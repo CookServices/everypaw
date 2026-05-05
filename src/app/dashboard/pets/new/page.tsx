@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Species } from "@/types";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 const SPECIES: { value: Species; label: string; emoji: string }[] = [
   { value: "dog", label: "Dog", emoji: "🐶" },
   { value: "cat", label: "Cat", emoji: "🐱" },
