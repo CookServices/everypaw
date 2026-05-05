@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Everypaw — Your pet's life story, printed",
   description: "Everypaw turns your daily moments into AI-crafted narratives and a beautiful printed book — one chapter at a time.",
