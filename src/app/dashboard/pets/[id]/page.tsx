@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Pet, Entry, Story } from "@/types";
 import Link from "next/link";
-import { use } from "react";
 
 const MOOD_OPTIONS = [
   { value: "happy", emoji: "😄", label: "Happy" },
@@ -16,8 +15,8 @@ const MOOD_OPTIONS = [
 
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
-export default function PetPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function PetPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const [pet, setPet] = useState<Pet | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
