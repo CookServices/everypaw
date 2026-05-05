@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+export const dynamic = "force-dynamic";
+
 function WaitlistForm({ dark = false }: { dark?: boolean }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
