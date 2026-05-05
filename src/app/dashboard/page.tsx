@@ -29,11 +29,13 @@ export default function DashboardPage() {
     window.location.href = "/";
   };
 
-  if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#7A5C44" }}>Loading your stories…</div>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#7A5C44" }}>Loading your stories…</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
@@ -42,7 +44,9 @@ export default function DashboardPage() {
           <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
           Everypaw
         </Link>
-        <button onClick={handleLogout} style={{ fontSize: ".8rem", color: "#7A5C44", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Sign out</button>
+        <button onClick={handleLogout} style={{ fontSize: ".8rem", color: "#7A5C44", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+          Sign out
+        </button>
       </nav>
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
@@ -58,4 +62,60 @@ export default function DashboardPage() {
 
         {pets.length === 0 ? (
           <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "3rem 2rem", textAlign: "center", border: "1.5px dashed rgba(61,43,31,.15)", marginBottom: "2.5rem" }}>
-            <div style={{ fontSize: "3rem", margin
+            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🐾</div>
+            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: "#3D2B1F", marginBottom: ".5rem" }}>No pets yet</h3>
+            <p style={{ fontSize: ".875rem", color: "#7A5C44", fontWeight: 300, marginBottom: "1.5rem" }}>Add your first pet to start building their story.</p>
+            <Link href="/dashboard/pets/new" style={{ background: "#C8813A", color: "#FDFAF5", padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
+              Add your first pet →
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "1rem", marginBottom: "2.5rem" }}>
+            {pets.map(pet => (
+              <Link key={pet.id} href={`/dashboard/pets/${pet.id}`} style={{ textDecoration: "none" }}>
+                <div
+                  style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)", cursor: "pointer", transition: "transform .15s, box-shadow .15s" }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 30px rgba(61,43,31,.1)";
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLDivElement).style.transform = "none";
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+                  }}
+                >
+                  <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.75rem", marginBottom: "1rem" }}>
+                    {pet.photo_url
+                      ? <img src={pet.photo_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 16 }} />
+                      : SPECIES_EMOJI[pet.species]
+                    }
+                  </div>
+                  <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".25rem" }}>{pet.name}</h3>
+                  <p style={{ fontSize: ".8rem", color: "#7A5C44", textTransform: "capitalize", fontWeight: 300 }}>{pet.breed || pet.species}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {entries.length > 0 && (
+          <div>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1rem" }}>Recent moments</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+              {entries.map(entry => (
+                <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+                  <div style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300, minWidth: 70, paddingTop: "2px" }}>
+                    {new Date(entry.entry_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </div>
+                  <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.6, margin: 0, flex: 1 }}>
+                    {entry.content.slice(0, 120)}{entry.content.length > 120 ? "…" : ""}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
