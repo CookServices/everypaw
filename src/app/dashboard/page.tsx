@@ -5,37 +5,50 @@ import { createClient } from "@/lib/supabase/client";
 import { Pet, Entry } from "@/types";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
 export default function DashboardPage() {
   const [pets, setPets] = useState<Pet[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const [isPremium, setIsPremium] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
 
   useEffect(() => {
     const load = async () => {
+      const supabase = createClient();
       const { data: petsData } = await supabase.from("pets").select("*").order("created_at", { ascending: false });
       const { data: entriesData } = await supabase.from("entries").select("*").order("entry_date", { ascending: false }).limit(5);
+      const { data: profile } = await supabase.from("profiles").select("is_premium").single();
       setPets(petsData || []);
       setEntries(entriesData || []);
+      setIsPremium(profile?.is_premium || false);
       setLoading(false);
     };
     load();
   }, []);
 
   const handleLogout = async () => {
+    const supabase = createClient();
     await supabase.auth.signOut();
     window.location.href = "/";
   };
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#7A5C44" }}>Loading your stories…</div>
-      </div>
-    );
-  }
+  const handleSubscribe = async () => {
+    setSubscribing(true);
+    const res = await fetch("/api/stripe/checkout", { method: "POST" });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+    else setSubscribing(false);
+  };
+
+  if (loading) return (
+    <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#7A5C44" }}>Loading your stories…</div>
+    </div>
+  );
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
@@ -44,9 +57,17 @@ export default function DashboardPage() {
           <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
           Everypaw
         </Link>
-        <button onClick={handleLogout} style={{ fontSize: ".8rem", color: "#7A5C44", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
-          Sign out
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          {!isPremium && (
+            <button onClick={handleSubscribe} disabled={subscribing} style={{ background: "#C8813A", color: "#FDFAF5", padding: ".5rem 1.25rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "none", cursor: "pointer", opacity: subscribing ? .7 : 1, fontFamily: "inherit" }}>
+              {subscribing ? "Loading…" : "✦ Upgrade to Premium"}
+            </button>
+          )}
+          {isPremium && (
+            <span style={{ fontSize: ".75rem", color: "#C8813A", fontWeight: 500 }}>✦ Premium</span>
+          )}
+          <button onClick={handleLogout} style={{ fontSize: ".8rem", color: "#7A5C44", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Sign out</button>
+        </div>
       </nav>
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
@@ -59,6 +80,18 @@ export default function DashboardPage() {
             + Add a pet
           </Link>
         </div>
+
+        {!isPremium && (
+          <div style={{ background: "rgba(200,129,58,.08)", border: "1.5px solid rgba(200,129,58,.25)", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+            <div>
+              <p style={{ fontSize: ".875rem", color: "#3D2B1F", fontWeight: 500, margin: "0 0 .25rem" }}>✦ Upgrade to Premium</p>
+              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>Unlimited entries, monthly AI stories, and a printed hardcover book.</p>
+            </div>
+            <button onClick={handleSubscribe} disabled={subscribing} style={{ background: "#C8813A", color: "#FDFAF5", padding: ".5rem 1.25rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "none", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+              {subscribing ? "Loading…" : "$4.99 / month →"}
+            </button>
+          </div>
+        )}
 
         {pets.length === 0 ? (
           <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "3rem 2rem", textAlign: "center", border: "1.5px dashed rgba(61,43,31,.15)", marginBottom: "2.5rem" }}>
@@ -73,22 +106,11 @@ export default function DashboardPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "1rem", marginBottom: "2.5rem" }}>
             {pets.map(pet => (
               <Link key={pet.id} href={`/dashboard/pets/${pet.id}`} style={{ textDecoration: "none" }}>
-                <div
-                  style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)", cursor: "pointer", transition: "transform .15s, box-shadow .15s" }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 30px rgba(61,43,31,.1)";
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLDivElement).style.transform = "none";
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
-                  }}
-                >
+                <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)", cursor: "pointer", transition: "transform .15s, box-shadow .15s" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 30px rgba(61,43,31,.1)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "none"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}>
                   <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.75rem", marginBottom: "1rem" }}>
-                    {pet.photo_url
-                      ? <img src={pet.photo_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 16 }} />
-                      : SPECIES_EMOJI[pet.species]
-                    }
+                    {pet.photo_url ? <img src={pet.photo_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 16 }} /> : SPECIES_EMOJI[pet.species]}
                   </div>
                   <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".25rem" }}>{pet.name}</h3>
                   <p style={{ fontSize: ".8rem", color: "#7A5C44", textTransform: "capitalize", fontWeight: 300 }}>{pet.breed || pet.species}</p>
@@ -107,9 +129,7 @@ export default function DashboardPage() {
                   <div style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300, minWidth: 70, paddingTop: "2px" }}>
                     {new Date(entry.entry_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </div>
-                  <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.6, margin: 0, flex: 1 }}>
-                    {entry.content.slice(0, 120)}{entry.content.length > 120 ? "…" : ""}
-                  </p>
+                  <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.6, margin: 0, flex: 1 }}>{entry.content.slice(0, 120)}{entry.content.length > 120 ? "…" : ""}</p>
                 </div>
               ))}
             </div>
