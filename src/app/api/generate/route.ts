@@ -62,14 +62,17 @@ Respond in JSON format only:
       }),
     });
 
-    const data = await response.json();
+   const data = await response.json();
     const text = data.content?.[0]?.text || "";
-    const clean = text.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(clean);
-
+    
+    // Extraire le JSON même s'il y a du texte autour
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("No JSON found in response:", text);
+      return NextResponse.json({ error: "Invalid response format" }, { status: 500 });
+    }
+    
+    const parsed = JSON.parse(jsonMatch[0]);
     return NextResponse.json({ title: parsed.title, story: parsed.story });
-  } catch (error) {
-    console.error("Generation error:", error);
-    return NextResponse.json({ error: "Generation failed" }, { status: 500 });
   }
 }
