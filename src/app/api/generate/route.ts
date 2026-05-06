@@ -28,24 +28,12 @@ Pet details:
 Journal entries written by their owner:
 ${entriesText}
 
-Your task:
-Write a beautiful narrative story of approximately 300-400 words, written in the first person as if ${petName} is narrating their own life.
+Write a beautiful narrative story of approximately 300-400 words in first person as if ${petName} is narrating their own life. Warm emotional tone. Start with something memorable. End on a heartfelt note.
 
-Guidelines:
-- Warm, emotional tone — this will be printed in a hardcover book
-- Weave the specific memories from the journal entries into a flowing narrative
-- Capture the pet's personality and the bond with their owner
-- Start with something memorable, not "I am ${petName}"
-- Include specific details from the entries to make it feel real and personal
-- End on a heartfelt note
+Also generate a short title (5 words max).
 
-Also generate a short title (5 words max) for this story.
-
-Respond in JSON format only:
-{
-  "title": "...",
-  "story": "..."
-}`;
+You MUST respond with valid JSON only, no other text:
+{"title": "...", "story": "..."}`;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -56,13 +44,14 @@ Respond in JSON format only:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-5",
+        model: "claude-3-5-sonnet-20241022",
         max_tokens: 1000,
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
     const data = await response.json();
+    console.log("Claude raw response:", JSON.stringify(data));
     const text = data.content?.[0]?.text || "";
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
