@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -21,30 +21,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Webhook error" }, { status: 400 });
   }
 
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const userId = session.metadata?.user_id;
+    console.log("Checkout completed for user:", userId);
 
     if (userId) {
-      const supabase = await createClient();
-      await supabase
+      const { error } = await supabase
         .from("profiles")
-        .update({ 
+        .update({
           is_premium: true,
           stripe_customer_id: session.customer as string,
         })
         .eq("id", userId);
+      
+      if (error) console.error("Supabase update error:", error);
+      else console.log("User upgraded to premium:", userId);
     }
   }
 
   if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object as Stripe.Subscription;
     const customerId = subscription.customer as string;
-    const supabase = await createClient();
-    await supabase
+    
+    const { error } = await supabase
       .from("profiles")
       .update({ is_premium: false })
       .eq("stripe_customer_id", customerId);
+    
+    if (error) console.error("Supabase downgrade error:", error);
   }
 
   return NextResponse.json({ received: true });
