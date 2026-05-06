@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "Everypaw — Your pet's life story, printed",
   description: "Everypaw turns your daily moments into AI-crafted narratives and a beautiful printed book — one chapter at a time.",
   metadataBase: new URL("https://everypaw.app"),
+  icons: {
+    icon: "/favicon.png",
+  },
   openGraph: {
     title: "Everypaw — Your pet's life story, printed",
     description: "Turn your pet's daily moments into a beautiful AI-crafted book.",
