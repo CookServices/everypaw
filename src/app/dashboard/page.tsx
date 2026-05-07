@@ -126,8 +126,13 @@ export default function DashboardPage() {
               {entries.map(entry => (
                 <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1rem", alignItems: "flex-start" }}>
                   <div style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300, minWidth: 70, paddingTop: "2px" }}>
-                    {new Date(entry.entry_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                  </div>
+  {new Date(entry.entry_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+  {entry.mood && (
+    <div style={{ marginTop: "4px", fontSize: "1rem" }}>
+      {entry.mood === "happy" ? "😄" : entry.mood === "funny" ? "😂" : entry.mood === "tender" ? "🥰" : entry.mood === "sad" ? "😢" : entry.mood === "proud" ? "🏆" : ""}
+    </div>
+  )}
+</div>
                   <div style={{ flex: 1 }}>
                     {entry.content.trim() && (
                       <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.6, margin: "0 0 .5rem" }}>
