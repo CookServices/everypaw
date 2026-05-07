@@ -166,4 +166,126 @@ export default function PetPage({ params }: { params: { id: string } }) {
         </span>
       </nav>
 
-      <main style={{ maxWidth: 720, margin:
+      <main style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1.5rem" }}>
+
+        {/* Pet header */}
+        <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1.25rem", alignItems: "center" }}>
+          <div style={{ width: 64, height: 64, borderRadius: 18, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", flexShrink: 0 }}>
+            {SPECIES_EMOJI[pet.species]}
+          </div>
+          <div>
+            <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.4rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .25rem" }}>{pet.name}</h1>
+            <p style={{ fontSize: ".85rem", color: "#7A5C44", fontWeight: 300, margin: 0 }}>
+              {pet.breed || pet.species}{pet.birthdate ? ` · Born ${new Date(pet.birthdate).toLocaleDateString("en-US", { month: "long", year: "numeric" })}` : ""}
+            </p>
+            {pet.bio && <p style={{ fontSize: ".85rem", color: "#7A5C44", marginTop: ".5rem", fontStyle: "italic" }}>{pet.bio}</p>}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: ".5rem", marginBottom: "1.5rem" }}>
+          {(["journal", "stories"] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{ padding: ".5rem 1.25rem", borderRadius: 100, border: `1.5px solid ${tab === t ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: tab === t ? "rgba(200,129,58,.1)" : "transparent", color: tab === t ? "#C8813A" : "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", fontWeight: tab === t ? 500 : 400, cursor: "pointer", textTransform: "capitalize" }}>
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {tab === "journal" && (
+          <>
+            {/* New entry */}
+            <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.25rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
+              <textarea value={newEntry} onChange={e => setNewEntry(e.target.value)} placeholder={`What did ${pet.name} do today?`} rows={3}
+                style={{ width: "100%", border: "none", background: "transparent", fontFamily: "inherit", fontSize: ".95rem", color: "#3D2B1F", outline: "none", resize: "none", lineHeight: 1.6, boxSizing: "border-box" }} />
+
+              {/* Photo previews */}
+              {pendingPhotos.length > 0 && (
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", margin: ".75rem 0" }}>
+                  {pendingPhotos.map((photo, i) => (
+                    <div key={i} style={{ position: "relative", width: 72, height: 72 }}>
+                      <img src={photo.preview} alt="" style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 10 }} />
+                      <button onClick={() => removePhoto(i)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "#3D2B1F", color: "#FDFAF5", border: "none", cursor: "pointer", fontSize: "11px", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: ".75rem", flexWrap: "wrap", gap: ".5rem" }}>
+                <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
+                  {/* Mood */}
+                  <div style={{ display: "flex", gap: ".35rem" }}>
+                    {MOOD_OPTIONS.map(m => (
+                      <button key={m.value} onClick={() => setMood(m.value)} title={m.label} style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${mood === m.value ? "#C8813A" : "transparent"}`, background: mood === m.value ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {m.emoji}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Photo upload button */}
+                  {pendingPhotos.length < 5 && (
+                    <button onClick={() => fileInputRef.current?.click()} style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "#7A5C44" }} title="Add photos">
+                      📷
+                    </button>
+                  )}
+                  <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handlePhotoSelect} style={{ display: "none" }} />
+                </div>
+                <button onClick={addEntry} disabled={saving || (!newEntry.trim() && pendingPhotos.length === 0)} style={{ padding: ".5rem 1.25rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer", opacity: saving || (!newEntry.trim() && pendingPhotos.length === 0) ? .5 : 1 }}>
+                  {uploadingPhotos ? "Uploading…" : saving ? "Saving…" : "Add moment"}
+                </button>
+              </div>
+            </div>
+
+            {/* Generate button */}
+            <button onClick={generateStory} disabled={generating || entries.length < 3} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", marginBottom: "1.5rem", opacity: entries.length < 3 ? .5 : 1 }}>
+              {generating ? "✨ Generating story…" : `✨ Generate ${pet.name}'s story`}
+              {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>Add {3 - entries.length} more {3 - entries.length === 1 ? "entry" : "entries"} to unlock</span>}
+            </button>
+
+            {/* Entries list */}
+            <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+              {entries.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#7A5C44", fontSize: ".9rem" }}>No entries yet — write your first moment above ✨</div>
+              ) : entries.map(entry => (
+                <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", border: "1px solid rgba(61,43,31,.06)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: ".5rem" }}>
+                    <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>
+                      {new Date(entry.entry_date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                    </span>
+                    {entry.mood && <span style={{ fontSize: ".9rem" }}>{MOOD_OPTIONS.find(m => m.value === entry.mood)?.emoji}</span>}
+                  </div>
+                  {entry.content.trim() && <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.65, margin: "0 0 .75rem" }}>{entry.content}</p>}
+                  {entry.photo_urls && entry.photo_urls.length > 0 && (
+                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                      {entry.photo_urls.map((url, i) => (
+                        <img key={i} src={url} alt="" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 10, cursor: "pointer" }}
+                          onClick={() => window.open(url, "_blank")} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {tab === "stories" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {stories.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
+                <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>✨</div>
+                <p style={{ color: "#7A5C44", fontFamily: "Georgia, serif", fontSize: "1rem" }}>No stories yet — go to Journal and generate {pet.name}&apos;s first story.</p>
+              </div>
+            ) : stories.map(story => (
+              <div key={story.id} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+                  <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>{story.title || `${pet.name}'s Story`}</h3>
+                  <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>{new Date(story.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                </div>
+                <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.75, margin: 0, fontFamily: "Georgia, serif", fontStyle: "italic" }}>{story.content}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
