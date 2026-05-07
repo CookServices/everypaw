@@ -63,9 +63,7 @@ export default function DashboardPage() {
               {subscribing ? "Loading…" : "✦ Upgrade to Premium"}
             </button>
           )}
-          {isPremium && (
-            <span style={{ fontSize: ".75rem", color: "#C8813A", fontWeight: 500 }}>✦ Premium</span>
-          )}
+          {isPremium && <span style={{ fontSize: ".75rem", color: "#C8813A", fontWeight: 500 }}>✦ Premium</span>}
           <Link href="/dashboard/settings" style={{ fontSize: ".8rem", color: "#7A5C44", textDecoration: "none" }}>Settings</Link>
           <button onClick={handleLogout} style={{ fontSize: ".8rem", color: "#7A5C44", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Sign out</button>
         </div>
@@ -129,25 +127,27 @@ export default function DashboardPage() {
                 <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1rem", alignItems: "flex-start" }}>
                   <div style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300, minWidth: 70, paddingTop: "2px" }}>
                     {new Date(entry.entry_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </div>
                   <div style={{ flex: 1 }}>
-  {entry.content.trim() && (
-    <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.6, margin: "0 0 .5rem" }}>
-      {entry.content.slice(0, 120)}{entry.content.length > 120 ? "…" : ""}
-    </p>
-  )}
-  {entry.photo_urls && entry.photo_urls.length > 0 && (
-    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-      {entry.photo_urls.slice(0, 3).map((url: string, i: number) => (
-        <img key={i} src={url} alt="" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8 }} />
-      ))}
-      {entry.photo_urls.length > 3 && (
-        <div style={{ width: 56, height: 56, borderRadius: 8, background: "rgba(61,43,31,.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: ".75rem", color: "#7A5C44" }}>
-          +{entry.photo_urls.length - 3}
-        </div>
-      )}
-    </div>
-  )}
-</div>
+                    {entry.content.trim() && (
+                      <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.6, margin: "0 0 .5rem" }}>
+                        {entry.content.slice(0, 120)}{entry.content.length > 120 ? "…" : ""}
+                      </p>
+                    )}
+                    {entry.photo_urls && entry.photo_urls.length > 0 && (
+                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                        {entry.photo_urls.slice(0, 3).map((url: string, i: number) => (
+                          <img key={i} src={url} alt="" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8 }} />
+                        ))}
+                        {entry.photo_urls.length > 3 && (
+                          <div style={{ width: 56, height: 56, borderRadius: 8, background: "rgba(61,43,31,.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: ".75rem", color: "#7A5C44" }}>
+                            +{entry.photo_urls.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
