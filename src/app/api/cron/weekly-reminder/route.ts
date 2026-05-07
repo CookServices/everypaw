@@ -19,7 +19,8 @@ export async function GET(req: Request) {
 
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, email");
+    .select("id, email, unsubscribe_token")
+    .eq("email_reminders", true);
 
   if (!profiles) return NextResponse.json({ sent: 0 });
 
@@ -45,6 +46,7 @@ export async function GET(req: Request) {
 
     const petNames = pets.map(p => p.name).join(", ");
     const entriesCount = recentEntries?.length || 0;
+    const unsubscribeUrl = `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`;
 
     await resend.emails.send({
       from: "Everypaw <hello@everypaw.app>",
@@ -59,7 +61,10 @@ export async function GET(req: Request) {
             : `<p style="font-size: 16px; line-height: 1.6; color: #7A5C44; margin: 0 0 24px;">No entries this week yet. What did ${petNames} get up to? Even a small moment is worth remembering.</p>`
           }
           <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 15px; font-weight: 500;">Add this week's moments →</a>
-          <p style="font-size: 12px; color: #7A5C44; margin-top: 32px; font-family: sans-serif;">You're receiving this because you have an Everypaw account. <a href="https://everypaw.app/dashboard" style="color: #C8813A;">Manage preferences</a></p>
+          <p style="font-size: 12px; color: #7A5C44; margin-top: 32px; font-family: sans-serif;">
+            You're receiving this because you have an Everypaw account. 
+            <a href="${unsubscribeUrl}" style="color: #C8813A;">Unsubscribe from weekly reminders</a>
+          </p>
         </div>
       `,
     });
