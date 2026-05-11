@@ -126,7 +126,7 @@ export default function GiftPage() {
             disabled={status === "loading"}
             style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "loading" ? .7 : 1 }}
           >
-            {status === "loading" ? "Sending gift…" : "Send gift →"}
+            {status === "loading" ? "Sending gift… " : "Send gift →"}
           </button>
         </div>
       </main>
