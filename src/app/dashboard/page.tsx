@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Pet, Entry } from "@/types";
 import Link from "next/link";
+import OnboardingModal from "@/components/onboarding/OnboardingModal";
 
 export const dynamic = "force-dynamic";
 
@@ -15,16 +16,21 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [hasStories, setHasStories] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
       const { data: petsData } = await supabase.from("pets").select("*").order("created_at", { ascending: false });
       const { data: entriesData } = await supabase.from("entries").select("*").order("entry_date", { ascending: false }).limit(5);
-      const { data: profile } = await supabase.from("profiles").select("is_premium").single();
+      const { data: profile } = await supabase.from("profiles").select("is_premium, onboarding_completed").single();
+      const { data: storiesData } = await supabase.from("stories").select("id").limit(1);
       setPets(petsData || []);
       setEntries(entriesData || []);
       setIsPremium(profile?.is_premium || false);
+      setShowOnboarding(!profile?.onboarding_completed);
+      setHasStories((storiesData?.length || 0) > 0);
       setLoading(false);
     };
     load();
@@ -70,6 +76,17 @@ export default function DashboardPage() {
       </nav>
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+
+        {/* Onboarding */}
+        {showOnboarding && (
+          <OnboardingModal
+            hasPets={pets.length > 0}
+            hasEntries={entries.length > 0}
+            hasStories={hasStories}
+            onComplete={() => setShowOnboarding(false)}
+          />
+        )}
+
         <div style={{ marginBottom: "2.5rem", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
           <div>
             <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.75rem, 3vw, 2.25rem)", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .25rem" }}>Your pets</h1>
@@ -126,13 +143,13 @@ export default function DashboardPage() {
               {entries.map(entry => (
                 <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1rem", alignItems: "flex-start" }}>
                   <div style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300, minWidth: 70, paddingTop: "2px" }}>
-  {new Date(entry.entry_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-  {entry.mood && (
-    <div style={{ marginTop: "4px", fontSize: "1rem" }}>
-      {entry.mood === "happy" ? "😄" : entry.mood === "funny" ? "😂" : entry.mood === "tender" ? "🥰" : entry.mood === "sad" ? "😢" : entry.mood === "proud" ? "🏆" : ""}
-    </div>
-  )}
-</div>
+                    {new Date(entry.entry_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    {entry.mood && (
+                      <div style={{ marginTop: "4px", fontSize: "1rem" }}>
+                        {entry.mood === "happy" ? "😄" : entry.mood === "funny" ? "😂" : entry.mood === "tender" ? "🥰" : entry.mood === "sad" ? "😢" : entry.mood === "proud" ? "🏆" : ""}
+                      </div>
+                    )}
+                  </div>
                   <div style={{ flex: 1 }}>
                     {entry.content.trim() && (
                       <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.6, margin: "0 0 .5rem" }}>
