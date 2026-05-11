@@ -6,7 +6,7 @@ import { Pet, Entry } from "@/types";
 import Link from "next/link";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { useTranslations } from "next-intl";
+import { useLocale } from "@/hooks/useLocale";
 
 export const dynamic = "force-dynamic";
 
