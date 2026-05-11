@@ -190,8 +190,17 @@ export default function PetPage({ params }: { params: { id: string } }) {
       <nav style={{ background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "1rem 2rem", display: "flex", alignItems: "center", gap: "1rem", position: "sticky", top: 0, zIndex: 50 }}>
         <Link href="/dashboard" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>← Dashboard</Link>
         <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "#3D2B1F" }}>
-          {SPECIES_EMOJI[pet.species]} {pet.name}
-        </span>
+  {SPECIES_EMOJI[pet.species]} {pet.name}
+</span>
+<button
+  onClick={() => {
+    navigator.clipboard.writeText(`https://everypaw.app/pets/${id}`);
+    alert("Link copied! 🐾");
+  }}
+  style={{ fontSize: ".75rem", color: "#7A5C44", background: "none", border: "1px solid rgba(61,43,31,.15)", borderRadius: 100, padding: ".25rem .75rem", cursor: "pointer", fontFamily: "inherit" }}
+>
+  Share profile
+</button>
       </nav>
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1.5rem" }}>
