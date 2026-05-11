@@ -99,13 +99,18 @@ export default function Home() {
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
           Everypaw
         </span>
-        <a href="#cta" style={{
-          background: "#3D2B1F", color: "#F7F2EA",
-          padding: ".5rem 1.25rem", borderRadius: "100px",
-          fontSize: ".875rem", fontWeight: 500, textDecoration: "none",
-        }}>
-          Join the waitlist
-        </a>
+       <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
+  <a href="/gift" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
+    🎁 Give a gift
+  </a>
+  <a href="#cta" style={{
+    background: "#3D2B1F", color: "#F7F2EA",
+    padding: ".5rem 1.25rem", borderRadius: "100px",
+    fontSize: ".875rem", fontWeight: 500, textDecoration: "none",
+  }}>
+    Join the waitlist
+  </a>
+</div>
       </nav>
 
       {/* HERO */}
