@@ -13,6 +13,8 @@ const MOOD_OPTIONS = [
   { value: "proud", emoji: "🏆", label: "Proud" },
 ];
 
+const [previewLoading, setPreviewLoading] = useState(false);
+
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
 async function compressImage(file: File): Promise<Blob> {
@@ -86,6 +88,19 @@ export default function PetPage({ params }: { params: { id: string } }) {
     const selected = files.slice(0, remaining);
     const newPhotos = selected.map(file => ({ file, preview: URL.createObjectURL(file) }));
     setPendingPhotos(prev => [...prev, ...newPhotos]);
+    const handlePreviewPDF = async () => {
+  setPreviewLoading(true);
+  const res = await fetch("/api/preview-pdf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ petId: id }),
+  });
+  const html = await res.text();
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+  setPreviewLoading(false);
+};
   };
 
   const removePhoto = (index: number) => {
@@ -304,6 +319,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
               <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
                 <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>✨</div>
                 <p style={{ color: "#7A5C44", fontFamily: "Georgia, serif", fontSize: "1rem" }}>No stories yet — go to Journal and generate {pet.name}&apos;s first story.</p>
+                <button
+  onClick={handlePreviewPDF}
+  disabled={previewLoading}
+  style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px solid rgba(200,129,58,.3)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", marginBottom: "1.5rem", opacity: previewLoading ? .7 : 1 }}
+>
+  {previewLoading ? "Generating preview…" : "📖 Preview my book"}
+</button>
               </div>
             ) : stories.map(story => (
               <div key={story.id} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
