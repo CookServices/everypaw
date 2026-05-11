@@ -321,6 +321,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
               {previewLoading ? "Generating preview…" : "📖 Preview my book"}
             </button>
 
+<Link
+  href={`/dashboard/pets/${id}/order`}
+  style={{ display: "block", width: "100%", padding: ".875rem", borderRadius: 16, border: "none", background: "#3D2B1F", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", marginBottom: "1.5rem", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}
+>
+  🛒 Order printed book — $35
+</Link>
+            
             {stories.length === 0 ? (
               <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
                 <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>✨</div>
