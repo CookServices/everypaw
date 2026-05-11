@@ -80,6 +80,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               Back to dashboard →
             </Link>
           </div>
+
         ) : step === "confirm" ? (
           <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)" }}>
             <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: "#3D2B1F", marginBottom: "1.5rem" }}>Confirm your order</h2>
@@ -106,6 +107,10 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               </div>
             </div>
 
+            <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 12, padding: ".875rem 1rem", marginBottom: "1rem", fontSize: ".8rem", color: "#7A5C44", lineHeight: 1.5 }}>
+              ⚠️ This is a real order. Your card on file with Gelato will be charged ~$35 + shipping. The book will be printed and shipped to the address above.
+            </div>
+
             <div style={{ display: "flex", gap: ".75rem" }}>
               <button onClick={() => setStep("address")} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".875rem", color: "#7A5C44", cursor: "pointer" }}>
                 Edit address
@@ -115,6 +120,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               </button>
             </div>
           </div>
+
         ) : (
           <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)" }}>
             <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", gap: "1rem", alignItems: "center" }}>
