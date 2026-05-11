@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         itemReferenceId: `item-${petId}`,
         productUid: GELATO_PRODUCT_UID,
         quantity: 1,
-        pageCount: 24,
+        pageCount: 20,
         files: [
           {
             type: "default",
