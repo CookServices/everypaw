@@ -1,0 +1,89 @@
+{
+  "nav": {
+    "give_gift": "🎁 Offrir un cadeau",
+    "join_waitlist": "Rejoindre la liste",
+    "dashboard": "Tableau de bord",
+    "settings": "Paramètres",
+    "sign_out": "Déconnexion",
+    "share_profile": "Partager le profil"
+  },
+  "dashboard": {
+    "title": "Vos animaux",
+    "subtitle": "Chaque moment, chaque histoire.",
+    "add_pet": "+ Ajouter un animal",
+    "no_pets_title": "Pas encore d'animaux",
+    "no_pets_desc": "Ajoutez votre premier animal pour commencer à construire son histoire.",
+    "add_first_pet": "Ajouter votre premier animal →",
+    "recent_moments": "Moments récents",
+    "upgrade_title": "✦ Passer à Premium",
+    "upgrade_desc": "Entrées illimitées, histoires IA mensuelles et un livre relié imprimé.",
+    "upgrade_cta": "4,99 € / mois →",
+    "premium_badge": "✦ Premium"
+  },
+  "journal": {
+    "placeholder": "Qu'a fait {name} aujourd'hui ?",
+    "add_moment": "Ajouter un moment",
+    "saving": "Enregistrement…",
+    "uploading": "Téléchargement…",
+    "generate_story": "✨ Générer l'histoire de {name}",
+    "generating": "✨ Génération en cours…",
+    "add_more": "Ajoutez {count} {entries} de plus pour débloquer",
+    "entry": "entrée",
+    "entries": "entrées",
+    "no_entries": "Pas encore d'entrées — écrivez votre premier moment ci-dessus ✨"
+  },
+  "stories": {
+    "preview_book": "📖 Aperçu de mon livre",
+    "order_book": "🛒 Commander le livre imprimé — 35 $",
+    "no_stories": "Pas encore d'histoires — allez dans le Journal et générez la première histoire de {name}.",
+    "generating_preview": "Génération de l'aperçu…"
+  },
+  "milestones": {
+    "title": "Étapes importantes",
+    "no_milestones_title": "Pas encore d'étapes",
+    "no_milestones_desc": "Les étapes sont détectées automatiquement lorsque vous ajoutez des entrées de journal."
+  },
+  "auth": {
+    "welcome_back": "Bon retour",
+    "sign_in": "Se connecter",
+    "signing_in": "Connexion...",
+    "create_account": "Créer un compte",
+    "creating": "Création du compte...",
+    "no_account": "Pas de compte ?",
+    "create_one": "En créer un →",
+    "already_account": "Vous avez déjà un compte ?",
+    "sign_in_link": "Se connecter →",
+    "google": "Continuer avec Google",
+    "email": "Email",
+    "password": "Mot de passe",
+    "password_hint": "Mot de passe (min. 8 caractères)",
+    "check_inbox": "Vérifiez votre boîte mail",
+    "check_inbox_desc": "Nous avons envoyé un lien de confirmation à {email}. Cliquez dessus pour activer votre compte.",
+    "start_story": "Commencez l'histoire de votre animal aujourd'hui"
+  },
+  "pet": {
+    "add_title": "Ajouter un animal",
+    "species": "Espèce",
+    "name": "Nom *",
+    "breed": "Race",
+    "birthday": "Date de naissance",
+    "bio": "Un peu à leur sujet",
+    "bio_placeholder": "Qu'est-ce qui les rend uniques ? Leur personnalité, leurs habitudes, leurs choses préférées…",
+    "create": "Créer le profil →",
+    "creating": "Création…",
+    "name_error": "Donnez un nom à votre animal !",
+    "born": "Né(e) en"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "email_prefs": "Préférences email",
+    "weekly_reminders": "Rappels hebdomadaires",
+    "weekly_reminders_desc": "Recevez un email hebdomadaire pour tenir le journal de votre animal à jour.",
+    "onboarding_guide": "Guide de démarrage",
+    "onboarding_guide_desc": "Afficher à nouveau le guide de démarrage sur votre tableau de bord.",
+    "reset_guide": "Réinitialiser le guide",
+    "save": "Enregistrer les préférences",
+    "saving": "Enregistrement…",
+    "saved": "✓ Enregistré"
+  }
+}
