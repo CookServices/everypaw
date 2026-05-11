@@ -69,7 +69,7 @@ export default function DashboardPage() {
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           {!isPremium && (
             <button onClick={handleSubscribe} disabled={subscribing} style={{ background: "#C8813A", color: "#FDFAF5", padding: ".5rem 1.25rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "none", cursor: "pointer", opacity: subscribing ? .7 : 1, fontFamily: "inherit" }}>
-              {subscribing ? "Loading…" : "✦ Upgrade to Premium"}
+              {subscribing ? "Loading…" : t("upgrade_title")}
             </button>
           )}
           {isPremium && <span style={{ fontSize: ".75rem", color: "#C8813A", fontWeight: 500 }}>{t("premium_badge")}</span>}
@@ -81,7 +81,6 @@ export default function DashboardPage() {
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
 
-        {/* Onboarding */}
         {showOnboarding && (
           <OnboardingModal
             hasPets={pets.length > 0}
@@ -108,7 +107,7 @@ export default function DashboardPage() {
               <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t("upgrade_desc")}</p>
             </div>
             <button onClick={handleSubscribe} disabled={subscribing} style={{ background: "#C8813A", color: "#FDFAF5", padding: ".5rem 1.25rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "none", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
-              {subscribing ? "Loading…" : "{t("upgrade_cta")}"}
+              {subscribing ? "Loading…" : t("upgrade_cta")}
             </button>
           </div>
         )}
