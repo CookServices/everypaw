@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
 export default function DashboardPage() {
-  const t = useTranslations("dashboard");
+  const { t } = useLocale();
   const [pets, setPets] = useState<Pet[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
