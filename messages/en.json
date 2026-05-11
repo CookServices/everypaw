@@ -1,0 +1,89 @@
+{
+  "nav": {
+    "give_gift": "🎁 Give a gift",
+    "join_waitlist": "Join the waitlist",
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "sign_out": "Sign out",
+    "share_profile": "Share profile"
+  },
+  "dashboard": {
+    "title": "Your pets",
+    "subtitle": "Every moment, every story.",
+    "add_pet": "+ Add a pet",
+    "no_pets_title": "No pets yet",
+    "no_pets_desc": "Add your first pet to start building their story.",
+    "add_first_pet": "Add your first pet →",
+    "recent_moments": "Recent moments",
+    "upgrade_title": "✦ Upgrade to Premium",
+    "upgrade_desc": "Unlimited entries, monthly AI stories, and a printed hardcover book.",
+    "upgrade_cta": "$4.99 / month →",
+    "premium_badge": "✦ Premium"
+  },
+  "journal": {
+    "placeholder": "What did {name} do today?",
+    "add_moment": "Add moment",
+    "saving": "Saving…",
+    "uploading": "Uploading…",
+    "generate_story": "✨ Generate {name}'s story",
+    "generating": "✨ Generating story…",
+    "add_more": "Add {count} more {entries} to unlock",
+    "entry": "entry",
+    "entries": "entries",
+    "no_entries": "No entries yet — write your first moment above ✨"
+  },
+  "stories": {
+    "preview_book": "📖 Preview my book",
+    "order_book": "🛒 Order printed book — $35",
+    "no_stories": "No stories yet — go to Journal and generate {name}'s first story.",
+    "generating_preview": "Generating preview…"
+  },
+  "milestones": {
+    "title": "Milestones",
+    "no_milestones_title": "No milestones yet",
+    "no_milestones_desc": "Milestones are detected automatically when you add journal entries."
+  },
+  "auth": {
+    "welcome_back": "Welcome back",
+    "sign_in": "Sign in",
+    "signing_in": "Signing in...",
+    "create_account": "Create account",
+    "creating": "Creating account...",
+    "no_account": "No account?",
+    "create_one": "Create one →",
+    "already_account": "Already have an account?",
+    "sign_in_link": "Sign in →",
+    "google": "Continue with Google",
+    "email": "Email",
+    "password": "Password",
+    "password_hint": "Password (min. 8 characters)",
+    "check_inbox": "Check your inbox",
+    "check_inbox_desc": "We sent a confirmation link to {email}. Click it to activate your account.",
+    "start_story": "Start your pet's story today"
+  },
+  "pet": {
+    "add_title": "Add a pet",
+    "species": "Species",
+    "name": "Name *",
+    "breed": "Breed",
+    "birthday": "Birthday",
+    "bio": "A little about them",
+    "bio_placeholder": "What makes them unique? Their personality, quirks, favourite things…",
+    "create": "Create profile →",
+    "creating": "Creating…",
+    "name_error": "Give your pet a name!",
+    "born": "Born"
+  },
+  "settings": {
+    "title": "Settings",
+    "email_prefs": "Email preferences",
+    "weekly_reminders": "Weekly reminders",
+    "weekly_reminders_desc": "Receive a weekly email to keep your pet's journal up to date.",
+    "onboarding_guide": "Getting started guide",
+    "onboarding_guide_desc": "Show the onboarding guide again on your dashboard.",
+    "reset_guide": "Reset guide",
+    "save": "Save preferences",
+    "saving": "Saving…",
+    "saved": "✓ Saved"
+  }
+}
