@@ -37,6 +37,17 @@ async function compressImage(file: File): Promise<Blob> {
   });
 }
 
+function groupEntriesByMonth(entries: Entry[]) {
+  const groups: { month: string; entries: Entry[] }[] = [];
+  entries.forEach(entry => {
+    const month = new Date(entry.entry_date).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    const existing = groups.find(g => g.month === month);
+    if (existing) existing.entries.push(entry);
+    else groups.push({ month, entries: [entry] });
+  });
+  return groups;
+}
+
 export default function PetPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const [pet, setPet] = useState<Pet | null>(null);
@@ -50,6 +61,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [pendingPhotos, setPendingPhotos] = useState<{ file: File; preview: string }[]>([]);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -72,10 +84,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
     const files = Array.from(e.target.files || []);
     const remaining = 5 - pendingPhotos.length;
     const selected = files.slice(0, remaining);
-    const newPhotos = selected.map(file => ({
-      file,
-      preview: URL.createObjectURL(file)
-    }));
+    const newPhotos = selected.map(file => ({ file, preview: URL.createObjectURL(file) }));
     setPendingPhotos(prev => [...prev, ...newPhotos]);
   };
 
@@ -108,15 +117,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     let photoUrls: string[] = [];
-    if (pendingPhotos.length > 0) {
-      photoUrls = await uploadPhotos(user!.id);
-    }
+    if (pendingPhotos.length > 0) photoUrls = await uploadPhotos(user!.id);
     const { data } = await supabase.from("entries").insert({
-      pet_id: id,
-      user_id: user!.id,
-      content: newEntry.trim() || " ",
-      mood,
-      photo_urls: photoUrls,
+      pet_id: id, user_id: user!.id,
+      content: newEntry.trim() || " ", mood, photo_urls: photoUrls,
     }).select().single();
     if (data) setEntries([data, ...entries]);
     setNewEntry("");
@@ -151,14 +155,23 @@ export default function PetPage({ params }: { params: { id: string } }) {
   };
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", color: "#7A5C44" }}>
-      Loading…
-    </div>
+    <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", color: "#7A5C44" }}>Loading…</div>
   );
   if (!pet) return <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>Pet not found.</div>;
 
+  const groupedEntries = groupEntriesByMonth(entries);
+
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div onClick={() => setLightboxUrl(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", cursor: "pointer" }}>
+          <img src={lightboxUrl} alt="" style={{ maxWidth: "100%", maxHeight: "90vh", borderRadius: 12, objectFit: "contain" }} />
+          <button onClick={() => setLightboxUrl(null)} style={{ position: "absolute", top: "1rem", right: "1rem", background: "rgba(255,255,255,.15)", border: "none", color: "#fff", width: 36, height: 36, borderRadius: "50%", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+        </div>
+      )}
+
       <nav style={{ background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "1rem 2rem", display: "flex", alignItems: "center", gap: "1rem", position: "sticky", top: 0, zIndex: 50 }}>
         <Link href="/dashboard" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>← Dashboard</Link>
         <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "#3D2B1F" }}>
@@ -198,7 +211,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
               <textarea value={newEntry} onChange={e => setNewEntry(e.target.value)} placeholder={`What did ${pet.name} do today?`} rows={3}
                 style={{ width: "100%", border: "none", background: "transparent", fontFamily: "inherit", fontSize: ".95rem", color: "#3D2B1F", outline: "none", resize: "none", lineHeight: 1.6, boxSizing: "border-box" }} />
 
-              {/* Photo previews */}
               {pendingPhotos.length > 0 && (
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", margin: ".75rem 0" }}>
                   {pendingPhotos.map((photo, i) => (
@@ -212,7 +224,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: ".75rem", flexWrap: "wrap", gap: ".5rem" }}>
                 <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
-                  {/* Mood */}
                   <div style={{ display: "flex", gap: ".35rem" }}>
                     {MOOD_OPTIONS.map(m => (
                       <button key={m.value} onClick={() => setMood(m.value)} title={m.label} style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${mood === m.value ? "#C8813A" : "transparent"}`, background: mood === m.value ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -220,7 +231,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
                       </button>
                     ))}
                   </div>
-                  {/* Photo upload button */}
                   {pendingPhotos.length < 5 && (
                     <button onClick={() => fileInputRef.current?.click()} style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "#7A5C44" }} title="Add photos">
                       📷
@@ -240,30 +250,51 @@ export default function PetPage({ params }: { params: { id: string } }) {
               {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>Add {3 - entries.length} more {3 - entries.length === 1 ? "entry" : "entries"} to unlock</span>}
             </button>
 
-            {/* Entries list */}
-            <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-              {entries.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#7A5C44", fontSize: ".9rem" }}>No entries yet — write your first moment above ✨</div>
-              ) : entries.map(entry => (
-                <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", border: "1px solid rgba(61,43,31,.06)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: ".5rem" }}>
-                    <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>
-                      {new Date(entry.entry_date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-                    </span>
-                    {entry.mood && <span style={{ fontSize: ".9rem" }}>{MOOD_OPTIONS.find(m => m.value === entry.mood)?.emoji}</span>}
-                  </div>
-                  {entry.content.trim() && <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.65, margin: "0 0 .75rem" }}>{entry.content}</p>}
-                  {entry.photo_urls && entry.photo_urls.length > 0 && (
-                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                      {entry.photo_urls.map((url, i) => (
-                        <img key={i} src={url} alt="" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 10, cursor: "pointer" }}
-                          onClick={() => window.open(url, "_blank")} />
-                      ))}
-                    </div>
-                  )}
+            {/* Timeline */}
+            {entries.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#7A5C44", fontSize: ".9rem" }}>No entries yet — write your first moment above ✨</div>
+            ) : groupedEntries.map(group => (
+              <div key={group.month} style={{ marginBottom: "2rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+                  <span style={{ fontFamily: "Georgia, serif", fontSize: ".9rem", fontWeight: 600, color: "#7A5C44" }}>{group.month}</span>
+                  <div style={{ flex: 1, height: "0.5px", background: "rgba(61,43,31,.1)" }} />
                 </div>
-              ))}
-            </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+                  {group.entries.map(entry => (
+                    <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(61,43,31,.06)" }}>
+                      {/* Photos grid */}
+                      {entry.photo_urls && entry.photo_urls.length > 0 && (
+                        <div style={{ display: "grid", gridTemplateColumns: entry.photo_urls.length === 1 ? "1fr" : entry.photo_urls.length === 2 ? "1fr 1fr" : "1fr 1fr 1fr", gap: "2px" }}>
+                          {entry.photo_urls.slice(0, 3).map((url, i) => (
+                            <div key={i} style={{ position: "relative" }}>
+                              <img src={url} alt="" onClick={() => setLightboxUrl(url)}
+                                style={{ width: "100%", height: entry.photo_urls.length === 1 ? 280 : 160, objectFit: "cover", display: "block", cursor: "pointer" }} />
+                              {i === 2 && entry.photo_urls.length > 3 && (
+                                <div onClick={() => setLightboxUrl(entry.photo_urls[2])} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                                  <span style={{ color: "#fff", fontSize: "1.25rem", fontWeight: 500 }}>+{entry.photo_urls.length - 3}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Entry content */}
+                      <div style={{ padding: ".875rem 1rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: entry.content.trim() ? ".5rem" : 0 }}>
+                          <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>
+                            {new Date(entry.entry_date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                          </span>
+                          {entry.mood && <span style={{ fontSize: ".9rem" }}>{MOOD_OPTIONS.find(m => m.value === entry.mood)?.emoji}</span>}
+                        </div>
+                        {entry.content.trim() && (
+                          <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.65, margin: 0 }}>{entry.content}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </>
         )}
 
