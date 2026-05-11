@@ -1,6 +1,4 @@
-const config = {
-  locales: ["en", "fr"],
-  defaultLocale: "en",
-};
+/** @type {import('next').NextConfig} */
+const nextConfig = {}
 
-export default config;
+module.exports = nextConfig
