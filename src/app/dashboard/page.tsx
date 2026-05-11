@@ -69,10 +69,10 @@ export default function DashboardPage() {
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           {!isPremium && (
             <button onClick={handleSubscribe} disabled={subscribing} style={{ background: "#C8813A", color: "#FDFAF5", padding: ".5rem 1.25rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "none", cursor: "pointer", opacity: subscribing ? .7 : 1, fontFamily: "inherit" }}>
-              {subscribing ? "Loading…" : t("upgrade_title")}
+              {subscribing ? "Loading…" : t.dashboard.upgrade_title}
             </button>
           )}
-          {isPremium && <span style={{ fontSize: ".75rem", color: "#C8813A", fontWeight: 500 }}>{t.dashboard.title}</span>}
+          {isPremium && <span style={{ fontSize: ".75rem", color: "#C8813A", fontWeight: 500 }}>{t.dashboard.premium_badge}</span>}
           <LanguageSwitcher />
           <Link href="/dashboard/settings" style={{ fontSize: ".8rem", color: "#7A5C44", textDecoration: "none" }}>Settings</Link>
           <button onClick={handleLogout} style={{ fontSize: ".8rem", color: "#7A5C44", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Sign out</button>
@@ -93,21 +93,21 @@ export default function DashboardPage() {
         <div style={{ marginBottom: "2.5rem", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
           <div>
             <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.75rem, 3vw, 2.25rem)", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .25rem" }}>{t.dashboard.title}</h1>
-            <p style={{ fontSize: ".9rem", color: "#7A5C44", fontWeight: 300 }}>{t.dashboard.title}</p>
+            <p style={{ fontSize: ".9rem", color: "#7A5C44", fontWeight: 300 }}>{t.dashboard.subtitle}</p>
           </div>
           <Link href="/dashboard/pets/new" style={{ background: "#C8813A", color: "#FDFAF5", padding: ".625rem 1.25rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
-            {t.dashboard.title}
+            {t.dashboard.add_pet}
           </Link>
         </div>
 
         {!isPremium && (
           <div style={{ background: "rgba(200,129,58,.08)", border: "1.5px solid rgba(200,129,58,.25)", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
             <div>
-              <p style={{ fontSize: ".875rem", color: "#3D2B1F", fontWeight: 500, margin: "0 0 .25rem" }}>{t.dashboard.title}</p>
-              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.dashboard.title}</p>
+              <p style={{ fontSize: ".875rem", color: "#3D2B1F", fontWeight: 500, margin: "0 0 .25rem" }}>{t.dashboard.upgrade_title}</p>
+              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.dashboard.upgrade_desc}</p>
             </div>
             <button onClick={handleSubscribe} disabled={subscribing} style={{ background: "#C8813A", color: "#FDFAF5", padding: ".5rem 1.25rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "none", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
-              {subscribing ? "Loading…" : t("upgrade_cta")}
+              {subscribing ? "Loading…" : t.dashboard.upgrade_cta}
             </button>
           </div>
         )}
@@ -115,10 +115,10 @@ export default function DashboardPage() {
         {pets.length === 0 ? (
           <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "3rem 2rem", textAlign: "center", border: "1.5px dashed rgba(61,43,31,.15)", marginBottom: "2.5rem" }}>
             <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🐾</div>
-            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: "#3D2B1F", marginBottom: ".5rem" }}>{t.dashboard.title}</h3>
-            <p style={{ fontSize: ".875rem", color: "#7A5C44", fontWeight: 300, marginBottom: "1.5rem" }}>{t.dashboard.title}</p>
+            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: "#3D2B1F", marginBottom: ".5rem" }}>{t.dashboard.no_pets_title}</h3>
+            <p style={{ fontSize: ".875rem", color: "#7A5C44", fontWeight: 300, marginBottom: "1.5rem" }}>{t.dashboard.no_pets_desc}</p>
             <Link href="/dashboard/pets/new" style={{ background: "#C8813A", color: "#FDFAF5", padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
-              {t.dashboard.title}
+              {t.dashboard.add_first_pet}
             </Link>
           </div>
         ) : (
@@ -141,7 +141,7 @@ export default function DashboardPage() {
 
         {entries.length > 0 && (
           <div>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1rem" }}>{t.dashboard.title}</h2>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1rem" }}>{t.dashboard.recent_moments}</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
               {entries.map(entry => (
                 <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1rem", alignItems: "flex-start" }}>
