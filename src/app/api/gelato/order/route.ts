@@ -22,6 +22,8 @@ async function handleRequest(req: Request, method: string) {
 
   if (!petId) return NextResponse.json({ error: "Missing petId" }, { status: 400 });
 
+console.log("Pet found:", pet?.name, "User:", user?.id);
+  
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -37,6 +39,8 @@ async function handleRequest(req: Request, method: string) {
 
   const photosWithEntries = entries?.filter(e => e.photo_urls?.length > 0).slice(0, 6) || [];
 
+console.log("Sending to Gelato:", JSON.stringify(orderPayload));
+  
   const html = `
 <!DOCTYPE html>
 <html>
