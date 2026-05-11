@@ -6,12 +6,14 @@ import { Pet, Entry } from "@/types";
 import Link from "next/link";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslations } from "next-intl";
 
 export const dynamic = "force-dynamic";
 
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
 export default function DashboardPage() {
+  const t = useTranslations("dashboard");
   const [pets, setPets] = useState<Pet[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
