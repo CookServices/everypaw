@@ -18,8 +18,6 @@ export async function POST(req: Request) {
 
   const { data: pet } = await supabase.from("pets").select("*").eq("id", petId).single();
 
-  console.log("Pet found:", pet?.name, "User:", user?.id);
-
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
 
   const orderPayload = {
@@ -51,8 +49,6 @@ export async function POST(req: Request) {
       email: user.email,
     },
   };
-
-  console.log("Sending to Gelato:", JSON.stringify(orderPayload));
 
   try {
     const response = await fetch("https://order.gelatoapis.com/v4/orders", {
