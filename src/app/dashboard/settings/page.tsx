@@ -46,12 +46,13 @@ export default function SettingsPage() {
 
       <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)" }}>
-          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1.5rem" }}>Email preferences</h2>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1.5rem" }}>Settings</h2>
 
           {loading ? (
             <p style={{ color: "#7A5C44", fontSize: ".9rem" }}>Loading…</p>
           ) : (
             <>
+              {/* Weekly reminders */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 0", borderBottom: "0.5px solid rgba(61,43,31,.08)" }}>
                 <div>
                   <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .25rem" }}>Weekly reminders</p>
@@ -73,6 +74,26 @@ export default function SettingsPage() {
                     background: "#FDFAF5", transition: "left .2s",
                     display: "block"
                   }} />
+                </button>
+              </div>
+
+              {/* Getting started guide */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 0", borderBottom: "0.5px solid rgba(61,43,31,.08)" }}>
+                <div>
+                  <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .25rem" }}>Getting started guide</p>
+                  <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>Show the onboarding guide again on your dashboard.</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    const supabase = createClient();
+                    const { data: { user } } = await supabase.auth.getUser();
+                    await supabase.from("profiles").update({ onboarding_completed: false }).eq("id", user!.id);
+                    setSaved(true);
+                    setTimeout(() => setSaved(false), 2000);
+                  }}
+                  style={{ background: "transparent", color: "#C8813A", padding: ".4rem 1rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "1.5px solid rgba(200,129,58,.3)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", marginLeft: "1rem" }}
+                >
+                  Reset guide
                 </button>
               </div>
 
