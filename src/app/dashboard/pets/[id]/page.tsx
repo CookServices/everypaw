@@ -13,8 +13,6 @@ const MOOD_OPTIONS = [
   { value: "proud", emoji: "🏆", label: "Proud" },
 ];
 
-const [previewLoading, setPreviewLoading] = useState(false);
-
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
 async function compressImage(file: File): Promise<Blob> {
@@ -64,6 +62,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [pendingPhotos, setPendingPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -88,19 +87,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
     const selected = files.slice(0, remaining);
     const newPhotos = selected.map(file => ({ file, preview: URL.createObjectURL(file) }));
     setPendingPhotos(prev => [...prev, ...newPhotos]);
-    const handlePreviewPDF = async () => {
-  setPreviewLoading(true);
-  const res = await fetch("/api/preview-pdf", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ petId: id }),
-  });
-  const html = await res.text();
-  const blob = new Blob([html], { type: "text/html" });
-  const url = URL.createObjectURL(blob);
-  window.open(url, "_blank");
-  setPreviewLoading(false);
-};
   };
 
   const removePhoto = (index: number) => {
@@ -167,6 +153,20 @@ export default function PetPage({ params }: { params: { id: string } }) {
       }
     } catch { alert("Generation failed. Please try again."); }
     setGenerating(false);
+  };
+
+  const handlePreviewPDF = async () => {
+    setPreviewLoading(true);
+    const res = await fetch("/api/preview-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ petId: id }),
+    });
+    const html = await res.text();
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setPreviewLoading(false);
   };
 
   if (loading) return (
@@ -277,10 +277,9 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
                   {group.entries.map(entry => (
                     <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(61,43,31,.06)" }}>
-                      {/* Photos grid */}
                       {entry.photo_urls && entry.photo_urls.length > 0 && (
                         <div style={{ display: "grid", gridTemplateColumns: entry.photo_urls.length === 1 ? "1fr" : entry.photo_urls.length === 2 ? "1fr 1fr" : "1fr 1fr 1fr", gap: "2px" }}>
-                          {entry.photo_urls.slice(0, 3).map((url, i) => (
+                          {entry.photo_urls.slice(0, 3).map((url: string, i: number) => (
                             <div key={i} style={{ position: "relative" }}>
                               <img src={url} alt="" onClick={() => setLightboxUrl(url)}
                                 style={{ width: "100%", height: entry.photo_urls.length === 1 ? 280 : 160, objectFit: "cover", display: "block", cursor: "pointer" }} />
@@ -293,7 +292,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
                           ))}
                         </div>
                       )}
-                      {/* Entry content */}
                       <div style={{ padding: ".875rem 1rem" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: entry.content.trim() ? ".5rem" : 0 }}>
                           <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>
@@ -315,17 +313,18 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "stories" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <button
+              onClick={handlePreviewPDF}
+              disabled={previewLoading}
+              style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px solid rgba(200,129,58,.3)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", marginBottom: ".5rem", opacity: previewLoading ? .7 : 1 }}
+            >
+              {previewLoading ? "Generating preview…" : "📖 Preview my book"}
+            </button>
+
             {stories.length === 0 ? (
               <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
                 <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>✨</div>
                 <p style={{ color: "#7A5C44", fontFamily: "Georgia, serif", fontSize: "1rem" }}>No stories yet — go to Journal and generate {pet.name}&apos;s first story.</p>
-                <button
-  onClick={handlePreviewPDF}
-  disabled={previewLoading}
-  style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px solid rgba(200,129,58,.3)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", marginBottom: "1.5rem", opacity: previewLoading ? .7 : 1 }}
->
-  {previewLoading ? "Generating preview…" : "📖 Preview my book"}
-</button>
               </div>
             ) : stories.map(story => (
               <div key={story.id} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
