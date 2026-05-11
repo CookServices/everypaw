@@ -72,7 +72,6 @@ export default function DashboardPage() {
           )}
           {isPremium && <span style={{ fontSize: ".75rem", color: "#C8813A", fontWeight: 500 }}>✦ Premium</span>}
           <LanguageSwitcher />
-<Link href="/dashboard/settings" style={{ fontSize: ".8rem", color: "#7A5C44", textDecoration: "none" }}>Settings</Link>
           <Link href="/dashboard/settings" style={{ fontSize: ".8rem", color: "#7A5C44", textDecoration: "none" }}>Settings</Link>
           <button onClick={handleLogout} style={{ fontSize: ".8rem", color: "#7A5C44", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Sign out</button>
         </div>
