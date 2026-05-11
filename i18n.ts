@@ -1,9 +1,23 @@
 import { getRequestConfig } from "next-intl/server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 export default getRequestConfig(async () => {
   const cookieStore = await cookies();
-  const locale = cookieStore.get("locale")?.value || "en";
+  const headersList = await headers();
+  
+  // Check cookie first (user preference)
+  const cookieLocale = cookieStore.get("locale")?.value;
+  
+  // If no cookie, detect from browser
+  let locale = "en";
+  if (cookieLocale && ["en", "fr"].includes(cookieLocale)) {
+    locale = cookieLocale;
+  } else {
+    const acceptLanguage = headersList.get("accept-language") || "";
+    if (acceptLanguage.toLowerCase().includes("fr")) {
+      locale = "fr";
+    }
+  }
 
   return {
     locale,
