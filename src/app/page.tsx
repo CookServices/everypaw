@@ -135,7 +135,7 @@ export default function Home() {
             <div style={{ textAlign: "center", padding: "2rem" }}>
               <div style={{ fontSize: "2.5rem", marginBottom: ".75rem" }}>🐾</div>
               <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "1.1rem", color: "#F7C27A", lineHeight: 1.3, marginBottom: ".5rem" }}>
-                The Life of Luna<br />2022 – 2025
+                The Life of Luna<br />2013 – 2025
               </div>
               <div style={{ fontSize: ".7rem", color: "rgba(247,242,234,.5)", letterSpacing: ".08em", textTransform: "uppercase" }}>
                 {t.landing.book_label}
