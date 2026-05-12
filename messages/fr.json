@@ -2,6 +2,8 @@
   "nav": {
     "give_gift": "🎁 Offrir un cadeau",
     "join_waitlist": "Rejoindre la liste",
+    "get_started": "Commencer",
+    "sign_in": "Se connecter",
     "dashboard": "Tableau de bord",
     "settings": "Paramètres",
     "sign_out": "Déconnexion",
@@ -101,12 +103,14 @@
     "saved": "✓ Enregistré"
   },
   "landing": {
-    "early_access": "✦ Maintenant en accès anticipé",
+    "early_access": "✦ Disponible maintenant",
     "hero_title_1": "La vie de votre animal mérite",
     "hero_title_em": "une vraie histoire",
     "hero_title_2": "— pas seulement des photos",
     "hero_desc": "Everypaw transforme vos moments du quotidien en récits créés par l'IA et en un beau livre imprimé — chapitre après chapitre.",
-    "hero_note": "Gratuit · Pas de carte bancaire · Les 200 premiers membres bénéficient de 50% de réduction au lancement",
+    "hero_note": "Gratuit pour commencer · Aucune carte bancaire requise",
+    "hero_cta": "Commencer gratuitement →",
+    "hero_signin": "Déjà un compte ? Se connecter",
     "book_label": "Un livre Everypaw",
     "printed_hardcover": "Livre relié imprimé",
     "waitlist_joining": "Inscription...",
@@ -165,11 +169,12 @@
     "premium_f3": "Livre relié imprimé annuel",
     "premium_f4": "Plusieurs profils d'animaux",
     "premium_f5": "Support prioritaire",
-    "premium_cta": "Rejoindre la liste →",
+    "premium_cta": "Démarrer Premium →",
     "cta_title_1": "Leur vie se déroule",
     "cta_title_em": "en ce moment même",
     "cta_title_2": ".",
     "cta_desc": "Chaque jour sans journal est une histoire perdue pour toujours. Commencez à capturer les moments qui comptent — avant qu'ils ne s'effacent.",
+    "cta_button": "Commencez l'histoire de votre animal →",
     "footer_copy": "© 2025 Everypaw · Fait avec amour pour les maîtres d'animaux"
   },
   "gift": {

@@ -1,89 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 
 export const dynamic = "force-dynamic";
-
-function WaitlistForm({ dark = false }: { dark?: boolean }) {
-  const { t } = useLocale();
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-
-  const handleSubmit = async () => {
-    if (!email || !email.includes("@")) return;
-    setStatus("loading");
-    try {
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (res.ok) {
-        setStatus("success");
-        setEmail("");
-      } else {
-        setStatus("error");
-      }
-    } catch {
-      setStatus("error");
-    }
-  };
-
-  if (status === "success") {
-    return (
-      <p style={{ color: dark ? "#E8A96A" : "#C8813A", fontWeight: 500, fontSize: "1rem" }}>
-        {t.landing.waitlist_success}
-      </p>
-    );
-  }
-
-  return (
-    <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap", justifyContent: "center" }}>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-        placeholder="your@email.com"
-        style={{
-          background: dark ? "rgba(247,242,234,.1)" : "#FDFAF5",
-          border: `1px solid ${dark ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.18)"}`,
-          borderRadius: "100px",
-          padding: ".75rem 1.5rem",
-          fontFamily: "inherit",
-          fontSize: ".9rem",
-          color: dark ? "#F7F2EA" : "#3D2B1F",
-          width: "280px",
-          outline: "none",
-        }}
-      />
-      <button
-        onClick={handleSubmit}
-        disabled={status === "loading"}
-        style={{
-          background: "#C8813A",
-          color: "#FDFAF5",
-          border: "none",
-          borderRadius: "100px",
-          padding: ".75rem 1.75rem",
-          fontFamily: "inherit",
-          fontSize: ".9rem",
-          fontWeight: 500,
-          cursor: "pointer",
-          opacity: status === "loading" ? .7 : 1,
-        }}
-      >
-        {status === "loading" ? t.landing.waitlist_joining : t.landing.waitlist_cta}
-      </button>
-      {status === "error" && (
-        <p style={{ width: "100%", textAlign: "center", fontSize: ".8rem", color: "#A32D2D" }}>
-          {t.landing.waitlist_error}
-        </p>
-      )}
-    </div>
-  );
-}
 
 export default function Home() {
   const { t } = useLocale();
@@ -140,16 +60,19 @@ export default function Home() {
           Everypaw
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
-          <a href="/gift" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
+          <Link href="/gift" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
             {t.nav.give_gift}
-          </a>
-          <a href="#cta" style={{
+          </Link>
+          <Link href="/auth/login" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
+            {t.nav.sign_in}
+          </Link>
+          <Link href="/auth/signup" style={{
             background: "#3D2B1F", color: "#F7F2EA",
             padding: ".5rem 1.25rem", borderRadius: "100px",
             fontSize: ".875rem", fontWeight: 500, textDecoration: "none",
           }}>
-            {t.nav.join_waitlist}
-          </a>
+            {t.nav.get_started}
+          </Link>
         </div>
       </nav>
 
@@ -180,9 +103,21 @@ export default function Home() {
           {t.landing.hero_desc}
         </p>
 
-        <WaitlistForm />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+          <Link href="/auth/signup" style={{
+            background: "#C8813A", color: "#FDFAF5",
+            padding: ".875rem 2.25rem", borderRadius: "100px",
+            fontSize: "1rem", fontWeight: 500, textDecoration: "none",
+            boxShadow: "0 4px 20px rgba(200,129,58,.35)",
+          }}>
+            {t.landing.hero_cta}
+          </Link>
+          <Link href="/auth/login" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none", opacity: .7 }}>
+            {t.landing.hero_signin}
+          </Link>
+        </div>
 
-        <p style={{ fontSize: ".75rem", color: "#7A5C44", opacity: .7, marginTop: ".75rem" }}>
+        <p style={{ fontSize: ".75rem", color: "#7A5C44", opacity: .6, marginTop: "1.25rem" }}>
           {t.landing.hero_note}
         </p>
 
@@ -298,6 +233,8 @@ export default function Home() {
         </h2>
         <p style={{ fontSize: "1rem", color: "#7A5C44", fontWeight: 300, marginBottom: "3rem" }}>{t.landing.pricing_desc}</p>
         <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center", flexWrap: "wrap", maxWidth: 720, margin: "0 auto" }}>
+
+          {/* Free */}
           <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem 2.25rem", flex: 1, minWidth: 260, textAlign: "left", border: "1.5px solid rgba(61,43,31,.08)" }}>
             <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".1em", textTransform: "uppercase", color: "#C8813A", marginBottom: ".75rem" }}>{t.landing.free_label}</div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem" }}>{t.landing.free_price}</div>
@@ -309,10 +246,12 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-            <button style={{ width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", border: "1.5px solid #3D2B1F", background: "transparent", color: "#3D2B1F" }}>
+            <Link href="/auth/signup" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", border: "1.5px solid #3D2B1F", background: "transparent", color: "#3D2B1F", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
               {t.landing.free_cta}
-            </button>
+            </Link>
           </div>
+
+          {/* Premium */}
           <div style={{ background: "#3D2B1F", borderRadius: 24, padding: "2rem 2.25rem", flex: 1, minWidth: 260, textAlign: "left", border: "1.5px solid #3D2B1F" }}>
             <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".1em", textTransform: "uppercase", color: "#E8A96A", marginBottom: ".75rem" }}>✦ Premium</div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem", color: "#F7F2EA" }}>{t.landing.premium_price}</div>
@@ -324,15 +263,16 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-            <a href="#cta" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", background: "#C8813A", border: "1.5px solid #C8813A", color: "#FDFAF5", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+            <Link href="/auth/signup?plan=premium" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", background: "#C8813A", border: "1.5px solid #C8813A", color: "#FDFAF5", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
               {t.landing.premium_cta}
-            </a>
+            </Link>
           </div>
+
         </div>
       </section>
 
       {/* CTA */}
-      <section id="cta" style={{ padding: "7rem 2rem", background: "linear-gradient(135deg, #3D2B1F 0%, #5C3A1E 100%)", textAlign: "center", position: "relative", overflow: "hidden" }}>
+      <section style={{ padding: "7rem 2rem", background: "linear-gradient(135deg, #3D2B1F 0%, #5C3A1E 100%)", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 60% 60% at 50% 50%, rgba(200,129,58,.2) 0%, transparent 70%)" }} />
         <div style={{ position: "relative", maxWidth: 600, margin: "0 auto" }}>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2.2rem, 4.5vw, 3.5rem)", fontWeight: 600, color: "#F7F2EA", lineHeight: 1.1, marginBottom: "1.25rem" }}>
@@ -341,7 +281,20 @@ export default function Home() {
           <p style={{ fontSize: "1rem", color: "rgba(247,242,234,.65)", fontWeight: 300, marginBottom: "2.5rem" }}>
             {t.landing.cta_desc}
           </p>
-          <WaitlistForm dark />
+          <Link href="/auth/signup" style={{
+            display: "inline-block",
+            background: "#C8813A", color: "#FDFAF5",
+            padding: ".875rem 2.5rem", borderRadius: "100px",
+            fontSize: "1rem", fontWeight: 500, textDecoration: "none",
+            boxShadow: "0 4px 24px rgba(200,129,58,.4)",
+          }}>
+            {t.landing.cta_button}
+          </Link>
+          <div style={{ marginTop: "1rem" }}>
+            <Link href="/auth/login" style={{ fontSize: ".8rem", color: "rgba(247,242,234,.45)", textDecoration: "none" }}>
+              {t.landing.hero_signin}
+            </Link>
+          </div>
         </div>
       </section>
 
