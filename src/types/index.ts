@@ -19,6 +19,8 @@ export interface Pet {
   birthdate: string | null;
   photo_url: string | null;
   bio: string | null;
+  deceased_at: string | null;
+  memorial_message: string | null;
   created_at: string;
 }
 
