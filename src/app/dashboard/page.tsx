@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic";
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
 export default function DashboardPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
   const [pets, setPets] = useState<Pet[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,7 +147,7 @@ export default function DashboardPage() {
               {entries.map(entry => (
                 <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1rem", alignItems: "flex-start" }}>
                   <div style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300, minWidth: 70, paddingTop: "2px" }}>
-                    {new Date(entry.entry_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    {new Date(entry.entry_date).toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}
                     {entry.mood && (
                       <div style={{ marginTop: "4px", fontSize: "1rem" }}>
                         {entry.mood === "happy" ? "😄" : entry.mood === "funny" ? "😂" : entry.mood === "tender" ? "🥰" : entry.mood === "sad" ? "😢" : entry.mood === "proud" ? "🏆" : ""}
