@@ -2,6 +2,8 @@
   "nav": {
     "give_gift": "🎁 Give a gift",
     "join_waitlist": "Join the waitlist",
+    "get_started": "Get started",
+    "sign_in": "Sign in",
     "dashboard": "Dashboard",
     "settings": "Settings",
     "sign_out": "Sign out",
@@ -101,12 +103,14 @@
     "saved": "✓ Saved"
   },
   "landing": {
-    "early_access": "✦ Now in early access",
+    "early_access": "✦ Now live",
     "hero_title_1": "Your pet's life deserves",
     "hero_title_em": "a real story",
     "hero_title_2": "— not just photos",
     "hero_desc": "Everypaw turns your daily moments into AI-crafted narratives and a beautiful printed book — one chapter at a time.",
-    "hero_note": "Free to join · No credit card · First 200 members get 50% off at launch",
+    "hero_note": "Free to start · No credit card required",
+    "hero_cta": "Get started free →",
+    "hero_signin": "Already have an account? Sign in",
     "book_label": "An Everypaw Book",
     "printed_hardcover": "Printed hardcover",
     "waitlist_joining": "Joining...",
@@ -165,11 +169,12 @@
     "premium_f3": "Annual printed hardcover book",
     "premium_f4": "Multiple pet profiles",
     "premium_f5": "Priority support",
-    "premium_cta": "Join the waitlist →",
+    "premium_cta": "Start Premium →",
     "cta_title_1": "Their life is",
     "cta_title_em": "happening",
     "cta_title_2": "right now.",
     "cta_desc": "Every day without a journal is a story lost forever. Start capturing the moments that matter — before they fade.",
+    "cta_button": "Start your pet's story →",
     "footer_copy": "© 2025 Everypaw · Built with love for pet parents"
   },
   "gift": {
