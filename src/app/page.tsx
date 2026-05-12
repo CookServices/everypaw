@@ -159,7 +159,7 @@ export default function Home() {
           {[
             ["94M", t.landing.stats_pets],
             ["69%", t.landing.stats_millennials],
-            ["$2,500", t.landing.stats_spend],
+            ["12", t.landing.stats_memories],
           ].map(([num, lbl]) => (
             <div key={num} style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", margin: "0 2rem" }}>
               <span style={{ fontFamily: "Georgia, serif", fontSize: "3rem", fontWeight: 600, color: "#C8813A" }}>{num}</span>
