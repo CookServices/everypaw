@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Pet, Entry, Story } from "@/types";
 import Link from "next/link";
 import { detectMilestones } from "@/lib/milestones";
+import { useLocale } from "@/hooks/useLocale";
 
 const MOOD_OPTIONS = [
   { value: "happy", emoji: "😄", label: "Happy" },
@@ -38,10 +39,11 @@ async function compressImage(file: File): Promise<Blob> {
   });
 }
 
-function groupEntriesByMonth(entries: Entry[]) {
+function groupEntriesByMonth(entries: Entry[], locale: string) {
+  const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
   const groups: { month: string; entries: Entry[] }[] = [];
   entries.forEach(entry => {
-    const month = new Date(entry.entry_date).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    const month = new Date(entry.entry_date).toLocaleDateString(dateLocale, { month: "long", year: "numeric" });
     const existing = groups.find(g => g.month === month);
     if (existing) existing.entries.push(entry);
     else groups.push({ month, entries: [entry] });
@@ -51,6 +53,9 @@ function groupEntriesByMonth(entries: Entry[]) {
 
 export default function PetPage({ params }: { params: { id: string } }) {
   const { id } = params;
+  const { t, locale } = useLocale();
+  const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
+
   const [pet, setPet] = useState<Pet | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
@@ -157,7 +162,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   };
 
   const generateStory = async () => {
-    if (entries.length < 3) { alert("Add at least 3 journal entries before generating a story."); return; }
+    if (entries.length < 3) { alert(t.journal.min_entries_alert); return; }
     setGenerating(true);
     try {
       const res = await fetch("/api/generate", {
@@ -177,7 +182,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
         if (saved) setStories([saved, ...stories]);
         setTab("stories");
       }
-    } catch { alert("Generation failed. Please try again."); }
+    } catch { alert(t.journal.generation_failed); }
     setGenerating(false);
   };
 
@@ -196,11 +201,17 @@ export default function PetPage({ params }: { params: { id: string } }) {
   };
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", color: "#7A5C44" }}>Loading…</div>
+    <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", color: "#7A5C44" }}>{t.dashboard.loading}</div>
   );
-  if (!pet) return <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>Pet not found.</div>;
+  if (!pet) return <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>{t.pet.not_found}</div>;
 
-  const groupedEntries = groupEntriesByMonth(entries);
+  const groupedEntries = groupEntriesByMonth(entries, locale);
+
+  const tabs = [
+    { key: "journal" as const, label: t.pet.tab_journal },
+    { key: "stories" as const, label: t.pet.tab_stories },
+    { key: "milestones" as const, label: t.pet.tab_milestones },
+  ];
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
@@ -208,7 +219,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
       {/* Milestone notification */}
       {newMilestone && (
         <div style={{ position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)", background: "#3D2B1F", color: "#FDFAF5", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
-          🏆 New milestone: {newMilestone.title}
+          🏆 {t.milestones.new_notification.replace("{title}", newMilestone.title)}
         </div>
       )}
 
@@ -221,18 +232,18 @@ export default function PetPage({ params }: { params: { id: string } }) {
       )}
 
       <nav style={{ background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "1rem 2rem", display: "flex", alignItems: "center", gap: "1rem", position: "sticky", top: 0, zIndex: 50 }}>
-        <Link href="/dashboard" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>← Dashboard</Link>
+        <Link href="/dashboard" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>{t.dashboard.back_pet}</Link>
         <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "#3D2B1F" }}>
           {SPECIES_EMOJI[pet.species]} {pet.name}
         </span>
         <button
           onClick={() => {
             navigator.clipboard.writeText(`https://everypaw.app/pets/${id}`);
-            alert("Link copied! 🐾");
+            alert(t.pet.link_copied);
           }}
           style={{ fontSize: ".75rem", color: "#7A5C44", background: "none", border: "1px solid rgba(61,43,31,.15)", borderRadius: 100, padding: ".25rem .75rem", cursor: "pointer", fontFamily: "inherit" }}
         >
-          Share profile
+          {t.nav.share_profile}
         </button>
       </nav>
 
@@ -246,23 +257,23 @@ export default function PetPage({ params }: { params: { id: string } }) {
           <div style={{ flex: 1 }}>
             <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.4rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .25rem" }}>{pet.name}</h1>
             <p style={{ fontSize: ".85rem", color: "#7A5C44", fontWeight: 300, margin: 0 }}>
-              {pet.breed || pet.species}{pet.birthdate ? ` · Born ${new Date(pet.birthdate).toLocaleDateString("en-US", { month: "long", year: "numeric" })}` : ""}
+              {pet.breed || pet.species}{pet.birthdate ? ` · ${t.pet.born} ${new Date(pet.birthdate).toLocaleDateString(dateLocale, { month: "long", year: "numeric" })}` : ""}
             </p>
             {pet.bio && <p style={{ fontSize: ".85rem", color: "#7A5C44", marginTop: ".5rem", fontStyle: "italic" }}>{pet.bio}</p>}
           </div>
           {milestones.length > 0 && (
             <div style={{ background: "rgba(200,129,58,.1)", borderRadius: 12, padding: ".5rem .875rem", textAlign: "center" }}>
               <div style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length}</div>
-              <div style={{ fontSize: ".7rem", color: "#7A5C44" }}>milestones</div>
+              <div style={{ fontSize: ".7rem", color: "#7A5C44" }}>{t.milestones.label}</div>
             </div>
           )}
         </div>
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: ".5rem", marginBottom: "1.5rem" }}>
-          {(["journal", "stories", "milestones"] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ padding: ".5rem 1.25rem", borderRadius: 100, border: `1.5px solid ${tab === t ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: tab === t ? "rgba(200,129,58,.1)" : "transparent", color: tab === t ? "#C8813A" : "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", fontWeight: tab === t ? 500 : 400, cursor: "pointer", textTransform: "capitalize" }}>
-              {t}{t === "milestones" && milestones.length > 0 ? ` (${milestones.length})` : ""}
+          {tabs.map(({ key, label }) => (
+            <button key={key} onClick={() => setTab(key)} style={{ padding: ".5rem 1.25rem", borderRadius: 100, border: `1.5px solid ${tab === key ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: tab === key ? "rgba(200,129,58,.1)" : "transparent", color: tab === key ? "#C8813A" : "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", fontWeight: tab === key ? 500 : 400, cursor: "pointer" }}>
+              {label}{key === "milestones" && milestones.length > 0 ? ` (${milestones.length})` : ""}
             </button>
           ))}
         </div>
@@ -270,7 +281,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
         {tab === "journal" && (
           <>
             <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.25rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
-              <textarea value={newEntry} onChange={e => setNewEntry(e.target.value)} placeholder={`What did ${pet.name} do today?`} rows={3}
+              <textarea value={newEntry} onChange={e => setNewEntry(e.target.value)} placeholder={t.journal.placeholder.replace("{name}", pet.name)} rows={3}
                 style={{ width: "100%", border: "none", background: "transparent", fontFamily: "inherit", fontSize: ".95rem", color: "#3D2B1F", outline: "none", resize: "none", lineHeight: 1.6, boxSizing: "border-box" }} />
               {pendingPhotos.length > 0 && (
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", margin: ".75rem 0" }}>
@@ -299,18 +310,18 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handlePhotoSelect} style={{ display: "none" }} />
                 </div>
                 <button onClick={addEntry} disabled={saving || (!newEntry.trim() && pendingPhotos.length === 0)} style={{ padding: ".5rem 1.25rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer", opacity: saving || (!newEntry.trim() && pendingPhotos.length === 0) ? .5 : 1 }}>
-                  {uploadingPhotos ? "Uploading…" : saving ? "Saving…" : "Add moment"}
+                  {uploadingPhotos ? t.journal.uploading : saving ? t.journal.saving : t.journal.add_moment}
                 </button>
               </div>
             </div>
 
             <button onClick={generateStory} disabled={generating || entries.length < 3} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", marginBottom: "1.5rem", opacity: entries.length < 3 ? .5 : 1 }}>
-              {generating ? "✨ Generating story…" : `✨ Generate ${pet.name}'s story`}
-              {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>Add {3 - entries.length} more {3 - entries.length === 1 ? "entry" : "entries"} to unlock</span>}
+              {generating ? t.journal.generating : t.journal.generate_story.replace("{name}", pet.name)}
+              {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>{t.journal.add_more.replace("{count}", String(3 - entries.length)).replace("{entries}", 3 - entries.length === 1 ? t.journal.entry : t.journal.entries)}</span>}
             </button>
 
             {entries.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#7A5C44", fontSize: ".9rem" }}>No entries yet — write your first moment above ✨</div>
+              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#7A5C44", fontSize: ".9rem" }}>{t.journal.no_entries}</div>
             ) : groupedEntries.map(group => (
               <div key={group.month} style={{ marginBottom: "2rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
@@ -338,7 +349,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                       <div style={{ padding: ".875rem 1rem" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: entry.content.trim() ? ".5rem" : 0 }}>
                           <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>
-                            {new Date(entry.entry_date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                            {new Date(entry.entry_date).toLocaleDateString(dateLocale, { weekday: "short", month: "short", day: "numeric" })}
                           </span>
                           {entry.mood && <span style={{ fontSize: ".9rem" }}>{MOOD_OPTIONS.find(m => m.value === entry.mood)?.emoji}</span>}
                         </div>
@@ -355,21 +366,21 @@ export default function PetPage({ params }: { params: { id: string } }) {
         {tab === "stories" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <button onClick={handlePreviewPDF} disabled={previewLoading} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px solid rgba(200,129,58,.3)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", marginBottom: ".5rem", opacity: previewLoading ? .7 : 1 }}>
-              {previewLoading ? "Generating preview…" : "📖 Preview my book"}
+              {previewLoading ? t.stories.generating_preview : t.stories.preview_book}
             </button>
             <Link href={`/dashboard/pets/${id}/order`} style={{ display: "block", width: "100%", padding: ".875rem", borderRadius: 16, border: "none", background: "#3D2B1F", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", marginBottom: "1.5rem", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
-              🛒 Order printed book — $35
+              {t.stories.order_book}
             </Link>
             {stories.length === 0 ? (
               <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
                 <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>✨</div>
-                <p style={{ color: "#7A5C44", fontFamily: "Georgia, serif", fontSize: "1rem" }}>No stories yet — go to Journal and generate {pet.name}&apos;s first story.</p>
+                <p style={{ color: "#7A5C44", fontFamily: "Georgia, serif", fontSize: "1rem" }}>{t.stories.no_stories.replace("{name}", pet.name)}</p>
               </div>
             ) : stories.map(story => (
               <div key={story.id} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
                   <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>{story.title || `${pet.name}'s Story`}</h3>
-                  <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>{new Date(story.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                  <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>{new Date(story.created_at).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}</span>
                 </div>
                 <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.75, margin: 0, fontFamily: "Georgia, serif", fontStyle: "italic" }}>{story.content}</p>
               </div>
@@ -382,10 +393,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
             {milestones.length === 0 ? (
               <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
                 <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>🏆</div>
-                <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#3D2B1F", marginBottom: ".5rem" }}>No milestones yet</h3>
+                <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#3D2B1F", marginBottom: ".5rem" }}>{t.milestones.no_milestones_title}</h3>
                 <p style={{ color: "#7A5C44", fontSize: ".875rem", fontWeight: 300, lineHeight: 1.6 }}>
-                  Milestones are detected automatically when you add journal entries.<br />
-                  Try mentioning a walk, bath, vet visit, or park!
+                  {t.milestones.no_milestones_desc}<br />
+                  {t.milestones.no_milestones_hint}
                 </p>
               </div>
             ) : (
@@ -398,7 +409,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                     <div>
                       <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .2rem" }}>{milestone.title}</p>
                       <p style={{ fontSize: ".75rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>
-                        {new Date(milestone.achieved_at).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                        {new Date(milestone.achieved_at).toLocaleDateString(dateLocale, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                       </p>
                     </div>
                   </div>

@@ -55,7 +55,7 @@ export default function DashboardPage() {
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#7A5C44" }}>Loading your stories…</div>
+      <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#7A5C44" }}>{t.dashboard.loading}</div>
     </div>
   );
 
@@ -69,13 +69,13 @@ export default function DashboardPage() {
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           {!isPremium && (
             <button onClick={handleSubscribe} disabled={subscribing} style={{ background: "#C8813A", color: "#FDFAF5", padding: ".5rem 1.25rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "none", cursor: "pointer", opacity: subscribing ? .7 : 1, fontFamily: "inherit" }}>
-              {subscribing ? "Loading…" : t.dashboard.upgrade_title}
+              {subscribing ? t.dashboard.loading_btn : t.dashboard.upgrade_title}
             </button>
           )}
           {isPremium && <span style={{ fontSize: ".75rem", color: "#C8813A", fontWeight: 500 }}>{t.dashboard.premium_badge}</span>}
           <LanguageSwitcher />
-          <Link href="/dashboard/settings" style={{ fontSize: ".8rem", color: "#7A5C44", textDecoration: "none" }}>Settings</Link>
-          <button onClick={handleLogout} style={{ fontSize: ".8rem", color: "#7A5C44", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Sign out</button>
+          <Link href="/dashboard/settings" style={{ fontSize: ".8rem", color: "#7A5C44", textDecoration: "none" }}>{t.nav.settings}</Link>
+          <button onClick={handleLogout} style={{ fontSize: ".8rem", color: "#7A5C44", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>{t.nav.sign_out}</button>
         </div>
       </nav>
 
@@ -107,7 +107,7 @@ export default function DashboardPage() {
               <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.dashboard.upgrade_desc}</p>
             </div>
             <button onClick={handleSubscribe} disabled={subscribing} style={{ background: "#C8813A", color: "#FDFAF5", padding: ".5rem 1.25rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "none", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
-              {subscribing ? "Loading…" : t.dashboard.upgrade_cta}
+              {subscribing ? t.dashboard.loading_btn : t.dashboard.upgrade_cta}
             </button>
           </div>
         )}

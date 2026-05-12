@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useLocale } from "@/hooks/useLocale";
 
 export const dynamic = "force-dynamic";
 
 export default function OrderPage({ params }: { params: { id: string } }) {
+  const { t } = useLocale();
   const { id } = params;
   const [step, setStep] = useState<"address" | "confirm" | "success">("address");
   const [loading, setLoading] = useState(false);
@@ -33,21 +35,21 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         setOrderId(data.orderId);
         setStep("success");
       } else {
-        alert("Order failed. Please try again.");
+        alert(t.order.order_failed);
       }
     } catch {
-      alert("Order failed. Please try again.");
+      alert(t.order.order_failed);
     }
     setLoading(false);
   };
 
   const fields = [
-    { key: "firstName", label: "First name", placeholder: "John" },
-    { key: "lastName", label: "Last name", placeholder: "Doe" },
-    { key: "addressLine1", label: "Address", placeholder: "123 Main St" },
-    { key: "addressLine2", label: "Apartment, suite (optional)", placeholder: "Apt 4B" },
-    { key: "city", label: "City", placeholder: "New York" },
-    { key: "postCode", label: "Postal code", placeholder: "10001" },
+    { key: "firstName", label: t.order.first_name, placeholder: "John" },
+    { key: "lastName", label: t.order.last_name, placeholder: "Doe" },
+    { key: "addressLine1", label: t.order.address, placeholder: "123 Main St" },
+    { key: "addressLine2", label: t.order.apt, placeholder: "Apt 4B" },
+    { key: "city", label: t.order.city, placeholder: "New York" },
+    { key: "postCode", label: t.order.postal_code, placeholder: "10001" },
   ];
 
   const inputStyle = {
@@ -60,8 +62,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
       <nav style={{ background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "1rem 2rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-        <Link href={`/dashboard/pets/${id}`} style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>← Back</Link>
-        <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F" }}>Order your book</span>
+        <Link href={`/dashboard/pets/${id}`} style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>{t.order.back}</Link>
+        <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F" }}>{t.order.title}</span>
       </nav>
 
       <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
@@ -69,24 +71,24 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         {step === "success" ? (
           <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2.5rem", border: "1px solid rgba(61,43,31,.08)", textAlign: "center" }}>
             <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>📬</div>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", color: "#3D2B1F", marginBottom: ".75rem" }}>Your book is on its way!</h2>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", color: "#3D2B1F", marginBottom: ".75rem" }}>{t.order.success_title}</h2>
             <p style={{ fontSize: ".9rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.6, marginBottom: ".5rem" }}>
-              Order confirmed. Your hardcover book will be printed and shipped within 5-7 business days.
+              {t.order.success_desc}
             </p>
             <p style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginBottom: "2rem" }}>
-              Order ID: <code style={{ background: "rgba(61,43,31,.06)", padding: "2px 6px", borderRadius: 4 }}>{orderId}</code>
+              {t.order.order_id} <code style={{ background: "rgba(61,43,31,.06)", padding: "2px 6px", borderRadius: 4 }}>{orderId}</code>
             </p>
             <Link href="/dashboard" style={{ background: "#C8813A", color: "#FDFAF5", padding: ".75rem 2rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
-              Back to dashboard →
+              {t.order.back_dashboard}
             </Link>
           </div>
 
         ) : step === "confirm" ? (
           <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)" }}>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: "#3D2B1F", marginBottom: "1.5rem" }}>Confirm your order</h2>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: "#3D2B1F", marginBottom: "1.5rem" }}>{t.order.confirm_title}</h2>
 
             <div style={{ background: "#F7F2EA", borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
-              <div style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".75rem" }}>Shipping to</div>
+              <div style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".75rem" }}>{t.order.shipping_to}</div>
               <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.7, margin: 0 }}>
                 {address.firstName} {address.lastName}<br />
                 {address.addressLine1}{address.addressLine2 ? `, ${address.addressLine2}` : ""}<br />
@@ -96,27 +98,27 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             </div>
 
             <div style={{ background: "#F7F2EA", borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
-              <div style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".75rem" }}>Order summary</div>
+              <div style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".75rem" }}>{t.order.order_summary}</div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".9rem", color: "#3D2B1F", marginBottom: ".5rem" }}>
-                <span>Hardcover photo book (8x8")</span>
-                <span style={{ fontWeight: 500 }}>$35.00</span>
+                <span>{t.order.product_name}</span>
+                <span style={{ fontWeight: 500 }}>{t.order.product_price}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".85rem", color: "#7A5C44" }}>
-                <span>Shipping</span>
-                <span>Calculated at checkout</span>
+                <span>{t.order.shipping}</span>
+                <span>{t.order.shipping_calculated}</span>
               </div>
             </div>
 
             <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 12, padding: ".875rem 1rem", marginBottom: "1rem", fontSize: ".8rem", color: "#7A5C44", lineHeight: 1.5 }}>
-              ⚠️ This is a real order. Your card on file with Gelato will be charged ~$35 + shipping. The book will be printed and shipped to the address above.
+              {t.order.warning}
             </div>
 
             <div style={{ display: "flex", gap: ".75rem" }}>
               <button onClick={() => setStep("address")} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".875rem", color: "#7A5C44", cursor: "pointer" }}>
-                Edit address
+                {t.order.edit_address}
               </button>
               <button onClick={handleOrder} disabled={loading} style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: loading ? .7 : 1 }}>
-                {loading ? "Placing order…" : "Place order →"}
+                {loading ? t.order.placing : t.order.place_order}
               </button>
             </div>
           </div>
@@ -126,12 +128,12 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", gap: "1rem", alignItems: "center" }}>
               <span style={{ fontSize: "1.5rem" }}>📖</span>
               <div>
-                <p style={{ fontSize: ".875rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .2rem" }}>Hardcover photo book · 8x8"</p>
-                <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>170gsm coated silk · Matt lamination · ~$35 + shipping</p>
+                <p style={{ fontSize: ".875rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .2rem" }}>{t.order.product_detail}</p>
+                <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.order.product_specs}</p>
               </div>
             </div>
 
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: "#3D2B1F", marginBottom: "1.5rem" }}>Shipping address</h2>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: "#3D2B1F", marginBottom: "1.5rem" }}>{t.order.shipping_address}</h2>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
@@ -163,7 +165,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               ))}
 
               <div>
-                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem" }}>Country</label>
+                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem" }}>{t.order.country}</label>
                 <select
                   value={address.country}
                   onChange={e => setAddress({ ...address, country: e.target.value })}
@@ -185,14 +187,14 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             <button
               onClick={() => {
                 if (!address.firstName || !address.lastName || !address.addressLine1 || !address.city || !address.postCode) {
-                  alert("Please fill in all required fields.");
+                  alert(t.order.required_fields);
                   return;
                 }
                 setStep("confirm");
               }}
               style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer" }}
             >
-              Continue →
+              {t.order.continue}
             </button>
           </div>
         )}
