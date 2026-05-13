@@ -23,7 +23,11 @@
     "premium_badge": "✦ Premium",
     "loading": "Loading your stories…",
     "loading_btn": "Loading…",
-    "back_pet": "← Dashboard"
+    "back_pet": "← Dashboard",
+    "upsell_title": "You've reached the free plan limit",
+    "upsell_desc": "You've used all 10 free entries. Upgrade to Premium to keep documenting {name}'s life without limits.",
+    "upsell_cta": "Upgrade to Premium →",
+    "upsell_later": "Later"
   },
   "journal": {
     "placeholder": "What did {name} do today?",

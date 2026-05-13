@@ -78,6 +78,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [showKebabMenu, setShowKebabMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingPet, setDeletingPet] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [showUpsellModal, setShowUpsellModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const kebabRef = useRef<HTMLDivElement>(null);
 
@@ -95,16 +97,18 @@ export default function PetPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
-      const [{ data: petData }, { data: entriesData }, { data: storiesData }, { data: milestonesData }] = await Promise.all([
+      const [{ data: petData }, { data: entriesData }, { data: storiesData }, { data: milestonesData }, { data: profile }] = await Promise.all([
         supabase.from("pets").select("*").eq("id", id).single(),
         supabase.from("entries").select("*").eq("pet_id", id).order("entry_date", { ascending: false }),
         supabase.from("stories").select("*").eq("pet_id", id).order("created_at", { ascending: false }),
         supabase.from("milestones").select("*").eq("pet_id", id).order("achieved_at", { ascending: false }),
+        supabase.from("profiles").select("is_premium").single(),
       ]);
       setPet(petData);
       setEntries(entriesData || []);
       setStories(storiesData || []);
       setMilestones(milestonesData || []);
+      setIsPremium(profile?.is_premium ?? false);
       setLoading(false);
     };
     load();
@@ -155,7 +159,18 @@ export default function PetPage({ params }: { params: { id: string } }) {
     }).select().single();
 
     if (data) {
-      setEntries([data, ...entries]);
+      const newEntries = [data, ...entries];
+      setEntries(newEntries);
+
+      if (!isPremium && newEntries.length >= 10) {
+        const UPSELL_KEY = "ep_upsell_shown";
+        const lastShown = localStorage.getItem(UPSELL_KEY);
+        const sevenDays = 7 * 24 * 60 * 60 * 1000;
+        if (!lastShown || Date.now() - Number(lastShown) > sevenDays) {
+          setShowUpsellModal(true);
+          localStorage.setItem(UPSELL_KEY, String(Date.now()));
+        }
+      }
 
       const existingMilestoneTypes = milestones.map(m => m.type);
       const detected = detectMilestones({ content: newEntry }, entries, existingMilestoneTypes);
@@ -292,6 +307,29 @@ export default function PetPage({ params }: { params: { id: string } }) {
               </button>
               <button onClick={saveMemorial} disabled={savingMemorial || !deceasedAt} style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: "#8B6B4A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: savingMemorial || !deceasedAt ? .6 : 1 }}>
                 {savingMemorial ? t.memorial.saving : t.memorial.save}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upsell modal */}
+      {showUpsellModal && (
+        <div onClick={() => setShowUpsellModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.55)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", maxWidth: 400, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,.2)", textAlign: "center" }}>
+            <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>✦</div>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.2rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .75rem" }}>
+              {t.dashboard.upsell_title}
+            </h2>
+            <p style={{ fontSize: ".875rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.65, margin: "0 0 1.75rem" }}>
+              {t.dashboard.upsell_desc.replace("{name}", pet?.name ?? "")}
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+              <Link href="/dashboard/upgrade" style={{ display: "block", padding: ".75rem 1.5rem", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", textDecoration: "none", fontSize: ".875rem", fontWeight: 500 }}>
+                {t.dashboard.upsell_cta}
+              </Link>
+              <button onClick={() => setShowUpsellModal(false)} style={{ padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer" }}>
+                {t.dashboard.upsell_later}
               </button>
             </div>
           </div>

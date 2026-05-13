@@ -23,7 +23,11 @@
     "premium_badge": "✦ Premium",
     "loading": "Chargement de vos histoires…",
     "loading_btn": "Chargement…",
-    "back_pet": "← Tableau de bord"
+    "back_pet": "← Tableau de bord",
+    "upsell_title": "Limite du plan gratuit atteinte",
+    "upsell_desc": "Vous avez atteint la limite de votre plan gratuit (10 entrées). Passez à Premium pour continuer à documenter la vie de {name} sans limite.",
+    "upsell_cta": "Passer à Premium →",
+    "upsell_later": "Plus tard"
   },
   "journal": {
     "placeholder": "Qu'a fait {name} aujourd'hui ?",
