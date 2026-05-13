@@ -1,0 +1,219 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Species } from "@/types";
+import { useLocale } from "@/hooks/useLocale";
+
+export const dynamic = "force-dynamic";
+
+const SPECIES_VALUES: { value: Species; emoji: string }[] = [
+  { value: "dog", emoji: "🐶" },
+  { value: "cat", emoji: "🐱" },
+  { value: "rabbit", emoji: "🐰" },
+  { value: "bird", emoji: "🐦" },
+  { value: "other", emoji: "🐾" },
+];
+
+async function compressImage(file: File): Promise<Blob> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const maxSize = 800;
+      let { width, height } = img;
+      if (width > maxSize || height > maxSize) {
+        if (width > height) { height = (height / width) * maxSize; width = maxSize; }
+        else { width = (width / height) * maxSize; height = maxSize; }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.85);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+}
+
+export default function EditPetPage({ params }: { params: { id: string } }) {
+  const { id } = params;
+  const { t } = useLocale();
+  const [name, setName] = useState("");
+  const [species, setSpecies] = useState<Species>("dog");
+  const [breed, setBreed] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [bio, setBio] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
+  const [status, setStatus] = useState<"loading" | "idle" | "saving" | "error">("loading");
+  const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const SPECIES = SPECIES_VALUES.map(s => ({
+    ...s,
+    label: t.pet[`species_${s.value}` as keyof typeof t.pet] as string,
+  }));
+
+  const selectedSpeciesEmoji = SPECIES.find(s => s.value === species)?.emoji ?? "🐾";
+
+  useEffect(() => {
+    const load = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.from("pets").select("*").eq("id", id).single();
+      if (data) {
+        setName(data.name ?? "");
+        setSpecies(data.species ?? "dog");
+        setBreed(data.breed ?? "");
+        setBirthdate(data.birthdate ?? "");
+        setBio(data.bio ?? "");
+        setCurrentPhotoUrl(data.photo_url ?? null);
+        setPhotoPreview(data.photo_url ?? null);
+      }
+      setStatus("idle");
+    };
+    load();
+  }, [id]);
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleSave = async () => {
+    if (!name.trim()) { setError(t.pet.name_error); return; }
+    setStatus("saving");
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    let photoUrl: string | null = currentPhotoUrl;
+    if (photoFile && user) {
+      const compressed = await compressImage(photoFile);
+      const filename = `${user.id}/avatar-${Date.now()}.jpg`;
+      const { error: uploadErr } = await supabase.storage
+        .from("pet-photos")
+        .upload(filename, compressed, { contentType: "image/jpeg" });
+      if (!uploadErr) {
+        const { data } = supabase.storage.from("pet-photos").getPublicUrl(filename);
+        photoUrl = data.publicUrl;
+      }
+    }
+
+    const { error: err } = await supabase.from("pets")
+      .update({
+        name: name.trim(), species,
+        breed: breed || null, birthdate: birthdate || null,
+        bio: bio || null, photo_url: photoUrl,
+      })
+      .eq("id", id);
+
+    if (err) { setError(err.message); setStatus("error"); }
+    else window.location.href = `/dashboard/pets/${id}`;
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: ".8rem", fontWeight: 500, color: "#7A5C44",
+    textTransform: "uppercase", letterSpacing: ".06em",
+    display: "block", marginBottom: ".5rem",
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: ".75rem 1rem", borderRadius: 12,
+    border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA",
+    fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F",
+    outline: "none", boxSizing: "border-box",
+  };
+
+  if (status === "loading") return (
+    <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", color: "#7A5C44" }}>
+      {t.dashboard.loading}
+    </div>
+  );
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
+      <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+        <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", boxShadow: "0 4px 40px rgba(61,43,31,.06)" }}>
+
+          {/* Photo upload */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "2rem" }}>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} style={{ display: "none" }} />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              style={{ position: "relative", width: 96, height: 96, borderRadius: "50%", border: "2px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.06)", cursor: "pointer", overflow: "hidden", padding: 0 }}
+            >
+              {photoPreview ? (
+                <img src={photoPreview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <span style={{ fontSize: "2.5rem", lineHeight: 1 }}>{selectedSpeciesEmoji}</span>
+              )}
+              <div
+                style={{ position: "absolute", inset: 0, background: "rgba(61,43,31,.35)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity .15s" }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "0")}
+              >
+                <span style={{ fontSize: "1.25rem" }}>📷</span>
+              </div>
+            </button>
+            <span style={{ marginTop: ".6rem", fontSize: ".75rem", color: "#7A5C44", opacity: .7 }}>
+              {photoPreview ? t.pet.photo_change : t.pet.photo_add}
+            </span>
+          </div>
+
+          {/* Species */}
+          <div style={{ marginBottom: "1.5rem" }}>
+            <label style={labelStyle}>{t.pet.species}</label>
+            <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
+              {SPECIES.map(s => (
+                <button key={s.value} onClick={() => setSpecies(s.value)} style={{ padding: ".5rem 1rem", borderRadius: 100, border: `1.5px solid ${species === s.value ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: species === s.value ? "rgba(200,129,58,.1)" : "transparent", color: species === s.value ? "#C8813A" : "#3D2B1F", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", display: "flex", alignItems: "center", gap: ".35rem" }}>
+                  {s.emoji} {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Text fields */}
+          {[
+            { label: t.pet.name, value: name, setter: setName, placeholder: "Luna, Biscuit, Mochi…", type: "text" },
+            { label: t.pet.breed, value: breed, setter: setBreed, placeholder: "Golden Retriever, Siamese…", type: "text" },
+            { label: t.pet.birthday, value: birthdate, setter: setBirthdate, placeholder: "", type: "date" },
+          ].map(field => (
+            <div key={field.label} style={{ marginBottom: "1.25rem" }}>
+              <label style={labelStyle}>{field.label}</label>
+              <input type={field.type} value={field.value} onChange={e => field.setter(e.target.value)} placeholder={field.placeholder} style={inputStyle} />
+            </div>
+          ))}
+
+          <div style={{ marginBottom: "1.5rem" }}>
+            <label style={labelStyle}>{t.pet.bio}</label>
+            <textarea value={bio} onChange={e => setBio(e.target.value)} placeholder={t.pet.bio_placeholder} rows={3}
+              style={{ ...inputStyle, resize: "vertical" }} />
+          </div>
+
+          {error && <p style={{ fontSize: ".8rem", color: "#A32D2D", marginBottom: "1rem" }}>{error}</p>}
+
+          <div style={{ display: "flex", gap: ".75rem" }}>
+            <button
+              onClick={() => { window.location.href = `/dashboard/pets/${id}`; }}
+              style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".9rem", cursor: "pointer" }}
+            >
+              {t.pet.back}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={status === "saving"}
+              style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "saving" ? .7 : 1 }}
+            >
+              {status === "saving" ? t.pet.saving : t.pet.save}
+            </button>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  );
+}

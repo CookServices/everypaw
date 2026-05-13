@@ -86,7 +86,8 @@
     "entries": "entries",
     "no_entries": "No entries yet — write your first moment above ✨",
     "min_entries_alert": "Add at least 3 journal entries before generating a story.",
-    "generation_failed": "Generation failed. Please try again."
+    "generation_failed": "Generation failed. Please try again.",
+    "entry_required": "Write something to continue"
   },
   "stories": {
     "preview_book": "📖 Preview my book",
@@ -150,6 +151,9 @@
     "photo_add": "Add a photo",
     "photo_change": "Change photo",
     "edit_profile": "Edit profile",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "back": "← Back",
     "delete_pet": "Delete pet",
     "delete_confirm": "Delete {name}? All entries, stories and milestones will be permanently removed.",
     "delete_yes": "Yes, delete",
@@ -166,7 +170,9 @@
     "reset_guide": "Reset guide",
     "save": "Save preferences",
     "saving": "Saving…",
-    "saved": "✓ Saved"
+    "saved": "✓ Saved",
+    "save_success": "Preferences saved ✓",
+    "save_error": "An error occurred, please try again"
   },
   "landing": {
     "early_access": "✦ Now live",

@@ -64,7 +64,14 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [newEntry, setNewEntry] = useState("");
   const [mood, setMood] = useState("happy");
   const [tab, setTab] = useState<"journal" | "stories" | "milestones">("journal");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab");
+    if (tabParam === "stories" || tabParam === "milestones") setTab(tabParam);
+  }, []);
   const [saving, setSaving] = useState(false);
+  const [entryError, setEntryError] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
@@ -147,7 +154,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
   };
 
   const addEntry = async () => {
-    if (!newEntry.trim() && pendingPhotos.length === 0) return;
+    if (!newEntry.trim() && pendingPhotos.length === 0) {
+      setEntryError(true);
+      return;
+    }
     setSaving(true);
     setUploadingPhotos(pendingPhotos.length > 0);
     const supabase = createClient();
@@ -504,8 +514,18 @@ export default function PetPage({ params }: { params: { id: string } }) {
         {tab === "journal" && (
           <>
             <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.25rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
-              <textarea value={newEntry} onChange={e => setNewEntry(e.target.value)} placeholder={t.journal.placeholder.replace("{name}", pet.name)} rows={3}
-                style={{ width: "100%", border: "none", background: "transparent", fontFamily: "inherit", fontSize: ".95rem", color: "#3D2B1F", outline: "none", resize: "none", lineHeight: 1.6, boxSizing: "border-box" }} />
+              <textarea
+                value={newEntry}
+                onChange={e => { setNewEntry(e.target.value); if (e.target.value.trim()) setEntryError(false); }}
+                placeholder={t.journal.placeholder.replace("{name}", pet.name)}
+                rows={3}
+                style={{ width: "100%", border: entryError ? "1.5px solid #A32D2D" : "none", background: entryError ? "rgba(163,45,45,.04)" : "transparent", borderRadius: entryError ? 8 : 0, fontFamily: "inherit", fontSize: ".95rem", color: "#3D2B1F", outline: "none", resize: "none", lineHeight: 1.6, boxSizing: "border-box", padding: entryError ? ".5rem" : 0, transition: "border-color .15s" }}
+              />
+              {entryError && (
+                <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: ".25rem 0 0", lineHeight: 1.4 }}>
+                  {t.journal.entry_required}
+                </p>
+              )}
               {pendingPhotos.length > 0 && (
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", margin: ".75rem 0" }}>
                   {pendingPhotos.map((photo, i) => (

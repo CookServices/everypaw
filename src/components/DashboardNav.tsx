@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -69,14 +70,25 @@ export default function DashboardNav() {
   const params = useParams();
   const { locale } = useLocale();
   const petId = params?.id as string | undefined;
+  const [firstPetId, setFirstPetId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (petId) return;
+    const supabase = createClient();
+    supabase.from("pets").select("id").order("created_at", { ascending: true }).limit(1).single()
+      .then(({ data }) => { if (data) setFirstPetId(data.id); });
+  }, [petId]);
+
+  const resolvedPetId = petId || firstPetId;
 
   const isPetPage = pathname.includes("/dashboard/pets/") && !pathname.includes("/order") && !pathname.includes("/new");
   const isOrderPage = pathname.includes("/order");
   const isSettingsPage = pathname.startsWith("/dashboard/settings");
   const isDashboard = !isPetPage && !isOrderPage && !isSettingsPage;
 
-  const petLink = petId ? `/dashboard/pets/${petId}` : "/dashboard";
-  const orderLink = petId ? `/dashboard/pets/${petId}/order` : "/dashboard";
+  const petLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal` : "/dashboard";
+  const storiesLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=stories` : "/dashboard";
+  const orderLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/order` : "/dashboard";
 
   const isFR = locale === "fr";
 
@@ -93,14 +105,14 @@ export default function DashboardNav() {
       label: "Journal",
       shortLabel: "Journal",
       icon: <IconBook />,
-      active: isPetPage,
+      active: isPetPage && !pathname.includes("?tab=stories") && !pathname.includes("?tab=milestones"),
     },
     {
-      href: petLink,
+      href: storiesLink,
       label: isFR ? "Histoires" : "Stories",
       shortLabel: isFR ? "Histoires" : "Stories",
       icon: <IconSparkles />,
-      active: false, // visually distinct — same destination as Journal
+      active: false,
     },
     {
       href: orderLink,

@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const [emailReminders, setEmailReminders] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saveResult, setSaveResult] = useState<"success" | "error" | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -28,18 +28,26 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveResult(null);
     const supabase = createClient();
-    await supabase
+    const { error } = await supabase
       .from("profiles")
       .update({ email_reminders: emailReminders })
       .eq("id", (await supabase.auth.getUser()).data.user!.id);
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSaveResult(error ? "error" : "success");
+    setTimeout(() => setSaveResult(null), 3000);
   };
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* Toast notification */}
+      {saveResult && (
+        <div style={{ position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)", background: saveResult === "success" ? "#2E5E1E" : "#A32D2D", color: "#FDFAF5", padding: ".875rem 1.5rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", whiteSpace: "nowrap", transition: "opacity .2s" }}>
+          {saveResult === "success" ? t.settings.save_success : t.settings.save_error}
+        </div>
+      )}
       <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)" }}>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1.5rem" }}>{t.settings.title}</h2>
@@ -91,8 +99,8 @@ export default function SettingsPage() {
                     const supabase = createClient();
                     const { data: { user } } = await supabase.auth.getUser();
                     await supabase.from("profiles").update({ onboarding_completed: false }).eq("id", user!.id);
-                    setSaved(true);
-                    setTimeout(() => setSaved(false), 2000);
+                    setSaveResult("success");
+                    setTimeout(() => setSaveResult(null), 3000);
                   }}
                   style={{ background: "transparent", color: "#C8813A", padding: ".4rem 1rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "1.5px solid rgba(200,129,58,.3)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", marginLeft: "1rem" }}
                 >
@@ -103,9 +111,9 @@ export default function SettingsPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: saved ? "#639922" : "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: saving ? .7 : 1, transition: "background .3s" }}
+                style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: saving ? .7 : 1 }}
               >
-                {saved ? t.settings.saved : saving ? t.settings.saving : t.settings.save}
+                {saving ? t.settings.saving : t.settings.save}
               </button>
             </>
           )}

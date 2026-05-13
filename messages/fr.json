@@ -86,7 +86,8 @@
     "entries": "entrées",
     "no_entries": "Pas encore d'entrées — écrivez votre premier moment ci-dessus ✨",
     "min_entries_alert": "Ajoutez au moins 3 entrées de journal avant de générer une histoire.",
-    "generation_failed": "La génération a échoué. Veuillez réessayer."
+    "generation_failed": "La génération a échoué. Veuillez réessayer.",
+    "entry_required": "Écrivez quelque chose pour continuer"
   },
   "stories": {
     "preview_book": "📖 Aperçu de mon livre",
@@ -150,6 +151,9 @@
     "photo_add": "Ajouter une photo",
     "photo_change": "Changer la photo",
     "edit_profile": "Modifier le profil",
+    "save": "Enregistrer les modifications",
+    "saving": "Enregistrement…",
+    "back": "← Retour",
     "delete_pet": "Supprimer l'animal",
     "delete_confirm": "Supprimer {name} ? Toutes les entrées, histoires et étapes seront définitivement supprimées.",
     "delete_yes": "Oui, supprimer",
@@ -166,7 +170,9 @@
     "reset_guide": "Réinitialiser le guide",
     "save": "Enregistrer les préférences",
     "saving": "Enregistrement…",
-    "saved": "✓ Enregistré"
+    "saved": "✓ Enregistré",
+    "save_success": "Préférences enregistrées ✓",
+    "save_error": "Une erreur est survenue, réessayez"
   },
   "landing": {
     "early_access": "✦ Disponible maintenant",
