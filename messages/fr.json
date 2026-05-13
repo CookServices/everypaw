@@ -95,6 +95,7 @@
     "email_prefs": "Préférences email",
     "weekly_reminders": "Rappels hebdomadaires",
     "weekly_reminders_desc": "Recevez un email hebdomadaire pour tenir le journal de votre animal à jour.",
+    "weekly_reminders_info": "Vous recevrez un email chaque semaine pour vous souvenir d'ajouter un moment.",
     "onboarding_guide": "Guide de démarrage",
     "onboarding_guide_desc": "Afficher à nouveau le guide de démarrage sur votre tableau de bord.",
     "reset_guide": "Réinitialiser le guide",
