@@ -87,7 +87,7 @@ export default function UpgradePage() {
               <div style={{ padding: ".875rem 1.25rem", fontSize: ".875rem", color: "#3D2B1F", fontWeight: 400 }}>
                 {row.label}
               </div>
-              <div style={{ padding: ".875rem .75rem", textAlign: "center", fontSize: ".85rem", color: row.free === "—" ? "#C9B8AA" : "#7A5C44", borderLeft: "1px solid rgba(61,43,31,.05)", fontWeight: row.free === "—" ? 400 : 300 }}>
+              <div style={{ padding: ".875rem .75rem", textAlign: "center", fontSize: ".85rem", color: "#7A5C44", borderLeft: "1px solid rgba(61,43,31,.05)", fontWeight: 300 }}>
                 {row.free}
               </div>
               <div style={{ padding: ".875rem .75rem", textAlign: "center", fontSize: ".85rem", color: "#C8813A", background: "rgba(200,129,58,.04)", borderLeft: "1px solid rgba(61,43,31,.05)", fontWeight: 500 }}>

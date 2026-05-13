@@ -578,8 +578,19 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 <button onClick={handlePreviewPDF} disabled={previewLoading} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px solid rgba(200,129,58,.3)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", marginBottom: ".5rem", opacity: previewLoading ? .7 : 1 }}>
                   {previewLoading ? t.stories.generating_preview : t.stories.preview_book}
                 </button>
-                <Link href={`/dashboard/pets/${id}/order`} style={{ display: "block", width: "100%", padding: ".875rem", borderRadius: 16, border: "none", background: "#3D2B1F", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", marginBottom: "1.5rem", textAlign: "center", textDecoration: "none", boxSizing: "border-box" as const }}>
-                  {t.stories.order_book}
+                <Link
+                  href={`/dashboard/pets/${id}/order`}
+                  style={{
+                    display: "block", width: "100%", padding: ".875rem", borderRadius: 16,
+                    border: isPremium ? "1.5px solid rgba(200,129,58,.35)" : "none",
+                    background: isPremium ? "rgba(200,129,58,.08)" : "#3D2B1F",
+                    color: isPremium ? "#C8813A" : "#FDFAF5",
+                    fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500,
+                    marginBottom: "1.5rem", textAlign: "center", textDecoration: "none",
+                    boxSizing: "border-box" as const,
+                  }}
+                >
+                  {isPremium ? t.stories.order_book_premium : t.stories.order_book}
                 </Link>
               </>
             )}
