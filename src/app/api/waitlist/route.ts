@@ -1,12 +1,22 @@
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const { allowed } = checkRateLimit(`waitlist:${getClientIp(req)}`, 5, 60_000);
+  if (!allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const { email } = await req.json();
 
-  if (!email || !email.includes("@")) {
+  if (!email || typeof email !== "string") {
+    return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email) || email.length > 254) {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 

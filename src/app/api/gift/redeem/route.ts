@@ -8,7 +8,12 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { code } = await req.json();
-  if (!code) return NextResponse.json({ error: "Missing code" }, { status: 400 });
+  if (!code || typeof code !== "string") {
+    return NextResponse.json({ error: "Missing code" }, { status: 400 });
+  }
+  if (code.length > 50 || !/^[A-Z0-9_-]+$/i.test(code)) {
+    return NextResponse.json({ error: "Invalid code format" }, { status: 400 });
+  }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 

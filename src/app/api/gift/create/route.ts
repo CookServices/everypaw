@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Resend } from "resend";
+import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
 
 const copy = {
   fr: {
@@ -42,11 +53,11 @@ function buildEmailHtml({
       <p style="font-size: 28px; margin: 0 0 8px;">🎁</p>
       <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 16px;">${c.heading}</h1>
       <p style="font-size: 16px; line-height: 1.6; color: #7A5C44; margin: 0 0 16px;">
-        ${c.body(senderName)}
+        ${c.body(escapeHtml(senderName))}
       </p>
       ${message ? `
       <div style="background: #F7F2EA; border-left: 3px solid #C8813A; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
-        <p style="font-size: 15px; font-style: italic; color: #3D2B1F; margin: 0;">"${message}"</p>
+        <p style="font-size: 15px; font-style: italic; color: #3D2B1F; margin: 0;">"${escapeHtml(message)}"</p>
       </div>
       ` : ""}
       <p style="font-size: 15px; color: #7A5C44; margin: 0 0 8px;">${c.codeLabel}</p>
@@ -58,16 +69,40 @@ function buildEmailHtml({
 }
 
 export async function POST(req: Request) {
-  const { recipientEmail, recipientName, senderName, message, scheduledDate, locale } = await req.json();
+  const { allowed } = checkRateLimit(`gift:${getClientIp(req)}`, 10, 60_000);
+  if (!allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await req.json();
+  const { recipientEmail, recipientName, senderName, message, scheduledDate, locale } = body;
 
   if (!recipientEmail || !recipientName || !senderName) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(recipientEmail)) {
+    return NextResponse.json({ error: "Invalid recipient email" }, { status: 400 });
+  }
+  if (typeof senderName !== "string" || senderName.length > 100) {
+    return NextResponse.json({ error: "Invalid sender name" }, { status: 400 });
+  }
+  if (typeof recipientName !== "string" || recipientName.length > 100) {
+    return NextResponse.json({ error: "Invalid recipient name" }, { status: 400 });
+  }
+  if (message !== undefined && (typeof message !== "string" || message.length > 500)) {
+    return NextResponse.json({ error: "Message too long (max 500 chars)" }, { status: 400 });
+  }
+
   if (scheduledDate) {
     const sendAt = new Date(scheduledDate + "T08:00:00Z");
-    if (sendAt <= new Date()) {
-      return NextResponse.json({ error: "Scheduled date must be in the future" }, { status: 400 });
+    if (isNaN(sendAt.getTime()) || sendAt <= new Date()) {
+      return NextResponse.json({ error: "Scheduled date must be a valid future date" }, { status: 400 });
     }
   }
 

@@ -10,9 +10,11 @@ export default async function MemorialPage({ params }: { params: { id: string } 
   const t = getTranslations(locale);
   const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
 
+  // Anon key is sufficient here — RLS allows public reads on pets/stories.
+  // Never use the service role key in public server components.
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
   const [{ data: pet }, { data: stories }] = await Promise.all([

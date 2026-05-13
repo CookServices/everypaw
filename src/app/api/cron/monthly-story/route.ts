@@ -3,8 +3,13 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
 export async function GET(req: Request) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret || cronSecret.length < 32) {
+    console.error("CRON_SECRET is not set or too short (min 32 chars)");
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+  }
   const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

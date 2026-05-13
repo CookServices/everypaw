@@ -8,6 +8,12 @@ export async function POST(req: Request) {
 
   const { petId, petName, species, bio, entries } = await req.json();
 
+  if (!petId) return NextResponse.json({ error: "Missing petId" }, { status: 400 });
+
+  const { data: pet } = await supabase.from("pets").select("id, user_id").eq("id", petId).single();
+  if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   if (!entries || entries.length < 3) {
     return NextResponse.json({ error: "Need at least 3 entries" }, { status: 400 });
   }
