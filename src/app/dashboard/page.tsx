@@ -12,6 +12,14 @@ export const dynamic = "force-dynamic";
 
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
+function relativeDate(dateStr: string, t: { dashboard: Record<string, string> }): string {
+  const diff = Math.floor((Date.now() - new Date(dateStr + "T12:00:00").getTime()) / 864e5);
+  if (diff === 0) return t.dashboard.last_entry_today;
+  if (diff === 1) return t.dashboard.last_entry_yesterday;
+  if (diff < 14) return t.dashboard.last_entry_days_ago.replace("{days}", String(diff));
+  return t.dashboard.last_entry_weeks_ago.replace("{weeks}", String(Math.floor(diff / 7)));
+}
+
 export default function DashboardPage() {
   const { t, locale } = useLocale();
   const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
@@ -24,6 +32,11 @@ export default function DashboardPage() {
   const [hasStories, setHasStories] = useState(false);
   const [monthlyEntryCount, setMonthlyEntryCount] = useState(0);
   const [lastStoryDate, setLastStoryDate] = useState<string | null>(null);
+  const [petMetadata, setPetMetadata] = useState<Record<string, {
+    lastEntry: string | null;
+    monthlyCount: number;
+    hasNewChapter: boolean;
+  }>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -39,6 +52,8 @@ export default function DashboardPage() {
         { data: storiesData },
         { count: monthlyCount },
         { data: lastStoryData },
+        { data: allEntriesMeta },
+        { data: recentStories },
       ] = await Promise.all([
         supabase.from("pets").select("*").order("created_at", { ascending: false }),
         supabase.from("entries").select("*").order("entry_date", { ascending: false }).limit(5),
@@ -46,6 +61,8 @@ export default function DashboardPage() {
         supabase.from("stories").select("id").limit(1),
         supabase.from("entries").select("*", { count: "exact", head: true }).gte("entry_date", monthStart).lte("entry_date", monthEnd),
         supabase.from("stories").select("created_at").order("created_at", { ascending: false }).limit(1).single(),
+        supabase.from("entries").select("pet_id, entry_date").order("entry_date", { ascending: false }),
+        supabase.from("stories").select("pet_id").gte("created_at", new Date(Date.now() - 30 * 864e5).toISOString()),
       ]);
 
       setPets(petsData || []);
@@ -55,6 +72,19 @@ export default function DashboardPage() {
       setHasStories((storiesData?.length || 0) > 0);
       setMonthlyEntryCount(monthlyCount ?? 0);
       setLastStoryDate(lastStoryData?.created_at ?? null);
+
+      // Build per-pet metadata
+      const meta: Record<string, { lastEntry: string | null; monthlyCount: number; hasNewChapter: boolean }> = {};
+      for (const e of (allEntriesMeta || []) as { pet_id: string; entry_date: string }[]) {
+        if (!meta[e.pet_id]) meta[e.pet_id] = { lastEntry: e.entry_date, monthlyCount: 0, hasNewChapter: false };
+        if (e.entry_date >= monthStart) meta[e.pet_id].monthlyCount++;
+      }
+      for (const s of (recentStories || []) as { pet_id: string }[]) {
+        if (!meta[s.pet_id]) meta[s.pet_id] = { lastEntry: null, monthlyCount: 0, hasNewChapter: false };
+        meta[s.pet_id].hasNewChapter = true;
+      }
+      setPetMetadata(meta);
+
       setLoading(false);
     };
     load();
@@ -226,19 +256,64 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "1rem", marginBottom: "2.5rem" }}>
-            {pets.map(pet => (
-              <Link key={pet.id} href={`/dashboard/pets/${pet.id}`} style={{ textDecoration: "none" }}>
-                <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)", cursor: "pointer", transition: "transform .15s, box-shadow .15s" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 30px rgba(61,43,31,.1)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "none"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}>
-                  <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.75rem", marginBottom: "1rem" }}>
-                    {pet.photo_url ? <img src={pet.photo_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 16 }} /> : SPECIES_EMOJI[pet.species]}
+            {pets.map(pet => {
+              const meta = petMetadata[pet.id];
+              return (
+                <Link key={pet.id} href={`/dashboard/pets/${pet.id}`} style={{ textDecoration: "none" }}>
+                  <div
+                    style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.25rem 1.5rem", border: "1px solid rgba(61,43,31,.08)", cursor: "pointer", transition: "transform .18s, box-shadow .18s, border-color .18s", position: "relative" }}
+                    onMouseEnter={e => {
+                      const el = e.currentTarget as HTMLDivElement;
+                      el.style.transform = "translateY(-4px)";
+                      el.style.boxShadow = "0 12px 40px rgba(61,43,31,.13)";
+                      el.style.borderColor = "rgba(200,129,58,.35)";
+                    }}
+                    onMouseLeave={e => {
+                      const el = e.currentTarget as HTMLDivElement;
+                      el.style.transform = "none";
+                      el.style.boxShadow = "none";
+                      el.style.borderColor = "rgba(61,43,31,.08)";
+                    }}
+                  >
+                    {/* New chapter badge */}
+                    {meta?.hasNewChapter && (
+                      <span style={{ position: "absolute", top: ".875rem", right: ".875rem", fontSize: ".65rem", fontWeight: 600, background: "rgba(200,129,58,.12)", color: "#C8813A", border: "1px solid rgba(200,129,58,.3)", borderRadius: 100, padding: ".2rem .55rem", letterSpacing: ".02em", whiteSpace: "nowrap" }}>
+                        {t.dashboard.new_chapter_badge}
+                      </span>
+                    )}
+
+                    <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.6rem", marginBottom: ".875rem" }}>
+                      {pet.photo_url ? <img src={pet.photo_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 14 }} /> : SPECIES_EMOJI[pet.species]}
+                    </div>
+
+                    <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .2rem" }}>{pet.name}</h3>
+                    <p style={{ fontSize: ".78rem", color: "#7A5C44", textTransform: "capitalize", fontWeight: 300, margin: "0 0 .75rem" }}>{pet.breed || pet.species}</p>
+
+                    {/* Metadata footer */}
+                    <div style={{ display: "flex", gap: ".75rem", borderTop: "1px solid rgba(61,43,31,.06)", paddingTop: ".75rem" }}>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: ".65rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", margin: "0 0 .2rem", fontFamily: "sans-serif" }}>
+                          {t.dashboard.month_entries_label}
+                        </p>
+                        <p style={{ fontSize: ".8rem", color: "#3D2B1F", margin: 0, fontWeight: 400 }}>
+                          {meta
+                            ? t.dashboard.entries_month.replace("{count}", String(meta.monthlyCount))
+                            : t.dashboard.no_entries_yet}
+                        </p>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: ".65rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", margin: "0 0 .2rem", fontFamily: "sans-serif" }}>
+                          {t.dashboard.recent_moments}
+                        </p>
+                        <p style={{ fontSize: ".8rem", color: "#3D2B1F", margin: 0, fontWeight: 400 }}>
+                          {meta?.lastEntry ? relativeDate(meta.lastEntry, t) : t.dashboard.no_entries_yet}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".25rem" }}>{pet.name}</h3>
-                  <p style={{ fontSize: ".8rem", color: "#7A5C44", textTransform: "capitalize", fontWeight: 300 }}>{pet.breed || pet.species}</p>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
 
