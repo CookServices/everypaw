@@ -80,26 +80,26 @@ export default function Home() {
       <section style={{
         minHeight: "100vh",
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-        padding: "8rem 2rem 5rem", textAlign: "center",
+        padding: "6rem 2rem 3.5rem", textAlign: "center",
         background: "radial-gradient(ellipse 80% 60% at 50% 30%, rgba(200,129,58,.12) 0%, transparent 70%)",
       }}>
         <span style={{
           display: "inline-flex", alignItems: "center", gap: ".5rem",
           background: "rgba(200,129,58,.12)", border: "1px solid rgba(200,129,58,.25)",
           color: "#C8813A", fontSize: ".75rem", fontWeight: 500, letterSpacing: ".06em", textTransform: "uppercase",
-          padding: ".35rem .9rem", borderRadius: "100px", marginBottom: "2rem",
+          padding: ".35rem .9rem", borderRadius: "100px", marginBottom: "1.25rem",
         }}>{t.landing.early_access}</span>
 
         <h1 style={{
-          fontFamily: "Georgia, serif", fontSize: "clamp(2.8rem, 6vw, 5rem)",
-          fontWeight: 600, lineHeight: 1.08, color: "#3D2B1F", maxWidth: 820,
-          margin: "0 0 1.75rem",
+          fontFamily: "Georgia, serif", fontSize: "clamp(2.25rem, 4.5vw, 4.5rem)",
+          fontWeight: 600, lineHeight: 1.1, color: "#3D2B1F", maxWidth: 820,
+          margin: "0 0 1.25rem",
         }}>
           {t.landing.hero_title_1}<br />
           <em style={{ color: "#C8813A", fontStyle: "italic" }}>{t.landing.hero_title_em}</em> {t.landing.hero_title_2}
         </h1>
 
-        <p style={{ fontSize: "1.125rem", fontWeight: 300, color: "#7A5C44", maxWidth: 480, lineHeight: 1.7, margin: "0 auto 2.5rem" }}>
+        <p style={{ fontSize: "1rem", fontWeight: 300, color: "#7A5C44", maxWidth: 480, lineHeight: 1.7, margin: "0 auto 2rem" }}>
           {t.landing.hero_desc}
         </p>
 
