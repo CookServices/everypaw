@@ -26,7 +26,7 @@ export default function CGV() {
           ["3. Paiement", "Le paiement est sécurisé par Stripe. Everypaw n'a accès à aucune donnée bancaire. En souscrivant à un abonnement, vous autorisez le prélèvement automatique à la date anniversaire."],
           ["4. Résiliation", "Vous pouvez résilier votre abonnement à tout moment depuis les paramètres de votre compte. La résiliation prend effet à la fin de la période en cours. Aucun remboursement au prorata n'est effectué."],
           ["5. Droit de rétractation", "Conformément à l'article L221-18 du Code de la consommation, vous disposez d'un délai de 14 jours pour exercer votre droit de rétractation à compter de la souscription, sauf si vous avez expressément renoncé à ce droit en accédant au service."],
-          ["6. Contact", "Pour toute question relative à une commande ou à votre abonnement, contactez-nous à hello@everypaw.fr."],
+          ["6. Contact", "Pour toute question relative à une commande ou à votre abonnement, contactez-nous à orders@everypaw.app."],
         ].map(([title, body]) => (
           <section key={title as string} style={{ marginBottom: "2rem" }}>
             <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".5rem" }}>{title}</h2>

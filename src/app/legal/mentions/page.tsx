@@ -21,7 +21,7 @@ export default function Mentions() {
         <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: "3rem" }}>Conformément à la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique.</p>
 
         {[
-          ["Éditeur du site", "Everypaw\nEmail : hello@everypaw.fr\nSite web : www.everypaw.fr"],
+          ["Éditeur du site", "Everypaw\nEmail : hello@everypaw.app\nSite web : www.everypaw.app"],
           ["Hébergement", "Le site est hébergé par Vercel Inc., 340 Pine Street, Suite 701, San Francisco, CA 94104, États-Unis.\nLes données sont stockées via Supabase, dont les serveurs sont localisés en Union Européenne (région eu-west-1)."],
           ["Propriété intellectuelle", "L'ensemble du contenu de ce site (textes, graphismes, logotypes, icônes, images) est la propriété exclusive d'Everypaw et est protégé par les lois françaises et internationales relatives à la propriété intellectuelle. Toute reproduction, représentation, modification, publication ou adaptation, totale ou partielle, est interdite sans autorisation préalable écrite."],
           ["Contenu utilisateur", "Les entrées de journal, photos et histoires créées par les utilisateurs restent leur propriété. En les publiant sur Everypaw, vous accordez à Everypaw une licence limitée pour les stocker et les utiliser uniquement afin de vous fournir le service (génération d'histoires IA, impression du livre)."],

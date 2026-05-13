@@ -27,9 +27,9 @@ export default function Contact() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           {[
-            { icon: "✉️", label: "Email général", value: "hello@everypaw.fr", href: "mailto:hello@everypaw.fr" },
-            { icon: "🛒", label: "Commandes & livraison", value: "commandes@everypaw.fr", href: "mailto:commandes@everypaw.fr" },
-            { icon: "🔒", label: "Protection des données (DPO)", value: "privacy@everypaw.fr", href: "mailto:privacy@everypaw.fr" },
+            { icon: "✉️", label: "Email général", value: "hello@everypaw.app", href: "mailto:hello@everypaw.app" },
+            { icon: "🛒", label: "Commandes & livraison", value: "orders@everypaw.app", href: "mailto:orders@everypaw.app" },
+            { icon: "🔒", label: "Protection des données (DPO)", value: "privacy@everypaw.app", href: "mailto:privacy@everypaw.app" },
           ].map(({ icon, label, value, href }) => (
             <a key={href} href={href} style={{ display: "flex", gap: "1rem", alignItems: "flex-start", background: "#FDFAF5", borderRadius: 16, padding: "1.25rem 1.5rem", border: "1px solid rgba(61,43,31,.08)", textDecoration: "none", transition: "border-color .15s" }}>
               <span style={{ fontSize: "1.25rem", flexShrink: 0, marginTop: 2 }}>{icon}</span>
@@ -43,7 +43,7 @@ export default function Contact() {
 
         <div style={{ marginTop: "3rem", background: "rgba(200,129,58,.06)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 16, padding: "1.25rem 1.5rem" }}>
           <p style={{ fontSize: ".875rem", color: "#7A5C44", lineHeight: 1.7, margin: 0, fontWeight: 300 }}>
-            Pour toute demande relative à vos données personnelles (accès, rectification, suppression), contactez-nous à <strong style={{ color: "#3D2B1F", fontWeight: 500 }}>privacy@everypaw.fr</strong> en mentionnant "Demande RGPD" en objet.
+            Pour toute demande relative à vos données personnelles (accès, rectification, suppression), contactez-nous à <strong style={{ color: "#3D2B1F", fontWeight: 500 }}>privacy@everypaw.app</strong> en mentionnant "Demande RGPD" en objet.
           </p>
         </div>
       </main>
