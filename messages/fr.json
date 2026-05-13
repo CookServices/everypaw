@@ -88,7 +88,12 @@
     "link_copied": "Lien copié ! 🐾",
     "tab_journal": "journal",
     "tab_stories": "histoires",
-    "tab_milestones": "étapes"
+    "tab_milestones": "étapes",
+    "edit_profile": "Modifier le profil",
+    "delete_pet": "Supprimer l'animal",
+    "delete_confirm": "Supprimer {name} ? Toutes les entrées, histoires et étapes seront définitivement supprimées.",
+    "delete_yes": "Oui, supprimer",
+    "delete_cancel": "Annuler"
   },
   "settings": {
     "title": "Paramètres",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Pet, Entry, Story } from "@/types";
 import Link from "next/link";
@@ -75,7 +75,22 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [deceasedAt, setDeceasedAt] = useState("");
   const [memorialMessage, setMemorialMessage] = useState("");
   const [savingMemorial, setSavingMemorial] = useState(false);
+  const [showKebabMenu, setShowKebabMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingPet, setDeletingPet] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const kebabRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (kebabRef.current && !kebabRef.current.contains(e.target as Node)) {
+        setShowKebabMenu(false);
+        setShowDeleteConfirm(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -190,6 +205,16 @@ export default function PetPage({ params }: { params: { id: string } }) {
     setGenerating(false);
   };
 
+  const deletePet = async () => {
+    setDeletingPet(true);
+    const supabase = createClient();
+    await supabase.from("entries").delete().eq("pet_id", id);
+    await supabase.from("stories").delete().eq("pet_id", id);
+    await supabase.from("milestones").delete().eq("pet_id", id);
+    await supabase.from("pets").delete().eq("id", id);
+    window.location.href = "/dashboard";
+  };
+
   const saveMemorial = async () => {
     if (!deceasedAt) return;
     setSavingMemorial(true);
@@ -300,7 +325,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1.5rem" }}>
 
         {/* Pet header */}
-        <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1.25rem", alignItems: "center" }}>
+        <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1.25rem", alignItems: "center", position: "relative" }}>
           <div style={{ width: 64, height: 64, borderRadius: 18, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", flexShrink: 0 }}>
             {SPECIES_EMOJI[pet.species]}
           </div>
@@ -317,7 +342,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
               {pet.breed || pet.species}{pet.birthdate ? ` · ${t.pet.born} ${new Date(pet.birthdate).toLocaleDateString(dateLocale, { month: "long", year: "numeric" })}` : ""}
             </p>
             {pet.bio && <p style={{ fontSize: ".85rem", color: "#7A5C44", marginTop: ".5rem", fontStyle: "italic" }}>{pet.bio}</p>}
-            {pet.deceased_at ? (
+            {pet.deceased_at && (
               <div style={{ display: "flex", gap: ".75rem", marginTop: ".75rem", flexWrap: "wrap" }}>
                 <Link href={`/memorial/${id}`} style={{ fontSize: ".75rem", color: "#8B6B4A", textDecoration: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".2rem .75rem" }}>
                   {t.memorial.view_memorial}
@@ -332,21 +357,77 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   {t.memorial.share_memorial}
                 </button>
               </div>
-            ) : (
-              <button
-                onClick={() => setShowMemorialModal(true)}
-                style={{ marginTop: ".6rem", fontSize: ".75rem", color: "#7A5C44", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", opacity: .6 }}
-              >
-                {t.memorial.mark_passed}
-              </button>
             )}
           </div>
+
           {milestones.length > 0 && (
-            <div style={{ background: "rgba(200,129,58,.1)", borderRadius: 12, padding: ".5rem .875rem", textAlign: "center" }}>
+            <div style={{ background: "rgba(200,129,58,.1)", borderRadius: 12, padding: ".5rem .875rem", textAlign: "center", flexShrink: 0 }}>
               <div style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length}</div>
               <div style={{ fontSize: ".7rem", color: "#7A5C44" }}>{t.milestones.label}</div>
             </div>
           )}
+
+          {/* Kebab menu */}
+          <div ref={kebabRef} style={{ position: "absolute", top: "1rem", right: "1rem" }}>
+            <button
+              onClick={() => { setShowKebabMenu(v => !v); setShowDeleteConfirm(false); }}
+              style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", color: "#7A5C44", fontFamily: "inherit" }}
+              aria-label="Options"
+            >
+              ···
+            </button>
+
+            {showKebabMenu && (
+              <div style={{ position: "absolute", top: "calc(100% + .5rem)", right: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 14, boxShadow: "0 8px 30px rgba(61,43,31,.12)", minWidth: 200, overflow: "hidden", zIndex: 60 }}>
+                {!showDeleteConfirm ? (
+                  <>
+                    <Link
+                      href={`/dashboard/pets/${id}/edit`}
+                      style={{ display: "block", padding: ".75rem 1rem", fontSize: ".875rem", color: "#3D2B1F", textDecoration: "none", fontFamily: "inherit" }}
+                      onClick={() => setShowKebabMenu(false)}
+                    >
+                      {t.pet.edit_profile}
+                    </Link>
+                    {!pet.deceased_at && (
+                      <button
+                        onClick={() => { setShowKebabMenu(false); setShowMemorialModal(true); }}
+                        style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "#8B6B4A", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}
+                      >
+                        {t.memorial.mark_passed}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowDeleteConfirm(true)}
+                      style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "#A32D2D", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}
+                    >
+                      {t.pet.delete_pet}
+                    </button>
+                  </>
+                ) : (
+                  <div style={{ padding: "1rem" }}>
+                    <p style={{ fontSize: ".8rem", color: "#3D2B1F", margin: "0 0 .875rem", lineHeight: 1.5 }}>
+                      {t.pet.delete_confirm.replace("{name}", pet.name)}
+                    </p>
+                    <div style={{ display: "flex", gap: ".5rem" }}>
+                      <button
+                        onClick={() => setShowDeleteConfirm(false)}
+                        style={{ flex: 1, padding: ".5rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", fontSize: ".8rem", color: "#7A5C44", cursor: "pointer", fontFamily: "inherit" }}
+                      >
+                        {t.pet.delete_cancel}
+                      </button>
+                      <button
+                        onClick={deletePet}
+                        disabled={deletingPet}
+                        style={{ flex: 1, padding: ".5rem", borderRadius: 100, border: "none", background: "#A32D2D", color: "#fff", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", opacity: deletingPet ? .6 : 1 }}
+                      >
+                        {t.pet.delete_yes}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Tabs */}

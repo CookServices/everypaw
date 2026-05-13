@@ -88,7 +88,12 @@
     "link_copied": "Link copied! 🐾",
     "tab_journal": "journal",
     "tab_stories": "stories",
-    "tab_milestones": "milestones"
+    "tab_milestones": "milestones",
+    "edit_profile": "Edit profile",
+    "delete_pet": "Delete pet",
+    "delete_confirm": "Delete {name}? All entries, stories and milestones will be permanently removed.",
+    "delete_yes": "Yes, delete",
+    "delete_cancel": "Cancel"
   },
   "settings": {
     "title": "Settings",
