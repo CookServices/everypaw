@@ -398,15 +398,11 @@ export default function PetPage({ params }: { params: { id: string } }) {
             )}
           </div>
 
-          {milestones.length > 0 && (
-            <div style={{ background: "rgba(200,129,58,.1)", borderRadius: 12, padding: ".5rem .875rem", textAlign: "center", flexShrink: 0 }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length}</div>
-              <div style={{ fontSize: ".7rem", color: "#7A5C44" }}>{t.milestones.label}</div>
-            </div>
-          )}
+          {/* Right column: kebab + milestone badge */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: ".625rem", flexShrink: 0 }}>
 
           {/* Kebab menu */}
-          <div ref={kebabRef} style={{ position: "absolute", top: "1rem", right: "1rem" }}>
+          <div ref={kebabRef} style={{ position: "relative" }}>
             <button
               onClick={() => { setShowKebabMenu(v => !v); setShowDeleteConfirm(false); }}
               style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", color: "#7A5C44", fontFamily: "inherit" }}
@@ -466,6 +462,15 @@ export default function PetPage({ params }: { params: { id: string } }) {
               </div>
             )}
           </div>
+
+          {milestones.length > 0 && (
+            <div style={{ background: "rgba(200,129,58,.1)", borderRadius: 12, padding: ".5rem .875rem", textAlign: "center" }}>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length}</div>
+              <div style={{ fontSize: ".7rem", color: "#7A5C44" }}>{t.milestones.label}</div>
+            </div>
+          )}
+
+          </div>{/* end right column */}
         </div>
 
         {/* Tabs */}
