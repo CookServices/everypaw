@@ -19,6 +19,7 @@ export async function POST(req: Request) {
   const { data: pet } = await supabase.from("pets").select("*").eq("id", petId).single();
 
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const orderPayload = {
     orderReferenceId: `everypaw-${petId}-${Date.now()}`,

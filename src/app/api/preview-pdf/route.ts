@@ -1,6 +1,24 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+function safeUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" ? url : "";
+  } catch {
+    return "";
+  }
+}
+
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -15,6 +33,7 @@ export async function POST(req: Request) {
   ]);
 
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const photosWithEntries = entries?.filter(e => e.photo_urls?.length > 0).slice(0, 6) || [];
 
@@ -51,7 +70,7 @@ export async function POST(req: Request) {
   <!-- Cover -->
   <div class="cover">
     <div class="cover-paw">🐾</div>
-    <div class="cover-title">The Life of<br>${pet.name}</div>
+    <div class="cover-title">The Life of<br>${escapeHtml(pet.name)}</div>
     ${pet.birthdate ? `<div class="cover-subtitle">Born ${new Date(pet.birthdate).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</div>` : ""}
     <div class="cover-line"></div>
     <div class="cover-brand">An Everypaw Book</div>
@@ -61,8 +80,8 @@ export async function POST(req: Request) {
   ${stories && stories.length > 0 ? stories.map((story, i) => `
   <div class="chapter">
     <div class="chapter-num">Chapter ${i + 1}</div>
-    <div class="chapter-title">${story.title || `${pet.name}'s Story`}</div>
-    <div class="chapter-text">${story.content.replace(/\n/g, "<br>")}</div>
+    <div class="chapter-title">${escapeHtml(story.title || `${pet.name}'s Story`)}</div>
+    <div class="chapter-text">${escapeHtml(story.content).replace(/\n/g, "<br>")}</div>
   </div>
   `).join("") : `
   <div class="chapter">
@@ -81,7 +100,7 @@ export async function POST(req: Request) {
     <div class="photo-grid">
       ${photosWithEntries.flatMap(e => e.photo_urls.slice(0, 1)).map((url: string, i: number) => `
         <div>
-          <img src="${url}" alt="" />
+          ${safeUrl(url) ? `<img src="${safeUrl(url)}" alt="" />` : ""}
         </div>
       `).join("")}
     </div>

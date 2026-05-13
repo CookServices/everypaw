@@ -39,22 +39,29 @@ export async function POST(req: Request) {
           stripe_customer_id: session.customer as string,
         })
         .eq("id", userId);
-      
-      if (error) console.error("Supabase update error:", error);
-      else console.log("User upgraded to premium:", userId);
+
+      if (error) {
+        console.error("Supabase update error:", error);
+        // Return 500 so Stripe retries the webhook
+        return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+      }
+      console.log("User upgraded to premium:", userId);
     }
   }
 
   if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object as Stripe.Subscription;
     const customerId = subscription.customer as string;
-    
+
     const { error } = await supabase
       .from("profiles")
       .update({ is_premium: false })
       .eq("stripe_customer_id", customerId);
-    
-    if (error) console.error("Supabase downgrade error:", error);
+
+    if (error) {
+      console.error("Supabase downgrade error:", error);
+      return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ received: true });
