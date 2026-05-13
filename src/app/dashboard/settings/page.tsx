@@ -55,28 +55,35 @@ export default function SettingsPage() {
           ) : (
             <>
               {/* Weekly reminders */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 0", borderBottom: "0.5px solid rgba(61,43,31,.08)" }}>
-                <div>
-                  <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .25rem" }}>{t.settings.weekly_reminders}</p>
-                  <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.settings.weekly_reminders_desc}</p>
+              <div style={{ padding: "1rem 0", borderBottom: "0.5px solid rgba(61,43,31,.08)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .25rem" }}>{t.settings.weekly_reminders}</p>
+                    <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.settings.weekly_reminders_desc}</p>
+                  </div>
+                  <button
+                    onClick={() => setEmailReminders(!emailReminders)}
+                    style={{
+                      width: 44, height: 24, borderRadius: 100,
+                      background: emailReminders ? "#C8813A" : "rgba(61,43,31,.15)",
+                      border: "none", cursor: "pointer", position: "relative",
+                      transition: "background .2s", flexShrink: 0, marginLeft: "1rem"
+                    }}
+                  >
+                    <span style={{
+                      position: "absolute", top: 2,
+                      left: emailReminders ? 22 : 2,
+                      width: 20, height: 20, borderRadius: "50%",
+                      background: "#FDFAF5", transition: "left .2s",
+                      display: "block"
+                    }} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setEmailReminders(!emailReminders)}
-                  style={{
-                    width: 44, height: 24, borderRadius: 100,
-                    background: emailReminders ? "#C8813A" : "rgba(61,43,31,.15)",
-                    border: "none", cursor: "pointer", position: "relative",
-                    transition: "background .2s", flexShrink: 0, marginLeft: "1rem"
-                  }}
-                >
-                  <span style={{
-                    position: "absolute", top: 2,
-                    left: emailReminders ? 22 : 2,
-                    width: 20, height: 20, borderRadius: "50%",
-                    background: "#FDFAF5", transition: "left .2s",
-                    display: "block"
-                  }} />
-                </button>
+                {emailReminders && (
+                  <p style={{ fontSize: ".75rem", color: "#C8813A", margin: ".6rem 0 0", fontWeight: 300, fontStyle: "italic" }}>
+                    {t.settings.weekly_reminders_info}
+                  </p>
+                )}
               </div>
 
               {/* Getting started guide */}

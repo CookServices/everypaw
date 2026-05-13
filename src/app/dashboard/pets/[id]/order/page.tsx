@@ -18,15 +18,15 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [step, setStep] = useState<"address" | "confirm" | "success">("address");
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [address, setAddress] = useState({
+  const [address, setAddress] = useState(() => ({
     firstName: "",
     lastName: "",
     addressLine1: "",
     addressLine2: "",
     city: "",
     postCode: "",
-    country: "US",
-  });
+    country: typeof navigator !== "undefined" && navigator.language.startsWith("fr") ? "FR" : "",
+  }));
 
   useEffect(() => {
     const supabase = createClient();
@@ -61,8 +61,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     { key: "lastName", label: t.order.last_name, placeholder: "Doe" },
     { key: "addressLine1", label: t.order.address, placeholder: "123 Main St" },
     { key: "addressLine2", label: t.order.apt, placeholder: "Apt 4B" },
-    { key: "city", label: t.order.city, placeholder: "New York" },
-    { key: "postCode", label: t.order.postal_code, placeholder: "10001" },
+    { key: "city", label: t.order.city, placeholder: "" },
+    { key: "postCode", label: t.order.postal_code, placeholder: "" },
   ];
 
   const inputStyle = {
@@ -199,9 +199,10 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               <div>
                 <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{t.order.country}</label>
                 <select value={address.country} onChange={e => setAddress({ ...address, country: e.target.value })} style={inputStyle}>
+                  <option value="" disabled>—</option>
+                  <option value="FR">France</option>
                   <option value="US">United States</option>
                   <option value="GB">United Kingdom</option>
-                  <option value="FR">France</option>
                   <option value="DE">Germany</option>
                   <option value="CA">Canada</option>
                   <option value="AU">Australia</option>

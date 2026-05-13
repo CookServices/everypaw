@@ -23,7 +23,11 @@
     "premium_badge": "✦ Premium",
     "loading": "Loading your stories…",
     "loading_btn": "Loading…",
-    "back_pet": "← Dashboard"
+    "back_pet": "← Dashboard",
+    "upsell_title": "You've reached the free plan limit",
+    "upsell_desc": "You've used all 10 free entries. Upgrade to Premium to keep documenting {name}'s life without limits.",
+    "upsell_cta": "Upgrade to Premium →",
+    "upsell_later": "Later"
   },
   "journal": {
     "placeholder": "What did {name} do today?",
@@ -88,13 +92,26 @@
     "link_copied": "Link copied! 🐾",
     "tab_journal": "journal",
     "tab_stories": "stories",
-    "tab_milestones": "milestones"
+    "tab_milestones": "milestones",
+    "species_dog": "Dog",
+    "species_cat": "Cat",
+    "species_rabbit": "Rabbit",
+    "species_bird": "Bird",
+    "species_other": "Other",
+    "photo_add": "Add a photo",
+    "photo_change": "Change photo",
+    "edit_profile": "Edit profile",
+    "delete_pet": "Delete pet",
+    "delete_confirm": "Delete {name}? All entries, stories and milestones will be permanently removed.",
+    "delete_yes": "Yes, delete",
+    "delete_cancel": "Cancel"
   },
   "settings": {
     "title": "Settings",
     "email_prefs": "Email preferences",
     "weekly_reminders": "Weekly reminders",
     "weekly_reminders_desc": "Receive a weekly email to keep your pet's journal up to date.",
+    "weekly_reminders_info": "You will receive an email every week to remember to add a moment.",
     "onboarding_guide": "Getting started guide",
     "onboarding_guide_desc": "Show the onboarding guide again on your dashboard.",
     "reset_guide": "Reset guide",

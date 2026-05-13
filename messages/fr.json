@@ -23,7 +23,11 @@
     "premium_badge": "✦ Premium",
     "loading": "Chargement de vos histoires…",
     "loading_btn": "Chargement…",
-    "back_pet": "← Tableau de bord"
+    "back_pet": "← Tableau de bord",
+    "upsell_title": "Limite du plan gratuit atteinte",
+    "upsell_desc": "Vous avez atteint la limite de votre plan gratuit (10 entrées). Passez à Premium pour continuer à documenter la vie de {name} sans limite.",
+    "upsell_cta": "Passer à Premium →",
+    "upsell_later": "Plus tard"
   },
   "journal": {
     "placeholder": "Qu'a fait {name} aujourd'hui ?",
@@ -88,13 +92,26 @@
     "link_copied": "Lien copié ! 🐾",
     "tab_journal": "journal",
     "tab_stories": "histoires",
-    "tab_milestones": "étapes"
+    "tab_milestones": "étapes",
+    "species_dog": "Chien",
+    "species_cat": "Chat",
+    "species_rabbit": "Lapin",
+    "species_bird": "Oiseau",
+    "species_other": "Autre",
+    "photo_add": "Ajouter une photo",
+    "photo_change": "Changer la photo",
+    "edit_profile": "Modifier le profil",
+    "delete_pet": "Supprimer l'animal",
+    "delete_confirm": "Supprimer {name} ? Toutes les entrées, histoires et étapes seront définitivement supprimées.",
+    "delete_yes": "Oui, supprimer",
+    "delete_cancel": "Annuler"
   },
   "settings": {
     "title": "Paramètres",
     "email_prefs": "Préférences email",
     "weekly_reminders": "Rappels hebdomadaires",
     "weekly_reminders_desc": "Recevez un email hebdomadaire pour tenir le journal de votre animal à jour.",
+    "weekly_reminders_info": "Vous recevrez un email chaque semaine pour vous souvenir d'ajouter un moment.",
     "onboarding_guide": "Guide de démarrage",
     "onboarding_guide_desc": "Afficher à nouveau le guide de démarrage sur votre tableau de bord.",
     "reset_guide": "Réinitialiser le guide",

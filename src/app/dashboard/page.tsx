@@ -73,7 +73,12 @@ export default function DashboardPage() {
               {subscribing ? t.dashboard.loading_btn : t.dashboard.upgrade_title}
             </button>
           )}
-          {isPremium && <span style={{ fontSize: ".75rem", color: "#C8813A", fontWeight: 500 }}>{t.dashboard.premium_badge}</span>}
+          {isPremium && (
+            <Link href="/dashboard/upgrade" style={{ fontSize: ".75rem", color: "#C8813A", fontWeight: 500, textDecoration: "none", padding: ".35rem .75rem", borderRadius: 100, border: "1px solid rgba(200,129,58,.25)", transition: "background .15s", cursor: "pointer" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "rgba(200,129,58,.1)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            >{t.dashboard.premium_badge}</Link>
+          )}
           <LanguageSwitcher />
           <Link href="/dashboard/settings" style={{ fontSize: ".8rem", color: "#7A5C44", textDecoration: "none" }}>{t.nav.settings}</Link>
           <button onClick={handleLogout} style={{ fontSize: ".8rem", color: "#7A5C44", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>{t.nav.sign_out}</button>
