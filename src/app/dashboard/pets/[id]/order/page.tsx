@@ -8,14 +8,52 @@ import { useLocale } from "@/hooks/useLocale";
 
 export const dynamic = "force-dynamic";
 
+type Step = "preview" | "address" | "confirm" | "success";
+
+interface Story {
+  id: string;
+  title: string | null;
+  content: string;
+  period_start: string | null;
+  period_end: string | null;
+  created_at: string;
+}
+
+interface Entry {
+  id: string;
+  photo_urls: string[];
+  entry_date: string;
+}
+
+interface Pet {
+  id: string;
+  name: string;
+  birthdate: string | null;
+  created_at: string;
+}
+
+const SHIPPING_BY_COUNTRY: Record<string, string> = {
+  FR: "~5–10 €",
+  DE: "~5–10 €",
+  ES: "~5–10 €",
+  IT: "~5–10 €",
+  NL: "~5–10 €",
+  GB: "~£8–14",
+  US: "~$12–18",
+  CA: "~$15–22",
+  AU: "~$18–28",
+};
+
 export default function OrderPage({ params }: { params: { id: string } }) {
   const { t } = useLocale();
   const { id } = params;
   const searchParams = useSearchParams();
   const isMemorial = searchParams.get("memorial") === "true";
 
-  const [petName, setPetName] = useState<string>("");
-  const [step, setStep] = useState<"address" | "confirm" | "success">("address");
+  const [pet, setPet] = useState<Pet | null>(null);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [step, setStep] = useState<Step>("preview");
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [address, setAddress] = useState(() => ({
@@ -30,10 +68,38 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.from("pets").select("name").eq("id", id).single().then(({ data }) => {
-      if (data) setPetName(data.name);
+    Promise.all([
+      supabase.from("pets").select("id, name, birthdate, created_at").eq("id", id).single(),
+      supabase.from("stories").select("id, title, content, period_start, period_end, created_at").eq("pet_id", id).order("created_at", { ascending: true }),
+      supabase.from("entries").select("id, photo_urls, entry_date").eq("pet_id", id).order("entry_date", { ascending: true }),
+    ]).then(([{ data: petData }, { data: storiesData }, { data: entriesData }]) => {
+      if (petData) setPet(petData);
+      if (storiesData) setStories(storiesData);
+      if (entriesData) setEntries(entriesData);
     });
   }, [id]);
+
+  const petName = pet?.name ?? "";
+  const photoEntries = entries.filter(e => e.photo_urls?.length > 0);
+  const photoCount = Math.min(photoEntries.flatMap(e => e.photo_urls).length, 6);
+
+  const coverPeriod = (() => {
+    if (!pet) return "";
+    const allDates: Date[] = [];
+    if (pet.birthdate) allDates.push(new Date(pet.birthdate));
+    stories.forEach(s => { if (s.period_start) allDates.push(new Date(s.period_start)); });
+    entries.forEach(e => { if (e.entry_date) allDates.push(new Date(e.entry_date)); });
+    const start = allDates.length ? allDates.reduce((a, b) => a < b ? a : b) : new Date(pet.created_at);
+    const startYear = start.getFullYear();
+    const endYear = new Date().getFullYear();
+    return startYear === endYear ? String(startYear) : `${startYear}–${endYear}`;
+  })();
+
+  const monthsCount = (() => {
+    if (!pet) return 1;
+    const start = pet.birthdate ? new Date(pet.birthdate) : new Date(pet.created_at);
+    return Math.max(1, Math.round((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+  })();
 
   const handleOrder = async () => {
     setLoading(true);
@@ -65,6 +131,20 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     { key: "postCode", label: t.order.postal_code, placeholder: "" },
   ];
 
+  const bg = isMemorial ? "#1C1410" : "#F7F2EA";
+  const cardBg = isMemorial ? "rgba(247,242,234,.04)" : "#FDFAF5";
+  const cardBorder = isMemorial ? "1px solid rgba(247,242,234,.08)" : "1px solid rgba(61,43,31,.08)";
+  const textPrimary = isMemorial ? "#F7F2EA" : "#3D2B1F";
+  const textMuted = isMemorial ? "rgba(247,242,234,.5)" : "#7A5C44";
+  const labelColor = isMemorial ? "rgba(247,242,234,.4)" : "#7A5C44";
+  const accentColor = isMemorial ? "#8B6B4A" : "#C8813A";
+  const price = isMemorial ? t.memorial.order_price : t.order.product_price;
+  const productName = isMemorial
+    ? (petName ? t.memorial.order_tribute.replace("{name}", petName) : "…")
+    : t.order.product_detail;
+  const productSpecs = isMemorial ? t.memorial.order_specs : t.order.product_specs;
+  const warningText = isMemorial ? t.memorial.order_note : t.order.warning;
+
   const inputStyle = {
     width: "100%", padding: ".75rem 1rem", borderRadius: 12,
     border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.12)" : "rgba(61,43,31,.15)"}`,
@@ -74,18 +154,12 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     outline: "none", boxSizing: "border-box" as const,
   };
 
-  const bg = isMemorial ? "#1C1410" : "#F7F2EA";
-  const cardBg = isMemorial ? "rgba(247,242,234,.04)" : "#FDFAF5";
-  const cardBorder = isMemorial ? "1px solid rgba(247,242,234,.08)" : "1px solid rgba(61,43,31,.08)";
-  const textPrimary = isMemorial ? "#F7F2EA" : "#3D2B1F";
-  const textMuted = isMemorial ? "rgba(247,242,234,.5)" : "#7A5C44";
-  const labelColor = isMemorial ? "rgba(247,242,234,.4)" : "#7A5C44";
-  const price = isMemorial ? t.memorial.order_price : t.order.product_price;
-  const productName = isMemorial
-    ? (petName ? t.memorial.order_tribute.replace("{name}", petName) : "…")
-    : t.order.product_detail;
-  const productSpecs = isMemorial ? t.memorial.order_specs : t.order.product_specs;
-  const warningText = isMemorial ? t.memorial.order_note : t.order.warning;
+  // Stepper: preview=0, address=1, confirm=2 (success has no stepper)
+  const stepIndex: Record<Step, number> = { preview: 0, address: 1, confirm: 2, success: 3 };
+  const currentIdx = stepIndex[step];
+  const stepLabels = [t.order.step_preview, t.order.step_address, t.order.step_payment];
+
+  const shippingEstimate = SHIPPING_BY_COUNTRY[address.country];
 
   return (
     <div style={{ minHeight: "100vh", background: bg, fontFamily: "'DM Sans', sans-serif", transition: "background .3s" }}>
@@ -100,10 +174,49 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
       <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
 
-        {/* Memorial hero */}
-        {isMemorial && petName && step === "address" && (
-          <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-            <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🕊️</div>
+        {/* Stepper — hidden on success */}
+        {step !== "success" && (
+          <div style={{ display: "flex", alignItems: "flex-start", marginBottom: "2.5rem" }}>
+            {stepLabels.map((label, i) => (
+              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+                {/* Connector line left */}
+                {i > 0 && (
+                  <div style={{
+                    position: "absolute", top: 15, right: "50%", width: "100%", height: 2,
+                    background: i <= currentIdx ? accentColor : isMemorial ? "rgba(247,242,234,.1)" : "rgba(61,43,31,.12)",
+                    zIndex: 0,
+                  }} />
+                )}
+                {/* Circle */}
+                <div style={{
+                  width: 30, height: 30, borderRadius: "50%", zIndex: 1, position: "relative",
+                  background: i < currentIdx ? accentColor : i === currentIdx ? accentColor : isMemorial ? "rgba(247,242,234,.08)" : "rgba(61,43,31,.08)",
+                  border: i === currentIdx ? `2px solid ${accentColor}` : "2px solid transparent",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: i <= currentIdx ? "#FDFAF5" : textMuted,
+                  fontSize: i < currentIdx ? ".85rem" : ".8rem",
+                  fontWeight: 600, transition: "all .3s",
+                }}>
+                  {i < currentIdx ? "✓" : i + 1}
+                </div>
+                {/* Label */}
+                <span style={{
+                  fontSize: ".7rem", marginTop: ".35rem",
+                  color: i === currentIdx ? accentColor : i < currentIdx ? accentColor : textMuted,
+                  fontWeight: i === currentIdx ? 600 : 400,
+                  textAlign: "center", lineHeight: 1.2,
+                }}>
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Memorial hero — preview step only */}
+        {isMemorial && petName && step === "preview" && (
+          <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+            <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>🕊️</div>
             <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.75rem", fontWeight: 600, color: "#F7F2EA", marginBottom: ".5rem" }}>
               {t.memorial.order_tribute.replace("{name}", petName)}
             </h1>
@@ -113,7 +226,123 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           </div>
         )}
 
-        {step === "success" ? (
+        {/* ─── PREVIEW STEP ─── */}
+        {step === "preview" && (
+          <div>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.25rem", textAlign: "center" }}>
+              {t.order.preview_title}
+            </h2>
+
+            {/* Book cover */}
+            <div style={{
+              background: isMemorial ? "#0E0B08" : "#3D2B1F",
+              borderRadius: 20, padding: "3rem 2rem",
+              textAlign: "center", marginBottom: "1.25rem",
+              boxShadow: "0 12px 40px rgba(0,0,0,.25)",
+              position: "relative", overflow: "hidden",
+            }}>
+              {/* Decorative spine line */}
+              <div style={{ position: "absolute", left: 18, top: 0, bottom: 0, width: 4, background: isMemorial ? "rgba(139,107,74,.4)" : "rgba(200,129,58,.35)", borderRadius: 2 }} />
+              <div style={{ fontSize: "2.75rem", marginBottom: "1.25rem" }}>{isMemorial ? "🕊️" : "🐾"}</div>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.9rem", fontWeight: 600, color: "#F7C27A", lineHeight: 1.25, marginBottom: ".75rem" }}>
+                {isMemorial
+                  ? t.order.memorial_cover_title.replace("{name}", petName || "…")
+                  : t.order.book_cover_title.replace("{name}", petName || "…")}
+              </div>
+              {coverPeriod && (
+                <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "1rem", color: "rgba(247,242,234,.45)", marginBottom: "1.5rem" }}>
+                  {petName} · {coverPeriod}
+                </div>
+              )}
+              <div style={{ width: 48, height: 2, background: accentColor, margin: "0 auto 1.5rem", borderRadius: 1 }} />
+              <div style={{ fontSize: ".7rem", color: "rgba(247,242,234,.3)", letterSpacing: ".12em", textTransform: "uppercase" }}>
+                {t.order.book_cover_label}
+              </div>
+            </div>
+
+            {/* Content summary pill */}
+            <div style={{
+              background: cardBg, border: cardBorder, borderRadius: 14,
+              padding: ".875rem 1.25rem", marginBottom: "1.5rem",
+              display: "flex", justifyContent: "center", alignItems: "center",
+              gap: ".75rem", flexWrap: "wrap",
+            }}>
+              {[
+                t.order.summary_chapters.replace("{n}", String(stories.length)),
+                t.order.summary_photos.replace("{n}", String(photoCount)),
+                t.order.summary_months.replace("{n}", String(monthsCount)),
+              ].map((item, i, arr) => (
+                <span key={i} style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
+                  <span style={{ fontSize: ".875rem", fontWeight: i === 1 ? 400 : 500, color: i === 1 ? accentColor : textPrimary }}>
+                    {item}
+                  </span>
+                  {i < arr.length - 1 && <span style={{ color: isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)", fontSize: ".75rem" }}>·</span>}
+                </span>
+              ))}
+            </div>
+
+            {/* Interior preview */}
+            {stories.length > 0 && (
+              <div style={{ marginBottom: "1.25rem" }}>
+                <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+                  {t.order.preview_interior}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+                  {stories.slice(0, 3).map((story, i) => (
+                    <div key={story.id} style={{ background: cardBg, border: cardBorder, borderRadius: 16, padding: "1.25rem 1.5rem" }}>
+                      <div style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: ".4rem" }}>
+                        {t.order.preview_chapter} {i + 1}
+                      </div>
+                      <div style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem", lineHeight: 1.3 }}>
+                        {story.title || `${petName}'s Story`}
+                      </div>
+                      <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: ".84rem", color: textMuted, lineHeight: 1.75 }}>
+                        {story.content.slice(0, 220).trim()}
+                        {story.content.length > 220 ? "…" : ""}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Photo preview (first available photo) */}
+            {photoEntries.length > 0 && (
+              <div style={{ marginBottom: "1.5rem" }}>
+                <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+                  {t.order.preview_photos_page}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: photoEntries.length > 1 ? "1fr 1fr" : "1fr", gap: ".625rem" }}>
+                  {photoEntries.slice(0, 2).map(e => (
+                    <div key={e.id} style={{ borderRadius: 14, overflow: "hidden", aspectRatio: "4/3", background: isMemorial ? "rgba(247,242,234,.04)" : "rgba(61,43,31,.05)" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={e.photo_urls[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* CTA buttons */}
+            <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+              <button
+                onClick={() => setStep("address")}
+                style={{ width: "100%", padding: ".875rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer" }}
+              >
+                {t.order.preview_cta}
+              </button>
+              <Link
+                href={`/dashboard/pets/${id}`}
+                style={{ display: "block", textAlign: "center", padding: ".75rem", borderRadius: 100, border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`, color: textMuted, textDecoration: "none", fontSize: ".875rem" }}
+              >
+                {t.order.preview_back}
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* ─── SUCCESS STEP ─── */}
+        {step === "success" && (
           <div style={{ background: cardBg, borderRadius: 24, padding: "2.5rem", border: cardBorder, textAlign: "center" }}>
             <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>{isMemorial ? "🕊️" : "📬"}</div>
             <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", color: textPrimary, marginBottom: ".75rem" }}>{t.order.success_title}</h2>
@@ -123,12 +352,14 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             <p style={{ fontSize: ".8rem", color: textMuted, fontWeight: 300, marginBottom: "2rem" }}>
               {t.order.order_id} <code style={{ background: isMemorial ? "rgba(247,242,234,.08)" : "rgba(61,43,31,.06)", padding: "2px 6px", borderRadius: 4 }}>{orderId}</code>
             </p>
-            <Link href="/dashboard" style={{ background: "#C8813A", color: "#FDFAF5", padding: ".75rem 2rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
+            <Link href="/dashboard" style={{ background: accentColor, color: "#FDFAF5", padding: ".75rem 2rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
               {t.order.back_dashboard}
             </Link>
           </div>
+        )}
 
-        ) : step === "confirm" ? (
+        {/* ─── CONFIRM STEP ─── */}
+        {step === "confirm" && (
           <div style={{ background: cardBg, borderRadius: 24, padding: "2rem", border: cardBorder }}>
             <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.5rem" }}>{t.order.confirm_title}</h2>
 
@@ -162,13 +393,15 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               <button onClick={() => setStep("address")} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`, background: "transparent", fontFamily: "inherit", fontSize: ".875rem", color: textMuted, cursor: "pointer" }}>
                 {t.order.edit_address}
               </button>
-              <button onClick={handleOrder} disabled={loading} style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: isMemorial ? "#8B6B4A" : "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: loading ? .7 : 1 }}>
+              <button onClick={handleOrder} disabled={loading} style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: loading ? .7 : 1 }}>
                 {loading ? t.order.placing : t.order.place_order}
               </button>
             </div>
           </div>
+        )}
 
-        ) : (
+        {/* ─── ADDRESS STEP ─── */}
+        {step === "address" && (
           <div style={{ background: cardBg, borderRadius: 24, padding: "2rem", border: cardBorder }}>
             <div style={{ background: isMemorial ? "rgba(200,129,58,.06)" : "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", gap: "1rem", alignItems: "center" }}>
               <span style={{ fontSize: "1.5rem" }}>{isMemorial ? "🕊️" : "📖"}</span>
@@ -213,6 +446,23 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               </div>
             </div>
 
+            {/* Shipping + price estimate (shown once country selected) */}
+            {address.country && (
+              <div style={{ marginTop: "1.25rem", background: isMemorial ? "rgba(200,129,58,.06)" : "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.18)", borderRadius: 14, padding: "1rem 1.25rem" }}>
+                <div style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".75rem", fontFamily: "sans-serif" }}>
+                  {t.order.price_total_est}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".875rem", color: textPrimary, marginBottom: ".375rem" }}>
+                  <span>{t.order.price_book}</span>
+                  <span style={{ fontWeight: 500 }}>{price}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".875rem", color: textMuted }}>
+                  <span>{t.order.estimated_shipping}</span>
+                  <span>{shippingEstimate ?? t.order.shipping_calculated}</span>
+                </div>
+              </div>
+            )}
+
             <button
               onClick={() => {
                 if (!address.firstName || !address.lastName || !address.addressLine1 || !address.city || !address.postCode) {
@@ -221,9 +471,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 }
                 setStep("confirm");
               }}
-              style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: isMemorial ? "#8B6B4A" : "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer" }}
+              style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer" }}
             >
-              {t.order.continue}
+              {t.order.continue_to_payment}
             </button>
           </div>
         )}

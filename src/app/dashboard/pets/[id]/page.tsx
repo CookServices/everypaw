@@ -6,6 +6,7 @@ import { Pet, Entry, Story } from "@/types";
 import Link from "next/link";
 import { detectMilestones } from "@/lib/milestones";
 import { useLocale } from "@/hooks/useLocale";
+import { generateShareCard, shareOrDownloadCard } from "@/lib/shareCard";
 
 const MOOD_OPTIONS = [
   { value: "happy", emoji: "😄", label: "Happy" },
@@ -78,6 +79,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [showKebabMenu, setShowKebabMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingPet, setDeletingPet] = useState(false);
+  const [sharingStoryId, setSharingStoryId] = useState<string | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -220,6 +222,24 @@ export default function PetPage({ params }: { params: { id: string } }) {
     setGenerating(false);
   };
 
+  const handleShare = async (story: Story) => {
+    if (!pet) return;
+    setSharingStoryId(story.id);
+    try {
+      const blob = await generateShareCard({
+        petName: pet.name,
+        petPhotoUrl: pet.photo_url,
+        speciesEmoji: SPECIES_EMOJI[pet.species] ?? "🐾",
+        storyTitle: story.title || `${pet.name}'s Story`,
+        storyContent: story.content,
+      });
+      await shareOrDownloadCard(blob, pet.name, story.content.slice(0, 140));
+    } catch {
+      alert(t.stories.share_error);
+    }
+    setSharingStoryId(null);
+  };
+
   const deletePet = async () => {
     setDeletingPet(true);
     const supabase = createClient();
@@ -344,8 +364,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      <nav style={{ background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "1rem 2rem", display: "flex", alignItems: "center", gap: "1rem", position: "sticky", top: 0, zIndex: 50 }}>
-        <Link href="/dashboard" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>{t.dashboard.back_pet}</Link>
+      <div style={{ padding: "1rem 1.5rem .5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "#3D2B1F" }}>
           {SPECIES_EMOJI[pet.species]} {pet.name}
         </span>
@@ -354,11 +373,11 @@ export default function PetPage({ params }: { params: { id: string } }) {
             navigator.clipboard.writeText(`https://everypaw.app/pets/${id}`);
             alert(t.pet.link_copied);
           }}
-          style={{ fontSize: ".75rem", color: "#7A5C44", background: "none", border: "1px solid rgba(61,43,31,.15)", borderRadius: 100, padding: ".25rem .75rem", cursor: "pointer", fontFamily: "inherit" }}
+          style={{ fontSize: ".75rem", color: "#7A5C44", background: "none", border: "1px solid rgba(61,43,31,.15)", borderRadius: 100, padding: ".375rem .875rem", cursor: "pointer", fontFamily: "inherit", minHeight: 36 }}
         >
           {t.nav.share_profile}
         </button>
-      </nav>
+      </div>
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1.5rem" }}>
 
@@ -605,7 +624,40 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>{story.title || `${pet.name}'s Story`}</h3>
                   <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>{new Date(story.created_at).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}</span>
                 </div>
-                <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.75, margin: 0, fontFamily: "Georgia, serif", fontStyle: "italic" }}>{story.content}</p>
+                <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.75, marginBottom: "1.25rem", fontFamily: "Georgia, serif", fontStyle: "italic" }}>{story.content}</p>
+                <div style={{ borderTop: "1px solid rgba(61,43,31,.06)", paddingTop: "1rem" }}>
+                  <button
+                    onClick={() => handleShare(story)}
+                    disabled={sharingStoryId === story.id}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: ".5rem",
+                      background: "transparent",
+                      border: "1.5px solid rgba(200,129,58,.35)",
+                      color: "#C8813A",
+                      borderRadius: 100, padding: ".5rem 1.125rem",
+                      fontSize: ".8rem", fontWeight: 500, cursor: "pointer",
+                      fontFamily: "inherit", opacity: sharingStoryId === story.id ? .65 : 1,
+                      transition: "background .15s, opacity .15s", minHeight: 36,
+                    }}
+                    onMouseEnter={e => { if (sharingStoryId !== story.id) (e.currentTarget as HTMLElement).style.background = "rgba(200,129,58,.08)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                  >
+                    {sharingStoryId === story.id ? (
+                      <>
+                        <span style={{ fontSize: ".9rem" }}>⏳</span>
+                        {t.stories.share_generating}
+                      </>
+                    ) : (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                        </svg>
+                        {t.stories.share_chapter}
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

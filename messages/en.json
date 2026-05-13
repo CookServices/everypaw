@@ -93,7 +93,10 @@
     "order_book": "🛒 Order printed book — $35 · or included with Premium",
     "order_book_premium": "📖 Order your included annual book →",
     "no_stories": "No stories yet — go to Journal and generate {name}'s first story.",
-    "generating_preview": "Generating preview…"
+    "generating_preview": "Generating preview…",
+    "share_chapter": "Share this chapter",
+    "share_generating": "Creating card…",
+    "share_error": "Could not create the card. Please try again."
   },
   "milestones": {
     "title": "Milestones",
@@ -276,7 +279,21 @@
     "required_fields": "Please fill in all required fields.",
     "success_title": "Gift sent!",
     "success_desc": "An email with the gift code has been sent to {email}.",
-    "back": "Back to Everypaw →"
+    "success_desc_scheduled": "An email with the gift code will be sent to {email} on {date}.",
+    "back": "Back to Everypaw →",
+    "how_it_works": "How it works",
+    "step1_icon": "🎁",
+    "step1_title": "You give",
+    "step1_desc": "Fill in the form and pay $49 — done in seconds.",
+    "step2_icon": "✉️",
+    "step2_title": "The recipient gets an email",
+    "step2_desc": "A personalised email with your message lands in their inbox.",
+    "step3_icon": "🐾",
+    "step3_title": "12 months of Premium activated",
+    "step3_desc": "They click the link, create their account, and their Premium is immediately active.",
+    "send_date_label": "Send date (optional)",
+    "send_date_hint": "Leave empty to send immediately. Perfect for a birthday or Christmas.",
+    "send_date_future_error": "The send date must be in the future."
   },
   "redeem": {
     "title": "Activate your gift",
@@ -341,8 +358,27 @@
     "postal_code": "Postal code",
     "country": "Country",
     "continue": "Continue →",
+    "continue_to_payment": "Continue to payment →",
     "required_fields": "Please fill in all required fields.",
-    "order_failed": "Order failed. Please try again."
+    "order_failed": "Order failed. Please try again.",
+    "step_preview": "Preview",
+    "step_address": "Address",
+    "step_payment": "Payment",
+    "preview_title": "Preview your book",
+    "preview_cta": "Order this book →",
+    "preview_back": "Back to profile",
+    "preview_chapter": "Chapter",
+    "preview_interior": "Interior page preview",
+    "preview_photos_page": "Photo moments",
+    "book_cover_title": "The Life of {name}",
+    "book_cover_label": "An Everypaw Book",
+    "memorial_cover_title": "In Memory of {name}",
+    "summary_chapters": "{n} chapters",
+    "summary_photos": "{n} photos",
+    "summary_months": "{n} months of stories",
+    "estimated_shipping": "Estimated shipping",
+    "price_book": "Book",
+    "price_total_est": "Estimated total"
   },
   "memorial": {
     "mark_passed": "Record passing…",

@@ -6,6 +6,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -17,3 +18,99 @@ body {
 }
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap');
+
+/* ── Images ─────────────────────────────────────────────────────────────── */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Mobile: prevent iOS auto-zoom on inputs (font-size must be ≥16px) ─── */
+@media (max-width: 767px) {
+  input:not([type="hidden"]),
+  input:not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* ── Dashboard layout ────────────────────────────────────────────────────── */
+.ep-dashboard-root {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar hidden on mobile, shown on desktop */
+.ep-sidebar {
+  display: none !important;
+}
+
+/* Bottom nav shown on mobile, hidden on desktop */
+.ep-bottom-nav {
+  display: flex !important;
+}
+
+@media (min-width: 768px) {
+  .ep-sidebar {
+    display: flex !important;
+  }
+  .ep-bottom-nav {
+    display: none !important;
+  }
+  .ep-dashboard-main {
+    margin-left: 220px;
+    padding-bottom: 0 !important;
+  }
+}
+
+.ep-dashboard-main {
+  flex: 1;
+  min-width: 0; /* prevent flex child overflow */
+  padding-bottom: 56px; /* clear fixed bottom nav on mobile */
+}
+
+/* ── Tap targets: all interactive elements ≥44px ───────────────────────── */
+@media (max-width: 767px) {
+  button,
+  [role="button"],
+  a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Override for inline text links that shouldn't be block */
+  nav a,
+  p a,
+  span a {
+    min-height: unset;
+    display: inline;
+  }
+}
+
+/* ── Landing page responsive ─────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .ep-hero-inner {
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+  .ep-hero-text {
+    align-items: center !important;
+    text-align: center !important;
+  }
+  .ep-hero-demo {
+    margin-top: 3rem;
+  }
+}
+
+/* ── Safe area for notched phones (iOS) ─────────────────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .ep-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+    height: calc(56px + env(safe-area-inset-bottom));
+  }
+  .ep-dashboard-main {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
+  }
+}

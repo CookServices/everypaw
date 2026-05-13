@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 import { Pet, Entry } from "@/types";
 import Link from "next/link";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useLocale } from "@/hooks/useLocale";
 
 export const dynamic = "force-dynamic";
@@ -112,29 +111,6 @@ export default function DashboardPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <nav style={{ background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 50 }}>
-        <Link href="/" style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", textDecoration: "none", display: "flex", alignItems: "center", gap: ".4rem" }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
-          Everypaw
-        </Link>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          {!isPremium && (
-            <button onClick={handleSubscribe} disabled={subscribing} style={{ background: "#C8813A", color: "#FDFAF5", padding: ".5rem 1.25rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "none", cursor: "pointer", opacity: subscribing ? .7 : 1, fontFamily: "inherit" }}>
-              {subscribing ? t.dashboard.loading_btn : t.dashboard.upgrade_title}
-            </button>
-          )}
-          {isPremium && (
-            <Link href="/dashboard/upgrade" style={{ fontSize: ".75rem", color: "#C8813A", fontWeight: 500, textDecoration: "none", padding: ".35rem .75rem", borderRadius: 100, border: "1px solid rgba(200,129,58,.25)", transition: "background .15s", cursor: "pointer" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "rgba(200,129,58,.1)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-            >{t.dashboard.premium_badge}</Link>
-          )}
-          <LanguageSwitcher />
-          <Link href="/dashboard/settings" style={{ fontSize: ".8rem", color: "#7A5C44", textDecoration: "none" }}>{t.nav.settings}</Link>
-          <button onClick={handleLogout} style={{ fontSize: ".8rem", color: "#7A5C44", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>{t.nav.sign_out}</button>
-        </div>
-      </nav>
-
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
 
         {showOnboarding && (

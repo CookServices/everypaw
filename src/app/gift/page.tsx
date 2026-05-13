@@ -5,26 +5,33 @@ import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 
 export default function GiftPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [form, setForm] = useState({
     recipientEmail: "",
     recipientName: "",
     senderName: "",
     message: "",
+    scheduledDate: "",
   });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [code, setCode] = useState<string | null>(null);
+
+  const todayStr = new Date().toISOString().split("T")[0];
 
   const handleSubmit = async () => {
     if (!form.recipientEmail || !form.recipientName || !form.senderName) {
       alert(t.gift.required_fields);
       return;
     }
+    if (form.scheduledDate && form.scheduledDate <= todayStr) {
+      alert(t.gift.send_date_future_error);
+      return;
+    }
     setStatus("loading");
     const res = await fetch("/api/gift/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, locale }),
     });
     const data = await res.json();
     if (data.success) {
@@ -42,10 +49,20 @@ export default function GiftPage() {
     outline: "none", boxSizing: "border-box" as const,
   };
 
+  const labelStyle = {
+    fontSize: ".75rem", fontWeight: 500 as const, color: "#7A5C44",
+    textTransform: "uppercase" as const, letterSpacing: ".06em",
+    display: "block", marginBottom: ".4rem",
+  };
+
+  const scheduledDateFormatted = form.scheduledDate
+    ? new Date(form.scheduledDate + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })
+    : "";
+
   if (status === "success") return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", fontFamily: "'DM Sans', sans-serif" }}>
       <div style={{ maxWidth: 480, width: "100%", textAlign: "center" }}>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "2rem", display: "flex", alignItems: "center", justifyContent: "center", gap: ".4rem" }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "2rem", display: "flex", alignItems: "center", justifyContent: "center", gap: ".4rem" }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
           Everypaw
         </div>
@@ -53,7 +70,9 @@ export default function GiftPage() {
           <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🎁</div>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", color: "#3D2B1F", marginBottom: ".75rem" }}>{t.gift.success_title}</h2>
           <p style={{ fontSize: ".9rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.6, marginBottom: "1.5rem" }}>
-            {t.gift.success_desc.replace("{email}", form.recipientEmail)}
+            {form.scheduledDate
+              ? t.gift.success_desc_scheduled.replace("{email}", form.recipientEmail).replace("{date}", scheduledDateFormatted)
+              : t.gift.success_desc.replace("{email}", form.recipientEmail)}
           </p>
           <div style={{ background: "#3D2B1F", color: "#F7C27A", fontFamily: "monospace", fontSize: "1.25rem", padding: "1rem", borderRadius: 12, textAlign: "center", letterSpacing: ".15em", marginBottom: "1.5rem" }}>
             {code}
@@ -76,13 +95,56 @@ export default function GiftPage() {
       </nav>
 
       <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+        {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>🎁</div>
           <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.75rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".5rem" }}>{t.gift.title}</h1>
           <p style={{ fontSize: ".9rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.6 }}>{t.gift.subtitle}</p>
         </div>
 
+        {/* 3-step explainer */}
+        <div style={{ marginBottom: "2rem" }}>
+          <div style={{ fontSize: ".7rem", fontWeight: 600, color: "#C8813A", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: "1.125rem", textAlign: "center" }}>
+            {t.gift.how_it_works}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {([
+              { icon: t.gift.step1_icon, title: t.gift.step1_title, desc: t.gift.step1_desc },
+              { icon: t.gift.step2_icon, title: t.gift.step2_title, desc: t.gift.step2_desc },
+              { icon: t.gift.step3_icon, title: t.gift.step3_title, desc: t.gift.step3_desc },
+            ] as { icon: string; title: string; desc: string }[]).map((step, i, arr) => (
+              <div key={i} style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+                {/* Icon + connector */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: "50%",
+                    background: "#FDFAF5", border: "1.5px solid rgba(200,129,58,.25)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "1.25rem", flexShrink: 0,
+                  }}>
+                    {step.icon}
+                  </div>
+                  {i < arr.length - 1 && (
+                    <div style={{ width: 1.5, height: 28, background: "rgba(200,129,58,.2)", margin: ".25rem 0" }} />
+                  )}
+                </div>
+                {/* Text */}
+                <div style={{ paddingTop: ".625rem", paddingBottom: i < arr.length - 1 ? "1rem" : 0 }}>
+                  <div style={{ fontSize: ".9rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".2rem", lineHeight: 1.3 }}>
+                    {step.title}
+                  </div>
+                  <div style={{ fontSize: ".82rem", color: "#7A5C44", lineHeight: 1.6, fontWeight: 300 }}>
+                    {step.desc}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Form card */}
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)" }}>
+          {/* Product pill */}
           <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <p style={{ fontSize: ".875rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .2rem" }}>{t.gift.product_name}</p>
@@ -92,13 +154,13 @@ export default function GiftPage() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {[
+            {([
               { key: "recipientName", label: t.gift.recipient_name, placeholder: "Jane" },
               { key: "recipientEmail", label: t.gift.recipient_email, placeholder: "jane@example.com", type: "email" },
               { key: "senderName", label: t.gift.sender_name, placeholder: "John" },
-            ].map(field => (
+            ] as { key: string; label: string; placeholder: string; type?: string }[]).map(field => (
               <div key={field.key}>
-                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem" }}>{field.label}</label>
+                <label style={labelStyle}>{field.label}</label>
                 <input
                   type={field.type || "text"}
                   placeholder={field.placeholder}
@@ -110,7 +172,7 @@ export default function GiftPage() {
             ))}
 
             <div>
-              <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem" }}>{t.gift.message_label}</label>
+              <label style={labelStyle}>{t.gift.message_label}</label>
               <textarea
                 placeholder={t.gift.message_placeholder}
                 value={form.message}
@@ -119,9 +181,26 @@ export default function GiftPage() {
                 style={{ ...inputStyle, resize: "vertical" }}
               />
             </div>
+
+            {/* Send date field */}
+            <div>
+              <label style={labelStyle}>{t.gift.send_date_label}</label>
+              <input
+                type="date"
+                min={new Date(Date.now() + 86400000).toISOString().split("T")[0]}
+                value={form.scheduledDate}
+                onChange={e => setForm({ ...form, scheduledDate: e.target.value })}
+                style={inputStyle}
+              />
+              <p style={{ fontSize: ".75rem", color: "#7A5C44", marginTop: ".4rem", lineHeight: 1.5 }}>
+                {t.gift.send_date_hint}
+              </p>
+            </div>
           </div>
 
-          {status === "error" && <p style={{ fontSize: ".8rem", color: "#A32D2D", marginTop: "1rem" }}>{t.gift.error}</p>}
+          {status === "error" && (
+            <p style={{ fontSize: ".8rem", color: "#A32D2D", marginTop: "1rem" }}>{t.gift.error}</p>
+          )}
 
           <button
             onClick={handleSubmit}

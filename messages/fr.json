@@ -93,7 +93,10 @@
     "order_book": "🛒 Commander le livre imprimé — 35 € · ou inclus avec Premium",
     "order_book_premium": "📖 Commander votre livre annuel inclus →",
     "no_stories": "Pas encore d'histoires — allez dans le Journal et générez la première histoire de {name}.",
-    "generating_preview": "Génération de l'aperçu…"
+    "generating_preview": "Génération de l'aperçu…",
+    "share_chapter": "Partager ce chapitre",
+    "share_generating": "Génération de la carte…",
+    "share_error": "Impossible de créer la carte. Veuillez réessayer."
   },
   "milestones": {
     "title": "Étapes importantes",
@@ -276,7 +279,21 @@
     "required_fields": "Veuillez remplir tous les champs obligatoires.",
     "success_title": "Cadeau envoyé !",
     "success_desc": "Un email avec le code cadeau a été envoyé à {email}.",
-    "back": "Retour à Everypaw →"
+    "success_desc_scheduled": "Un email avec le code cadeau sera envoyé à {email} le {date}.",
+    "back": "Retour à Everypaw →",
+    "how_it_works": "Comment ça marche",
+    "step1_icon": "🎁",
+    "step1_title": "Vous offrez",
+    "step1_desc": "Remplissez le formulaire et payez 49€ — en quelques secondes c'est fait.",
+    "step2_icon": "✉️",
+    "step2_title": "Le destinataire reçoit un email",
+    "step2_desc": "Un email personnalisé avec votre message arrive dans sa boîte mail.",
+    "step3_icon": "🐾",
+    "step3_title": "12 mois Premium activés",
+    "step3_desc": "Il clique sur le lien, crée son compte, et son abonnement Premium est immédiatement actif.",
+    "send_date_label": "Date d'envoi (facultatif)",
+    "send_date_hint": "Laissez vide pour envoyer maintenant. Idéal pour un anniversaire ou Noël.",
+    "send_date_future_error": "La date d'envoi doit être dans le futur."
   },
   "redeem": {
     "title": "Activer votre cadeau",
@@ -341,8 +358,27 @@
     "postal_code": "Code postal",
     "country": "Pays",
     "continue": "Continuer →",
+    "continue_to_payment": "Continuer vers le paiement →",
     "required_fields": "Veuillez remplir tous les champs obligatoires.",
-    "order_failed": "La commande a échoué. Veuillez réessayer."
+    "order_failed": "La commande a échoué. Veuillez réessayer.",
+    "step_preview": "Aperçu",
+    "step_address": "Adresse",
+    "step_payment": "Paiement",
+    "preview_title": "Aperçu de votre livre",
+    "preview_cta": "Commander ce livre →",
+    "preview_back": "Retour au profil",
+    "preview_chapter": "Chapitre",
+    "preview_interior": "Aperçu des pages intérieures",
+    "preview_photos_page": "Moments en photos",
+    "book_cover_title": "La vie de {name}",
+    "book_cover_label": "Un livre Everypaw",
+    "memorial_cover_title": "À la mémoire de {name}",
+    "summary_chapters": "{n} chapitres",
+    "summary_photos": "{n} photos",
+    "summary_months": "{n} mois d'histoires",
+    "estimated_shipping": "Livraison estimée",
+    "price_book": "Livre",
+    "price_total_est": "Total estimé"
   },
   "memorial": {
     "mark_passed": "Enregistrer le décès…",

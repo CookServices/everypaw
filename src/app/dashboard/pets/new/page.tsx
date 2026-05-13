@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Species } from "@/types";
-import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 
 export const dynamic = "force-dynamic";
@@ -108,11 +107,6 @@ export default function NewPetPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <nav style={{ background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "1rem 2rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-        <Link href="/dashboard" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>{t.dashboard.back_pet}</Link>
-        <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F" }}>{t.pet.add_title}</span>
-      </nav>
-
       <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", boxShadow: "0 4px 40px rgba(61,43,31,.06)" }}>
 
