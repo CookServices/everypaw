@@ -238,7 +238,26 @@
     "cta_title_2": ".",
     "cta_desc": "Chaque jour sans journal est une histoire perdue pour toujours. Commencez à capturer les moments qui comptent — avant qu'ils ne s'effacent.",
     "cta_button": "Commencez l'histoire de votre animal →",
-    "footer_copy": "© 2025 Everypaw · Fait avec amour pour les maîtres d'animaux"
+    "footer_copy": "© 2025 Everypaw · Fait avec amour pour les maîtres d'animaux",
+    "legal_cgv": "Conditions générales de vente",
+    "legal_privacy": "Politique de confidentialité",
+    "legal_mentions": "Mentions légales",
+    "legal_contact": "Contact"
+  },
+  "faq": {
+    "title": "Questions fréquentes",
+    "q1": "Comment fonctionne l'IA ?",
+    "a1": "Chaque mois, notre IA lit toutes vos entrées de journal et les tisse en un chapitre narratif chaleureux — rédigé à la première personne, comme si votre animal racontait sa propre vie. Plus vous ajoutez de moments, plus l'histoire devient riche et personnelle.",
+    "q2": "Que se passe-t-il si mon animal nous quitte ?",
+    "a2": "Tous vos souvenirs restent accessibles pour toujours. Vous pouvez créer une page mémorial dédiée, partager son profil avec vos proches, et commander un livre relié commémoratif qui rassemble chaque histoire et chaque moment de sa vie — un objet précieux à conserver.",
+    "q3": "Puis-je personnaliser le livre ?",
+    "a3": "Le livre est généré automatiquement à partir de vos histoires et photos, avec le nom de votre animal et les années couvertes sur la couverture. Des options de personnalisation avancées — page de dédicace, titre personnalisé, couleur de couverture — sont en cours de développement.",
+    "q4": "Quelle est la qualité d'impression ?",
+    "a4": "Nos livres sont imprimés sur papier couché satiné 170 g/m² avec une couverture rigide et une plastification mate. Format 20×20 cm, reliure parfaite. Qualité professionnelle, comparable aux meilleurs livres photo des studios spécialisés.",
+    "q5": "Le plan gratuit est-il vraiment gratuit ?",
+    "a5": "Oui, complètement et sans conditions. Vous pouvez créer un profil d'animal, ajouter jusqu'à 10 entrées de journal et générer un chapitre d'histoire IA — entièrement gratuit. Aucune carte bancaire requise pour commencer.",
+    "q6": "Comment annuler mon abonnement ?",
+    "a6": "Depuis les paramètres de votre compte, en un clic. Sans engagement, sans frais d'annulation. Vous conservez l'accès à toutes vos histoires, entrées et données même après l'annulation."
   },
   "gift": {
     "title": "Offrez le cadeau des souvenirs",

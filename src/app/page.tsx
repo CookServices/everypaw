@@ -1,12 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useLocale } from "@/hooks/useLocale";
 
 export const dynamic = "force-dynamic";
 
 export default function Home() {
   const { t } = useLocale();
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [demoSlide, setDemoSlide] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setDemoSlide(s => (s + 1) % 3), 5000);
+    return () => clearInterval(id);
+  }, []);
 
   const features = [
     ["📝", t.landing.f1_title, t.landing.f1_desc],
@@ -77,79 +85,218 @@ export default function Home() {
       </nav>
 
       {/* HERO */}
+      <style>{`
+        @keyframes ep-typing {
+          from { width: 0 }
+          to { width: 100% }
+        }
+        @keyframes ep-blink {
+          0%, 100% { opacity: 1 }
+          50% { opacity: 0 }
+        }
+        @keyframes ep-progress {
+          from { width: 0% }
+          to { width: 100% }
+        }
+        @keyframes ep-fade-up {
+          from { opacity: 0; transform: translateY(10px) }
+          to { opacity: 1; transform: translateY(0) }
+        }
+        @keyframes ep-fade-in {
+          from { opacity: 0 }
+          to { opacity: 1 }
+        }
+        @media (max-width: 860px) {
+          .ep-hero-inner { flex-direction: column !important; text-align: center !important; }
+          .ep-hero-text { align-items: center !important; text-align: center !important; }
+          .ep-hero-demo { margin-top: 3rem; }
+        }
+      `}</style>
       <section style={{
         minHeight: "100vh",
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-        padding: "6rem 2rem 3.5rem", textAlign: "center",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "7rem 2rem 4rem",
         background: "radial-gradient(ellipse 80% 60% at 50% 30%, rgba(200,129,58,.12) 0%, transparent 70%)",
       }}>
-        <span style={{
-          display: "inline-flex", alignItems: "center", gap: ".5rem",
-          background: "rgba(200,129,58,.12)", border: "1px solid rgba(200,129,58,.25)",
-          color: "#C8813A", fontSize: ".75rem", fontWeight: 500, letterSpacing: ".06em", textTransform: "uppercase",
-          padding: ".35rem .9rem", borderRadius: "100px", marginBottom: "1.25rem",
-        }}>{t.landing.early_access}</span>
+        <div className="ep-hero-inner" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4rem", maxWidth: 1100, width: "100%", flexWrap: "wrap" }}>
 
-        <h1 style={{
-          fontFamily: "Georgia, serif", fontSize: "clamp(2.25rem, 4.5vw, 4.5rem)",
-          fontWeight: 600, lineHeight: 1.1, color: "#3D2B1F", maxWidth: 820,
-          margin: "0 0 1.25rem",
-        }}>
-          {t.landing.hero_title_1}<br />
-          <em style={{ color: "#C8813A", fontStyle: "italic" }}>{t.landing.hero_title_em}</em> {t.landing.hero_title_2}
-        </h1>
+          {/* LEFT — copy */}
+          <div className="ep-hero-text" style={{ flex: "1 1 380px", maxWidth: 540, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 0 }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: ".5rem",
+              background: "rgba(200,129,58,.12)", border: "1px solid rgba(200,129,58,.25)",
+              color: "#C8813A", fontSize: ".75rem", fontWeight: 500, letterSpacing: ".06em", textTransform: "uppercase",
+              padding: ".35rem .9rem", borderRadius: "100px", marginBottom: "1.25rem",
+            }}>{t.landing.early_access}</span>
 
-        <p style={{ fontSize: "1rem", fontWeight: 300, color: "#7A5C44", maxWidth: 480, lineHeight: 1.7, margin: "0 auto 2rem" }}>
-          {t.landing.hero_desc}
-        </p>
+            <h1 style={{
+              fontFamily: "Georgia, serif", fontSize: "clamp(2.1rem, 4vw, 4rem)",
+              fontWeight: 600, lineHeight: 1.1, color: "#3D2B1F",
+              margin: "0 0 1.25rem",
+            }}>
+              {t.landing.hero_title_1}<br />
+              <em style={{ color: "#C8813A", fontStyle: "italic" }}>{t.landing.hero_title_em}</em> {t.landing.hero_title_2}
+            </h1>
 
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
-          <Link href="/auth/signup" style={{
-            background: "#C8813A", color: "#FDFAF5",
-            padding: ".875rem 2.25rem", borderRadius: "100px",
-            fontSize: "1rem", fontWeight: 500, textDecoration: "none",
-            boxShadow: "0 4px 20px rgba(200,129,58,.35)",
-          }}>
-            {t.landing.hero_cta}
-          </Link>
-          <Link href="/auth/login" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none", opacity: .7 }}>
-            {t.landing.hero_signin}
-          </Link>
-        </div>
+            <p style={{ fontSize: "1rem", fontWeight: 300, color: "#7A5C44", maxWidth: 440, lineHeight: 1.7, margin: "0 0 2rem" }}>
+              {t.landing.hero_desc}
+            </p>
 
-        <p style={{ fontSize: ".75rem", color: "#7A5C44", opacity: .6, marginTop: "1.25rem" }}>
-          {t.landing.hero_note}
-        </p>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "1rem" }}>
+              <Link href="/auth/signup" style={{
+                background: "#C8813A", color: "#FDFAF5",
+                padding: ".875rem 2.25rem", borderRadius: "100px",
+                fontSize: "1rem", fontWeight: 500, textDecoration: "none",
+                boxShadow: "0 4px 20px rgba(200,129,58,.35)",
+              }}>
+                {t.landing.hero_cta}
+              </Link>
+              <Link href="/auth/login" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none", opacity: .7 }}>
+                {t.landing.hero_signin}
+              </Link>
+            </div>
 
-        {/* Book mock */}
-        <div style={{ marginTop: "4rem", position: "relative", display: "inline-block" }}>
-          <div style={{
-            width: 260, height: 340,
-            background: "linear-gradient(135deg, #5C3A1E 0%, #3D2B1F 100%)",
-            borderRadius: "4px 16px 16px 4px",
-            boxShadow: "-6px 0 0 rgba(0,0,0,.25), 8px 20px 60px rgba(61,43,31,.35)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            position: "relative", overflow: "hidden",
-          }}>
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 16, background: "rgba(0,0,0,.3)" }} />
-            <div style={{ textAlign: "center", padding: "2rem" }}>
-              <div style={{ fontSize: "2.5rem", marginBottom: ".75rem" }}>🐾</div>
-              <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "1.1rem", color: "#F7C27A", lineHeight: 1.3, marginBottom: ".5rem" }}>
-                The Life of Luna<br />2013 – 2025
-              </div>
-              <div style={{ fontSize: ".7rem", color: "rgba(247,242,234,.5)", letterSpacing: ".08em", textTransform: "uppercase" }}>
-                {t.landing.book_label}
+            <p style={{ fontSize: ".75rem", color: "#7A5C44", opacity: .6, marginTop: "1.25rem" }}>
+              {t.landing.hero_note}
+            </p>
+          </div>
+
+          {/* RIGHT — product demo */}
+          <div className="ep-hero-demo" style={{ flex: "0 1 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+            {/* Phone frame */}
+            <div style={{
+              width: 280, height: 520,
+              background: "#FDFAF5",
+              borderRadius: 36,
+              border: "8px solid #2a1d12",
+              boxShadow: "0 40px 80px rgba(61,43,31,.28), 0 0 0 1px rgba(61,43,31,.08), inset 0 0 0 1px rgba(247,242,234,.5)",
+              overflow: "hidden",
+              position: "relative",
+              userSelect: "none",
+            }}>
+              {/* Notch */}
+              <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 72, height: 22, background: "#2a1d12", borderRadius: "0 0 14px 14px", zIndex: 10 }} />
+
+              <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                {/* Status bar */}
+                <div style={{ height: 30, background: "#F7F2EA", display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "0 16px 5px" }}>
+                  <span style={{ fontSize: 10, color: "#3D2B1F", fontWeight: 600 }}>9:41</span>
+                  <span style={{ fontSize: 9, color: "#3D2B1F", letterSpacing: 1 }}>●●●</span>
+                </div>
+
+                {/* App nav bar */}
+                <div style={{ background: "#F7F2EA", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "7px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                  <div>
+                    <div style={{ fontFamily: "Georgia, serif", fontSize: 12.5, fontWeight: 600, color: "#3D2B1F", lineHeight: 1 }}>
+                      {demoSlide === 0 ? "Max · Journal" : demoSlide === 1 ? "Max · Histoire IA" : "Max · Livre 2025"}
+                    </div>
+                    <div style={{ fontSize: 9, color: "#7A5C44", marginTop: 2, fontWeight: 300 }}>Golden Retriever · 2 ans</div>
+                  </div>
+                  <div style={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg,#C8813A,#5C3A1E)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🐾</div>
+                </div>
+
+                {/* Slide area */}
+                <div style={{ flex: 1, position: "relative", overflow: "hidden", background: "#F7F2EA" }}>
+
+                  {/* Slide 0 — Journal */}
+                  <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 0 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                    {[
+                      { icon: "🚶", text: "Balade au parc — 2h de course !", when: "il y a 2 jours" },
+                      { icon: "🍽️", text: "Refusé ses croquettes... encore.", when: "hier" },
+                    ].map((e, i) => (
+                      <div key={i} style={{ background: "#FDFAF5", borderRadius: 12, padding: "9px 11px", border: "1px solid rgba(61,43,31,.07)", animation: demoSlide === 0 ? `ep-fade-up .4s ease ${i * .12}s both` : "none" }}>
+                        <div style={{ fontSize: 10.5, color: "#3D2B1F", display: "flex", gap: 6, alignItems: "flex-start" }}>
+                          <span style={{ flexShrink: 0 }}>{e.icon}</span>
+                          <span style={{ lineHeight: 1.4 }}>{e.text}</span>
+                        </div>
+                        <div style={{ fontSize: 9, color: "#7A5C44", marginTop: 4, opacity: .55 }}>{e.when}</div>
+                      </div>
+                    ))}
+
+                    {/* Typing entry */}
+                    {demoSlide === 0 && (
+                      <div style={{ background: "#FDFAF5", borderRadius: 12, padding: "9px 11px", border: "1.5px solid rgba(200,129,58,.45)", animation: "ep-fade-up .4s ease .25s both" }}>
+                        <div style={{ fontSize: 10, color: "#7A5C44", fontWeight: 300, marginBottom: 4 }}>Aujourd'hui</div>
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                          <span style={{ fontSize: 10.5, color: "#3D2B1F", overflow: "hidden", whiteSpace: "nowrap", display: "inline-block", animation: "ep-typing 2.2s steps(30, end) .8s both" }}>
+                            Premier bain — pas content ! 🛁
+                          </span>
+                          <span style={{ width: 1.5, height: 12, background: "#C8813A", display: "inline-block", animation: "ep-blink 1s step-end infinite", marginLeft: 1, flexShrink: 0 }} />
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ marginTop: "auto", background: "#C8813A", borderRadius: 100, padding: "8px 0", textAlign: "center", animation: demoSlide === 0 ? "ep-fade-up .4s ease .4s both" : "none" }}>
+                      <span style={{ fontSize: 11, color: "#FDFAF5", fontWeight: 500 }}>+ Ajouter un moment</span>
+                    </div>
+                  </div>
+
+                  {/* Slide 1 — AI story generation */}
+                  <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 1 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ animation: demoSlide === 1 ? "ep-fade-up .4s ease both" : "none" }}>
+                      <div style={{ fontSize: 11, color: "#C8813A", fontWeight: 500, marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+                        <span>✨</span> Génération en cours...
+                      </div>
+                      <div style={{ background: "rgba(200,129,58,.15)", borderRadius: 100, height: 4, overflow: "hidden" }}>
+                        <div style={{ height: "100%", background: "linear-gradient(90deg,#C8813A,#F7C27A)", borderRadius: 100, animation: demoSlide === 1 ? "ep-progress 2.8s ease .3s both" : "none" }} />
+                      </div>
+                    </div>
+
+                    <div style={{ flex: 1, background: "#FDFAF5", borderRadius: 14, padding: 12, border: "1px solid rgba(61,43,31,.07)", animation: demoSlide === 1 ? "ep-fade-in .6s ease 2s both" : "none", opacity: 0 }}>
+                      <div style={{ fontSize: 9, color: "#C8813A", fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 8 }}>Chapitre 3 · Novembre 2025</div>
+                      <p style={{ fontFamily: "Georgia, serif", fontSize: 10.5, color: "#3D2B1F", lineHeight: 1.75, fontStyle: "italic", margin: 0 }}>
+                        "Ce mois-ci a été particulièrement magique. Ma première balade sous les feuilles d'automne, le nez plongé dans chaque odeur nouvelle...
+                      </p>
+                      <p style={{ fontFamily: "Georgia, serif", fontSize: 10.5, color: "#3D2B1F", lineHeight: 1.75, fontStyle: "italic", margin: "8px 0 0", opacity: .75 }}>
+                        Et ce fameux bain dont je n'avais absolument pas besoin, selon moi."
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Slide 2 — Book preview */}
+                  <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 2 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+                    <div style={{
+                      width: 120, height: 160,
+                      background: "linear-gradient(135deg, #5C3A1E 0%, #3D2B1F 100%)",
+                      borderRadius: "3px 10px 10px 3px",
+                      boxShadow: "-4px 0 0 rgba(0,0,0,.3), 6px 14px 40px rgba(61,43,31,.4)",
+                      position: "relative", overflow: "hidden",
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 14,
+                      animation: demoSlide === 2 ? "ep-fade-up .5s ease both" : "none",
+                      flexShrink: 0,
+                    }}>
+                      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 9, background: "rgba(0,0,0,.3)" }} />
+                      <div style={{ fontSize: 22, marginBottom: 6 }}>🐾</div>
+                      <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 9, color: "#F7C27A", textAlign: "center", lineHeight: 1.4 }}>La Vie de Max<br />2023 – 2025</div>
+                      <div style={{ fontSize: 7, color: "rgba(247,242,234,.35)", marginTop: 5, letterSpacing: ".08em", textTransform: "uppercase" }}>Everypaw</div>
+                    </div>
+
+                    <div style={{ textAlign: "center", animation: demoSlide === 2 ? "ep-fade-up .5s ease .15s both" : "none" }}>
+                      <div style={{ fontFamily: "Georgia, serif", fontSize: 12, fontWeight: 600, color: "#3D2B1F", marginBottom: 3 }}>Aperçu de votre livre</div>
+                      <div style={{ fontSize: 9.5, color: "#7A5C44", fontWeight: 300 }}>Imprimé & expédié chaque année</div>
+                    </div>
+
+                    <div style={{ background: "rgba(200,129,58,.1)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 100, padding: "7px 16px", animation: demoSlide === 2 ? "ep-fade-up .5s ease .3s both" : "none" }}>
+                      <span style={{ fontSize: 10.5, color: "#C8813A", fontWeight: 500 }}>📖 Inclus avec Premium</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dots */}
+                <div style={{ height: 38, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: "#F7F2EA", borderTop: "1px solid rgba(61,43,31,.06)", flexShrink: 0 }}>
+                  {[0, 1, 2].map(i => (
+                    <button key={i} onClick={() => setDemoSlide(i)} style={{ width: i === demoSlide ? 18 : 6, height: 6, borderRadius: 3, background: i === demoSlide ? "#C8813A" : "rgba(61,43,31,.18)", transition: "all .3s", border: "none", padding: 0, cursor: "pointer" }} />
+                  ))}
+                </div>
               </div>
             </div>
-            <div style={{
-              position: "absolute", top: -12, right: -12,
-              width: 64, height: 64, borderRadius: "50%",
-              background: "#C8813A", color: "#FDFAF5",
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              fontSize: ".6rem", fontWeight: 500, textAlign: "center", lineHeight: 1.2,
-              transform: "rotate(12deg)",
-            }}>{t.landing.printed_hardcover}</div>
+
+            {/* Label below phone */}
+            <p style={{ fontSize: ".72rem", color: "#7A5C44", opacity: .5, fontWeight: 300, textAlign: "center", margin: 0 }}>
+              {demoSlide === 0 ? "📝 Journal de vie" : demoSlide === 1 ? "✨ Histoire générée par l'IA" : "📖 Aperçu du livre annuel"}
+            </p>
           </div>
+
         </div>
       </section>
 
@@ -298,13 +445,82 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section style={{ padding: "6rem 2rem", background: "#F7F2EA" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.6rem, 3vw, 2.25rem)", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>
+            {t.faq.title}
+          </h2>
+        </div>
+
+        {([
+          [t.faq.q1, t.faq.a1],
+          [t.faq.q2, t.faq.a2],
+          [t.faq.q3, t.faq.a3],
+          [t.faq.q4, t.faq.a4],
+          [t.faq.q5, t.faq.a5],
+          [t.faq.q6, t.faq.a6],
+        ] as [string, string][]).map(([q, a], i) => (
+          <div
+            key={i}
+            style={{ borderTop: i === 0 ? "1px solid rgba(61,43,31,.12)" : "none", borderBottom: "1px solid rgba(61,43,31,.12)" }}
+          >
+            <button
+              onClick={() => setOpenFaq(openFaq === i ? null : i)}
+              style={{
+                width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
+                padding: "1.25rem 0", background: "none", border: "none", cursor: "pointer",
+                textAlign: "left", gap: "1rem",
+              }}
+            >
+              <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 500, color: "#3D2B1F", lineHeight: 1.4 }}>
+                {q}
+              </span>
+              <span style={{ fontSize: "1.1rem", color: "#C8813A", flexShrink: 0, transition: "transform .2s", transform: openFaq === i ? "rotate(45deg)" : "rotate(0deg)" }}>
+                +
+              </span>
+            </button>
+            <div style={{
+              overflow: "hidden",
+              maxHeight: openFaq === i ? 400 : 0,
+              transition: "max-height .3s ease",
+            }}>
+              <p style={{ fontSize: ".95rem", color: "#7A5C44", lineHeight: 1.75, paddingBottom: "1.25rem", margin: 0, fontWeight: 300 }}>
+                {a}
+              </p>
+            </div>
+          </div>
+        ))}
+        </div>
+      </section>
+
       {/* FOOTER */}
-      <footer style={{ padding: "2rem 3rem", background: "#3D2B1F", borderTop: "1px solid rgba(247,242,234,.08)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
-        <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", color: "rgba(247,242,234,.6)", display: "flex", alignItems: "center", gap: ".4rem" }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "rgba(247,242,234,.3)", display: "inline-block" }} />
-          Everypaw
-        </span>
-        <p style={{ fontSize: ".75rem", color: "rgba(247,242,234,.3)" }}>{t.landing.footer_copy}</p>
+      <footer style={{ padding: "2rem 3rem", background: "#3D2B1F", borderTop: "1px solid rgba(247,242,234,.08)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem", marginBottom: "1.25rem" }}>
+          <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", color: "rgba(247,242,234,.6)", display: "flex", alignItems: "center", gap: ".4rem" }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "rgba(247,242,234,.3)", display: "inline-block" }} />
+            Everypaw
+          </span>
+          <p style={{ fontSize: ".75rem", color: "rgba(247,242,234,.3)", margin: 0 }}>{t.landing.footer_copy}</p>
+        </div>
+        <div style={{ borderTop: "1px solid rgba(247,242,234,.06)", paddingTop: "1.25rem", display: "flex", flexWrap: "wrap", gap: ".375rem .1rem" }}>
+          {[
+            { label: t.landing.legal_cgv, href: "/legal/cgv" },
+            { label: t.landing.legal_privacy, href: "/legal/confidentialite" },
+            { label: t.landing.legal_mentions, href: "/legal/mentions" },
+            { label: t.landing.legal_contact, href: "/contact" },
+          ].map(({ label, href }, i, arr) => (
+            <span key={href} style={{ display: "flex", alignItems: "center", gap: ".1rem" }}>
+              <Link href={href} style={{ fontSize: ".72rem", color: "rgba(247,242,234,.28)", textDecoration: "none", fontWeight: 300, whiteSpace: "nowrap", padding: "0 .5rem" }}>
+                {label}
+              </Link>
+              {i < arr.length - 1 && (
+                <span style={{ fontSize: ".72rem", color: "rgba(247,242,234,.12)", userSelect: "none" }}>·</span>
+              )}
+            </span>
+          ))}
+        </div>
       </footer>
     </>
   );

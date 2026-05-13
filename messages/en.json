@@ -238,7 +238,26 @@
     "cta_title_2": "right now.",
     "cta_desc": "Every day without a journal is a story lost forever. Start capturing the moments that matter — before they fade.",
     "cta_button": "Start your pet's story →",
-    "footer_copy": "© 2025 Everypaw · Built with love for pet parents"
+    "footer_copy": "© 2025 Everypaw · Built with love for pet parents",
+    "legal_cgv": "Terms of sale",
+    "legal_privacy": "Privacy policy",
+    "legal_mentions": "Legal notices",
+    "legal_contact": "Contact"
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "q1": "How does the AI work?",
+    "a1": "Each month, our AI reads all your journal entries and weaves them into a warm, flowing narrative chapter — written in first person, as if your pet is narrating their own life. The more moments you add, the richer and more personal the story becomes.",
+    "q2": "What happens if my pet passes away?",
+    "a2": "All your memories stay accessible forever. You can create a dedicated memorial page, share their profile with loved ones, and order a commemorative hardcover book that gathers every story and moment from their life — a keepsake to hold onto.",
+    "q3": "Can I customise the book?",
+    "a3": "The book is automatically generated from your stories and photos, with your pet's name and the years covered on the cover. Advanced customisation options — dedication page, custom title, cover colour — are currently in development.",
+    "q4": "What is the print quality like?",
+    "a4": "Our books are printed on 170gsm coated silk paper with a rigid hardcover and matt lamination. 20×20 cm format, perfect-bound. Professional quality, comparable to premium photo books from specialist studios.",
+    "q5": "Is the free plan really free?",
+    "a5": "Yes, completely and with no conditions. You can create a pet profile, add up to 10 journal entries, and generate one AI story chapter — all for free. No credit card required to get started.",
+    "q6": "How do I cancel my subscription?",
+    "a6": "From your account settings, in one click. No commitment, no cancellation fee. You keep full access to all your stories, entries, and account data even after cancelling."
   },
   "gift": {
     "title": "Give the gift of memories",
