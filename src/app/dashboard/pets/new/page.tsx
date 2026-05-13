@@ -8,12 +8,12 @@ import { useLocale } from "@/hooks/useLocale";
 
 export const dynamic = "force-dynamic";
 
-const SPECIES: { value: Species; label: string; emoji: string }[] = [
-  { value: "dog", label: "Dog", emoji: "🐶" },
-  { value: "cat", label: "Cat", emoji: "🐱" },
-  { value: "rabbit", label: "Rabbit", emoji: "🐰" },
-  { value: "bird", label: "Bird", emoji: "🐦" },
-  { value: "other", label: "Other", emoji: "🐾" },
+const SPECIES_VALUES: { value: Species; emoji: string }[] = [
+  { value: "dog", emoji: "🐶" },
+  { value: "cat", emoji: "🐱" },
+  { value: "rabbit", emoji: "🐰" },
+  { value: "bird", emoji: "🐦" },
+  { value: "other", emoji: "🐾" },
 ];
 
 async function compressImage(file: File): Promise<Blob> {
@@ -50,6 +50,11 @@ export default function NewPetPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const SPECIES = SPECIES_VALUES.map(s => ({
+    ...s,
+    label: t.pet[`species_${s.value}` as keyof typeof t.pet] as string,
+  }));
 
   const selectedSpeciesEmoji = SPECIES.find(s => s.value === species)?.emoji ?? "🐾";
 
@@ -104,7 +109,7 @@ export default function NewPetPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
       <nav style={{ background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "1rem 2rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-        <Link href="/dashboard" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>← {t.dashboard.title}</Link>
+        <Link href="/dashboard" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>{t.dashboard.back_pet}</Link>
         <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F" }}>{t.pet.add_title}</span>
       </nav>
 
@@ -137,7 +142,7 @@ export default function NewPetPage() {
               </div>
             </button>
             <span style={{ marginTop: ".6rem", fontSize: ".75rem", color: "#7A5C44", opacity: .7 }}>
-              {photoPreview ? "Change photo" : "Add a photo"}
+              {photoPreview ? t.pet.photo_change : t.pet.photo_add}
             </span>
           </div>
 
