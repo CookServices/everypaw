@@ -374,10 +374,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      <div style={{ padding: "1rem 1.5rem .5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "#3D2B1F" }}>
-          {SPECIES_EMOJI[pet.species]} {pet.name}
-        </span>
+      <div style={{ padding: "1rem 1.5rem .5rem", display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
         <button
           onClick={() => {
             navigator.clipboard.writeText(`https://everypaw.app/pets/${id}`);
