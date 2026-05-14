@@ -1,13 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
-// ── SVG icons (20×20, stroke-based, Tabler-style) ──────────────────────────
+const SPECIES_EMOJI: Record<string, string> = {
+  dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾",
+};
+
+const LAST_PET_KEY = "lastPetId";
+
+// ── SVG icons ────────────────────────────────────────────────────────────────
 
 function IconHome() {
   return (
@@ -63,71 +69,211 @@ function IconLogout() {
   );
 }
 
-// ── Main component ──────────────────────────────────────────────────────────
+function IconChevron({ open }: { open: boolean }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      style={{ transition: "transform .15s", transform: open ? "rotate(180deg)" : "none" }}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+// ── Pet selector ─────────────────────────────────────────────────────────────
+
+interface PetOption { id: string; name: string; species: string; }
+
+function PetSelector({
+  pets,
+  selectedId,
+  onSelect,
+}: {
+  pets: PetOption[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selected = pets.find(p => p.id === selectedId) ?? pets[0] ?? null;
+  const multi = pets.length > 1;
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  if (!selected) return null;
+
+  const emoji = SPECIES_EMOJI[selected.species] ?? "🐾";
+
+  return (
+    <div ref={ref} style={{ position: "relative", padding: ".625rem 1rem", borderBottom: "1px solid rgba(61,43,31,.06)" }}>
+      <button
+        onClick={() => multi && setOpen(v => !v)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: ".5rem",
+          background: open ? "rgba(61,43,31,.04)" : "transparent",
+          border: "none", borderRadius: 8, padding: ".4rem .5rem",
+          cursor: multi ? "pointer" : "default", fontFamily: "inherit",
+          transition: "background .12s",
+        }}
+        onMouseEnter={e => { if (multi) (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)"; }}
+        onMouseLeave={e => { if (!open) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+      >
+        <span style={{ fontSize: "1.1rem", lineHeight: 1, flexShrink: 0 }}>{emoji}</span>
+        <span style={{ flex: 1, textAlign: "left", fontSize: ".85rem", fontWeight: 500, color: "#3D2B1F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {selected.name}
+        </span>
+        {multi && <IconChevron open={open} />}
+      </button>
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% - .25rem)", left: ".75rem", right: ".75rem",
+          background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)",
+          borderRadius: 12, boxShadow: "0 8px 24px rgba(61,43,31,.12)",
+          zIndex: 60, overflow: "hidden", padding: ".35rem",
+        }}>
+          {pets.map(pet => {
+            const isActive = pet.id === selectedId;
+            return (
+              <button
+                key={pet.id}
+                onClick={() => { onSelect(pet.id); setOpen(false); }}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: ".5rem",
+                  padding: ".5rem .625rem", border: "none", borderRadius: 8,
+                  background: isActive ? "rgba(200,129,58,.1)" : "transparent",
+                  color: isActive ? "#C8813A" : "#3D2B1F",
+                  fontFamily: "inherit", fontSize: ".85rem", fontWeight: isActive ? 500 : 400,
+                  cursor: "pointer", textAlign: "left",
+                  transition: "background .1s",
+                }}
+                onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)"; }}
+                onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              >
+                <span style={{ fontSize: "1rem", lineHeight: 1 }}>{SPECIES_EMOJI[pet.species] ?? "🐾"}</span>
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pet.name}</span>
+                {isActive && <span style={{ fontSize: ".7rem", color: "#C8813A" }}>✓</span>}
+              </button>
+            );
+          })}
+
+          <div style={{ borderTop: "1px solid rgba(61,43,31,.06)", marginTop: ".35rem", paddingTop: ".35rem" }}>
+            <Link
+              href="/dashboard/pets/new"
+              onClick={() => setOpen(false)}
+              style={{
+                display: "flex", alignItems: "center", gap: ".5rem",
+                padding: ".5rem .625rem", borderRadius: 8,
+                color: "#7A5C44", fontSize: ".8rem", textDecoration: "none",
+                transition: "background .1s",
+              }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)"}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
+            >
+              <span style={{ fontSize: ".9rem" }}>+</span>
+              {/* small add label */}
+              <span>Ajouter un animal</span>
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function DashboardNav() {
   const pathname = usePathname();
   const params = useParams();
+  const router = useRouter();
   const { locale } = useLocale();
-  const petId = params?.id as string | undefined;
-  const [firstPetId, setFirstPetId] = useState<string | null>(null);
 
+  const petId = params?.id as string | undefined;
+
+  const [pets, setPets] = useState<PetOption[]>([]);
+  const [resolvedPetId, setResolvedPetId] = useState<string | null>(null);
+
+  // ── Fetch all pets once ────────────────────────────────────────────────────
   useEffect(() => {
-    if (petId) return;
     const supabase = createClient();
-    supabase.from("pets").select("id").order("created_at", { ascending: true }).limit(1).single()
-      .then(({ data }) => { if (data) setFirstPetId(data.id); });
+    supabase
+      .from("pets")
+      .select("id, name, species")
+      .order("created_at", { ascending: true })
+      .then(({ data }) => {
+        if (data && data.length > 0) setPets(data as PetOption[]);
+      });
+  }, []);
+
+  // ── Sync resolvedPetId with URL param + localStorage ──────────────────────
+  useEffect(() => {
+    if (petId) {
+      // On a pet page: URL is authoritative → persist to localStorage
+      setResolvedPetId(petId);
+      try { localStorage.setItem(LAST_PET_KEY, petId); } catch {}
+    } else {
+      // No ID in URL: try localStorage first, then first pet from DB
+      try {
+        const stored = localStorage.getItem(LAST_PET_KEY);
+        if (stored) { setResolvedPetId(stored); return; }
+      } catch {}
+      // localStorage empty or unavailable — wait for pets to load
+    }
   }, [petId]);
 
-  const resolvedPetId = petId || firstPetId;
+  // Once pets are loaded, fill resolvedPetId if still null
+  useEffect(() => {
+    if (resolvedPetId) return;
+    if (pets.length === 0) return;
+    const stored = (() => { try { return localStorage.getItem(LAST_PET_KEY); } catch { return null; } })();
+    const candidate = stored && pets.find(p => p.id === stored) ? stored : pets[0].id;
+    setResolvedPetId(candidate);
+  }, [pets, resolvedPetId]);
 
-  const isPetPage = pathname.includes("/dashboard/pets/") && !pathname.includes("/order") && !pathname.includes("/new");
-  const isOrderPage = pathname.includes("/order");
+  // ── Handle pet selection from dropdown ────────────────────────────────────
+  const handleSelectPet = (newId: string) => {
+    setResolvedPetId(newId);
+    try { localStorage.setItem(LAST_PET_KEY, newId); } catch {}
+
+    // Preserve current tab when switching pets
+    const tabMatch = pathname.match(/\?tab=(\w+)/);
+    const currentSearch = typeof window !== "undefined" ? window.location.search : "";
+    const tabParam = new URLSearchParams(currentSearch).get("tab");
+
+    if (pathname.includes("/order")) {
+      router.push(`/dashboard/pets/${newId}/order`);
+    } else if (tabParam === "stories" || tabParam === "milestones") {
+      router.push(`/dashboard/pets/${newId}?tab=${tabParam}`);
+    } else {
+      router.push(`/dashboard/pets/${newId}?tab=journal`);
+    }
+  };
+
+  // ── Active state helpers ───────────────────────────────────────────────────
+  const isPetPage    = pathname.includes("/dashboard/pets/") && !pathname.includes("/order") && !pathname.includes("/new") && !pathname.includes("/edit");
+  const isOrderPage  = pathname.includes("/order");
   const isSettingsPage = pathname.startsWith("/dashboard/settings");
-  const isDashboard = !isPetPage && !isOrderPage && !isSettingsPage;
+  const isDashboard  = !isPetPage && !isOrderPage && !isSettingsPage;
 
-  const petLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal` : "/dashboard";
+  const petLink    = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal`  : "/dashboard";
   const storiesLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=stories` : "/dashboard";
-  const orderLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/order` : "/dashboard";
+  const orderLink  = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/order`         : "/dashboard";
 
   const isFR = locale === "fr";
 
   const items = [
-    {
-      href: "/dashboard",
-      label: isFR ? "Accueil" : "Home",
-      shortLabel: isFR ? "Accueil" : "Home",
-      icon: <IconHome />,
-      active: isDashboard,
-    },
-    {
-      href: petLink,
-      label: "Journal",
-      shortLabel: "Journal",
-      icon: <IconBook />,
-      active: isPetPage && !pathname.includes("?tab=stories") && !pathname.includes("?tab=milestones"),
-    },
-    {
-      href: storiesLink,
-      label: isFR ? "Histoires" : "Stories",
-      shortLabel: isFR ? "Histoires" : "Stories",
-      icon: <IconSparkles />,
-      active: false,
-    },
-    {
-      href: orderLink,
-      label: isFR ? "Commander" : "Order",
-      shortLabel: isFR ? "Livre" : "Book",
-      icon: <IconPackage />,
-      active: isOrderPage,
-    },
-    {
-      href: "/dashboard/settings",
-      label: isFR ? "Paramètres" : "Settings",
-      shortLabel: isFR ? "Params" : "Settings",
-      icon: <IconSettings />,
-      active: isSettingsPage,
-    },
+    { href: "/dashboard",  label: isFR ? "Accueil" : "Home",     shortLabel: isFR ? "Accueil" : "Home",     icon: <IconHome />,     active: isDashboard },
+    { href: petLink,       label: "Journal",                       shortLabel: "Journal",                      icon: <IconBook />,     active: isPetPage },
+    { href: storiesLink,   label: isFR ? "Histoires" : "Stories", shortLabel: isFR ? "Histoires" : "Stories", icon: <IconSparkles />, active: false },
+    { href: orderLink,     label: isFR ? "Commander" : "Order",   shortLabel: isFR ? "Livre" : "Book",        icon: <IconPackage />,  active: isOrderPage },
+    { href: "/dashboard/settings", label: isFR ? "Paramètres" : "Settings", shortLabel: isFR ? "Params" : "Settings", icon: <IconSettings />, active: isSettingsPage },
   ];
 
   const handleLogout = async () => {
@@ -136,19 +282,22 @@ export default function DashboardNav() {
     window.location.href = "/";
   };
 
-  // ── Sidebar (desktop ≥768px) ─────────────────────────────────────────────
+  // ── Sidebar (desktop ≥768px) ──────────────────────────────────────────────
 
   const Sidebar = (
     <aside className="ep-sidebar" style={{
       width: 220, minHeight: "100vh", position: "fixed", left: 0, top: 0, bottom: 0,
       background: "#FDFAF5", borderRight: "1px solid rgba(61,43,31,.08)",
-      display: "flex", flexDirection: "column", zIndex: 40, padding: "0",
+      display: "flex", flexDirection: "column", zIndex: 40,
     }}>
       {/* Logo */}
       <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: ".5rem", padding: "1.5rem 1.25rem 1.25rem", textDecoration: "none", borderBottom: "1px solid rgba(61,43,31,.06)" }}>
         <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8813A", display: "inline-block", flexShrink: 0 }} />
         <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "#3D2B1F" }}>Everypaw</span>
       </Link>
+
+      {/* Pet selector */}
+      <PetSelector pets={pets} selectedId={resolvedPetId} onSelect={handleSelectPet} />
 
       {/* Nav items */}
       <nav style={{ flex: 1, padding: "1rem .75rem", display: "flex", flexDirection: "column", gap: ".25rem" }}>
@@ -188,12 +337,7 @@ export default function DashboardNav() {
         <LanguageSwitcher />
         <button
           onClick={handleLogout}
-          style={{
-            display: "flex", alignItems: "center", gap: ".5rem",
-            background: "none", border: "none", cursor: "pointer",
-            fontSize: ".8rem", color: "#7A5C44", padding: ".35rem 0",
-            fontFamily: "inherit", textAlign: "left",
-          }}
+          style={{ display: "flex", alignItems: "center", gap: ".5rem", background: "none", border: "none", cursor: "pointer", fontSize: ".8rem", color: "#7A5C44", padding: ".35rem 0", fontFamily: "inherit", textAlign: "left" }}
         >
           <IconLogout />
           {isFR ? "Déconnexion" : "Sign out"}
@@ -202,7 +346,7 @@ export default function DashboardNav() {
     </aside>
   );
 
-  // ── Bottom nav (mobile <768px) ───────────────────────────────────────────
+  // ── Bottom nav (mobile <768px) ────────────────────────────────────────────
 
   const BottomNav = (
     <nav className="ep-bottom-nav" style={{
@@ -222,10 +366,7 @@ export default function DashboardNav() {
           }}
         >
           <span style={{ opacity: item.active ? 1 : 0.6, lineHeight: 1 }}>{item.icon}</span>
-          <span style={{
-            fontSize: ".6rem", fontWeight: item.active ? 600 : 400,
-            letterSpacing: ".01em", lineHeight: 1,
-          }}>
+          <span style={{ fontSize: ".6rem", fontWeight: item.active ? 600 : 400, letterSpacing: ".01em", lineHeight: 1 }}>
             {item.shortLabel}
           </span>
         </Link>
