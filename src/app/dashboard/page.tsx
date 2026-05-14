@@ -145,7 +145,8 @@ export default function DashboardPage() {
               ? t.dashboard.month_chapter_day
               : t.dashboard.month_chapter_days.replace("{days}", String(daysUntilChapter));
 
-          const filteredMonthlyCount = kpiPetFilter === "all"
+          const showAll = kpiPetFilter === "all";
+          const filteredMonthlyCount = showAll
             ? monthlyEntryCount
             : (petMetadata[kpiPetFilter]?.monthlyCount ?? 0);
 
@@ -154,6 +155,16 @@ export default function DashboardPage() {
             : t.dashboard.month_entries_free.replace("{count}", String(filteredMonthlyCount));
           const freeProgress = Math.min(filteredMonthlyCount / 10, 1);
 
+          // Pets with entries this month — used in "Concerne :" and per-pet badges
+          const activePets = pets.filter(p => (petMetadata[p.id]?.monthlyCount ?? 0) > 0);
+
+          const badgeStyle: React.CSSProperties = {
+            display: "inline-flex", alignItems: "center", gap: ".25rem",
+            background: "rgba(61,43,31,.05)", borderRadius: 8,
+            padding: "3px 8px", fontSize: ".68rem", color: "#3D2B1F",
+            whiteSpace: "nowrap" as const,
+          };
+
           return (
             <div style={{ marginBottom: "1.5rem" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".5rem", marginBottom: ".75rem" }}>
@@ -161,15 +172,18 @@ export default function DashboardPage() {
                   {t.dashboard.month_title}
                 </p>
                 {pets.length > 1 && (
-                  <div style={{ display: "flex", gap: ".35rem", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: ".35rem", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: ".68rem", color: "#9A8070", whiteSpace: "nowrap" }}>
+                      {locale === "fr" ? "Afficher pour :" : "Show for:"}
+                    </span>
                     <button
                       onClick={() => setKpiPetFilter("all")}
                       style={{
                         padding: ".25rem .625rem", borderRadius: 100, fontSize: ".72rem", fontWeight: 500,
                         border: "1px solid", cursor: "pointer", fontFamily: "inherit", transition: "all .12s",
-                        background: kpiPetFilter === "all" ? "#C8813A" : "transparent",
-                        color: kpiPetFilter === "all" ? "#FDFAF5" : "#7A5C44",
-                        borderColor: kpiPetFilter === "all" ? "#C8813A" : "rgba(61,43,31,.2)",
+                        background: showAll ? "#C8813A" : "transparent",
+                        color: showAll ? "#FDFAF5" : "#7A5C44",
+                        borderColor: showAll ? "#C8813A" : "rgba(61,43,31,.2)",
                       }}
                     >
                       {locale === "fr" ? "Tous" : "All"}
@@ -199,9 +213,21 @@ export default function DashboardPage() {
                   <p style={{ fontSize: ".68rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".07em", margin: "0 0 .4rem", fontFamily: "sans-serif" }}>
                     {t.dashboard.month_entries_label}
                   </p>
-                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .6rem", lineHeight: 1 }}>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .5rem", lineHeight: 1 }}>
                     {entriesLabel}
                   </p>
+                  {/* Per-pet breakdown — only in "Tous" mode with multiple pets */}
+                  {showAll && pets.length > 1 && activePets.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: ".3rem", marginBottom: ".5rem" }}>
+                      {activePets.map(pet => (
+                        <span key={pet.id} style={badgeStyle}>
+                          <span>{SPECIES_EMOJI[pet.species]}</span>
+                          <span>{pet.name}</span>
+                          <strong>{petMetadata[pet.id]?.monthlyCount ?? 0}</strong>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {!isPremium && (
                     <div style={{ height: 4, borderRadius: 100, background: "rgba(61,43,31,.1)", overflow: "hidden" }}>
                       <div style={{ height: "100%", borderRadius: 100, background: freeProgress >= 1 ? "#A32D2D" : "#C8813A", width: `${freeProgress * 100}%`, transition: "width .4s ease" }} />
@@ -220,9 +246,29 @@ export default function DashboardPage() {
                   <p style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem", lineHeight: 1.2 }}>
                     {chapterLabel}
                   </p>
-                  <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>
+                  <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: "0 0 .5rem", fontWeight: 300 }}>
                     {new Date(year, now.getMonth() + 1, 1).toLocaleDateString(dateLocale, { month: "long", day: "numeric" })}
                   </p>
+                  {/* "Concerne :" — clickable pet badges, only in "Tous" mode with multiple pets */}
+                  {showAll && pets.length > 1 && activePets.length > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: ".3rem" }}>
+                      <span style={{ fontSize: ".68rem", color: "#9A8070" }}>
+                        {locale === "fr" ? "Concerne :" : "For:"}
+                      </span>
+                      {activePets.map(pet => (
+                        <Link
+                          key={pet.id}
+                          href={`/dashboard/pets/${pet.id}?tab=stories`}
+                          style={{ ...badgeStyle, color: "#7A5C44", textDecoration: "none", transition: "background .1s" }}
+                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(200,129,58,.1)"}
+                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.05)"}
+                        >
+                          <span>{SPECIES_EMOJI[pet.species]}</span>
+                          <span>{pet.name}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Book widget — Premium only */}
@@ -234,11 +280,29 @@ export default function DashboardPage() {
                     <p style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem", lineHeight: 1.2 }}>
                       {t.dashboard.month_book_value}
                     </p>
-                    <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>
-                      {monthlyEntryCount > 0
-                        ? `${monthlyEntryCount} ${monthlyEntryCount === 1 ? (locale === "fr" ? "entrée ajoutée" : "entry added") : (locale === "fr" ? "entrées ajoutées" : "entries added")}`
+                    <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: "0 0 .5rem", fontWeight: 300 }}>
+                      {filteredMonthlyCount > 0
+                        ? `${filteredMonthlyCount} ${filteredMonthlyCount === 1 ? (locale === "fr" ? "entrée ajoutée" : "entry added") : (locale === "fr" ? "entrées ajoutées" : "entries added")}`
                         : (locale === "fr" ? "Ajoutez votre premier moment ✨" : "Add your first moment ✨")}
                     </p>
+                    {/* Per-pet breakdown — only in "Tous" mode with multiple pets */}
+                    {showAll && pets.length > 1 && activePets.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: ".3rem" }}>
+                        {activePets.map(pet => {
+                          const count = petMetadata[pet.id]?.monthlyCount ?? 0;
+                          const label = count === 1
+                            ? (locale === "fr" ? "entrée" : "entry")
+                            : (locale === "fr" ? "entrées" : "entries");
+                          return (
+                            <span key={pet.id} style={{ ...badgeStyle, background: "rgba(200,129,58,.08)" }}>
+                              <span>{SPECIES_EMOJI[pet.species]}</span>
+                              <span>{pet.name}</span>
+                              <strong>{count} {label}</strong>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
 
