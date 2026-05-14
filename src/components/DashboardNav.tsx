@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useParams, useRouter } from "next/navigation";
+import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
@@ -234,6 +234,8 @@ export default function DashboardNav() {
   const pathname = usePathname();
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab");
   const { locale } = useLocale();
 
   const petId = params?.id as string | undefined;
@@ -261,15 +263,17 @@ export default function DashboardNav() {
       setResolvedPetId(petId);
       setShowAll(false);
       try { localStorage.setItem(LAST_PET_KEY, petId); } catch {}
+    } else if (pathname === "/dashboard") {
+      // Global dashboard: always show "Tous mes animaux"
+      setShowAll(true);
     } else {
-      // No ID in URL: try localStorage first, then first pet from DB
+      // Other non-pet pages (settings, etc.): resolve pet from localStorage for nav links
       try {
         const stored = localStorage.getItem(LAST_PET_KEY);
         if (stored) { setResolvedPetId(stored); return; }
       } catch {}
-      // localStorage empty or unavailable — wait for pets to load
     }
-  }, [petId]);
+  }, [petId, pathname]);
 
   // Once pets are loaded, fill resolvedPetId if still null
   useEffect(() => {
@@ -319,9 +323,9 @@ export default function DashboardNav() {
 
   const items = [
     { href: "/dashboard",  label: isFR ? "Accueil" : "Home",     shortLabel: isFR ? "Accueil" : "Home",     icon: <IconHome />,     active: isDashboard },
-    { href: petLink,       label: "Journal",                       shortLabel: "Journal",                      icon: <IconBook />,     active: isPetPage },
-    { href: storiesLink,    label: isFR ? "Histoires" : "Stories",  shortLabel: isFR ? "Histoires" : "Stories", icon: <IconSparkles />, active: false },
-    { href: milestonesLink, label: isFR ? "Étapes" : "Milestones", shortLabel: isFR ? "Étapes" : "Steps",     icon: <IconTrophy />,   active: false },
+    { href: petLink,       label: "Journal",                       shortLabel: "Journal",                      icon: <IconBook />,     active: isPetPage && currentTab !== "stories" && currentTab !== "milestones" },
+    { href: storiesLink,    label: isFR ? "Histoires" : "Stories",  shortLabel: isFR ? "Histoires" : "Stories", icon: <IconSparkles />, active: isPetPage && currentTab === "stories" },
+    { href: milestonesLink, label: isFR ? "Étapes" : "Milestones", shortLabel: isFR ? "Étapes" : "Steps",     icon: <IconTrophy />,   active: isPetPage && currentTab === "milestones" },
     { href: orderLink,      label: isFR ? "Commander" : "Order",   shortLabel: isFR ? "Livre" : "Book",       icon: <IconPackage />,  active: isOrderPage },
     { href: "/dashboard/settings", label: isFR ? "Paramètres" : "Settings", shortLabel: isFR ? "Params" : "Settings", icon: <IconSettings />, active: isSettingsPage },
   ];
