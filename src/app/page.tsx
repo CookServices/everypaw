@@ -37,20 +37,11 @@ export default function Home() {
     [t.landing.r3_quote, t.landing.r3_author],
   ];
 
-  const freeFeatures = [
-    t.landing.free_f1,
-    t.landing.free_f2,
-    t.landing.free_f3,
-    t.landing.free_f4,
-  ];
+  const [pricingCycle, setPricingCycle] = useState<"monthly" | "annual">("monthly");
 
-  const premiumFeatures = [
-    t.landing.premium_f1,
-    t.landing.premium_f2,
-    t.landing.premium_f3,
-    t.landing.premium_f4,
-    t.landing.premium_f5,
-  ];
+  const freeFeatures    = [t.landing.free_f1, t.landing.free_f2, t.landing.free_f3];
+  const digitalFeatures = [t.landing.premium_f1, t.landing.premium_f2, t.landing.premium_f3, t.landing.premium_f4];
+  const printFeatures   = [t.landing.print_f1, t.landing.print_f2, t.landing.print_f3, t.landing.print_f4];
 
   return (
     <>
@@ -378,44 +369,103 @@ export default function Home() {
         <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 600, marginBottom: ".75rem" }}>
           {t.landing.pricing_title}
         </h2>
-        <p style={{ fontSize: "1rem", color: "#7A5C44", fontWeight: 300, marginBottom: "3rem" }}>{t.landing.pricing_desc}</p>
-        <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center", flexWrap: "wrap", maxWidth: 720, margin: "0 auto" }}>
+        <p style={{ fontSize: "1rem", color: "#7A5C44", fontWeight: 300, marginBottom: "2rem" }}>{t.landing.pricing_desc}</p>
+
+        {/* Monthly / Annual toggle */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "2.5rem" }}>
+          <div style={{ display: "inline-flex", background: "#FDFAF5", borderRadius: 100, border: "1px solid rgba(61,43,31,.1)", padding: "4px" }}>
+            {(["monthly", "annual"] as const).map(cycle => (
+              <button
+                key={cycle}
+                onClick={() => setPricingCycle(cycle)}
+                style={{
+                  padding: ".4rem 1.25rem", borderRadius: 100, border: "none",
+                  background: pricingCycle === cycle ? "#3D2B1F" : "transparent",
+                  color: pricingCycle === cycle ? "#F7F2EA" : "#7A5C44",
+                  fontFamily: "inherit", fontSize: ".875rem",
+                  fontWeight: pricingCycle === cycle ? 600 : 400,
+                  cursor: "pointer", display: "flex", alignItems: "center", gap: ".5rem",
+                }}
+              >
+                {cycle === "monthly" ? t.landing.pricing_monthly : t.landing.pricing_annual}
+                {cycle === "annual" && (
+                  <span style={{ fontSize: ".68rem", background: "#C8813A", color: "#FDFAF5", padding: ".15rem .45rem", borderRadius: 100, fontWeight: 600 }}>
+                    −40 %
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: "1.25rem", justifyContent: "center", flexWrap: "wrap", maxWidth: 960, margin: "0 auto" }}>
 
           {/* Free */}
-          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem 2.25rem", flex: 1, minWidth: 260, textAlign: "left", border: "1.5px solid rgba(61,43,31,.08)" }}>
-            <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".1em", textTransform: "uppercase", color: "#C8813A", marginBottom: ".75rem" }}>{t.landing.free_label}</div>
+          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem 2rem", flex: 1, minWidth: 240, maxWidth: 300, textAlign: "left", border: "1.5px solid rgba(61,43,31,.08)", display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".1em", textTransform: "uppercase", color: "#7A5C44", marginBottom: ".75rem" }}>{t.landing.free_label}</div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem" }}>{t.landing.free_price}</div>
             <div style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginBottom: "1.5rem" }}>{t.landing.free_period}</div>
-            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: ".6rem", marginBottom: "1.75rem", padding: 0 }}>
+            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: ".6rem", marginBottom: "1.75rem", padding: 0, flex: 1 }}>
               {freeFeatures.map(f => (
-                <li key={f} style={{ fontSize: ".875rem", display: "flex", alignItems: "center", gap: ".5rem", fontWeight: 300 }}>
-                  <span style={{ color: "#C8813A", fontWeight: 600 }}>✓</span> {f}
+                <li key={f} style={{ fontSize: ".875rem", display: "flex", alignItems: "flex-start", gap: ".5rem", fontWeight: 300 }}>
+                  <span style={{ color: "#C8813A", fontWeight: 600, flexShrink: 0 }}>✓</span> {f}
                 </li>
               ))}
             </ul>
-            <Link href="/auth/signup" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", border: "1.5px solid #3D2B1F", background: "transparent", color: "#3D2B1F", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+            <Link href="/auth/signup" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#3D2B1F", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
               {t.landing.free_cta}
             </Link>
           </div>
 
-          {/* Premium */}
-          <div style={{ background: "#3D2B1F", borderRadius: 24, padding: "2rem 2.25rem", flex: 1, minWidth: 260, textAlign: "left", border: "1.5px solid #3D2B1F" }}>
-            <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".1em", textTransform: "uppercase", color: "#E8A96A", marginBottom: ".75rem" }}>✦ Premium</div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem", color: "#F7F2EA" }}>{t.landing.premium_price}</div>
-            <div style={{ fontSize: ".8rem", color: "rgba(247,242,234,.6)", fontWeight: 300, marginBottom: "1.5rem" }}>{t.landing.premium_period}</div>
-            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: ".6rem", marginBottom: "1.75rem", padding: 0 }}>
-              {premiumFeatures.map(f => (
-                <li key={f} style={{ fontSize: ".875rem", display: "flex", alignItems: "center", gap: ".5rem", fontWeight: 300, color: "rgba(247,242,234,.85)" }}>
-                  <span style={{ color: "#C8813A", fontWeight: 600 }}>✓</span> {f}
+          {/* Digital */}
+          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem 2rem", flex: 1, minWidth: 240, maxWidth: 300, textAlign: "left", border: "1.5px solid rgba(200,129,58,.25)", display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".1em", textTransform: "uppercase", color: "#C8813A", marginBottom: ".75rem" }}>{t.landing.premium_label}</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem" }}>{t.landing.premium_price}</div>
+            <div style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginBottom: "1.5rem" }}>{t.landing.premium_period}</div>
+            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: ".6rem", marginBottom: "1.75rem", padding: 0, flex: 1 }}>
+              {digitalFeatures.map(f => (
+                <li key={f} style={{ fontSize: ".875rem", display: "flex", alignItems: "flex-start", gap: ".5rem", fontWeight: 300 }}>
+                  <span style={{ color: "#C8813A", fontWeight: 600, flexShrink: 0 }}>✓</span> {f}
                 </li>
               ))}
             </ul>
-            <Link href="/auth/signup?plan=premium" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", background: "#C8813A", border: "1.5px solid #C8813A", color: "#FDFAF5", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+            <Link href="/auth/signup?plan=digital" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, background: "rgba(200,129,58,.12)", border: "1.5px solid rgba(200,129,58,.3)", color: "#C8813A", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
               {t.landing.premium_cta}
             </Link>
           </div>
 
+          {/* Print */}
+          <div style={{ background: "#3D2B1F", borderRadius: 24, padding: "2rem 2rem", flex: 1, minWidth: 240, maxWidth: 300, textAlign: "left", border: "1.5px solid #3D2B1F", display: "flex", flexDirection: "column", position: "relative" }}>
+            <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", background: "#C8813A", color: "#FDFAF5", fontSize: ".68rem", fontWeight: 700, padding: ".3rem .85rem", borderRadius: 100, letterSpacing: ".04em", whiteSpace: "nowrap" }}>
+              {t.landing.print_badge}
+            </div>
+            <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".1em", textTransform: "uppercase", color: "#E8A96A", marginBottom: ".75rem" }}>{t.landing.print_label}</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem", color: "#F7F2EA" }}>
+              {pricingCycle === "annual" ? t.landing.print_price_annual : t.landing.print_price_monthly}
+            </div>
+            <div style={{ fontSize: ".8rem", color: "rgba(247,242,234,.6)", fontWeight: 300, marginBottom: "1.5rem" }}>
+              {pricingCycle === "annual" ? t.landing.print_period_annual : t.landing.print_period_monthly}
+            </div>
+            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: ".6rem", marginBottom: "1.75rem", padding: 0, flex: 1 }}>
+              {printFeatures.map(f => (
+                <li key={f} style={{ fontSize: ".875rem", display: "flex", alignItems: "flex-start", gap: ".5rem", fontWeight: 300, color: "rgba(247,242,234,.85)" }}>
+                  <span style={{ color: "#C8813A", fontWeight: 600, flexShrink: 0 }}>✓</span> {f}
+                </li>
+              ))}
+            </ul>
+            <Link href="/auth/signup?plan=print" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 600, background: "#C8813A", border: "1.5px solid #C8813A", color: "#FDFAF5", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+              {t.landing.print_cta}
+            </Link>
+          </div>
+
         </div>
+
+        {/* Book à la carte */}
+        <p style={{ marginTop: "2rem", fontSize: ".85rem", color: "#7A5C44", fontWeight: 300 }}>
+          <Link href="/auth/signup?plan=book" style={{ color: "#C8813A", textDecoration: "underline", textUnderlineOffset: 3 }}>
+            {t.landing.pricing_book_note}
+          </Link>
+        </p>
       </section>
 
       {/* CTA */}
