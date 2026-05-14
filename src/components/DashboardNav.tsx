@@ -43,6 +43,17 @@ function IconSparkles() {
   );
 }
 
+function IconTrophy() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 21h8M12 17v4" />
+      <path d="M7 4H4a2 2 0 00-2 2v1c0 3.31 2.69 6 6 6" />
+      <path d="M17 4h3a2 2 0 012 2v1c0 3.31-2.69 6-6 6" />
+      <path d="M12 13c-3.31 0-6-2.69-6-6V4h12v3c0 3.31-2.69 6-6 6z" />
+    </svg>
+  );
+}
+
 function IconPackage() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -262,17 +273,19 @@ export default function DashboardNav() {
   const isSettingsPage = pathname.startsWith("/dashboard/settings");
   const isDashboard  = !isPetPage && !isOrderPage && !isSettingsPage;
 
-  const petLink    = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal`  : "/dashboard";
-  const storiesLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=stories` : "/dashboard";
-  const orderLink  = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/order`         : "/dashboard";
+  const petLink        = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal`     : "/dashboard";
+  const storiesLink    = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=stories`    : "/dashboard";
+  const milestonesLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=milestones` : "/dashboard";
+  const orderLink      = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/order`           : "/dashboard";
 
   const isFR = locale === "fr";
 
   const items = [
     { href: "/dashboard",  label: isFR ? "Accueil" : "Home",     shortLabel: isFR ? "Accueil" : "Home",     icon: <IconHome />,     active: isDashboard },
     { href: petLink,       label: "Journal",                       shortLabel: "Journal",                      icon: <IconBook />,     active: isPetPage },
-    { href: storiesLink,   label: isFR ? "Histoires" : "Stories", shortLabel: isFR ? "Histoires" : "Stories", icon: <IconSparkles />, active: false },
-    { href: orderLink,     label: isFR ? "Commander" : "Order",   shortLabel: isFR ? "Livre" : "Book",        icon: <IconPackage />,  active: isOrderPage },
+    { href: storiesLink,    label: isFR ? "Histoires" : "Stories",  shortLabel: isFR ? "Histoires" : "Stories", icon: <IconSparkles />, active: false },
+    { href: milestonesLink, label: isFR ? "Étapes" : "Milestones", shortLabel: isFR ? "Étapes" : "Steps",     icon: <IconTrophy />,   active: false },
+    { href: orderLink,      label: isFR ? "Commander" : "Order",   shortLabel: isFR ? "Livre" : "Book",       icon: <IconPackage />,  active: isOrderPage },
     { href: "/dashboard/settings", label: isFR ? "Paramètres" : "Settings", shortLabel: isFR ? "Params" : "Settings", icon: <IconSettings />, active: isSettingsPage },
   ];
 

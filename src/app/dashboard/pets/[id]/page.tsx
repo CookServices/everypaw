@@ -502,15 +502,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
           </div>{/* end right column */}
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: ".5rem", marginBottom: "1.5rem" }}>
-          {tabs.map(({ key, label }) => (
-            <button key={key} onClick={() => setTab(key)} style={{ padding: ".5rem 1.25rem", borderRadius: 100, border: `1.5px solid ${tab === key ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: tab === key ? "rgba(200,129,58,.1)" : "transparent", color: tab === key ? "#C8813A" : "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", fontWeight: tab === key ? 500 : 400, cursor: "pointer" }}>
-              {label}{key === "milestones" && milestones.length > 0 ? ` (${milestones.length})` : ""}
-            </button>
-          ))}
-        </div>
-
         {tab === "journal" && (
           <>
             <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.25rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
