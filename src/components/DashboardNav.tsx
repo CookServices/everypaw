@@ -96,17 +96,23 @@ interface PetOption { id: string; name: string; species: string; }
 function PetSelector({
   pets,
   selectedId,
+  showAll,
   onSelect,
+  onSelectAll,
+  isFR,
 }: {
   pets: PetOption[];
   selectedId: string | null;
+  showAll: boolean;
   onSelect: (id: string) => void;
+  onSelectAll: () => void;
+  isFR: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const selected = pets.find(p => p.id === selectedId) ?? pets[0] ?? null;
-  const multi = pets.length > 1;
+  const selected = showAll ? null : (pets.find(p => p.id === selectedId) ?? pets[0] ?? null);
+  const hasMultiple = pets.length > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -117,29 +123,30 @@ function PetSelector({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  if (!selected) return null;
+  if (pets.length === 0) return null;
 
-  const emoji = SPECIES_EMOJI[selected.species] ?? "🐾";
+  const emoji = selected ? (SPECIES_EMOJI[selected.species] ?? "🐾") : "🐾";
+  const triggerName = selected ? selected.name : (isFR ? "Tous mes animaux" : "All my pets");
 
   return (
     <div ref={ref} style={{ position: "relative", padding: ".625rem 1rem", borderBottom: "1px solid rgba(61,43,31,.06)" }}>
       <button
-        onClick={() => multi && setOpen(v => !v)}
+        onClick={() => setOpen(v => !v)}
         style={{
           width: "100%", display: "flex", alignItems: "center", gap: ".5rem",
           background: open ? "rgba(61,43,31,.04)" : "transparent",
           border: "none", borderRadius: 8, padding: ".4rem .5rem",
-          cursor: multi ? "pointer" : "default", fontFamily: "inherit",
+          cursor: "pointer", fontFamily: "inherit",
           transition: "background .12s",
         }}
-        onMouseEnter={e => { if (multi) (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)"; }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)"; }}
         onMouseLeave={e => { if (!open) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
       >
         <span style={{ fontSize: "1.1rem", lineHeight: 1, flexShrink: 0 }}>{emoji}</span>
         <span style={{ flex: 1, textAlign: "left", fontSize: ".85rem", fontWeight: 500, color: "#3D2B1F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {selected.name}
+          {triggerName}
         </span>
-        {multi && <IconChevron open={open} />}
+        <IconChevron open={open} />
       </button>
 
       {open && (
@@ -149,8 +156,32 @@ function PetSelector({
           borderRadius: 12, boxShadow: "0 8px 24px rgba(61,43,31,.12)",
           zIndex: 60, overflow: "hidden", padding: ".35rem",
         }}>
+          {/* "Tous mes animaux" entry */}
+          <button
+            onClick={() => { onSelectAll(); setOpen(false); }}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", gap: ".5rem",
+              padding: ".5rem .625rem", border: "none", borderRadius: 8,
+              background: showAll ? "rgba(200,129,58,.1)" : "transparent",
+              color: showAll ? "#C8813A" : "#3D2B1F",
+              fontFamily: "inherit", fontSize: ".85rem", fontWeight: showAll ? 500 : 400,
+              cursor: "pointer", textAlign: "left",
+              transition: "background .1s",
+            }}
+            onMouseEnter={e => { if (!showAll) (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)"; }}
+            onMouseLeave={e => { if (!showAll) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+          >
+            <span style={{ fontSize: "1rem", lineHeight: 1 }}>🐾</span>
+            <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {isFR ? "Tous mes animaux" : "All my pets"}
+            </span>
+            {showAll && <span style={{ fontSize: ".7rem", color: "#C8813A" }}>✓</span>}
+          </button>
+
+          {hasMultiple && <div style={{ height: 1, background: "rgba(61,43,31,.06)", margin: ".25rem .25rem" }} />}
+
           {pets.map(pet => {
-            const isActive = pet.id === selectedId;
+            const isActive = !showAll && pet.id === selectedId;
             return (
               <button
                 key={pet.id}
@@ -188,8 +219,7 @@ function PetSelector({
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
             >
               <span style={{ fontSize: ".9rem" }}>+</span>
-              {/* small add label */}
-              <span>Ajouter un animal</span>
+              <span>{isFR ? "Ajouter un animal" : "Add a pet"}</span>
             </Link>
           </div>
         </div>
@@ -210,6 +240,7 @@ export default function DashboardNav() {
 
   const [pets, setPets] = useState<PetOption[]>([]);
   const [resolvedPetId, setResolvedPetId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   // ── Fetch all pets once ────────────────────────────────────────────────────
   useEffect(() => {
@@ -226,8 +257,9 @@ export default function DashboardNav() {
   // ── Sync resolvedPetId with URL param + localStorage ──────────────────────
   useEffect(() => {
     if (petId) {
-      // On a pet page: URL is authoritative → persist to localStorage
+      // On a pet page: URL is authoritative → persist to localStorage, clear showAll
       setResolvedPetId(petId);
+      setShowAll(false);
       try { localStorage.setItem(LAST_PET_KEY, petId); } catch {}
     } else {
       // No ID in URL: try localStorage first, then first pet from DB
@@ -251,10 +283,10 @@ export default function DashboardNav() {
   // ── Handle pet selection from dropdown ────────────────────────────────────
   const handleSelectPet = (newId: string) => {
     setResolvedPetId(newId);
+    setShowAll(false);
     try { localStorage.setItem(LAST_PET_KEY, newId); } catch {}
 
     // Preserve current tab when switching pets
-    const tabMatch = pathname.match(/\?tab=(\w+)/);
     const currentSearch = typeof window !== "undefined" ? window.location.search : "";
     const tabParam = new URLSearchParams(currentSearch).get("tab");
 
@@ -265,6 +297,11 @@ export default function DashboardNav() {
     } else {
       router.push(`/dashboard/pets/${newId}?tab=journal`);
     }
+  };
+
+  const handleSelectAll = () => {
+    setShowAll(true);
+    router.push("/dashboard");
   };
 
   // ── Active state helpers ───────────────────────────────────────────────────
@@ -310,7 +347,7 @@ export default function DashboardNav() {
       </Link>
 
       {/* Pet selector */}
-      <PetSelector pets={pets} selectedId={resolvedPetId} onSelect={handleSelectPet} />
+      <PetSelector pets={pets} selectedId={resolvedPetId} showAll={showAll} onSelect={handleSelectPet} onSelectAll={handleSelectAll} isFR={isFR} />
 
       {/* Nav items */}
       <nav style={{ flex: 1, padding: "1rem .75rem", display: "flex", flexDirection: "column", gap: ".25rem" }}>

@@ -31,6 +31,7 @@ export default function DashboardPage() {
   const [hasStories, setHasStories] = useState(false);
   const [monthlyEntryCount, setMonthlyEntryCount] = useState(0);
   const [lastStoryDate, setLastStoryDate] = useState<string | null>(null);
+  const [kpiPetFilter, setKpiPetFilter] = useState<string | "all">("all");
   const [petMetadata, setPetMetadata] = useState<Record<string, {
     lastEntry: string | null;
     monthlyCount: number;
@@ -144,16 +145,53 @@ export default function DashboardPage() {
               ? t.dashboard.month_chapter_day
               : t.dashboard.month_chapter_days.replace("{days}", String(daysUntilChapter));
 
+          const filteredMonthlyCount = kpiPetFilter === "all"
+            ? monthlyEntryCount
+            : (petMetadata[kpiPetFilter]?.monthlyCount ?? 0);
+
           const entriesLabel = isPremium
-            ? t.dashboard.month_entries_premium.replace("{count}", String(monthlyEntryCount))
-            : t.dashboard.month_entries_free.replace("{count}", String(monthlyEntryCount));
-          const freeProgress = Math.min(monthlyEntryCount / 10, 1);
+            ? t.dashboard.month_entries_premium.replace("{count}", String(filteredMonthlyCount))
+            : t.dashboard.month_entries_free.replace("{count}", String(filteredMonthlyCount));
+          const freeProgress = Math.min(filteredMonthlyCount / 10, 1);
 
           return (
             <div style={{ marginBottom: "1.5rem" }}>
-              <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".75rem" }}>
-                {t.dashboard.month_title}
-              </p>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".5rem", marginBottom: ".75rem" }}>
+                <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: 0 }}>
+                  {t.dashboard.month_title}
+                </p>
+                {pets.length > 1 && (
+                  <div style={{ display: "flex", gap: ".35rem", flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => setKpiPetFilter("all")}
+                      style={{
+                        padding: ".25rem .625rem", borderRadius: 100, fontSize: ".72rem", fontWeight: 500,
+                        border: "1px solid", cursor: "pointer", fontFamily: "inherit", transition: "all .12s",
+                        background: kpiPetFilter === "all" ? "#C8813A" : "transparent",
+                        color: kpiPetFilter === "all" ? "#FDFAF5" : "#7A5C44",
+                        borderColor: kpiPetFilter === "all" ? "#C8813A" : "rgba(61,43,31,.2)",
+                      }}
+                    >
+                      {locale === "fr" ? "Tous" : "All"}
+                    </button>
+                    {pets.map(pet => (
+                      <button
+                        key={pet.id}
+                        onClick={() => setKpiPetFilter(pet.id)}
+                        style={{
+                          padding: ".25rem .625rem", borderRadius: 100, fontSize: ".72rem", fontWeight: 500,
+                          border: "1px solid", cursor: "pointer", fontFamily: "inherit", transition: "all .12s",
+                          background: kpiPetFilter === pet.id ? "#C8813A" : "transparent",
+                          color: kpiPetFilter === pet.id ? "#FDFAF5" : "#7A5C44",
+                          borderColor: kpiPetFilter === pet.id ? "#C8813A" : "rgba(61,43,31,.2)",
+                        }}
+                      >
+                        {SPECIES_EMOJI[pet.species]} {pet.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div style={{ display: "grid", gridTemplateColumns: isPremium ? "repeat(3, 1fr)" : "repeat(2, 1fr)", gap: ".75rem" }}>
 
                 {/* Entries widget */}
@@ -297,37 +335,51 @@ export default function DashboardPage() {
           <div>
             <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1rem" }}>{t.dashboard.recent_moments}</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-              {entries.map(entry => (
-                <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-                  <div style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300, minWidth: 70, paddingTop: "2px" }}>
-                    {new Date(entry.entry_date).toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}
-                    {entry.mood && (
-                      <div style={{ marginTop: "4px", fontSize: "1rem" }}>
-                        {entry.mood === "happy" ? "😄" : entry.mood === "funny" ? "😂" : entry.mood === "tender" ? "🥰" : entry.mood === "sad" ? "😢" : entry.mood === "proud" ? "🏆" : ""}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    {entry.content.trim() && (
-                      <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.6, margin: "0 0 .5rem" }}>
-                        {entry.content.slice(0, 120)}{entry.content.length > 120 ? "…" : ""}
-                      </p>
-                    )}
-                    {entry.photo_urls && entry.photo_urls.length > 0 && (
-                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                        {entry.photo_urls.slice(0, 3).map((url: string, i: number) => (
-                          <img key={i} src={url} alt="" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8 }} />
-                        ))}
-                        {entry.photo_urls.length > 3 && (
-                          <div style={{ width: 56, height: 56, borderRadius: 8, background: "rgba(61,43,31,.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: ".75rem", color: "#7A5C44" }}>
-                            +{entry.photo_urls.length - 3}
+              {entries.map(entry => {
+                const entryPet = pets.find(p => p.id === entry.pet_id);
+                return (
+                  <Link key={entry.id} href={`/dashboard/pets/${entry.pet_id}?tab=journal`} style={{ textDecoration: "none" }}>
+                    <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1rem", alignItems: "flex-start", transition: "border-color .15s" }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = "rgba(200,129,58,.3)"}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.08)"}
+                    >
+                      <div style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300, minWidth: 70, paddingTop: "2px" }}>
+                        {new Date(entry.entry_date).toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}
+                        {entry.mood && (
+                          <div style={{ marginTop: "4px", fontSize: "1rem" }}>
+                            {entry.mood === "happy" ? "😄" : entry.mood === "funny" ? "😂" : entry.mood === "tender" ? "🥰" : entry.mood === "sad" ? "😢" : entry.mood === "proud" ? "🏆" : ""}
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                      <div style={{ flex: 1 }}>
+                        {pets.length > 1 && entryPet && (
+                          <p style={{ fontSize: ".7rem", color: "#C8813A", fontWeight: 500, margin: "0 0 .35rem", display: "flex", alignItems: "center", gap: ".25rem" }}>
+                            <span>{SPECIES_EMOJI[entryPet.species] ?? "🐾"}</span>
+                            <span>{entryPet.name}</span>
+                          </p>
+                        )}
+                        {entry.content.trim() && (
+                          <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.6, margin: "0 0 .5rem" }}>
+                            {entry.content.slice(0, 120)}{entry.content.length > 120 ? "…" : ""}
+                          </p>
+                        )}
+                        {entry.photo_urls && entry.photo_urls.length > 0 && (
+                          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                            {entry.photo_urls.slice(0, 3).map((url: string, i: number) => (
+                              <img key={i} src={url} alt="" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8 }} />
+                            ))}
+                            {entry.photo_urls.length > 3 && (
+                              <div style={{ width: 56, height: 56, borderRadius: 8, background: "rgba(61,43,31,.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: ".75rem", color: "#7A5C44" }}>
+                                +{entry.photo_urls.length - 3}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
