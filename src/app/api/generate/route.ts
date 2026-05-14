@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getUserPlan, canGenerateStory } from "@/lib/plan";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -14,6 +15,20 @@ export async function POST(req: Request) {
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  // ── Plan gate ──────────────────────────────────────────────────────────────
+  const { plan } = await getUserPlan();
+
+  const { count: storyCount } = await supabase
+    .from("stories")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  const blocked = canGenerateStory(plan, storyCount ?? 0);
+  if (blocked === "story_limit") {
+    return NextResponse.json({ error: "story_limit" }, { status: 403 });
+  }
+
+  // ── Entries check ──────────────────────────────────────────────────────────
   if (!entries || entries.length < 3) {
     return NextResponse.json({ error: "Need at least 3 entries" }, { status: 400 });
   }
@@ -57,7 +72,6 @@ You MUST respond with valid JSON only, no other text:
     });
 
     const data = await response.json();
-    console.log("Claude raw response:", JSON.stringify(data));
     const text = data.content?.[0]?.text || "";
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);

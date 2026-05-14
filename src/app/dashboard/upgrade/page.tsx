@@ -1,122 +1,292 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useState } from "react";
 import { useLocale } from "@/hooks/useLocale";
 
 export const dynamic = "force-dynamic";
 
+type BillingCycle = "monthly" | "annual";
+
 export default function UpgradePage() {
-  const { t } = useLocale();
-  const [petName, setPetName] = useState<string | null>(null);
-  const [loadingCheckout, setLoadingCheckout] = useState(false);
+  const { locale } = useLocale();
+  const isFR = locale === "fr";
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from("pets")
-      .select("name")
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .single()
-      .then(({ data }) => {
-        if (data?.name) setPetName(data.name);
-      });
-  }, []);
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+  const [loading, setLoading] = useState<string | null>(null);
 
-  const handleSubscribe = async () => {
-    setLoadingCheckout(true);
+  const handleSubscribe = async (plan: "digital" | "print_monthly" | "print_annual") => {
+    setLoading(plan);
     try {
-      const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-    } catch {
-      setLoadingCheckout(false);
+    } finally {
+      setLoading(null);
     }
   };
 
-  const subtitle = petName
-    ? t.upgrade.subtitle.replace("{name}", petName)
-    : t.upgrade.subtitle_generic;
+  const handleBookOnce = async () => {
+    setLoading("book");
+    try {
+      const res = await fetch("/api/stripe/book-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } finally {
+      setLoading(null);
+    }
+  };
 
-  const tableRows: { label: string; free: string; premium: string }[] = [
-    { label: t.upgrade.feature_entries, free: t.upgrade.free_entries, premium: t.upgrade.premium_entries },
-    { label: t.upgrade.feature_stories, free: t.upgrade.free_stories, premium: t.upgrade.premium_stories },
-    { label: t.upgrade.feature_book, free: t.upgrade.free_book, premium: t.upgrade.premium_book },
-    { label: t.upgrade.feature_profiles, free: t.upgrade.free_profiles, premium: t.upgrade.premium_profiles },
-    { label: t.upgrade.feature_support, free: t.upgrade.free_support, premium: t.upgrade.premium_support },
-  ];
+  const t = {
+    title:        isFR ? "Choisissez votre formule" : "Choose your plan",
+    subtitle:     isFR ? "Commencez gratuitement — évoluez quand vous êtes prêt." : "Start free — upgrade when you're ready.",
+    monthly:      isFR ? "Mensuel" : "Monthly",
+    annual:       isFR ? "Annuel" : "Annual",
+    save:         isFR ? "Économisez 40 $/an" : "Save $40/year",
+    cta_loading:  isFR ? "Redirection…" : "Redirecting…",
+    cancel:       isFR ? "Sans engagement" : "Cancel anytime",
+
+    free: {
+      name:  isFR ? "Gratuit" : "Free",
+      price: "$0",
+      desc:  isFR ? "Pour découvrir Everypaw" : "Explore Everypaw",
+      feats: isFR
+        ? ["10 entrées de journal", "1 histoire IA", "1 profil animal"]
+        : ["10 journal entries", "1 AI story", "1 pet profile"],
+      cta: isFR ? "Plan actuel" : "Current plan",
+    },
+
+    digital: {
+      name:  isFR ? "Premium Digital" : "Premium Digital",
+      price: "$4.99",
+      desc:  isFR ? "Pour les passionnés" : "For dedicated pet parents",
+      feats: isFR
+        ? ["Entrées illimitées", "Histoires IA illimitées", "Profils animaux illimités", "Export PDF"]
+        : ["Unlimited entries", "Unlimited AI stories", "Unlimited pet profiles", "PDF export"],
+      cta: isFR ? "Commencer Digital →" : "Get Digital →",
+    },
+
+    print: {
+      name:         isFR ? "Premium Print" : "Premium Print",
+      priceMonthly: "$9.99",
+      priceAnnual:  "$79",
+      priceAnnualPer: isFR ? "$6.58/mois" : "$6.58/month",
+      desc:         isFR ? "Avec un beau livre relié chaque année" : "With a beautiful hardcover book each year",
+      feats: isFR
+        ? ["Tout le plan Digital", "1 livre hardcover / an inclus", "Impression & livraison incluses", "Support prioritaire"]
+        : ["Everything in Digital", "1 hardcover book/year included", "Printing & shipping included", "Priority support"],
+      cta: isFR ? "Commencer Print →" : "Get Print →",
+      badge: isFR ? "Meilleure valeur" : "Best value",
+    },
+
+    book: {
+      name:  isFR ? "Livre à la carte" : "Book à la carte",
+      price: "$29",
+      desc:  isFR ? "Un cadeau ou une commande unique" : "A gift or one-time order",
+      feats: isFR
+        ? ["1 livre hardcover imprimé", "Livraison incluse", "Aucun abonnement requis"]
+        : ["1 printed hardcover book", "Shipping included", "No subscription required"],
+      cta: isFR ? "Commander un livre →" : "Order a book →",
+    },
+  };
+
+  const planCard = (
+    title: string,
+    price: string,
+    priceSub: string | null,
+    desc: string,
+    features: string[],
+    cta: string,
+    onCta: (() => void) | null,
+    featured: boolean,
+    badge?: string,
+    disabled?: boolean,
+  ) => (
+    <div style={{
+      background: featured ? "#3D2B1F" : "#FDFAF5",
+      borderRadius: 20,
+      padding: "1.75rem",
+      border: featured ? "none" : "1px solid rgba(61,43,31,.1)",
+      position: "relative",
+      display: "flex",
+      flexDirection: "column",
+      gap: "1.25rem",
+    }}>
+      {badge && (
+        <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", background: "#C8813A", color: "#FDFAF5", fontSize: ".7rem", fontWeight: 600, padding: ".3rem .8rem", borderRadius: 100, letterSpacing: ".04em", whiteSpace: "nowrap" }}>
+          {badge}
+        </div>
+      )}
+
+      <div>
+        <p style={{ fontSize: ".75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".07em", color: featured ? "rgba(247,242,234,.6)" : "#7A5C44", margin: "0 0 .4rem" }}>
+          {title}
+        </p>
+        <div style={{ display: "flex", alignItems: "baseline", gap: ".35rem" }}>
+          <span style={{ fontFamily: "Georgia, serif", fontSize: "2rem", fontWeight: 700, color: featured ? "#F7C27A" : "#3D2B1F" }}>{price}</span>
+          {priceSub && <span style={{ fontSize: ".8rem", color: featured ? "rgba(247,242,234,.5)" : "#7A5C44" }}>{priceSub}</span>}
+        </div>
+        <p style={{ fontSize: ".82rem", color: featured ? "rgba(247,242,234,.7)" : "#7A5C44", margin: ".4rem 0 0", lineHeight: 1.4 }}>{desc}</p>
+      </div>
+
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: ".5rem" }}>
+        {features.map(f => (
+          <li key={f} style={{ fontSize: ".85rem", color: featured ? "rgba(247,242,234,.85)" : "#3D2B1F", display: "flex", gap: ".5rem", alignItems: "flex-start" }}>
+            <span style={{ color: featured ? "#F7C27A" : "#C8813A", flexShrink: 0, marginTop: "1px" }}>✓</span>
+            {f}
+          </li>
+        ))}
+      </ul>
+
+      <button
+        onClick={onCta ?? undefined}
+        disabled={!onCta || !!disabled}
+        style={{
+          marginTop: "auto",
+          width: "100%",
+          padding: ".8rem",
+          borderRadius: 100,
+          border: onCta ? "none" : `1.5px solid ${featured ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.15)"}`,
+          background: onCta
+            ? (featured ? "#C8813A" : "rgba(200,129,58,.12)")
+            : "transparent",
+          color: onCta
+            ? (featured ? "#FDFAF5" : "#C8813A")
+            : (featured ? "rgba(247,242,234,.4)" : "#7A5C44"),
+          fontFamily: "inherit",
+          fontSize: ".875rem",
+          fontWeight: onCta ? 600 : 400,
+          cursor: onCta && !disabled ? "pointer" : "default",
+          opacity: disabled ? .5 : 1,
+        }}
+      >
+        {cta}
+      </button>
+    </div>
+  );
+
+  const printPlan = billingCycle === "annual" ? "print_annual" : "print_monthly";
+  const printPrice = billingCycle === "annual" ? t.print.priceAnnual : t.print.priceMonthly;
+  const printPriceSub = billingCycle === "annual" ? t.print.priceAnnualPer : (isFR ? "/mois" : "/month");
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <main style={{ maxWidth: 540, margin: "0 auto", padding: "3rem 1.5rem 4rem" }}>
+      <main style={{ maxWidth: 960, margin: "0 auto", padding: "3rem 1.5rem 4rem" }}>
 
-        {/* Hero */}
+        {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
           <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>✦</div>
-          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "2rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".75rem", lineHeight: 1.2 }}>
-            {t.upgrade.title}
+          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.75rem, 3vw, 2.25rem)", fontWeight: 600, color: "#3D2B1F", marginBottom: ".75rem" }}>
+            {t.title}
           </h1>
-          <p style={{ fontSize: "1rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.7, maxWidth: 400, margin: "0 auto" }}>
-            {subtitle}
-          </p>
+          <p style={{ fontSize: "1rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.7 }}>{t.subtitle}</p>
         </div>
 
-        {/* Comparison table */}
-        <div style={{ background: "#FDFAF5", borderRadius: 20, border: "1px solid rgba(61,43,31,.08)", overflow: "hidden", marginBottom: "1.75rem" }}>
-          {/* Header */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px", borderBottom: "1px solid rgba(61,43,31,.08)" }}>
-            <div style={{ padding: "1rem 1.25rem", fontSize: ".7rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em" }} />
-            <div style={{ padding: "1rem .75rem", textAlign: "center", fontSize: ".8rem", fontWeight: 500, color: "#7A5C44", borderLeft: "1px solid rgba(61,43,31,.06)" }}>
-              {t.upgrade.plan_free}
-            </div>
-            <div style={{ padding: "1rem .75rem", textAlign: "center", fontSize: ".8rem", fontWeight: 600, color: "#C8813A", background: "rgba(200,129,58,.04)", borderLeft: "1px solid rgba(61,43,31,.06)" }}>
-              {t.upgrade.plan_premium} ✦
-            </div>
+        {/* Billing toggle */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "2.5rem", gap: 0 }}>
+          <div style={{ display: "inline-flex", background: "#FDFAF5", borderRadius: 100, border: "1px solid rgba(61,43,31,.1)", padding: "4px" }}>
+            {(["monthly", "annual"] as const).map(cycle => (
+              <button
+                key={cycle}
+                onClick={() => setBillingCycle(cycle)}
+                style={{
+                  padding: ".45rem 1.25rem", borderRadius: 100, border: "none",
+                  background: billingCycle === cycle ? "#3D2B1F" : "transparent",
+                  color: billingCycle === cycle ? "#F7F2EA" : "#7A5C44",
+                  fontFamily: "inherit", fontSize: ".875rem", fontWeight: billingCycle === cycle ? 600 : 400,
+                  cursor: "pointer", transition: "all .15s",
+                  display: "flex", alignItems: "center", gap: ".5rem",
+                }}
+              >
+                {cycle === "monthly" ? t.monthly : t.annual}
+                {cycle === "annual" && (
+                  <span style={{ fontSize: ".68rem", background: "#C8813A", color: "#FDFAF5", padding: ".15rem .5rem", borderRadius: 100, fontWeight: 600 }}>
+                    {t.save}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* Rows */}
-          {tableRows.map((row, i) => (
-            <div key={row.label} style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px", borderBottom: i < tableRows.length - 1 ? "1px solid rgba(61,43,31,.05)" : "none" }}>
-              <div style={{ padding: ".875rem 1.25rem", fontSize: ".875rem", color: "#3D2B1F", fontWeight: 400 }}>
-                {row.label}
-              </div>
-              <div style={{ padding: ".875rem .75rem", textAlign: "center", fontSize: ".85rem", color: "#7A5C44", borderLeft: "1px solid rgba(61,43,31,.05)", fontWeight: 300 }}>
-                {row.free}
-              </div>
-              <div style={{ padding: ".875rem .75rem", textAlign: "center", fontSize: ".85rem", color: "#C8813A", background: "rgba(200,129,58,.04)", borderLeft: "1px solid rgba(61,43,31,.05)", fontWeight: 500 }}>
-                {row.premium}
-              </div>
+        {/* Plan grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.25rem", marginBottom: "2.5rem" }}>
+
+          {planCard(
+            t.free.name,
+            t.free.price,
+            isFR ? "/mois" : "/month",
+            t.free.desc,
+            t.free.feats,
+            t.free.cta,
+            null,
+            false,
+            undefined,
+            true,
+          )}
+
+          {planCard(
+            t.digital.name,
+            t.digital.price,
+            isFR ? "/mois" : "/month",
+            t.digital.desc,
+            t.digital.feats,
+            loading === "digital" ? t.cta_loading : t.digital.cta,
+            loading ? null : () => handleSubscribe("digital"),
+            false,
+          )}
+
+          {planCard(
+            t.print.name,
+            printPrice,
+            printPriceSub,
+            t.print.desc,
+            t.print.feats,
+            loading === "print_monthly" || loading === "print_annual" ? t.cta_loading : t.print.cta,
+            loading ? null : () => handleSubscribe(printPlan),
+            true,
+            t.print.badge,
+          )}
+
+        </div>
+
+        {/* Book à la carte */}
+        <div style={{ background: "#FDFAF5", borderRadius: 20, border: "1px solid rgba(61,43,31,.08)", padding: "1.5rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1.25rem" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: ".5rem", marginBottom: ".35rem" }}>
+              <span style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 700, color: "#3D2B1F" }}>
+                {t.book.price}
+              </span>
+              <span style={{ fontSize: ".85rem", fontWeight: 600, color: "#3D2B1F" }}>{t.book.name}</span>
             </div>
-          ))}
-        </div>
-
-        {/* CTAs */}
-        <div style={{ display: "flex", flexDirection: "column", gap: ".875rem" }}>
-          <button
-            onClick={handleSubscribe}
-            disabled={loadingCheckout}
-            style={{ width: "100%", padding: ".9rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".95rem", fontWeight: 600, cursor: loadingCheckout ? "not-allowed" : "pointer", opacity: loadingCheckout ? .7 : 1, transition: "opacity .15s" }}
-          >
-            {loadingCheckout ? t.upgrade.loading : t.upgrade.monthly_cta}
-          </button>
-
-          <div style={{ textAlign: "center", fontSize: ".8rem", color: "#7A5C44", fontWeight: 300 }}>
-            {t.upgrade.or}
+            <p style={{ fontSize: ".875rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.book.desc}</p>
+            <ul style={{ listStyle: "none", padding: 0, margin: ".75rem 0 0", display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
+              {t.book.feats.map(f => (
+                <li key={f} style={{ fontSize: ".8rem", color: "#7A5C44", display: "flex", alignItems: "center", gap: ".35rem" }}>
+                  <span style={{ color: "#C8813A" }}>✓</span>{f}
+                </li>
+              ))}
+            </ul>
           </div>
-
           <button
-            onClick={handleSubscribe}
-            disabled={loadingCheckout}
-            style={{ width: "100%", padding: ".875rem", borderRadius: 100, border: "1.5px solid rgba(200,129,58,.4)", background: "rgba(200,129,58,.06)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: loadingCheckout ? "not-allowed" : "pointer", opacity: loadingCheckout ? .7 : 1, transition: "opacity .15s" }}
+            onClick={handleBookOnce}
+            disabled={!!loading}
+            style={{ padding: ".75rem 1.75rem", borderRadius: 100, border: "1.5px solid rgba(200,129,58,.4)", background: "rgba(200,129,58,.08)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: loading ? .7 : 1 }}
           >
-            {t.upgrade.annual_cta}
+            {loading === "book" ? t.cta_loading : t.book.cta}
           </button>
-
-          <p style={{ textAlign: "center", fontSize: ".78rem", color: "#7A5C44", fontWeight: 300, margin: ".25rem 0 0", opacity: .7 }}>
-            {t.upgrade.cancel_anytime}
-          </p>
         </div>
+
+        <p style={{ textAlign: "center", fontSize: ".78rem", color: "#7A5C44", fontWeight: 300, marginTop: "1.5rem", opacity: .7 }}>
+          {t.cancel}
+        </p>
 
       </main>
     </div>

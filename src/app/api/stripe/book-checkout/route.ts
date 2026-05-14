@@ -4,12 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-const PRICE_MAP: Record<string, string | undefined> = {
-  digital:       process.env.STRIPE_PRICE_DIGITAL_MONTHLY,
-  print_monthly: process.env.STRIPE_PRICE_PRINT_MONTHLY,
-  print_annual:  process.env.STRIPE_PRICE_PRINT_ANNUAL,
-};
-
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -18,21 +12,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { plan = "digital" } = await req.json().catch(() => ({}));
-  const priceId = PRICE_MAP[plan];
+  const { petId } = await req.json().catch(() => ({}));
 
+  const priceId = process.env.STRIPE_PRICE_BOOK_ONCE;
   if (!priceId) {
-    return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+    return NextResponse.json({ error: "Book price not configured" }, { status: 500 });
   }
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
-    mode: "subscription",
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
+    mode: "payment",
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?book_ordered=true`,
     cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/upgrade`,
     customer_email: user.email,
-    metadata: { user_id: user.id, plan },
+    metadata: {
+      user_id: user.id,
+      plan: "book_only",
+      pet_id: petId ?? "",
+    },
   });
 
   return NextResponse.json({ url: session.url });
