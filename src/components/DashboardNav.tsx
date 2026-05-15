@@ -11,13 +11,21 @@ const SPECIES_EMOJI: Record<string, string> = {
   dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾",
 };
 
+const SPECIES_LABEL: Record<string, { fr: string; en: string }> = {
+  dog: { fr: "Chien", en: "Dog" },
+  cat: { fr: "Chat", en: "Cat" },
+  rabbit: { fr: "Lapin", en: "Rabbit" },
+  bird: { fr: "Oiseau", en: "Bird" },
+  other: { fr: "Animal", en: "Pet" },
+};
+
 const LAST_PET_KEY = "lastPetId";
 
 // ── SVG icons ────────────────────────────────────────────────────────────────
 
 function IconHome() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" />
       <path d="M9 21V12h6v9" />
     </svg>
@@ -26,7 +34,7 @@ function IconHome() {
 
 function IconBook() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
       <path d="M8 7h8M8 11h5" />
@@ -36,7 +44,7 @@ function IconBook() {
 
 function IconSparkles() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 3v2M12 19v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
       <circle cx="12" cy="12" r="4" />
     </svg>
@@ -45,7 +53,7 @@ function IconSparkles() {
 
 function IconTrophy() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <path d="M8 21h8M12 17v4" />
       <path d="M7 4H4a2 2 0 00-2 2v1c0 3.31 2.69 6 6 6" />
       <path d="M17 4h3a2 2 0 012 2v1c0 3.31-2.69 6-6 6" />
@@ -54,18 +62,19 @@ function IconTrophy() {
   );
 }
 
-function IconPackage() {
+function IconBookCover() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.91 7.27L12 2.5 3.09 7.27M20.91 7.27L12 12.04M20.91 7.27v9.45l-8.91 4.78M3.09 7.27L12 12.04M3.09 7.27v9.45L12 21.5M12 12.04V21.5" />
-      <path d="M7.5 4.89L16.41 9.66" />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+      <path d="M9 2v17" />
     </svg>
   );
 }
 
 function IconSettings() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
     </svg>
@@ -74,7 +83,7 @@ function IconSettings() {
 
 function IconLogout() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
     </svg>
   );
@@ -82,9 +91,17 @@ function IconLogout() {
 
 function IconChevron({ open }: { open: boolean }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
       style={{ transition: "transform .15s", transform: open ? "rotate(180deg)" : "none" }}>
       <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+function IconPlus() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5v14M5 12h14" />
     </svg>
   );
 }
@@ -112,7 +129,6 @@ function PetSelector({
   const ref = useRef<HTMLDivElement>(null);
 
   const selected = showAll ? null : (pets.find(p => p.id === selectedId) ?? pets[0] ?? null);
-  const hasMultiple = pets.length > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -126,37 +142,52 @@ function PetSelector({
   if (pets.length === 0) return null;
 
   const emoji = selected ? (SPECIES_EMOJI[selected.species] ?? "🐾") : "🐾";
-  const triggerName = selected ? selected.name : (isFR ? "Tous mes animaux" : "All my pets");
+  const petName = selected ? selected.name : (isFR ? "Tous mes animaux" : "All my pets");
+  const speciesText = selected
+    ? ((isFR ? SPECIES_LABEL[selected.species]?.fr : SPECIES_LABEL[selected.species]?.en) ?? selected.species)
+    : `${pets.length} ${isFR ? (pets.length > 1 ? "animaux" : "animal") : (pets.length > 1 ? "pets" : "pet")}`;
 
   return (
-    <div ref={ref} style={{ position: "relative", padding: ".625rem 1rem", borderBottom: "1px solid rgba(61,43,31,.06)" }}>
+    <div ref={ref} style={{ position: "relative", borderBottom: "1px solid rgba(61,43,31,.06)" }}>
       <button
         onClick={() => setOpen(v => !v)}
+        aria-label={isFR ? "Choisir un animal" : "Select a pet"}
         style={{
-          width: "100%", display: "flex", alignItems: "center", gap: ".5rem",
-          background: open ? "rgba(61,43,31,.04)" : "transparent",
-          border: "none", borderRadius: 8, padding: ".4rem .5rem",
+          width: "100%", display: "flex", alignItems: "center", gap: ".75rem",
+          background: open ? "rgba(61,43,31,.05)" : "rgba(61,43,31,.025)",
+          border: "none", padding: ".875rem 1rem",
           cursor: "pointer", fontFamily: "inherit",
           transition: "background .12s",
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)"; }}
-        onMouseLeave={e => { if (!open) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.05)"; }}
+        onMouseLeave={e => { if (!open) (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.025)"; }}
       >
-        <span style={{ fontSize: "1.1rem", lineHeight: 1, flexShrink: 0 }}>{emoji}</span>
-        <span style={{ flex: 1, textAlign: "left", fontSize: ".85rem", fontWeight: 500, color: "#3D2B1F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {triggerName}
-        </span>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+          background: "rgba(200,129,58,.15)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "1.25rem",
+        }}>
+          {emoji}
+        </div>
+        <div style={{ flex: 1, textAlign: "left", overflow: "hidden" }}>
+          <p style={{ margin: 0, fontSize: ".875rem", fontWeight: 600, color: "#3D2B1F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.3 }}>
+            {petName}
+          </p>
+          <p style={{ margin: 0, fontSize: ".72rem", color: "#9A8070", fontWeight: 400, lineHeight: 1.3 }}>
+            {speciesText}
+          </p>
+        </div>
         <IconChevron open={open} />
       </button>
 
       {open && (
         <div style={{
-          position: "absolute", top: "calc(100% - .25rem)", left: ".75rem", right: ".75rem",
+          position: "absolute", top: "calc(100%)", left: ".75rem", right: ".75rem",
           background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)",
           borderRadius: 12, boxShadow: "0 8px 24px rgba(61,43,31,.12)",
           zIndex: 60, overflow: "hidden", padding: ".35rem",
         }}>
-          {/* "Tous mes animaux" entry */}
           <button
             onClick={() => { onSelectAll(); setOpen(false); }}
             style={{
@@ -165,8 +196,7 @@ function PetSelector({
               background: showAll ? "rgba(200,129,58,.1)" : "transparent",
               color: showAll ? "#C8813A" : "#3D2B1F",
               fontFamily: "inherit", fontSize: ".85rem", fontWeight: showAll ? 500 : 400,
-              cursor: "pointer", textAlign: "left",
-              transition: "background .1s",
+              cursor: "pointer", textAlign: "left", transition: "background .1s",
             }}
             onMouseEnter={e => { if (!showAll) (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)"; }}
             onMouseLeave={e => { if (!showAll) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
@@ -178,7 +208,7 @@ function PetSelector({
             {showAll && <span style={{ fontSize: ".7rem", color: "#C8813A" }}>✓</span>}
           </button>
 
-          {hasMultiple && <div style={{ height: 1, background: "rgba(61,43,31,.06)", margin: ".25rem .25rem" }} />}
+          {pets.length > 0 && <div style={{ height: 1, background: "rgba(61,43,31,.06)", margin: ".25rem .25rem" }} />}
 
           {pets.map(pet => {
             const isActive = !showAll && pet.id === selectedId;
@@ -192,8 +222,7 @@ function PetSelector({
                   background: isActive ? "rgba(200,129,58,.1)" : "transparent",
                   color: isActive ? "#C8813A" : "#3D2B1F",
                   fontFamily: "inherit", fontSize: ".85rem", fontWeight: isActive ? 500 : 400,
-                  cursor: "pointer", textAlign: "left",
-                  transition: "background .1s",
+                  cursor: "pointer", textAlign: "left", transition: "background .1s",
                 }}
                 onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)"; }}
                 onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
@@ -244,7 +273,6 @@ export default function DashboardNav() {
   const [resolvedPetId, setResolvedPetId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-  // ── Fetch all pets once ────────────────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient();
     supabase
@@ -256,18 +284,14 @@ export default function DashboardNav() {
       });
   }, []);
 
-  // ── Sync resolvedPetId with URL param + localStorage ──────────────────────
   useEffect(() => {
     if (petId) {
-      // On a pet page: URL is authoritative → persist to localStorage, clear showAll
       setResolvedPetId(petId);
       setShowAll(false);
       try { localStorage.setItem(LAST_PET_KEY, petId); } catch {}
     } else if (pathname === "/dashboard") {
-      // Global dashboard: always show "Tous mes animaux"
       setShowAll(true);
     } else {
-      // Other non-pet pages (settings, etc.): resolve pet from localStorage for nav links
       try {
         const stored = localStorage.getItem(LAST_PET_KEY);
         if (stored) { setResolvedPetId(stored); return; }
@@ -275,7 +299,6 @@ export default function DashboardNav() {
     }
   }, [petId, pathname]);
 
-  // Once pets are loaded, fill resolvedPetId if still null
   useEffect(() => {
     if (resolvedPetId) return;
     if (pets.length === 0) return;
@@ -284,13 +307,11 @@ export default function DashboardNav() {
     setResolvedPetId(candidate);
   }, [pets, resolvedPetId]);
 
-  // ── Handle pet selection from dropdown ────────────────────────────────────
   const handleSelectPet = (newId: string) => {
     setResolvedPetId(newId);
     setShowAll(false);
     try { localStorage.setItem(LAST_PET_KEY, newId); } catch {}
 
-    // Preserve current tab when switching pets
     const currentSearch = typeof window !== "undefined" ? window.location.search : "";
     const tabParam = new URLSearchParams(currentSearch).get("tab");
 
@@ -308,26 +329,25 @@ export default function DashboardNav() {
     router.push("/dashboard");
   };
 
-  // ── Active state helpers ───────────────────────────────────────────────────
   const isPetPage    = pathname.includes("/dashboard/pets/") && !pathname.includes("/order") && !pathname.includes("/new") && !pathname.includes("/edit");
   const isOrderPage  = pathname.includes("/order");
   const isSettingsPage = pathname.startsWith("/dashboard/settings");
   const isDashboard  = !isPetPage && !isOrderPage && !isSettingsPage;
 
-  const petLink        = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal`     : "/dashboard";
+  const petLink        = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal`    : "/dashboard";
   const storiesLink    = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=stories`    : "/dashboard";
   const milestonesLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=milestones` : "/dashboard";
   const orderLink      = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/order`           : "/dashboard";
+  const addMomentLink  = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal`    : "/dashboard/pets/new";
 
   const isFR = locale === "fr";
 
-  const items = [
-    { href: "/dashboard",  label: isFR ? "Accueil" : "Home",     shortLabel: isFR ? "Accueil" : "Home",     icon: <IconHome />,     active: isDashboard },
-    { href: petLink,       label: "Journal",                       shortLabel: "Journal",                      icon: <IconBook />,     active: isPetPage && currentTab !== "stories" && currentTab !== "milestones" },
-    { href: storiesLink,    label: isFR ? "Histoires" : "Stories",  shortLabel: isFR ? "Histoires" : "Stories", icon: <IconSparkles />, active: isPetPage && currentTab === "stories" },
-    { href: milestonesLink, label: isFR ? "Étapes" : "Milestones", shortLabel: isFR ? "Étapes" : "Steps",     icon: <IconTrophy />,   active: isPetPage && currentTab === "milestones" },
-    { href: orderLink,      label: isFR ? "Commander" : "Order",   shortLabel: isFR ? "Livre" : "Book",       icon: <IconPackage />,  active: isOrderPage },
-    { href: "/dashboard/settings", label: isFR ? "Paramètres" : "Settings", shortLabel: isFR ? "Params" : "Settings", icon: <IconSettings />, active: isSettingsPage },
+  const mainItems = [
+    { href: "/dashboard",   label: isFR ? "Accueil"      : "Home",       shortLabel: isFR ? "Accueil"   : "Home",    icon: <IconHome />,      active: isDashboard },
+    { href: petLink,        label: "Journal",                              shortLabel: "Journal",                      icon: <IconBook />,      active: isPetPage && currentTab !== "stories" && currentTab !== "milestones" },
+    { href: storiesLink,    label: isFR ? "Histoires IA" : "AI Stories",  shortLabel: isFR ? "Histoires" : "Stories", icon: <IconSparkles />, active: isPetPage && currentTab === "stories" },
+    { href: orderLink,      label: isFR ? "Livre"        : "Book",        shortLabel: isFR ? "Livre"     : "Book",    icon: <IconBookCover />, active: isOrderPage },
+    { href: milestonesLink, label: isFR ? "Étapes"       : "Milestones",  shortLabel: isFR ? "Étapes"    : "Steps",   icon: <IconTrophy />,   active: isPetPage && currentTab === "milestones" },
   ];
 
   const handleLogout = async () => {
@@ -345,17 +365,24 @@ export default function DashboardNav() {
       display: "flex", flexDirection: "column", zIndex: 40,
     }}>
       {/* Logo */}
-      <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: ".5rem", padding: "1.5rem 1.25rem 1.25rem", textDecoration: "none", borderBottom: "1px solid rgba(61,43,31,.06)" }}>
+      <Link href="/dashboard" style={{
+        display: "flex", alignItems: "center", gap: ".5rem",
+        padding: "1.375rem 1.25rem 1.25rem", textDecoration: "none",
+        borderBottom: "1px solid rgba(61,43,31,.06)",
+      }}>
         <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8813A", display: "inline-block", flexShrink: 0 }} />
         <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "#3D2B1F" }}>Everypaw</span>
       </Link>
 
       {/* Pet selector */}
-      <PetSelector pets={pets} selectedId={resolvedPetId} showAll={showAll} onSelect={handleSelectPet} onSelectAll={handleSelectAll} isFR={isFR} />
+      <PetSelector
+        pets={pets} selectedId={resolvedPetId} showAll={showAll}
+        onSelect={handleSelectPet} onSelectAll={handleSelectAll} isFR={isFR}
+      />
 
-      {/* Nav items */}
-      <nav style={{ flex: 1, padding: "1rem .75rem", display: "flex", flexDirection: "column", gap: ".25rem" }}>
-        {items.map(item => (
+      {/* Main nav */}
+      <nav style={{ flex: 1, padding: ".875rem .75rem", display: "flex", flexDirection: "column", gap: ".2rem" }}>
+        {mainItems.map(item => (
           <Link
             key={item.label}
             href={item.href}
@@ -386,12 +413,74 @@ export default function DashboardNav() {
         ))}
       </nav>
 
-      {/* Bottom: language + logout */}
-      <div style={{ padding: "1rem 1.25rem 1.5rem", borderTop: "1px solid rgba(61,43,31,.06)", display: "flex", flexDirection: "column", gap: ".75rem" }}>
-        <LanguageSwitcher />
+      {/* CTA — Ajouter un moment */}
+      <div style={{ padding: "0 .75rem .875rem" }}>
+        <Link
+          href={addMomentLink}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem",
+            width: "100%", padding: ".75rem", borderRadius: 10,
+            background: "#C8813A", color: "#FDFAF5",
+            fontSize: ".875rem", fontWeight: 500, textDecoration: "none",
+            transition: "opacity .15s",
+          }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = ".85"}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}
+        >
+          <IconPlus />
+          {isFR ? "Ajouter un moment" : "Add a moment"}
+        </Link>
+      </div>
+
+      {/* Secondary section: Settings, Language, Logout */}
+      <div style={{ borderTop: "1px solid rgba(61,43,31,.08)", padding: ".75rem 1rem 1.25rem", display: "flex", flexDirection: "column", gap: ".2rem" }}>
+        <Link
+          href="/dashboard/settings"
+          style={{
+            display: "flex", alignItems: "center", gap: ".625rem",
+            padding: ".45rem .5rem", borderRadius: 8,
+            color: isSettingsPage ? "#C8813A" : "#9A8070",
+            fontSize: ".8rem", fontWeight: isSettingsPage ? 500 : 400,
+            textDecoration: "none",
+            background: isSettingsPage ? "rgba(200,129,58,.08)" : "transparent",
+            transition: "background .12s, color .12s",
+          }}
+          onMouseEnter={e => {
+            if (!isSettingsPage) {
+              (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)";
+              (e.currentTarget as HTMLElement).style.color = "#7A5C44";
+            }
+          }}
+          onMouseLeave={e => {
+            if (!isSettingsPage) {
+              (e.currentTarget as HTMLElement).style.background = "transparent";
+              (e.currentTarget as HTMLElement).style.color = "#9A8070";
+            }
+          }}
+        >
+          <IconSettings />
+          {isFR ? "Paramètres" : "Settings"}
+        </Link>
+        <div style={{ padding: ".2rem .25rem" }}>
+          <LanguageSwitcher />
+        </div>
         <button
           onClick={handleLogout}
-          style={{ display: "flex", alignItems: "center", gap: ".5rem", background: "none", border: "none", cursor: "pointer", fontSize: ".8rem", color: "#7A5C44", padding: ".35rem 0", fontFamily: "inherit", textAlign: "left" }}
+          style={{
+            display: "flex", alignItems: "center", gap: ".625rem",
+            background: "none", border: "none", cursor: "pointer",
+            fontSize: ".8rem", color: "#9A8070", padding: ".45rem .5rem",
+            fontFamily: "inherit", textAlign: "left", borderRadius: 8,
+            transition: "background .12s, color .12s", width: "100%",
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)";
+            (e.currentTarget as HTMLElement).style.color = "#7A5C44";
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background = "transparent";
+            (e.currentTarget as HTMLElement).style.color = "#9A8070";
+          }}
         >
           <IconLogout />
           {isFR ? "Déconnexion" : "Sign out"}
@@ -400,32 +489,55 @@ export default function DashboardNav() {
     </aside>
   );
 
-  // ── Bottom nav (mobile <768px) ────────────────────────────────────────────
+  // ── Mobile: FAB + bottom nav (5 items, no Settings) ──────────────────────
 
   const BottomNav = (
-    <nav className="ep-bottom-nav" style={{
-      position: "fixed", bottom: 0, left: 0, right: 0, height: 56,
-      background: "#F7F2EA", borderTop: "0.5px solid rgba(61,43,31,.12)",
-      zIndex: 40, display: "flex", alignItems: "stretch",
-    }}>
-      {items.map(item => (
-        <Link
-          key={item.label}
-          href={item.href}
-          style={{
-            flex: 1, display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center", gap: "2px",
-            textDecoration: "none", minHeight: 44,
-            color: item.active ? "#C8813A" : "#7A5C44",
-          }}
-        >
-          <span style={{ opacity: item.active ? 1 : 0.6, lineHeight: 1 }}>{item.icon}</span>
-          <span style={{ fontSize: ".6rem", fontWeight: item.active ? 600 : 400, letterSpacing: ".01em", lineHeight: 1 }}>
-            {item.shortLabel}
-          </span>
-        </Link>
-      ))}
-    </nav>
+    <>
+      {/* Floating Action Button */}
+      <Link
+        href={addMomentLink}
+        className="ep-fab"
+        aria-label={isFR ? "Ajouter un moment" : "Add a moment"}
+        style={{
+          position: "fixed",
+          bottom: "calc(56px + env(safe-area-inset-bottom, 0px) + 12px)",
+          left: "50%", transform: "translateX(-50%)",
+          width: 50, height: 50, borderRadius: "50%",
+          background: "#C8813A", color: "#FDFAF5",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 4px 20px rgba(200,129,58,.5)",
+          zIndex: 50, textDecoration: "none",
+          minHeight: "unset",
+        }}
+      >
+        <IconPlus />
+      </Link>
+
+      {/* Bottom nav */}
+      <nav className="ep-bottom-nav" style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, height: 56,
+        background: "#F7F2EA", borderTop: "0.5px solid rgba(61,43,31,.12)",
+        zIndex: 40, display: "flex", alignItems: "stretch",
+      }}>
+        {mainItems.map(item => (
+          <Link
+            key={item.label}
+            href={item.href}
+            style={{
+              flex: 1, display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center", gap: "2px",
+              textDecoration: "none", minHeight: 44,
+              color: item.active ? "#C8813A" : "#7A5C44",
+            }}
+          >
+            <span style={{ opacity: item.active ? 1 : 0.6, lineHeight: 1 }}>{item.icon}</span>
+            <span style={{ fontSize: ".575rem", fontWeight: item.active ? 600 : 400, letterSpacing: ".01em", lineHeight: 1 }}>
+              {item.shortLabel}
+            </span>
+          </Link>
+        ))}
+      </nav>
+    </>
   );
 
   return (

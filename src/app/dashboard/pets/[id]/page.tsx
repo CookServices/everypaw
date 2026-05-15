@@ -64,6 +64,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [newEntry, setNewEntry] = useState("");
   const [mood, setMood] = useState("happy");
   const [tab, setTab] = useState<"journal" | "stories" | "milestones">("journal");
+  const [moodFilter, setMoodFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -294,11 +295,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
   );
   if (!pet) return <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>{t.pet.not_found}</div>;
 
-  const groupedEntries = groupEntriesByMonth(entries, locale);
+  const filteredEntries = moodFilter ? entries.filter(e => e.mood === moodFilter) : entries;
+  const groupedEntries = groupEntriesByMonth(filteredEntries, locale);
+  const isFR = locale === "fr";
 
   const tabs = [
     { key: "journal" as const, label: t.pet.tab_journal },
-    { key: "stories" as const, label: t.pet.tab_stories },
+    { key: "stories" as const, label: isFR ? "Histoires IA" : "AI Stories" },
     { key: "milestones" as const, label: t.pet.tab_milestones },
   ];
 
@@ -501,6 +504,39 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "journal" && (
           <>
+            {/* Mood filter pills */}
+            <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: "1.25rem", alignItems: "center" }}>
+              <button
+                onClick={() => setMoodFilter(null)}
+                style={{
+                  padding: ".35rem .75rem", borderRadius: 100, fontSize: ".78rem", fontWeight: moodFilter === null ? 500 : 400,
+                  border: "1.5px solid", cursor: "pointer", fontFamily: "inherit", transition: "all .12s",
+                  background: moodFilter === null ? "#C8813A" : "transparent",
+                  color: moodFilter === null ? "#FDFAF5" : "#7A5C44",
+                  borderColor: moodFilter === null ? "#C8813A" : "rgba(61,43,31,.2)",
+                }}
+              >
+                {isFR ? "Tous" : "All"}
+              </button>
+              {MOOD_OPTIONS.map(m => (
+                <button
+                  key={m.value}
+                  onClick={() => setMoodFilter(moodFilter === m.value ? null : m.value)}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: ".3rem",
+                    padding: ".35rem .75rem", borderRadius: 100, fontSize: ".78rem", fontWeight: moodFilter === m.value ? 500 : 400,
+                    border: "1.5px solid", cursor: "pointer", fontFamily: "inherit", transition: "all .12s",
+                    background: moodFilter === m.value ? "rgba(200,129,58,.12)" : "transparent",
+                    color: moodFilter === m.value ? "#C8813A" : "#7A5C44",
+                    borderColor: moodFilter === m.value ? "#C8813A" : "rgba(61,43,31,.2)",
+                  }}
+                >
+                  <span>{m.emoji}</span>
+                  <span>{m.label}</span>
+                </button>
+              ))}
+            </div>
+
             <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.25rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
               <textarea
                 value={newEntry}
@@ -551,8 +587,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
               {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>{t.journal.add_more.replace("{count}", String(3 - entries.length)).replace("{entries}", 3 - entries.length === 1 ? t.journal.entry : t.journal.entries)}</span>}
             </button>
 
-            {entries.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#7A5C44", fontSize: ".9rem" }}>{t.journal.no_entries}</div>
+            {filteredEntries.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#7A5C44", fontSize: ".9rem" }}>
+                {moodFilter ? (isFR ? "Aucune entrée pour ce filtre." : "No entries match this filter.") : t.journal.no_entries}
+              </div>
             ) : groupedEntries.map(group => (
               <div key={group.month} style={{ marginBottom: "2rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>

@@ -104,6 +104,17 @@ img {
   }
 }
 
+/* ── FAB (floating action button) — mobile only ─────────────────────────── */
+.ep-fab {
+  display: flex !important;
+}
+
+@media (min-width: 768px) {
+  .ep-fab {
+    display: none !important;
+  }
+}
+
 /* ── Safe area for notched phones (iOS) ─────────────────────────────────── */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .ep-bottom-nav {
