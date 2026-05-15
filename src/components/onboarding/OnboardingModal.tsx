@@ -20,8 +20,6 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
       const saved = sessionStorage.getItem("ep_onboarding_step");
       if (saved !== null) return parseInt(saved, 10);
     }
-    if (hasPets && hasEntries) return 2;
-    if (hasPets) return 1;
     return 0;
   })();
 
