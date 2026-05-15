@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Pet, Entry, Story } from "@/types";
 import Link from "next/link";
@@ -55,6 +56,11 @@ function groupEntriesByMonth(entries: Entry[], locale: string) {
 export default function PetPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const { t, locale } = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawTab = searchParams.get("tab");
+  const tab: "journal" | "stories" | "milestones" =
+    rawTab === "stories" ? "stories" : rawTab === "milestones" ? "milestones" : "journal";
   const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
 
   const [pet, setPet] = useState<Pet | null>(null);
@@ -63,14 +69,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [milestones, setMilestones] = useState<{ id: string; type: string; title: string; achieved_at: string }[]>([]);
   const [newEntry, setNewEntry] = useState("");
   const [mood, setMood] = useState("happy");
-  const [tab, setTab] = useState<"journal" | "stories" | "milestones">("journal");
   const [moodFilter, setMoodFilter] = useState<string | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get("tab");
-    if (tabParam === "stories" || tabParam === "milestones") setTab(tabParam);
-  }, []);
   const [saving, setSaving] = useState(false);
   const [entryError, setEntryError] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -227,7 +226,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
           period_end: entries[0]?.entry_date,
         }).select().single();
         if (saved) setStories([saved, ...stories]);
-        setTab("stories");
+        router.push(`/dashboard/pets/${id}?tab=stories`);
       }
     } catch { alert(t.journal.generation_failed); }
     setGenerating(false);
