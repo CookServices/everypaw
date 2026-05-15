@@ -123,16 +123,36 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
           ))}
         </div>
 
-        {/* Step counter */}
-        <p style={{
-          fontSize: ".68rem", fontWeight: 600, color: "#C8813A",
-          letterSpacing: ".1em", textTransform: "uppercase",
-          margin: "0 0 .6rem", fontFamily: "sans-serif",
-        }}>
-          {t.onboarding.step_of
-            .replace("{current}", String(step + 1))
-            .replace("{total}", String(totalSteps))}
-        </p>
+        {/* Step counter + back button */}
+        <div style={{ display: "flex", alignItems: "center", gap: ".625rem", margin: "0 0 .6rem" }}>
+          {step > 0 && (
+            <button
+              onClick={() => goTo(step - 1)}
+              aria-label="Étape précédente"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 26, height: 26, borderRadius: "50%",
+                border: "1.5px solid rgba(61,43,31,.18)",
+                background: "transparent", cursor: "pointer",
+                color: "#7A5C44", fontSize: ".9rem", lineHeight: 1,
+                flexShrink: 0, transition: "border-color .12s, color .12s",
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#C8813A"; (e.currentTarget as HTMLElement).style.color = "#C8813A"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.18)"; (e.currentTarget as HTMLElement).style.color = "#7A5C44"; }}
+            >
+              ←
+            </button>
+          )}
+          <p style={{
+            fontSize: ".68rem", fontWeight: 600, color: "#C8813A",
+            letterSpacing: ".1em", textTransform: "uppercase",
+            margin: 0, fontFamily: "sans-serif",
+          }}>
+            {t.onboarding.step_of
+              .replace("{current}", String(step + 1))
+              .replace("{total}", String(totalSteps))}
+          </p>
+        </div>
 
         {/* Emoji */}
         <div style={{ fontSize: "2.25rem", marginBottom: ".875rem", lineHeight: 1 }}>
