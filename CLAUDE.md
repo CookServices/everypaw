@@ -1,8 +1,56 @@
-# CLAUDE.md
+# CLAUDE.md — Everypaw
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> Fichier de contexte projet pour Claude Code. Maintenu à la racine du repo.
 
-## Commands
+---
+
+## Instructions pour Claude
+
+En fin de session, si des décisions importantes ont été prises ou du code significatif a été produit :
+1. Mets à jour la section "État actuel / Fonctionnalités implémentées" avec ce qui a changé
+2. Ajoute les nouvelles commandes découvertes
+3. Note les décisions d'architecture dans "Conventions de code"
+4. Mets à jour la date de dernière session
+
+Ne demande pas confirmation — fais-le directement avant de clore.
+
+Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suivre l'ordre d'implémentation recommandé pour toute nouvelle feature (voir section dédiée).
+
+---
+
+## Présentation du projet
+
+**Everypaw** est une application web pour pet parents (chiens, chats) permettant de tenir un journal IA de leur animal et de le transformer en livre imprimé annuel.
+
+- **URL** : https://everypaw.app
+- **GitHub** : CookServices/everypaw (branch `main`)
+- **Domaine** : everypaw.app (OVH → Vercel)
+- **Statut** : MVP live, early-access — Stripe en mode **test** (à passer en Live avant lancement public)
+- **Cible** : pet parents US/UK, très attachés émotionnellement à leurs animaux
+- **Différenciateur** : seule app combinant journal IA + livre imprimé physique
+
+---
+
+## Stack technique
+
+| Couche | Techno | Notes |
+|---|---|---|
+| Framework | Next.js 14.2 (App Router) | Pas de `output: standalone` dans next.config.js |
+| Base de données | Supabase (PostgreSQL) | Auth + DB + Storage photos |
+| Auth | Supabase Auth | Google OAuth + email/password — Google OAuth en mode **Test** (à publier avant lancement) |
+| Paiements | Stripe | Webhooks dans `/api/stripe/webhook` |
+| IA | Anthropic Claude API | Modèle : `claude-sonnet-4-5` pour la génération de stories |
+| Impression | Gelato | Print-on-demand livres |
+| Emails | Resend | 3 000/mois gratuit |
+| Hébergement | Vercel | Cron jobs configurés dans `vercel.json` |
+| Langage | TypeScript | |
+| Style | Inline styles | Tailwind installé mais non utilisé en pratique |
+
+**Coût infra mois 1-2 : ~30-50€/mois** (Anthropic API principal poste)
+
+---
+
+## Commandes
 
 ```bash
 npm run dev        # Start dev server on localhost:3000
@@ -10,72 +58,318 @@ npm run build      # Production build (also validates TypeScript)
 npx tsc --noEmit   # Type-check without building
 ```
 
-No lint script and no test suite are configured. Type-check with `npx tsc --noEmit` before committing.
+Pas de lint script ni de test suite configurés. Type-checker avec `npx tsc --noEmit` avant tout commit.
 
-Deployment is on **Vercel** — pushing to `main` auto-deploys. Environment variables (Supabase, Stripe, Gelato, Resend) live only on Vercel; there is no `.env.local` locally.
+Déploiement sur **Vercel** — push sur `main` = auto-deploy. Les variables d'environnement (Supabase, Stripe, Gelato, Resend) ne vivent que sur Vercel ; pas de `.env.local` en local.
+
+---
+
+## Variables d'environnement (Vercel)
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+
+ANTHROPIC_API_KEY
+
+STRIPE_SECRET_KEY              # sk_test_51TKay... (mode test)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+STRIPE_PRICE_ID
+STRIPE_WEBHOOK_SECRET
+STRIPE_GIFT_COUPON_ID          # GLTgXWbF
+
+RESEND_API_KEY
+WAITLIST_TO                    # email destinataire waitlist
+
+CRON_SECRET                    # protège les routes /api/cron/*
+```
+
+---
+
+## Schéma base de données (Supabase)
+
+```sql
+-- profiles (liée à auth.users)
+profiles: id, email, full_name, avatar_url,
+          plan,              -- 'free' | 'digital' | 'print' | 'book_only'
+          is_premium,        -- boolean (legacy, dériver de plan)
+          book_credits,      -- integer — livres dus à l'utilisateur
+          stripe_customer_id,
+          email_reminders,   -- boolean — consentement emails hebdomadaires
+          onboarding_completed,
+          created_at
+
+-- pets
+pets: id, user_id, name, species, breed, birthdate, photo_url, bio,
+      deceased_at,           -- date nullable — active le mode mémorial
+      memorial_message,      -- text nullable
+      created_at
+
+-- entries (journal)
+entries: id, pet_id, user_id, content, photo_urls[], mood, tags[], entry_date, created_at
+
+-- stories (chapitres IA)
+stories: id, pet_id, user_id, title, content, cover_url,
+         status,             -- 'draft' | 'ready' | 'ordered'
+         created_at
+
+-- milestones
+milestones: id, pet_id, user_id, type, title, achieved_at, entry_id, created_at
+```
+
+SQL migrations dans `supabase/migrations/`. Toujours utiliser `IF NOT EXISTS` et blocs `DO $$ … $$` pour rester idempotent.
+
+---
+
+## Plans & monétisation
+
+| Plan | Prix | Accès |
+|---|---|---|
+| **Free** | $0 | 10 entrées max, 1 génération IA, 1 profil animal |
+| **Premium Digital** | $4.99/mois | IA illimitée, multi-profils, pas de livre |
+| **Premium Print** | $9.99/mois ou $79/an | Tout le digital + 1 livre hardcover annuel |
+| **Livre à la carte** | $29 one-time | 1 livre unique (cadeau), sans accès premium digital |
+
+### Guards d'accès (`src/lib/plan.ts`)
+
+```typescript
+getUserPlan(userId)          // retourne le plan actuel
+canGenerateStory(userId)     // Free: max 1 | autres: illimité
+canAddEntry(userId)          // Free: max 10 | autres: illimité
+canOrderBook(userId)         // Digital: non | Print: oui (1/an) | Book: oui (1 crédit)
+```
+
+`priceIdToPlan()` mappe les Stripe price IDs (depuis env vars) aux plans.  
+Book credits : incrémentés atomiquement via RPC Postgres `increment_book_credits`.
+
+Le webhook (`/api/stripe/webhook`) gère :
+- `checkout.session.completed`
+- `customer.subscription.deleted`
+- `customer.subscription.updated`
+
+---
 
 ## Architecture
 
-**Next.js 14 App Router** — all pages under `src/app/`. All dashboard pages are `"use client"` components; they fetch data in `useEffect` on mount via the browser Supabase client.
+**Next.js 14 App Router** — toutes les pages dans `src/app/`. Toutes les pages dashboard sont `"use client"` ; elles fetchent les données dans `useEffect` via le client Supabase browser.
 
-### Supabase
+### Supabase — deux clients
 
-Two clients:
-- `src/lib/supabase/client.ts` — browser client, used in all `"use client"` pages
-- `src/lib/supabase/server.ts` — server client, used in API routes and middleware
-- `getServiceSupabase()` in `src/lib/plan.ts` — service role client (bypasses RLS), used only in Stripe webhook
+- `src/lib/supabase/client.ts` — client browser, utilisé dans toutes les pages `"use client"`
+- `src/lib/supabase/server.ts` — client serveur, utilisé dans les routes API et le middleware
+- `getServiceSupabase()` dans `src/lib/plan.ts` — client service role (bypass RLS), uniquement dans le webhook Stripe
 
-Auth is enforced in `src/middleware.ts`: unauthenticated requests to `/dashboard/*` redirect to `/auth/login`.
-
-**Key tables**: `profiles` (plan, is_premium, book_credits, stripe_customer_id, onboarding_completed), `pets`, `entries` (pet_id, content, photo_urls, mood, tags, entry_date), `stories` (pet_id, status: draft|ready|ordered), `milestones` (detected client-side via `src/lib/milestones.ts` keyword matching).
-
-### Plans & monetisation (`src/lib/plan.ts`)
-
-Four plans: `free | digital | print | book_only`. Guards: `canAddEntry`, `canGenerateStory`, `canOrderBook`. `priceIdToPlan()` maps Stripe price IDs (from env vars) to plan strings. The webhook (`/api/stripe/webhook`) handles `checkout.session.completed`, `customer.subscription.deleted`, and `customer.subscription.updated`.
-
-Free limits: 10 entries total, 1 generated story. Book credits are incremented atomically via `increment_book_credits` Postgres RPC.
+Auth enforced dans `src/middleware.ts` : les requêtes non authentifiées vers `/dashboard/*` redirigent vers `/auth/login`.
 
 ### i18n
 
-Messages in `messages/en.json` and `messages/fr.json`. `src/lib/i18n.ts` loads both at build time. `src/hooks/useLocale.ts` reads the `locale` cookie client-side and exposes `{ t, locale, setLocale }`. All UI strings go through `t.*` — add keys to both JSON files when adding new copy.
+Messages dans `messages/en.json` et `messages/fr.json`. `src/lib/i18n.ts` charge les deux au build. `src/hooks/useLocale.ts` lit le cookie `locale` côté client et expose `{ t, locale, setLocale }`.
+
+**Règle** : toujours ajouter les nouvelles clés dans les **deux** fichiers JSON.
 
 ### Dashboard layout & navigation
 
-`src/app/dashboard/layout.tsx` renders `<DashboardNav>` (fixed sidebar on desktop, bottom nav on mobile) + `{children}`.
+`src/app/dashboard/layout.tsx` rend `<DashboardNav>` (sidebar fixe desktop, bottom nav mobile) + `{children}`.
 
-`src/components/DashboardNav.tsx` manages:
-- `PetSelector` dropdown: lists all pets + "Tous mes animaux" entry. Persists last visited pet to `localStorage` key `lastPetId`.
-- `showAll` state: true when on `/dashboard` (global view) — resets automatically via `useEffect` on `pathname`.
-- Tab-aware navigation: sidebar links use `?tab=journal|stories|milestones` query params. Active state uses `useSearchParams()` to read `currentTab`.
-- Pet switching preserves the current tab.
+`src/components/DashboardNav.tsx` — composant central de navigation :
+- **PetSelector** : liste tous les pets + "Tous mes animaux". Persiste le dernier pet visité dans `localStorage` (`lastPetId`)
+- `showAll` state : `true` quand on est sur `/dashboard` (vue globale)
+- Navigation tab-aware : les liens sidebar utilisent `?tab=journal|stories|milestones`
+- Le switch de pet préserve l'onglet actif
+- **Sidebar desktop** (3 zones) : sélecteur animal proéminent → nav principale 5 items → CTA "Ajouter un moment" → section secondaire (Paramètres, langue, déconnexion)
+- **Mobile** : bottom nav 5 items + FAB orange flottant
+
+### Labels de navigation (nommage définitif)
+
+| Ancien | Actuel |
+|---|---|
+| Commander | Livre |
+| Histoires | Histoires IA |
 
 ### Pet page tabs
 
-`/dashboard/pets/[id]` uses `?tab=journal|stories|milestones` (no tab = journal). Tab is read from `useSearchParams` (or `window.location.search` in legacy effects). There is no inline tab bar in the UI — navigation is exclusively through the sidebar.
+`/dashboard/pets/[id]` utilise `?tab=journal|stories|milestones` (pas de tab = journal).  
+Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state local** (correction importante : un state local avec `useEffect` vide ne se mettait pas à jour sur navigation client-side).
 
-### API routes
+---
 
-| Route | Purpose |
+## Routes API
+
+| Route | Rôle |
 |---|---|
-| `/api/generate` | AI story generation — server-side plan gate via `getUserPlan()` |
-| `/api/stripe/checkout` | Subscription checkout (accepts `{ plan: "digital" \| "print_monthly" \| "print_annual" }`) |
-| `/api/stripe/book-checkout` | One-time book purchase |
-| `/api/stripe/webhook` | Stripe webhook (must use service role Supabase) |
-| `/api/gelato/order` | Send book to print via Gelato API |
-| `/api/cron/monthly-story` | Auto-generate stories monthly |
-| `/api/cron/weekly-reminder` | Email reminders via Resend |
-| `/api/gift/create`, `/api/gift/redeem` | Gift card flow |
-| `/api/preview-pdf` | PDF preview via `@react-pdf/renderer` |
+| `/api/generate` | Génération histoire IA — gate plan server-side via `getUserPlan()` |
+| `/api/stripe/checkout` | Checkout abonnement (accepte `{ plan: "digital" \| "print_monthly" \| "print_annual" }`) |
+| `/api/stripe/book-checkout` | Achat livre one-time |
+| `/api/stripe/webhook` | Webhook Stripe (doit utiliser le client Supabase service role) |
+| `/api/gelato/order` | Envoi commande à Gelato |
+| `/api/cron/monthly-story` | Auto-génération histoires mensuelles |
+| `/api/cron/weekly-reminder` | Rappels email via Resend |
+| `/api/gift/create`, `/api/gift/redeem` | Flow carte cadeau |
+| `/api/preview-pdf` | Preview PDF via `@react-pdf/renderer` |
+| `/api/locale` | Setter cookie i18n |
 
-### Styling conventions
+---
 
-No Tailwind used in practice despite it being installed. All styles are **inline** with this design token set:
+## Pages clés
 
-- Background: `#F7F2EA` (dashboard), `#FDFAF5` (cards/sidebar)
-- Text: `#3D2B1F` (primary), `#7A5C44` (muted), `#9A8070` (very muted)
-- Accent: `#C8813A` (amber — CTAs, active states)
-- Error: `#A32D2D`
-- Fonts: `Georgia, serif` for headings, `'DM Sans', sans-serif` for body
-- Border radius: 8px (small), 12–16px (cards), 20px (large cards), 100px (pills/buttons)
+| Route | Description |
+|---|---|
+| `/` | Landing page (EN par défaut) |
+| `/auth/signup` | Inscription |
+| `/dashboard` | Dashboard principal |
+| `/dashboard/pets/[id]` | Profil animal + journal (tabs: journal / histoires IA / étapes) |
+| `/dashboard/pets/[id]/order` | Commande livre |
+| `/dashboard/settings` | Préférences utilisateur |
+| `/pets/[id]` | Profil public animal |
+| `/memorial/[id]` | Page mémorial (à implémenter) |
+| `/gift` | Page cadeau |
+| `/unsubscribe` | Désinscription emails (token) |
 
-SQL migrations live in `supabase/migrations/`. Use `IF NOT EXISTS` and `DO $$ … $$` blocks to keep them idempotent.
+---
+
+## Cron jobs (`vercel.json`)
+
+```json
+{
+  "crons": [
+    { "path": "/api/cron/weekly-reminder", "schedule": "0 8 * * 1" },
+    { "path": "/api/cron/monthly-story",   "schedule": "0 8 1 * *"  }
+  ]
+}
+```
+
+Toutes les routes cron protégées par `Authorization: Bearer CRON_SECRET`.
+
+---
+
+## Gelato — Configuration livre
+
+```typescript
+productUid: "photobooks-hardcover_pf_200x200-mm-8x8-inch_pt_170-gsm-65lb-coated-silk_cl_4-4_ccl_4-4_bt_glued-left_ct_matt-lamination_prt_1-0_cpt_130-gsm-65-lb-cover-coated-silk_ver"
+pageCount: 28   // OBLIGATOIRE — sans ça Gelato retourne BAD_REQUEST
+currency: "USD"
+```
+
+**COGS livre : $15-25 (impression + shipping)** — raison pour laquelle le livre est séparé du plan Digital.
+
+---
+
+## Design system
+
+### Palette de couleurs
+
+```css
+--cream:        #F7F2EA   /* fond principal dashboard */
+--cream-card:   #FDFAF5   /* fond cartes / sidebar */
+--cream-dark:   #EDE5D4   /* fond secondaire */
+--brown:        #3D2B1F   /* texte principal */
+--brown-mid:    #7A5C44   /* texte secondaire / muted */
+--brown-light:  #9A8070   /* très muted */
+--amber:        #C8813A   /* accent / CTA / états actifs */
+--amber-light:  #E8A96A   /* hover accent */
+--sage:         #6B7B5E   /* accents verts */
+--error:        #A32D2D   /* erreurs / danger */
+```
+
+### Typographie
+
+- **Titres** : `Georgia, serif` (ou Playfair Display) — 400 & 600
+- **Corps** : `'DM Sans', sans-serif` — 300 / 400 / 500
+- Style éditorial et chaleureux — évoque le papier, la mémoire, le vivant
+
+### Border-radius
+
+- 8px → petits éléments (badges, inputs)
+- 10–12px → nav items, dropdowns
+- 14–16px → cartes moyennes
+- 20px → grandes cartes
+- 100px → pills, boutons principaux
+
+### Règles de design
+
+- Ne jamais partir dans une direction SaaS bleue générique
+- Toujours conserver la palette beige/crème/marron/orange
+- Border-radius généreux, ombres douces
+- Tous les styles sont **inline** (`style={{}}`), pas de classes Tailwind
+- Hover states via `onMouseEnter` / `onMouseLeave` handlers React
+- Media queries dans `src/app/globals.css` (`.ep-sidebar`, `.ep-bottom-nav`, `.ep-fab`, `.ep-dashboard-main`)
+
+---
+
+## Fonctionnalités implémentées
+
+### ✅ Sprint 1 — Core
+- Upload et gestion de photos (compression canvas avant upload)
+- Rappels hebdomadaires par email (cron tous les lundis 8h UTC)
+- Page de préférences email (`/dashboard/settings`) avec toggle opt-out
+- Lien de désinscription tokenisé dans les emails
+- Onboarding guidé (modal 3 étapes, sessionStorage pour résumption + bouton retour)
+- Timeline visuelle des entrées groupées par mois
+
+### ✅ Sprint 2 — Livre & monétisation
+- Preview du livre en PDF (`/api/preview-pdf`)
+- Commande livre imprimé via Gelato API
+- Gifting — offrir un abonnement (coupon Stripe : `GLTgXWbF`)
+- Page profil animal publique (`/pets/[id]`)
+- Mode mémorial (`deceased_at` sur pet → badge + modal)
+
+### ✅ Sprint 3 — Contenu & scale
+- Milestones & achievements (détection automatique à la création d'entrée via `src/lib/milestones.ts`)
+- Multi-langues EN/FR — solution custom (next-intl abandonné)
+- Navigation globale refonte UX (sidebar 3 zones + FAB mobile)
+- Filtres mood pills dans le journal
+- Dashboard avec chips navigation pet + KPI améliorés
+
+### 🚧 Prochaine étape
+- Passer Stripe en mode **Live**
+- Passer Google OAuth en mode **Published**
+- Chapitre mensuel automatique (cron IA le 1er de chaque mois)
+- Page mémorial complète (`/memorial/[id]`)
+- Partage social (carte générative)
+
+---
+
+## Conventions de code
+
+### Ordre d'implémentation pour toute nouvelle feature
+
+1. Lire `package.json` + fichiers de layout existants
+2. Lire le schéma Supabase actuel
+3. Proposer la migration SQL si nécessaire
+4. Implémenter la logique métier
+5. Implémenter l'UI en dernier
+
+### Règles critiques
+
+- Routes API dans `/app/api/`
+- Webhook Stripe : `/api/stripe/webhook` — **ne jamais déplacer**
+- Auth middleware : vérifier via Supabase server client uniquement
+- Ne jamais supprimer un ancien Price ID Stripe avant que le nouveau soit testé en Live
+- Tab actif dans la pet page : **lire depuis `useSearchParams()`**, jamais un `useState` avec `useEffect` vide (ne se met pas à jour sur navigation client-side)
+- Toujours ajouter les nouvelles clés i18n dans `messages/en.json` ET `messages/fr.json`
+
+---
+
+## Checklist avant mise en production
+
+- [ ] Passer `STRIPE_SECRET_KEY` de `sk_test_...` à `sk_live_...`
+- [ ] Mettre à jour `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET` en mode Live
+- [ ] Publier l'application Google OAuth (retirer le mode Test)
+- [ ] Tester le webhook Stripe en mode Live avec un vrai paiement
+- [ ] Vérifier que le cron weekly-reminder envoie bien les emails
+- [ ] Vérifier que Gelato est configuré avec une carte de paiement valide
+
+---
+
+## Contexte marché
+
+- **Cible** : pet parents US/UK, très attachés émotionnellement à leurs animaux
+- **Différenciateur** : seule app combinant journal IA + livre imprimé physique
+- **Concurrents directs** : 11Pets, PetNoter, DogNote (aucun ne propose un livre imprimé)
+- **Canaux d'acquisition** : Reddit, Twitter/X, groupes Facebook pet parents, Product Hunt
+- **Stratégie** : validation organique avant publicité payante
+
+---
+
+*Dernière mise à jour : 2026-05-18*
