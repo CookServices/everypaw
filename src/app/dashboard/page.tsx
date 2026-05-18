@@ -99,12 +99,20 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (plan: "digital" | "print_monthly" = "digital") => {
     setSubscribing(true);
-    const res = await fetch("/api/stripe/checkout", { method: "POST" });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
-    else setSubscribing(false);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else setSubscribing(false);
+    } catch {
+      setSubscribing(false);
+    }
   };
 
   if (loading) return (
@@ -300,16 +308,57 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Premium upsell banner */}
+        {/* Premium upsell — 2 cartes */}
         {!isPremium && (
-          <div style={{ background: "rgba(200,129,58,.08)", border: "1.5px solid rgba(200,129,58,.25)", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
-            <div>
-              <p style={{ fontSize: ".875rem", color: "#3D2B1F", fontWeight: 500, margin: "0 0 .25rem" }}>{t.dashboard.upgrade_title}</p>
-              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.dashboard.upgrade_desc}</p>
+          <div style={{ marginBottom: "1.5rem" }}>
+            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
+              {isFR ? "Passer à Premium" : "Upgrade to Premium"}
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem" }}>
+
+              {/* Digital */}
+              <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1.1rem", border: "1.5px solid rgba(200,129,58,.2)", display: "flex", flexDirection: "column", gap: ".5rem" }}>
+                <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#C8813A", textTransform: "uppercase", letterSpacing: ".07em", margin: 0 }}>
+                  Premium Digital
+                </p>
+                <p style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", margin: 0, lineHeight: 1 }}>
+                  4,99 €<span style={{ fontSize: ".75rem", fontWeight: 400, color: "#7A5C44" }}>/mois</span>
+                </p>
+                <p style={{ fontSize: ".75rem", color: "#7A5C44", margin: 0, fontWeight: 300, lineHeight: 1.5 }}>
+                  {isFR ? "Entrées illimitées, histoires IA, export PDF" : "Unlimited entries, AI stories, PDF export"}
+                </p>
+                <button
+                  onClick={() => handleSubscribe("digital")}
+                  disabled={subscribing}
+                  style={{ marginTop: "auto", padding: ".5rem .875rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: subscribing ? "wait" : "pointer", opacity: subscribing ? .7 : 1 }}
+                >
+                  {isFR ? "Choisir Digital →" : "Choose Digital →"}
+                </button>
+              </div>
+
+              {/* Print */}
+              <div style={{ background: "linear-gradient(135deg, rgba(200,129,58,.1) 0%, rgba(200,129,58,.04) 100%)", borderRadius: 16, padding: "1.1rem", border: "1.5px solid rgba(200,129,58,.35)", display: "flex", flexDirection: "column", gap: ".5rem", position: "relative" }}>
+                <div style={{ position: "absolute", top: "-.6rem", right: ".875rem", background: "#C8813A", color: "#FDFAF5", fontSize: ".65rem", fontWeight: 600, borderRadius: 100, padding: ".2rem .6rem", letterSpacing: ".04em" }}>
+                  {isFR ? "Meilleure valeur" : "Best value"}
+                </div>
+                <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#C8813A", textTransform: "uppercase", letterSpacing: ".07em", margin: 0 }}>
+                  Premium Print
+                </p>
+                <p style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", margin: 0, lineHeight: 1 }}>
+                  9,99 €<span style={{ fontSize: ".75rem", fontWeight: 400, color: "#7A5C44" }}>/mois</span>
+                </p>
+                <p style={{ fontSize: ".75rem", color: "#7A5C44", margin: 0, fontWeight: 300, lineHeight: 1.5 }}>
+                  {isFR ? "Tout Digital + livre relié annuel livré chez vous" : "All Digital + annual hardcover book delivered"}
+                </p>
+                <button
+                  onClick={() => handleSubscribe("print_monthly")}
+                  disabled={subscribing}
+                  style={{ marginTop: "auto", padding: ".5rem .875rem", borderRadius: 100, border: "1.5px solid #C8813A", background: "transparent", color: "#C8813A", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: subscribing ? "wait" : "pointer", opacity: subscribing ? .7 : 1 }}
+                >
+                  {isFR ? "Choisir Print →" : "Choose Print →"}
+                </button>
+              </div>
             </div>
-            <button onClick={handleSubscribe} disabled={subscribing} style={{ background: "#C8813A", color: "#FDFAF5", padding: ".5rem 1.25rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "none", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
-              {subscribing ? t.dashboard.loading_btn : t.dashboard.upgrade_cta}
-            </button>
           </div>
         )}
 

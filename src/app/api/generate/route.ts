@@ -12,6 +12,8 @@ export async function POST(req: Request) {
   if (!petId) return NextResponse.json({ error: "Missing petId" }, { status: 400 });
 
   const { data: pet } = await supabase.from("pets").select("id, user_id").eq("id", petId).single();
+  const { data: profile } = await supabase.from("profiles").select("locale, language").eq("id", user.id).single();
+  const lang = (profile?.locale || profile?.language || "fr").toLowerCase().startsWith("fr") ? "French" : "English";
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -40,6 +42,8 @@ export async function POST(req: Request) {
     .join("\n");
 
   const prompt = `You are writing a warm, emotional, first-person narrative story for a pet journal called Everypaw.
+
+IMPORTANT: Write this story entirely in ${lang}. Do not use any other language.
 
 Pet details:
 - Name: ${petName}
