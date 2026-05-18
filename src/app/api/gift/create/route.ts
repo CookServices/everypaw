@@ -110,9 +110,15 @@ export async function POST(req: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
   const resend = new Resend(process.env.RESEND_API_KEY);
 
+  const giftCouponId = process.env.STRIPE_GIFT_COUPON_ID;
+  if (!giftCouponId) {
+    console.error("[gift/create] STRIPE_GIFT_COUPON_ID env var is not set");
+    return NextResponse.json({ error: "Gift service not configured" }, { status: 500 });
+  }
+
   try {
     const promotionCode = await stripe.promotionCodes.create({
-      coupon: process.env.STRIPE_GIFT_COUPON_ID!,
+      coupon: giftCouponId,
       max_redemptions: 1,
       metadata: {
         recipient_email: recipientEmail,
