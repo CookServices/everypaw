@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { petId, petName, species, bio, entries, style } = await req.json();
+  const { petId, petName, species, bio, entries, style, periodStart, periodEnd } = await req.json();
 
   if (!petId) return NextResponse.json({ error: "Missing petId" }, { status: 400 });
 
@@ -81,7 +81,11 @@ Also generate a short evocative title (5 words max).
 You MUST respond with valid JSON only, no other text:
 {"title": "...", "story": "..."}`;
 
+  console.log("[generate] params:", { petId, style, periodStart, periodEnd, entriesCount: entries?.length });
+  console.log("[generate] API key present:", !!process.env.ANTHROPIC_API_KEY);
+
   try {
+    console.log("[generate] calling Anthropic model=claude-sonnet-4-6");
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -90,25 +94,70 @@ You MUST respond with valid JSON only, no other text:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5",
+        model: "claude-sonnet-4-6",
         max_tokens: 1200,
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
-    const data = await response.json();
-    const text = data.content?.[0]?.text || "";
+    const anthropicData = await response.json();
+    console.log("[generate] Anthropic status:", response.status, "| stop_reason:", anthropicData.stop_reason, "| error:", anthropicData.error ?? null);
+
+    if (!response.ok) {
+      console.error("[generate] Anthropic API error:", anthropicData);
+      return NextResponse.json({ error: "Anthropic API error", detail: anthropicData.error }, { status: 500 });
+    }
+
+    const text = anthropicData.content?.[0]?.text || "";
+    console.log("[generate] raw text length:", text.length);
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      console.error("No JSON found in response:", text);
+      console.error("[generate] No JSON in Anthropic response:", text.slice(0, 200));
       return NextResponse.json({ error: "Invalid response format" }, { status: 500 });
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    return NextResponse.json({ title: parsed.title, story: parsed.story });
+    const { title, story } = parsed;
+    console.log("[generate] parsed title:", title, "| story length:", story?.length);
+
+    // Compute period dates (must be YYYY-MM-DD)
+    const today = new Date().toISOString().split("T")[0];
+    const firstEntry: string | undefined = entries[entries.length - 1]?.entry_date;
+    const lastEntry: string | undefined = entries[0]?.entry_date;
+    const finalPeriodStart = (periodStart || firstEntry || today).slice(0, 10);
+    const finalPeriodEnd = (
+      periodEnd
+        ? [periodEnd, lastEntry ?? today, today].sort().at(0)!
+        : lastEntry ?? today
+    ).slice(0, 10);
+
+    console.log("[generate] INSERT payload:", { pet_id: petId, user_id: user.id, style: style ?? "classic", period_start: finalPeriodStart, period_end: finalPeriodEnd });
+
+    const { data: saved, error: insertError } = await supabase
+      .from("stories")
+      .insert({
+        pet_id: petId,
+        user_id: user.id,
+        title,
+        content: story,
+        style: style ?? "classic",
+        period_start: finalPeriodStart,
+        period_end: finalPeriodEnd,
+        status: "published",
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("[generate] Supabase INSERT error:", insertError);
+      return NextResponse.json({ error: "Failed to save story", detail: insertError.message }, { status: 500 });
+    }
+
+    console.log("[generate] story saved, id:", saved?.id);
+    return NextResponse.json({ title, story, id: saved?.id });
   } catch (error) {
-    console.error("Generation error:", error);
+    console.error("[generate] Unexpected error:", error);
     return NextResponse.json({ error: "Generation failed" }, { status: 500 });
   }
 }

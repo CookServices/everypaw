@@ -334,25 +334,29 @@ export default function PetPage({ params }: { params: { id: string } }) {
       ? [genPeriodEnd, lastEntryDate, today].sort().at(0)!
       : lastEntryDate;
     const style = storyStyle ?? "classic";
+    const finalPeriodStart = (genPeriodStart || filteredEntries[filteredEntries.length - 1]?.entry_date || "").slice(0, 10);
+    const finalPeriodEnd = effectivePeriodEnd.slice(0, 10);
     setGenerating(true);
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ petId: id, petName: pet?.name, species: pet?.species, bio: pet?.bio, entries: filteredEntries.slice(0, 20), style }),
+        body: JSON.stringify({
+          petId: id, petName: pet?.name, species: pet?.species, bio: pet?.bio,
+          entries: filteredEntries.slice(0, 20), style,
+          periodStart: finalPeriodStart, periodEnd: finalPeriodEnd,
+        }),
       });
       const data = await res.json();
-      if (data.story) {
+      if (data.story && data.id) {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data: saved } = await supabase.from("stories").insert({
-          pet_id: id, user_id: user!.id, content: data.story, title: data.title,
-          style,
-          period_start: genPeriodStart || filteredEntries[filteredEntries.length - 1]?.entry_date,
-          period_end: effectivePeriodEnd,
-        }).select().single();
+        const { data: saved } = await supabase.from("stories").select("*").eq("id", data.id).single();
         if (saved) setStories([saved, ...stories]);
         router.push(`/dashboard/pets/${id}?tab=stories`);
+      } else if (data.story) {
+        router.push(`/dashboard/pets/${id}?tab=stories`);
+      } else {
+        alert(t.journal.generation_failed);
       }
     } catch { alert(t.journal.generation_failed); }
     setGenerating(false);
