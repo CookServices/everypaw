@@ -123,10 +123,10 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   };
 
   const fields = [
-    { key: "firstName", label: t.order.first_name, placeholder: "John" },
-    { key: "lastName", label: t.order.last_name, placeholder: "Doe" },
-    { key: "addressLine1", label: t.order.address, placeholder: "123 Main St" },
-    { key: "addressLine2", label: t.order.apt, placeholder: "Apt 4B" },
+    { key: "firstName", label: t.order.first_name, placeholder: "" },
+    { key: "lastName", label: t.order.last_name, placeholder: "" },
+    { key: "addressLine1", label: t.order.address, placeholder: "" },
+    { key: "addressLine2", label: t.order.apt, placeholder: "" },
     { key: "city", label: t.order.city, placeholder: "" },
     { key: "postCode", label: t.order.postal_code, placeholder: "" },
   ];
