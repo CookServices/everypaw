@@ -242,19 +242,20 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
             </button>
           )}
 
-          {/* Secondary: "I'll do this later" on step 1 */}
-          {current.skipLabel && (
-            <button
-              onClick={() => goTo(step + 1)}
+          {/* Secondary: "Créer le profil de mon animal →" on step 1 */}
+          {current.skipLabel && current.primaryHref && (
+            <Link
+              href={current.primaryHref}
+              onClick={() => sessionStorage.setItem("ep_onboarding_step", String(step + 1))}
               style={{
-                background: "none", border: "none",
+                textAlign: "center",
                 fontSize: ".8rem", color: "#7A5C44",
-                cursor: "pointer", fontFamily: "inherit",
-                opacity: .65, padding: ".25rem",
+                textDecoration: "none", padding: ".25rem",
+                opacity: .75,
               }}
             >
               {current.skipLabel}
-            </button>
+            </Link>
           )}
         </div>
 

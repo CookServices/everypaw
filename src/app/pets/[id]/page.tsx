@@ -80,7 +80,7 @@ export default async function PublicPetPage({ params }: { params: { id: string }
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               {stories.map(story => (
                 <div key={story.id} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
-                  <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".75rem" }}>{story.title || `${pet.name}'s Story`}</h3>
+                  <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".75rem" }}>{story.title || (locale === "fr" ? `L'histoire de ${pet.name}` : `${pet.name}'s Story`)}</h3>
                   <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.75, margin: 0, fontFamily: "Georgia, serif", fontStyle: "italic" }}>
                     {story.content.slice(0, 300)}…
                   </p>
