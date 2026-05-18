@@ -60,13 +60,13 @@ Pet details:
 Journal entries written by their owner:
 ${entriesText}
 
-Write a beautiful narrative story of 400-500 words, structured in exactly 3 parts:
+Write a beautiful narrative story of 400-500 words, structured in exactly 3 paragraphs. Separate each paragraph with a blank line. Do NOT include any section labels or headers (no "INTRO", "DÉVELOPPEMENT", "CHUTE", or similar):
 
-1. INTRO (1 paragraph): Set the mood of the period — evoke atmosphere, season, daily rhythm. Do NOT list events; paint a feeling.
+Paragraph 1: Set the mood of the period — evoke atmosphere, season, daily rhythm. Do NOT list events; paint a feeling.
 
-2. DEVELOPPEMENT (2-3 paragraphs): Bring to life the key moments from the journal entries. Use sensory details (smells, textures, sounds). Weave entries into a flowing narrative — never list them. Show emotion through action and sensation.
+Paragraphs 2-3: Bring to life the key moments from the journal entries. Use sensory details (smells, textures, sounds). Weave entries into a flowing narrative — never list them. Show emotion through action and sensation.
 
-3. CHUTE (1 paragraph): End with a tender, introspective note from ${petName}'s point of view — a small reflection or realization. Close with a single memorable, resonant sentence.
+Paragraph 4: End with a tender, introspective note from ${petName}'s point of view — a small reflection or realization. Close with a single memorable, resonant sentence.
 
 Style rules (follow strictly):
 - First-person voice: ${petName} is the narrator throughout
