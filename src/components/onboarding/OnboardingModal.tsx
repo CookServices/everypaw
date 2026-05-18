@@ -49,9 +49,10 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
       desc: t.onboarding.step1_desc,
       extra: null,
       example: null,
-      primaryHref: "/dashboard/pets/new",
+      primaryHref: null,
       primaryLabel: t.onboarding.step1_cta,
       skipLabel: t.onboarding.step1_skip,
+      skipHref: "/dashboard/pets/new",
     },
     {
       emoji: "✏️",
@@ -62,6 +63,7 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
       primaryHref: null,
       primaryLabel: t.onboarding.next,
       skipLabel: null,
+      skipHref: null,
     },
     {
       emoji: "✨",
@@ -72,6 +74,7 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
       primaryHref: null,
       primaryLabel: t.onboarding.start,
       skipLabel: null,
+      skipHref: null,
     },
   ];
 
@@ -243,9 +246,9 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
           )}
 
           {/* Secondary: "Créer le profil de mon animal →" on step 1 */}
-          {current.skipLabel && current.primaryHref && (
+          {current.skipLabel && current.skipHref && (
             <Link
-              href={current.primaryHref}
+              href={current.skipHref}
               onClick={() => sessionStorage.setItem("ep_onboarding_step", String(step + 1))}
               style={{
                 textAlign: "center",

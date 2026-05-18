@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Pet, Entry, Story } from "@/types";
 import Link from "next/link";
-import { detectMilestones } from "@/lib/milestones";
+import { detectMilestones, MILESTONE_TYPES } from "@/lib/milestones";
 import { useLocale } from "@/hooks/useLocale";
 import { generateShareCard, shareOrDownloadCard } from "@/lib/shareCard";
 
@@ -168,9 +168,12 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [editMood, setEditMood] = useState<string | null>(null);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editPhotos, setEditPhotos] = useState<string[]>([]);
+  const [editPendingPhotos, setEditPendingPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [textareaFocused, setTextareaFocused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
   const kebabRef = useRef<HTMLDivElement>(null);
   const entryMenuRef = useRef<HTMLDivElement>(null);
 
@@ -355,12 +358,24 @@ export default function PetPage({ params }: { params: { id: string } }) {
     if (!editingEntry) return;
     setSavingEdit(true);
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    let finalPhotoUrls = [...editPhotos];
+    for (const { file } of editPendingPhotos) {
+      const compressed = await compressImage(file);
+      const filename = `${user!.id}/${id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+      const { error } = await supabase.storage.from("pet-photos").upload(filename, compressed, { contentType: "image/jpeg" });
+      if (!error) {
+        const { data: urlData } = supabase.storage.from("pet-photos").getPublicUrl(filename);
+        finalPhotoUrls.push(urlData.publicUrl);
+      }
+    }
     const { data } = await supabase.from("entries")
-      .update({ content: editContent.trim() || " ", mood: editMood })
+      .update({ content: editContent.trim() || " ", mood: editMood, photo_urls: finalPhotoUrls })
       .eq("id", editingEntry.id)
       .select().single();
     if (data) setEntries(prev => prev.map(e => e.id === data.id ? data : e));
     setEditingEntry(null);
+    setEditPendingPhotos([]);
     setSavingEdit(false);
   };
 
@@ -501,19 +516,77 @@ export default function PetPage({ params }: { params: { id: string } }) {
       {/* Edit entry modal */}
       {editingEntry && (
         <div onClick={() => setEditingEntry(null)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.75rem", maxWidth: 440, width: "100%", boxShadow: "0 8px 40px rgba(61,43,31,.18)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.75rem", maxWidth: 440, width: "100%", boxShadow: "0 8px 40px rgba(61,43,31,.18)", maxHeight: "90vh", overflowY: "auto" }}>
             <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 1rem" }}>
               {isFR ? "Modifier ce moment" : "Edit this moment"}
             </h3>
             <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4} maxLength={1000}
               style={{ width: "100%", boxSizing: "border-box", padding: ".75rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", resize: "none", outline: "none", lineHeight: 1.6 }} />
-            <div style={{ display: "flex", gap: ".35rem", margin: ".75rem 0" }}>
+
+            {/* Emoji / mood */}
+            <div style={{ display: "flex", gap: ".35rem", margin: ".75rem 0 1rem" }}>
               {MOOD_OPTIONS.map(m => (
                 <button key={m.value} onClick={() => setEditMood(editMood === m.value ? null : m.value)} style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${editMood === m.value ? "#C8813A" : "transparent"}`, background: editMood === m.value ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1rem" }}>
                   {m.emoji}
                 </button>
               ))}
             </div>
+
+            {/* Existing photos */}
+            {editPhotos.length > 0 && (
+              <div style={{ marginBottom: ".75rem" }}>
+                <p style={{ fontSize: ".72rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", margin: "0 0 .5rem" }}>{isFR ? "Photos existantes" : "Existing photos"}</p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {editPhotos.map((url, i) => (
+                    <div key={i} style={{ position: "relative", width: 64, height: 64 }}>
+                      <img src={url} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8 }} />
+                      <button onClick={() => setEditPhotos(prev => prev.filter((_, idx) => idx !== i))} style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: "#A32D2D", color: "#fff", border: "none", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* New pending photos */}
+            {editPendingPhotos.length > 0 && (
+              <div style={{ marginBottom: ".75rem" }}>
+                <p style={{ fontSize: ".72rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", margin: "0 0 .5rem" }}>{isFR ? "Nouvelles photos" : "New photos"}</p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {editPendingPhotos.map((p, i) => (
+                    <div key={i} style={{ position: "relative", width: 64, height: 64 }}>
+                      <img src={p.preview} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8 }} />
+                      <button onClick={() => setEditPendingPhotos(prev => { URL.revokeObjectURL(prev[i].preview); return prev.filter((_, idx) => idx !== i); })} style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: "#3D2B1F", color: "#fff", border: "none", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add photo button */}
+            {editPhotos.length + editPendingPhotos.length < 5 && (
+              <button
+                onClick={() => editFileInputRef.current?.click()}
+                style={{ display: "flex", alignItems: "center", gap: ".4rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".8rem", cursor: "pointer", marginBottom: ".75rem" }}
+              >
+                <span>📷</span>
+                <span>{isFR ? "Ajouter une photo" : "Add a photo"}</span>
+              </button>
+            )}
+            <input
+              ref={editFileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={e => {
+                const files = Array.from(e.target.files || []);
+                const remaining = 5 - editPhotos.length - editPendingPhotos.length;
+                const newPhotos = files.slice(0, remaining).map(f => ({ file: f, preview: URL.createObjectURL(f) }));
+                setEditPendingPhotos(prev => [...prev, ...newPhotos]);
+                e.target.value = "";
+              }}
+              style={{ display: "none" }}
+            />
+
             <div style={{ display: "flex", gap: ".625rem", marginTop: ".5rem" }}>
               <button onClick={() => setEditingEntry(null)} style={{ flex: 1, padding: ".6rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer" }}>
                 {isFR ? "Annuler" : "Cancel"}
@@ -741,7 +814,18 @@ export default function PetPage({ params }: { params: { id: string } }) {
                       {mood ? (ALL_EMOJIS.find(e => e.value === mood)?.emoji ?? "😊") : "😊"}
                     </button>
                     {showEmojiPicker && (
-                      <div style={{ position: "absolute", bottom: "calc(100% + .5rem)", left: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 16, boxShadow: "0 8px 30px rgba(61,43,31,.15)", padding: "1rem", zIndex: 50, width: 280 }}>
+                      <div style={{ position: "absolute", top: "calc(100% + .5rem)", left: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 16, boxShadow: "0 8px 30px rgba(61,43,31,.15)", padding: "1rem", zIndex: 50, width: 280, maxHeight: 340, overflowY: "auto" }}>
+                        {/* Deselect button */}
+                        {mood && (
+                          <div style={{ marginBottom: ".75rem" }}>
+                            <button onClick={() => { setMood(null); setShowEmojiPicker(false); }}
+                              title={isFR ? "Désélectionner" : "Deselect"}
+                              style={{ display: "flex", alignItems: "center", gap: ".5rem", padding: ".35rem .75rem", borderRadius: 8, border: "1.5px solid rgba(200,129,58,.35)", background: "rgba(200,129,58,.06)", cursor: "pointer", fontSize: ".8rem", color: "#C8813A", fontFamily: "inherit", width: "100%" }}>
+                              <span style={{ fontSize: "1rem" }}>⊘</span>
+                              <span>{isFR ? "Retirer l'émoticône" : "Remove emoji"}</span>
+                            </button>
+                          </div>
+                        )}
                         {EMOJI_CATEGORIES.map(cat => (
                           <div key={cat.label} style={{ marginBottom: ".75rem" }}>
                             <p style={{ fontSize: ".65rem", fontWeight: 600, color: "#9A8070", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .4rem" }}>{cat.label}</p>
@@ -812,7 +896,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                               style={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "#7A5C44", fontFamily: "inherit", lineHeight: 1 }}>···</button>
                             {entryMenuId === entry.id && !deletingEntryId && (
                               <div style={{ position: "absolute", top: "calc(100% + .3rem)", right: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 10, boxShadow: "0 4px 16px rgba(61,43,31,.12)", minWidth: 140, zIndex: 30 }}>
-                                <button onClick={() => { setEditingEntry(entry); setEditContent(entry.content.trim()); setEditMood(entry.mood ?? null); setEntryMenuId(null); }}
+                                <button onClick={() => { setEditingEntry(entry); setEditContent(entry.content.trim()); setEditMood(entry.mood ?? null); setEditPhotos(entry.photo_urls ?? []); setEditPendingPhotos([]); setEntryMenuId(null); }}
                                   style={{ display: "block", width: "100%", padding: ".625rem .875rem", fontSize: ".8rem", color: "#3D2B1F", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
                                   {isFR ? "Modifier" : "Edit"}
                                 </button>
@@ -883,10 +967,17 @@ export default function PetPage({ params }: { params: { id: string } }) {
               </div>
             ) : stories.map(story => (
               <div key={story.id} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1rem", gap: ".75rem" }}>
                   <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>{story.title || `${pet.name}'s Story`}</h3>
-                  <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>{new Date(story.created_at).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}</span>
+                  <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300, flexShrink: 0 }}>{new Date(story.created_at).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}</span>
                 </div>
+                {story.period_start && story.period_end && (
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", background: "rgba(200,129,58,.07)", borderRadius: 100, padding: ".25rem .75rem", marginBottom: ".875rem" }}>
+                    <span style={{ fontSize: ".72rem", color: "#C8813A", fontWeight: 500 }}>
+                      {new Date(story.period_start + "T12:00:00").toLocaleDateString(dateLocale, { day: "numeric", month: "short" })} → {new Date(story.period_end + "T12:00:00").toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                  </div>
+                )}
                 <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.75, marginBottom: "1.25rem", fontFamily: "Georgia, serif", fontStyle: "italic" }}>{story.content}</p>
                 <div style={{ borderTop: "1px solid rgba(61,43,31,.06)", paddingTop: "1rem" }}>
                   <button
@@ -928,32 +1019,45 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "milestones" && (
           <div>
-            {milestones.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
-                <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>🏆</div>
-                <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#3D2B1F", marginBottom: ".5rem" }}>{t.milestones.no_milestones_title}</h3>
-                <p style={{ color: "#7A5C44", fontSize: ".875rem", fontWeight: 300, lineHeight: 1.6 }}>
-                  {t.milestones.no_milestones_desc}<br />
-                  {t.milestones.no_milestones_hint}
-                </p>
+            {/* Progress bar */}
+            <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: "1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: ".625rem" }}>
+                <span style={{ fontSize: ".85rem", fontWeight: 500, color: "#3D2B1F" }}>
+                  {milestones.length} / {MILESTONE_TYPES.length} {isFR ? "étapes complétées" : "steps completed"}
+                </span>
+                <span style={{ fontSize: ".8rem", color: "#C8813A", fontWeight: 600 }}>
+                  {Math.round(milestones.length / MILESTONE_TYPES.length * 100)}%
+                </span>
               </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-                {milestones.map(milestone => (
-                  <div key={milestone.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", border: "1px solid rgba(61,43,31,.06)", display: "flex", alignItems: "center", gap: "1rem" }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.25rem", flexShrink: 0 }}>
-                      🏆
+              <div style={{ height: 6, borderRadius: 100, background: "rgba(61,43,31,.1)", overflow: "hidden" }}>
+                <div style={{ height: "100%", borderRadius: 100, background: "#C8813A", width: `${milestones.length / MILESTONE_TYPES.length * 100}%`, transition: "width .5s ease" }} />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+              {MILESTONE_TYPES.map(mt => {
+                const achieved = milestones.find(m => m.type === mt.type);
+                const parts = mt.title.split(" ");
+                const icon = parts[parts.length - 1];
+                const label = parts.slice(0, -1).join(" ");
+                return (
+                  <div key={mt.type} style={{ background: "#FDFAF5", borderRadius: 14, padding: ".875rem 1.125rem", border: `1px solid ${achieved ? "rgba(200,129,58,.2)" : "rgba(61,43,31,.06)"}`, display: "flex", alignItems: "center", gap: ".875rem", opacity: achieved ? 1 : 0.6 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: achieved ? "rgba(200,129,58,.12)" : "rgba(61,43,31,.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.15rem", flexShrink: 0 }}>
+                      {achieved ? icon : "🔒"}
                     </div>
-                    <div>
-                      <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .2rem" }}>{milestone.title}</p>
-                      <p style={{ fontSize: ".75rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>
-                        {new Date(milestone.achieved_at).toLocaleDateString(dateLocale, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: ".875rem", fontWeight: 500, color: achieved ? "#3D2B1F" : "#7A5C44", margin: "0 0 .15rem" }}>{label}</p>
+                      <p style={{ fontSize: ".72rem", color: achieved ? "#7A5C44" : "#9A8070", margin: 0, fontWeight: 300 }}>
+                        {achieved
+                          ? new Date(achieved.achieved_at).toLocaleDateString(dateLocale, { month: "long", day: "numeric", year: "numeric" })
+                          : (isFR ? "Non encore atteinte" : "Not yet unlocked")}
                       </p>
                     </div>
+                    {achieved && <span style={{ fontSize: ".9rem", flexShrink: 0 }}>✅</span>}
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
         )}
       </main>

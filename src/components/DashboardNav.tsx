@@ -229,7 +229,7 @@ function IconPlus() {
 
 // ── Pet selector ─────────────────────────────────────────────────────────────
 
-interface PetOption { id: string; name: string; species: string; }
+interface PetOption { id: string; name: string; species: string; photo_url?: string | null; }
 
 function PetSelector({
   pets,
@@ -287,9 +287,12 @@ function PetSelector({
           width: 36, height: 36, borderRadius: 10, flexShrink: 0,
           background: "rgba(200,129,58,.15)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "1.25rem",
+          fontSize: selected?.photo_url ? undefined : "1.25rem",
+          overflow: "hidden",
         }}>
-          {emoji}
+          {selected?.photo_url
+            ? <img src={selected.photo_url} alt={selected.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : selected ? (emoji) : "🐾"}
         </div>
         <div style={{ flex: 1, textAlign: "left", overflow: "hidden" }}>
           <p style={{ margin: 0, fontSize: ".875rem", fontWeight: 600, color: "#3D2B1F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.3 }}>
@@ -348,7 +351,11 @@ function PetSelector({
                 onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)"; }}
                 onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
-                <span style={{ fontSize: "1rem", lineHeight: 1 }}>{SPECIES_EMOJI[pet.species] ?? "🐾"}</span>
+                {pet.photo_url ? (
+                  <img src={pet.photo_url} alt={pet.name} style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                ) : (
+                  <span style={{ fontSize: "1rem", lineHeight: 1 }}>{SPECIES_EMOJI[pet.species] ?? "🐾"}</span>
+                )}
                 <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pet.name}</span>
                 {isActive && <span style={{ fontSize: ".7rem", color: "#C8813A" }}>✓</span>}
               </button>
@@ -399,7 +406,7 @@ export default function DashboardNav() {
     const supabase = createClient();
     supabase
       .from("pets")
-      .select("id, name, species")
+      .select("id, name, species, photo_url")
       .order("created_at", { ascending: true })
       .then(({ data }) => {
         if (data && data.length > 0) setPets(data as PetOption[]);
