@@ -53,9 +53,23 @@ Pet details:
 Journal entries written by their owner:
 ${entriesText}
 
-Write a beautiful narrative story of approximately 300-400 words in first person as if ${petName} is narrating their own life. Warm emotional tone. Start with something memorable. End on a heartfelt note.
+Write a beautiful narrative story of 400-500 words, structured in exactly 3 parts:
 
-Also generate a short title (5 words max).
+1. INTRO (1 paragraph): Set the mood of the period — evoke atmosphere, season, daily rhythm. Do NOT list events; paint a feeling.
+
+2. DEVELOPPEMENT (2-3 paragraphs): Bring to life the key moments from the journal entries. Use sensory details (smells, textures, sounds). Weave entries into a flowing narrative — never list them. Show emotion through action and sensation.
+
+3. CHUTE (1 paragraph): End with a tender, introspective note from ${petName}'s point of view — a small reflection or realization. Close with a single memorable, resonant sentence.
+
+Style rules (follow strictly):
+- First-person voice: ${petName} is the narrator throughout
+- Mention ${petName}'s name at least 3 times naturally in the text
+- Reference the species (${species}) or breed at least once
+- Do NOT mechanically list journal entries — transform them into narrative
+- Tone: warm, intimate, slightly poetic — like a letter to the reader
+- Target exactly 400-500 words (count carefully)
+
+Also generate a short evocative title (5 words max).
 
 You MUST respond with valid JSON only, no other text:
 {"title": "...", "story": "..."}`;
@@ -70,7 +84,7 @@ You MUST respond with valid JSON only, no other text:
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-5",
-        max_tokens: 1000,
+        max_tokens: 1200,
         messages: [{ role: "user", content: prompt }],
       }),
     });
