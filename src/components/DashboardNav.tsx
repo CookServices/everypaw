@@ -7,6 +7,127 @@ import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
+function SuggestionModal({ isFR, onClose }: { isFR: boolean; onClose: () => void }) {
+  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!message.trim()) return;
+    setStatus("sending");
+    try {
+      const res = await fetch("/api/suggestion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+      setStatus(res.ok ? "sent" : "error");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 200,
+        background: "rgba(61,43,31,.45)", backdropFilter: "blur(2px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "1rem",
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: "#FDFAF5", borderRadius: 16, padding: "1.75rem",
+          width: "100%", maxWidth: 420,
+          boxShadow: "0 8px 40px rgba(61,43,31,.18)",
+        }}
+      >
+        <h2 style={{ margin: "0 0 .375rem", fontSize: "1.125rem", fontWeight: 600, color: "#3D2B1F" }}>
+          {isFR ? "Envoyer une suggestion" : "Send a suggestion"}
+        </h2>
+        <p style={{ margin: "0 0 1.25rem", fontSize: ".875rem", color: "#7A5C44" }}>
+          {isFR
+            ? "Une idée de fonctionnalité, un bug, ou juste un retour ? On lit tout."
+            : "A feature idea, a bug, or just feedback? We read everything."}
+        </p>
+
+        {status === "sent" ? (
+          <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
+            <p style={{ fontSize: "2rem", margin: "0 0 .5rem" }}>🐾</p>
+            <p style={{ color: "#3D2B1F", fontWeight: 500 }}>
+              {isFR ? "Merci pour ta suggestion !" : "Thanks for your suggestion!"}
+            </p>
+            <button
+              onClick={onClose}
+              style={{
+                marginTop: "1rem", padding: ".5rem 1.25rem", borderRadius: 8,
+                background: "#C8813A", color: "#FDFAF5", border: "none",
+                fontSize: ".875rem", fontWeight: 500, cursor: "pointer",
+              }}
+            >
+              {isFR ? "Fermer" : "Close"}
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <textarea
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              placeholder={isFR ? "Ta suggestion…" : "Your suggestion…"}
+              rows={5}
+              maxLength={2000}
+              required
+              style={{
+                width: "100%", boxSizing: "border-box",
+                padding: ".75rem", borderRadius: 10,
+                border: "1.5px solid rgba(61,43,31,.15)",
+                background: "#FAF6EF", color: "#3D2B1F",
+                fontSize: ".875rem", resize: "vertical",
+                fontFamily: "inherit", outline: "none",
+              }}
+            />
+            {status === "error" && (
+              <p style={{ color: "#c0392b", fontSize: ".8rem", margin: ".5rem 0 0" }}>
+                {isFR ? "Erreur lors de l'envoi. Réessaie." : "Something went wrong. Please try again."}
+              </p>
+            )}
+            <div style={{ display: "flex", gap: ".75rem", marginTop: "1rem", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  padding: ".5rem 1rem", borderRadius: 8,
+                  border: "1.5px solid rgba(61,43,31,.15)", background: "transparent",
+                  color: "#7A5C44", fontSize: ".875rem", cursor: "pointer",
+                }}
+              >
+                {isFR ? "Annuler" : "Cancel"}
+              </button>
+              <button
+                type="submit"
+                disabled={status === "sending" || !message.trim()}
+                style={{
+                  padding: ".5rem 1.25rem", borderRadius: 8,
+                  background: "#C8813A", color: "#FDFAF5", border: "none",
+                  fontSize: ".875rem", fontWeight: 500, cursor: "pointer",
+                  opacity: status === "sending" || !message.trim() ? .6 : 1,
+                }}
+              >
+                {status === "sending"
+                  ? (isFR ? "Envoi…" : "Sending…")
+                  : (isFR ? "Envoyer" : "Send")}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const SPECIES_EMOJI: Record<string, string> = {
   dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾",
 };
@@ -272,6 +393,7 @@ export default function DashboardNav() {
   const [pets, setPets] = useState<PetOption[]>([]);
   const [resolvedPetId, setResolvedPetId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [suggestionOpen, setSuggestionOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -413,23 +535,25 @@ export default function DashboardNav() {
         ))}
       </nav>
 
-      {/* CTA — Ajouter un moment */}
+      {/* CTA — Suggestion */}
       <div style={{ padding: "0 .75rem .875rem" }}>
-        <Link
-          href={addMomentLink}
+        <button
+          onClick={() => setSuggestionOpen(true)}
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem",
             width: "100%", padding: ".75rem", borderRadius: 10,
-            background: "#C8813A", color: "#FDFAF5",
-            fontSize: ".875rem", fontWeight: 500, textDecoration: "none",
+            background: "#C8813A", color: "#FDFAF5", border: "none",
+            fontSize: ".875rem", fontWeight: 500, cursor: "pointer",
             transition: "opacity .15s",
           }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = ".85"}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}
         >
-          <IconPlus />
-          {isFR ? "Ajouter un moment" : "Add a moment"}
-        </Link>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+          </svg>
+          {isFR ? "Suggestion" : "Suggestion"}
+        </button>
       </div>
 
       {/* Secondary section: Settings, Language, Logout */}
@@ -493,25 +617,27 @@ export default function DashboardNav() {
 
   const BottomNav = (
     <>
-      {/* Floating Action Button */}
-      <Link
-        href={addMomentLink}
+      {/* Floating Action Button — Suggestion */}
+      <button
+        onClick={() => setSuggestionOpen(true)}
         className="ep-fab"
-        aria-label={isFR ? "Ajouter un moment" : "Add a moment"}
+        aria-label={isFR ? "Suggestion" : "Suggestion"}
         style={{
           position: "fixed",
           bottom: "calc(56px + env(safe-area-inset-bottom, 0px) + 12px)",
           left: "50%", transform: "translateX(-50%)",
           width: 50, height: 50, borderRadius: "50%",
-          background: "#C8813A", color: "#FDFAF5",
+          background: "#C8813A", color: "#FDFAF5", border: "none",
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 4px 20px rgba(200,129,58,.5)",
-          zIndex: 50, textDecoration: "none",
+          zIndex: 50, cursor: "pointer",
           minHeight: "unset",
         }}
       >
-        <IconPlus />
-      </Link>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+        </svg>
+      </button>
 
       {/* Bottom nav */}
       <nav className="ep-bottom-nav" style={{
@@ -544,6 +670,9 @@ export default function DashboardNav() {
     <>
       {Sidebar}
       {BottomNav}
+      {suggestionOpen && (
+        <SuggestionModal isFR={isFR} onClose={() => setSuggestionOpen(false)} />
+      )}
     </>
   );
 }
