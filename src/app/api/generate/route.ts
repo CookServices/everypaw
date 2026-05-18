@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { petId, petName, species, bio, entries } = await req.json();
+  const { petId, petName, species, bio, entries, style } = await req.json();
 
   if (!petId) return NextResponse.json({ error: "Missing petId" }, { status: 400 });
 
@@ -44,6 +44,13 @@ export async function POST(req: Request) {
   const prompt = `You are writing a warm, emotional, first-person narrative story for a pet journal called Everypaw.
 
 IMPORTANT: Write this story entirely in ${lang}. Do not use any other language.
+${style ? `STYLE: ${({
+  poetic:   "Write in a poetic, lyrical style with rich metaphors and emotional imagery. Use beautiful language.",
+  humorous: "Write with humor and wit — light, playful, full of amusing observations and gentle self-deprecating comedy.",
+  classic:  "Write in a classic, clean narrative style — sober, well-structured, timeless.",
+  epic:     "Write in an epic, adventurous, dramatic style. Make everyday moments feel heroic.",
+  tender:   "Write like a love letter — deeply warm, intimate, soft, full of tenderness and affection.",
+} as Record<string,string>)[style] ?? ""}` : ""}
 
 Pet details:
 - Name: ${petName}

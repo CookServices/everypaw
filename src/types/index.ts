@@ -44,6 +44,7 @@ export interface Story {
   content: string;
   period_start: string | null;
   period_end: string | null;
+  style: string | null;
   status: StoryStatus;
   created_at: string;
 }

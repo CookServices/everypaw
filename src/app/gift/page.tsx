@@ -150,7 +150,7 @@ export default function GiftPage() {
           <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
             {isFR ? "Choisir la formule" : "Choose a plan"}
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".625rem", marginBottom: "1.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".625rem", marginBottom: ".75rem" }}>
             {/* Digital */}
             <button
               onClick={() => setSelectedPlan("digital")}
@@ -176,6 +176,16 @@ export default function GiftPage() {
                 {isFR ? "Digital + livre relié annuel" : "Digital + annual hardcover book"}
               </p>
             </button>
+          </div>
+
+          {/* Dynamic price summary */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: ".625rem .875rem", background: "rgba(200,129,58,.06)", borderRadius: 10, marginBottom: "1.5rem" }}>
+            <span style={{ fontSize: ".8rem", color: "#7A5C44" }}>
+              {isFR ? "Formule sélectionnée" : "Selected plan"}
+            </span>
+            <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#C8813A" }}>
+              {selectedPlan === "digital" ? "4,99 €/mois" : "9,99 €/mois"}
+            </span>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>

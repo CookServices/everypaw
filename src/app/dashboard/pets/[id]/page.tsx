@@ -91,6 +91,14 @@ const ALL_EMOJIS = EMOJI_CATEGORIES.flatMap(c => c.emojis);
 
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
+const STORY_STYLES = [
+  { value: "poetic",    icon: "🎭", labelFR: "Poétique",    labelEN: "Poetic",    descFR: "Lyrique, métaphores, émotionnel",          descEN: "Lyrical, metaphors, emotional" },
+  { value: "humorous",  icon: "😄", labelFR: "Humoristique", labelEN: "Humorous",  descFR: "Léger, décalé, autodérision",             descEN: "Light, quirky, self-deprecating" },
+  { value: "classic",   icon: "📖", labelFR: "Classique",    labelEN: "Classic",   descFR: "Narratif, sobre, intemporel",             descEN: "Narrative, sober, timeless" },
+  { value: "epic",      icon: "🌟", labelFR: "Épique",       labelEN: "Epic",      descFR: "Aventurier, dramatique, héroïque",       descEN: "Adventurous, dramatic, heroic" },
+  { value: "tender",    icon: "💝", labelFR: "Tendre",       labelEN: "Tender",    descFR: "Doux, intime, comme une lettre d'amour", descEN: "Soft, intimate, like a love letter" },
+];
+
 async function compressImage(file: File): Promise<Blob> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -172,6 +180,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [editPendingPhotos, setEditPendingPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [textareaFocused, setTextareaFocused] = useState(false);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [storyStyle, setStoryStyle] = useState("classic");
+  const [genPeriodStart, setGenPeriodStart] = useState("");
+  const [genPeriodEnd, setGenPeriodEnd] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
   const kebabRef = useRef<HTMLDivElement>(null);
@@ -302,13 +314,17 @@ export default function PetPage({ params }: { params: { id: string } }) {
   };
 
   const generateStory = async () => {
-    if (entries.length < 3) { alert(t.journal.min_entries_alert); return; }
+    setShowGenerateModal(false);
+    let filteredEntries = entries;
+    if (genPeriodStart) filteredEntries = filteredEntries.filter(e => e.entry_date >= genPeriodStart);
+    if (genPeriodEnd) filteredEntries = filteredEntries.filter(e => e.entry_date <= genPeriodEnd);
+    if (filteredEntries.length < 3) { alert(t.journal.min_entries_alert); return; }
     setGenerating(true);
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ petId: id, petName: pet?.name, species: pet?.species, bio: pet?.bio, entries: entries.slice(0, 20) }),
+        body: JSON.stringify({ petId: id, petName: pet?.name, species: pet?.species, bio: pet?.bio, entries: filteredEntries.slice(0, 20), style: storyStyle }),
       });
       const data = await res.json();
       if (data.story) {
@@ -316,8 +332,9 @@ export default function PetPage({ params }: { params: { id: string } }) {
         const { data: { user } } = await supabase.auth.getUser();
         const { data: saved } = await supabase.from("stories").insert({
           pet_id: id, user_id: user!.id, content: data.story, title: data.title,
-          period_start: entries[entries.length - 1]?.entry_date,
-          period_end: entries[0]?.entry_date,
+          style: storyStyle,
+          period_start: genPeriodStart || filteredEntries[filteredEntries.length - 1]?.entry_date,
+          period_end: genPeriodEnd || filteredEntries[0]?.entry_date,
         }).select().single();
         if (saved) setStories([saved, ...stories]);
         router.push(`/dashboard/pets/${id}?tab=stories`);
@@ -599,6 +616,64 @@ export default function PetPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
+      {/* Generate story modal */}
+      {showGenerateModal && (
+        <div onClick={() => setShowGenerateModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", maxWidth: 480, width: "100%", boxShadow: "0 16px 60px rgba(61,43,31,.2)", maxHeight: "90vh", overflowY: "auto" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.2rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 1.5rem" }}>
+              {isFR ? "Créer une histoire" : "Create a story"}
+            </h2>
+
+            {/* Style selector */}
+            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
+              {isFR ? "Style narratif" : "Narrative style"}
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: ".5rem", marginBottom: "1.5rem" }}>
+              {STORY_STYLES.map(s => (
+                <button key={s.value} onClick={() => setStoryStyle(s.value)}
+                  style={{ display: "flex", alignItems: "center", gap: ".875rem", padding: ".75rem 1rem", borderRadius: 12, border: `1.5px solid ${storyStyle === s.value ? "#C8813A" : "rgba(61,43,31,.12)"}`, background: storyStyle === s.value ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", transition: "all .12s" }}>
+                  <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>{s.icon}</span>
+                  <div>
+                    <p style={{ fontSize: ".875rem", fontWeight: 600, color: storyStyle === s.value ? "#C8813A" : "#3D2B1F", margin: "0 0 .15rem" }}>{isFR ? s.labelFR : s.labelEN}</p>
+                    <p style={{ fontSize: ".75rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{isFR ? s.descFR : s.descEN}</p>
+                  </div>
+                  {storyStyle === s.value && <span style={{ marginLeft: "auto", fontSize: ".85rem", color: "#C8813A", flexShrink: 0 }}>✓</span>}
+                </button>
+              ))}
+            </div>
+
+            {/* Period selector */}
+            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
+              {isFR ? "Période (optionnel)" : "Period (optional)"}
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".625rem", marginBottom: "1.5rem" }}>
+              <div>
+                <label style={{ fontSize: ".72rem", color: "#7A5C44", display: "block", marginBottom: ".3rem" }}>{isFR ? "Du" : "From"}</label>
+                <input type="date" value={genPeriodStart} onChange={e => setGenPeriodStart(e.target.value)}
+                  style={{ width: "100%", padding: ".625rem .875rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".85rem", color: "#3D2B1F", outline: "none", boxSizing: "border-box" as const }} />
+              </div>
+              <div>
+                <label style={{ fontSize: ".72rem", color: "#7A5C44", display: "block", marginBottom: ".3rem" }}>{isFR ? "Au" : "To"}</label>
+                <input type="date" value={genPeriodEnd} onChange={e => setGenPeriodEnd(e.target.value)}
+                  style={{ width: "100%", padding: ".625rem .875rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".85rem", color: "#3D2B1F", outline: "none", boxSizing: "border-box" as const }} />
+              </div>
+            </div>
+            <p style={{ fontSize: ".75rem", color: "#9A8070", margin: "-.5rem 0 1.5rem", lineHeight: 1.5 }}>
+              {isFR ? "Sans période : toutes les entrées sont utilisées." : "Without a period: all entries are used."}
+            </p>
+
+            <div style={{ display: "flex", gap: ".75rem" }}>
+              <button onClick={() => setShowGenerateModal(false)} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer" }}>
+                {isFR ? "Annuler" : "Cancel"}
+              </button>
+              <button onClick={generateStory} style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer" }}>
+                {isFR ? "Générer ✨" : "Generate ✨"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Lightbox */}
       {lightboxUrl && (
         <div onClick={() => setLightboxUrl(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", cursor: "pointer" }}>
@@ -863,7 +938,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 isFR ? "Dernières retouches en cours…" : "Final touches in progress…",
               ] : ["✨ Generating…", "Your story is taking shape…", "Final touches…"];
               return (
-                <button onClick={generateStory} disabled={generating || entries.length < 3} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", marginBottom: "1.5rem", opacity: entries.length < 3 ? .5 : 1 }}>
+                <button onClick={() => { if (entries.length >= 3) setShowGenerateModal(true); }} disabled={generating || entries.length < 3} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", marginBottom: "1.5rem", opacity: entries.length < 3 ? .5 : 1 }}>
                   {generating ? generatingMessages[generatingMsgIdx] : t.journal.generate_story.replace("{name}", pet.name)}
                   {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>{t.journal.add_more.replace("{count}", String(3 - entries.length)).replace("{entries}", 3 - entries.length === 1 ? t.journal.entry : t.journal.entries)}</span>}
                 </button>
@@ -971,11 +1046,22 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>{story.title || `${pet.name}'s Story`}</h3>
                   <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300, flexShrink: 0 }}>{new Date(story.created_at).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}</span>
                 </div>
-                {story.period_start && story.period_end && (
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", background: "rgba(200,129,58,.07)", borderRadius: 100, padding: ".25rem .75rem", marginBottom: ".875rem" }}>
-                    <span style={{ fontSize: ".72rem", color: "#C8813A", fontWeight: 500 }}>
-                      {new Date(story.period_start + "T12:00:00").toLocaleDateString(dateLocale, { day: "numeric", month: "short" })} → {new Date(story.period_end + "T12:00:00").toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "numeric" })}
-                    </span>
+                {(story.period_start && story.period_end || story.style) && (
+                  <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: ".875rem", alignItems: "center" }}>
+                    {story.period_start && story.period_end && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", background: "rgba(200,129,58,.07)", borderRadius: 100, padding: ".25rem .75rem", fontSize: ".72rem", color: "#C8813A", fontWeight: 500 }}>
+                        {new Date(story.period_start + "T12:00:00").toLocaleDateString(dateLocale, { day: "numeric", month: "short" })} → {new Date(story.period_end + "T12:00:00").toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "numeric" })}
+                      </span>
+                    )}
+                    {story.style && (() => {
+                      const s = STORY_STYLES.find(st => st.value === story.style);
+                      return s ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", background: "rgba(61,43,31,.05)", borderRadius: 100, padding: ".25rem .75rem", fontSize: ".72rem", color: "#7A5C44", fontWeight: 400 }}>
+                          <span>{s.icon}</span>
+                          <span>{isFR ? s.labelFR : s.labelEN}</span>
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
                 )}
                 <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.75, marginBottom: "1.25rem", fontFamily: "Georgia, serif", fontStyle: "italic" }}>{story.content}</p>
