@@ -6,6 +6,8 @@ import { useLocale } from "@/hooks/useLocale";
 
 export default function GiftPage() {
   const { t, locale } = useLocale();
+  const isFR = locale === "fr";
+  const [selectedPlan, setSelectedPlan] = useState<"digital" | "print">("digital");
   const [form, setForm] = useState({
     recipientEmail: "",
     recipientName: "",
@@ -31,7 +33,7 @@ export default function GiftPage() {
     const res = await fetch("/api/gift/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, locale }),
+      body: JSON.stringify({ ...form, locale, plan: selectedPlan }),
     });
     const data = await res.json();
     if (data.success) {
@@ -144,13 +146,36 @@ export default function GiftPage() {
 
         {/* Form card */}
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)" }}>
-          {/* Product pill */}
-          <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <p style={{ fontSize: ".875rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .2rem" }}>{t.gift.product_name}</p>
-              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.gift.product_desc}</p>
-            </div>
-            <span style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#C8813A" }}>{t.gift.product_price}</span>
+          {/* Plan selection */}
+          <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
+            {isFR ? "Choisir la formule" : "Choose a plan"}
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".625rem", marginBottom: "1.5rem" }}>
+            {/* Digital */}
+            <button
+              onClick={() => setSelectedPlan("digital")}
+              style={{ padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "digital" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "digital" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s" }}
+            >
+              <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Digital</p>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem" }}>4,99 €<span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/mois</span></p>
+              <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: 0, fontWeight: 300, lineHeight: 1.4 }}>
+                {isFR ? "Entrées illimitées, histoires IA, PDF" : "Unlimited entries, AI stories, PDF"}
+              </p>
+            </button>
+            {/* Print */}
+            <button
+              onClick={() => setSelectedPlan("print")}
+              style={{ padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "print" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "print" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s", position: "relative" }}
+            >
+              <div style={{ position: "absolute", top: "-.5rem", right: ".75rem", background: "#C8813A", color: "#FDFAF5", fontSize: ".6rem", fontWeight: 600, borderRadius: 100, padding: ".15rem .5rem", letterSpacing: ".04em" }}>
+                {isFR ? "Meilleure valeur" : "Best value"}
+              </div>
+              <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Print</p>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem" }}>9,99 €<span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/mois</span></p>
+              <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: 0, fontWeight: 300, lineHeight: 1.4 }}>
+                {isFR ? "Digital + livre relié annuel" : "Digital + annual hardcover book"}
+              </p>
+            </button>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>

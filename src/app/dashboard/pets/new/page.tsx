@@ -1,9 +1,33 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Species } from "@/types";
 import { useLocale } from "@/hooks/useLocale";
+import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
+
+async function getCroppedBlob(imageSrc: string, croppedAreaPixels: Area): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = imageSrc;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const size = 400;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(
+        img,
+        croppedAreaPixels.x, croppedAreaPixels.y,
+        croppedAreaPixels.width, croppedAreaPixels.height,
+        0, 0, size, size
+      );
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("crop failed")), "image/jpeg", 0.9);
+    };
+    img.onerror = reject;
+  });
+}
 
 export const dynamic = "force-dynamic";
 
@@ -46,9 +70,17 @@ export default function NewPetPage() {
   const [bio, setBio] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const onCropComplete = useCallback((_: Area, pixels: Area) => {
+    setCroppedAreaPixels(pixels);
+  }, []);
 
   const SPECIES = SPECIES_VALUES.map(s => ({
     ...s,
@@ -61,7 +93,18 @@ export default function NewPetPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
+    setCropSrc(URL.createObjectURL(file));
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+  };
+
+  const handleCropConfirm = async () => {
+    if (!cropSrc || !croppedAreaPixels) return;
+    const blob = await getCroppedBlob(cropSrc, croppedAreaPixels);
+    const croppedFile = new File([blob], "avatar.jpg", { type: "image/jpeg" });
+    setPhotoFile(croppedFile);
+    setPhotoPreview(URL.createObjectURL(blob));
+    setCropSrc(null);
   };
 
   const handleCreate = async () => {
@@ -107,6 +150,44 @@ export default function NewPetPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* Crop modal */}
+      {cropSrc && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(28,18,10,.85)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
+          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "1.5rem", width: "100%", maxWidth: 420, boxShadow: "0 24px 60px rgba(0,0,0,.3)" }}>
+            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 1rem" }}>
+              Recadrer la photo
+            </h3>
+            <div style={{ position: "relative", width: "100%", height: 300, borderRadius: 12, overflow: "hidden", background: "#000" }}>
+              <Cropper
+                image={cropSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+            <input
+              type="range"
+              min={1} max={3} step={0.01}
+              value={zoom}
+              onChange={e => setZoom(Number(e.target.value))}
+              style={{ width: "100%", margin: "1rem 0 .5rem", accentColor: "#C8813A" }}
+            />
+            <div style={{ display: "flex", gap: ".75rem" }}>
+              <button onClick={() => setCropSrc(null)} style={{ flex: 1, padding: ".6rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer" }}>
+                Annuler
+              </button>
+              <button onClick={handleCropConfirm} style={{ flex: 2, padding: ".6rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer" }}>
+                Confirmer →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", boxShadow: "0 4px 40px rgba(61,43,31,.06)" }}>
 
@@ -154,13 +235,13 @@ export default function NewPetPage() {
 
           {/* Text fields */}
           {[
-            { label: t.pet.name, value: name, setter: setName, placeholder: "Luna, Biscuit, Mochi…", type: "text" },
-            { label: t.pet.breed, value: breed, setter: setBreed, placeholder: "Golden Retriever, Siamese…", type: "text" },
-            { label: t.pet.birthday, value: birthdate, setter: setBirthdate, placeholder: "", type: "date" },
+            { label: t.pet.name, value: name, setter: setName, placeholder: "Luna, Biscuit, Mochi…", type: "text", max: undefined },
+            { label: t.pet.breed, value: breed, setter: setBreed, placeholder: "Golden Retriever, Siamese…", type: "text", max: undefined },
+            { label: t.pet.birthday, value: birthdate, setter: setBirthdate, placeholder: "", type: "date", max: new Date().toISOString().split("T")[0] },
           ].map(field => (
             <div key={field.label} style={{ marginBottom: "1.25rem" }}>
               <label style={labelStyle}>{field.label}</label>
-              <input type={field.type} value={field.value} onChange={e => field.setter(e.target.value)} placeholder={field.placeholder} style={inputStyle} />
+              <input type={field.type} value={field.value} onChange={e => field.setter(e.target.value)} placeholder={field.placeholder} max={field.max} style={inputStyle} />
             </div>
           ))}
 

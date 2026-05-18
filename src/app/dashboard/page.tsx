@@ -205,8 +205,12 @@ export default function DashboardPage() {
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#C8813A"; (e.currentTarget as HTMLElement).style.background = "rgba(200,129,58,.06)"; (e.currentTarget as HTMLElement).style.color = "#C8813A"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.15)"; (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#7A5C44"; }}
                 >
-                  <span>{SPECIES_EMOJI[pet.species] ?? "🐾"}</span>
-                  <span>{pet.name}</span>
+                  {pet.photo_url ? (
+                    <img src={pet.photo_url} alt={pet.name} style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                  ) : (
+                    <span>{SPECIES_EMOJI[pet.species] ?? "🐾"}</span>
+                  )}
+                  <span style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pet.name}</span>
                   {petMetadata[pet.id]?.hasNewChapter && (
                     <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#C8813A", display: "inline-block", flexShrink: 0 }} />
                   )}

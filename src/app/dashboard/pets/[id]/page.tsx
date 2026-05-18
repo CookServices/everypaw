@@ -17,6 +17,78 @@ const MOOD_OPTIONS = [
   { value: "proud", emoji: "🏆", label: "Proud" },
 ];
 
+const EMOJI_CATEGORIES = [
+  {
+    label: "Humeurs",
+    emojis: [
+      { value: "happy", emoji: "😄", label: "Heureux" },
+      { value: "funny", emoji: "😂", label: "Drôle" },
+      { value: "tender", emoji: "🥰", label: "Tendre" },
+      { value: "sad", emoji: "😢", label: "Triste" },
+      { value: "proud", emoji: "🏆", label: "Fier" },
+      { value: "love", emoji: "❤️", label: "Amour" },
+      { value: "surprised", emoji: "😲", label: "Surpris" },
+      { value: "sleepy", emoji: "😴", label: "Endormi" },
+      { value: "silly", emoji: "🤪", label: "Fou" },
+      { value: "nervous", emoji: "😰", label: "Nerveux" },
+    ],
+  },
+  {
+    label: "Activités",
+    emojis: [
+      { value: "walk", emoji: "🐾", label: "Promenade" },
+      { value: "play", emoji: "🎾", label: "Jouer" },
+      { value: "swim", emoji: "🏊", label: "Nager" },
+      { value: "run", emoji: "🏃", label: "Courir" },
+      { value: "sleep_act", emoji: "🛌", label: "Dormir" },
+      { value: "bath", emoji: "🛁", label: "Bain" },
+      { value: "car", emoji: "🚗", label: "Voiture" },
+      { value: "park", emoji: "🌳", label: "Parc" },
+      { value: "beach", emoji: "🏖️", label: "Plage" },
+      { value: "home", emoji: "🏠", label: "Maison" },
+    ],
+  },
+  {
+    label: "Santé",
+    emojis: [
+      { value: "vet", emoji: "🏥", label: "Vétérinaire" },
+      { value: "medicine", emoji: "💊", label: "Médicament" },
+      { value: "healthy", emoji: "💪", label: "En forme" },
+      { value: "sick", emoji: "🤒", label: "Malade" },
+      { value: "vaccine", emoji: "💉", label: "Vaccin" },
+      { value: "grooming", emoji: "✂️", label: "Toilettage" },
+      { value: "checkup", emoji: "🩺", label: "Bilan" },
+      { value: "recovered", emoji: "🌟", label: "Rétabli" },
+    ],
+  },
+  {
+    label: "Nourriture",
+    emojis: [
+      { value: "food", emoji: "🍖", label: "Manger" },
+      { value: "treat", emoji: "🦴", label: "Friandise" },
+      { value: "fish", emoji: "🐟", label: "Poisson" },
+      { value: "carrot", emoji: "🥕", label: "Carotte" },
+      { value: "hungry", emoji: "😋", label: "Affamé" },
+      { value: "yummy", emoji: "🤤", label: "Délicieux" },
+    ],
+  },
+  {
+    label: "Nature",
+    emojis: [
+      { value: "sun", emoji: "☀️", label: "Soleil" },
+      { value: "rain", emoji: "🌧️", label: "Pluie" },
+      { value: "snow", emoji: "❄️", label: "Neige" },
+      { value: "flower", emoji: "🌸", label: "Fleur" },
+      { value: "leaf", emoji: "🍂", label: "Feuille" },
+      { value: "moon", emoji: "🌙", label: "Nuit" },
+      { value: "star", emoji: "⭐", label: "Étoile" },
+      { value: "rainbow", emoji: "🌈", label: "Arc-en-ciel" },
+    ],
+  },
+];
+
+const ALL_EMOJIS = EMOJI_CATEGORIES.flatMap(c => c.emojis);
+
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
 async function compressImage(file: File): Promise<Blob> {
@@ -68,11 +140,12 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [stories, setStories] = useState<Story[]>([]);
   const [milestones, setMilestones] = useState<{ id: string; type: string; title: string; achieved_at: string }[]>([]);
   const [newEntry, setNewEntry] = useState("");
-  const [mood, setMood] = useState("happy");
+  const [mood, setMood] = useState<string | null>(null);
   const [moodFilter, setMoodFilter] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [entryError, setEntryError] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generatingMsgIdx, setGeneratingMsgIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [pendingPhotos, setPendingPhotos] = useState<{ file: File; preview: string }[]>([]);
@@ -89,8 +162,17 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [sharingStoryId, setSharingStoryId] = useState<string | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
+  const [entryMenuId, setEntryMenuId] = useState<string | null>(null);
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editMood, setEditMood] = useState<string | null>(null);
+  const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [textareaFocused, setTextareaFocused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const kebabRef = useRef<HTMLDivElement>(null);
+  const entryMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -98,10 +180,19 @@ export default function PetPage({ params }: { params: { id: string } }) {
         setShowKebabMenu(false);
         setShowDeleteConfirm(false);
       }
+      if (entryMenuRef.current && !entryMenuRef.current.contains(e.target as Node)) {
+        setEntryMenuId(null);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!generating) { setGeneratingMsgIdx(0); return; }
+    const interval = setInterval(() => setGeneratingMsgIdx(i => (i + 1) % 3), 3000);
+    return () => clearInterval(interval);
+  }, [generating]);
 
   useEffect(() => {
     const load = async () => {
@@ -260,6 +351,26 @@ export default function PetPage({ params }: { params: { id: string } }) {
     window.location.href = "/dashboard";
   };
 
+  const updateEntry = async () => {
+    if (!editingEntry) return;
+    setSavingEdit(true);
+    const supabase = createClient();
+    const { data } = await supabase.from("entries")
+      .update({ content: editContent.trim() || " ", mood: editMood })
+      .eq("id", editingEntry.id)
+      .select().single();
+    if (data) setEntries(prev => prev.map(e => e.id === data.id ? data : e));
+    setEditingEntry(null);
+    setSavingEdit(false);
+  };
+
+  const deleteEntry = async (entryId: string) => {
+    const supabase = createClient();
+    await supabase.from("entries").delete().eq("id", entryId);
+    setEntries(prev => prev.filter(e => e.id !== entryId));
+    setDeletingEntryId(null);
+  };
+
   const saveMemorial = async () => {
     if (!deceasedAt) return;
     setSavingMemorial(true);
@@ -368,6 +479,53 @@ export default function PetPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
+      {/* Delete entry confirmation modal */}
+      {deletingEntryId && (
+        <div onClick={() => setDeletingEntryId(null)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.75rem", maxWidth: 360, width: "100%", boxShadow: "0 8px 40px rgba(61,43,31,.18)" }}>
+            <p style={{ fontSize: ".9rem", color: "#3D2B1F", margin: "0 0 1.25rem", lineHeight: 1.5 }}>
+              {isFR ? "Voulez-vous vraiment supprimer ce moment ?" : "Are you sure you want to delete this moment?"}
+            </p>
+            <div style={{ display: "flex", gap: ".625rem" }}>
+              <button onClick={() => setDeletingEntryId(null)} style={{ flex: 1, padding: ".6rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".85rem", cursor: "pointer" }}>
+                {isFR ? "Annuler" : "Cancel"}
+              </button>
+              <button onClick={() => deleteEntry(deletingEntryId)} style={{ flex: 1, padding: ".6rem", borderRadius: 100, border: "none", background: "#A32D2D", color: "#fff", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer" }}>
+                {isFR ? "Supprimer" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit entry modal */}
+      {editingEntry && (
+        <div onClick={() => setEditingEntry(null)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.75rem", maxWidth: 440, width: "100%", boxShadow: "0 8px 40px rgba(61,43,31,.18)" }}>
+            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 1rem" }}>
+              {isFR ? "Modifier ce moment" : "Edit this moment"}
+            </h3>
+            <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4} maxLength={1000}
+              style={{ width: "100%", boxSizing: "border-box", padding: ".75rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", resize: "none", outline: "none", lineHeight: 1.6 }} />
+            <div style={{ display: "flex", gap: ".35rem", margin: ".75rem 0" }}>
+              {MOOD_OPTIONS.map(m => (
+                <button key={m.value} onClick={() => setEditMood(editMood === m.value ? null : m.value)} style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${editMood === m.value ? "#C8813A" : "transparent"}`, background: editMood === m.value ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1rem" }}>
+                  {m.emoji}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: ".625rem", marginTop: ".5rem" }}>
+              <button onClick={() => setEditingEntry(null)} style={{ flex: 1, padding: ".6rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer" }}>
+                {isFR ? "Annuler" : "Cancel"}
+              </button>
+              <button onClick={updateEntry} disabled={savingEdit} style={{ flex: 2, padding: ".6rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: savingEdit ? .7 : 1 }}>
+                {savingEdit ? (isFR ? "Enregistrement…" : "Saving…") : (isFR ? "Enregistrer" : "Save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Lightbox */}
       {lightboxUrl && (
         <div onClick={() => setLightboxUrl(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", cursor: "pointer" }}>
@@ -392,8 +550,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {/* Pet header */}
         <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1.25rem", alignItems: "center", position: "relative" }}>
-          <div style={{ width: 64, height: 64, borderRadius: 18, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", flexShrink: 0 }}>
-            {SPECIES_EMOJI[pet.species]}
+          <div style={{ width: 64, height: 64, borderRadius: 18, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", flexShrink: 0, overflow: "hidden" }}>
+            {pet.photo_url
+              ? <img src={pet.photo_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : SPECIES_EMOJI[pet.species]}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
@@ -492,9 +652,14 @@ export default function PetPage({ params }: { params: { id: string } }) {
           </div>
 
           {milestones.length > 0 && (
-            <div style={{ background: "rgba(200,129,58,.1)", borderRadius: 12, padding: ".5rem .875rem", textAlign: "center" }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length}</div>
-              <div style={{ fontSize: ".7rem", color: "#7A5C44" }}>{t.milestones.label}</div>
+            <div style={{ background: "rgba(200,129,58,.1)", borderRadius: 12, padding: ".5rem .875rem", textAlign: "center", minWidth: 70 }}>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length} / 12</div>
+              <div style={{ fontSize: ".65rem", color: "#7A5C44", lineHeight: 1.3 }}>{t.milestones.label}</div>
+              {milestones[0] && (
+                <div style={{ fontSize: ".62rem", color: "#C8813A", marginTop: ".2rem", opacity: .8, lineHeight: 1.2 }}>
+                  🏆 {milestones[0].title.slice(0, 18)}{milestones[0].title.length > 18 ? "…" : ""}
+                </div>
+              )}
             </div>
           )}
 
@@ -540,13 +705,21 @@ export default function PetPage({ params }: { params: { id: string } }) {
               <textarea
                 value={newEntry}
                 onChange={e => { setNewEntry(e.target.value); if (e.target.value.trim()) setEntryError(false); }}
+                onFocus={() => setTextareaFocused(true)}
+                onBlur={() => setTextareaFocused(false)}
                 placeholder={t.journal.placeholder.replace("{name}", pet.name)}
                 rows={3}
+                maxLength={1000}
                 style={{ width: "100%", border: entryError ? "1.5px solid #A32D2D" : "none", background: entryError ? "rgba(163,45,45,.04)" : "transparent", borderRadius: entryError ? 8 : 0, fontFamily: "inherit", fontSize: ".95rem", color: "#3D2B1F", outline: "none", resize: "none", lineHeight: 1.6, boxSizing: "border-box", padding: entryError ? ".5rem" : 0, transition: "border-color .15s" }}
               />
               {entryError && (
                 <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: ".25rem 0 0", lineHeight: 1.4 }}>
                   {t.journal.entry_required}
+                </p>
+              )}
+              {(textareaFocused || newEntry.length > 0) && (
+                <p style={{ fontSize: ".72rem", textAlign: "right", margin: ".2rem 0 0", color: newEntry.length > 950 ? "#A32D2D" : newEntry.length > 800 ? "#C8813A" : "#9A8070" }}>
+                  {newEntry.length} / 1000
                 </p>
               )}
               {pendingPhotos.length > 0 && (
@@ -561,12 +734,30 @@ export default function PetPage({ params }: { params: { id: string } }) {
               )}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: ".75rem", flexWrap: "wrap", gap: ".5rem" }}>
                 <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
-                  <div style={{ display: "flex", gap: ".35rem" }}>
-                    {MOOD_OPTIONS.map(m => (
-                      <button key={m.value} onClick={() => setMood(m.value)} title={m.label} style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${mood === m.value ? "#C8813A" : "transparent"}`, background: mood === m.value ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        {m.emoji}
-                      </button>
-                    ))}
+                  <div style={{ position: "relative" }}>
+                    <button onClick={() => setShowEmojiPicker(v => !v)}
+                      style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${mood ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: mood ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      title={isFR ? "Ajouter une émoticône" : "Add an emoji"}>
+                      {mood ? (ALL_EMOJIS.find(e => e.value === mood)?.emoji ?? "😊") : "😊"}
+                    </button>
+                    {showEmojiPicker && (
+                      <div style={{ position: "absolute", bottom: "calc(100% + .5rem)", left: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 16, boxShadow: "0 8px 30px rgba(61,43,31,.15)", padding: "1rem", zIndex: 50, width: 280 }}>
+                        {EMOJI_CATEGORIES.map(cat => (
+                          <div key={cat.label} style={{ marginBottom: ".75rem" }}>
+                            <p style={{ fontSize: ".65rem", fontWeight: 600, color: "#9A8070", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .4rem" }}>{cat.label}</p>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: ".2rem" }}>
+                              {cat.emojis.map(e => (
+                                <button key={e.value} onClick={() => { setMood(mood === e.value ? null : e.value); setShowEmojiPicker(false); }}
+                                  title={e.label}
+                                  style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${mood === e.value ? "#C8813A" : "transparent"}`, background: mood === e.value ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                  {e.emoji}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {pendingPhotos.length < 5 && (
                     <button onClick={() => fileInputRef.current?.click()} style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "#7A5C44" }} title="Add photos">
@@ -581,10 +772,19 @@ export default function PetPage({ params }: { params: { id: string } }) {
               </div>
             </div>
 
-            <button onClick={generateStory} disabled={generating || entries.length < 3} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", marginBottom: "1.5rem", opacity: entries.length < 3 ? .5 : 1 }}>
-              {generating ? t.journal.generating : t.journal.generate_story.replace("{name}", pet.name)}
-              {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>{t.journal.add_more.replace("{count}", String(3 - entries.length)).replace("{entries}", 3 - entries.length === 1 ? t.journal.entry : t.journal.entries)}</span>}
-            </button>
+            {(() => {
+              const generatingMessages = pet ? [
+                isFR ? `✨ L'IA lit les aventures de ${pet.name}…` : `✨ AI is reading ${pet.name}'s adventures…`,
+                isFR ? "Votre histoire prend forme…" : "Your story is taking shape…",
+                isFR ? "Dernières retouches en cours…" : "Final touches in progress…",
+              ] : ["✨ Generating…", "Your story is taking shape…", "Final touches…"];
+              return (
+                <button onClick={generateStory} disabled={generating || entries.length < 3} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", marginBottom: "1.5rem", opacity: entries.length < 3 ? .5 : 1 }}>
+                  {generating ? generatingMessages[generatingMsgIdx] : t.journal.generate_story.replace("{name}", pet.name)}
+                  {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>{t.journal.add_more.replace("{count}", String(3 - entries.length)).replace("{entries}", 3 - entries.length === 1 ? t.journal.entry : t.journal.entries)}</span>}
+                </button>
+              );
+            })()}
 
             {filteredEntries.length === 0 ? (
               <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#7A5C44", fontSize: ".9rem" }}>
@@ -599,6 +799,33 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
                   {group.entries.map(entry => (
                     <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(61,43,31,.06)" }}>
+                      <div style={{ padding: ".875rem 1rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: entry.content.trim() ? ".5rem" : 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                            <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>
+                              {new Date(entry.entry_date).toLocaleDateString(dateLocale, { weekday: "short", month: "short", day: "numeric" })}
+                            </span>
+                            {entry.mood && <span style={{ fontSize: ".9rem" }}>{ALL_EMOJIS.find(m => m.value === entry.mood)?.emoji ?? MOOD_OPTIONS.find(m => m.value === entry.mood)?.emoji}</span>}
+                          </div>
+                          <div ref={entryMenuId === entry.id ? entryMenuRef : null} style={{ position: "relative" }}>
+                            <button onClick={() => setEntryMenuId(entryMenuId === entry.id ? null : entry.id)}
+                              style={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "#7A5C44", fontFamily: "inherit", lineHeight: 1 }}>···</button>
+                            {entryMenuId === entry.id && !deletingEntryId && (
+                              <div style={{ position: "absolute", top: "calc(100% + .3rem)", right: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 10, boxShadow: "0 4px 16px rgba(61,43,31,.12)", minWidth: 140, zIndex: 30 }}>
+                                <button onClick={() => { setEditingEntry(entry); setEditContent(entry.content.trim()); setEditMood(entry.mood ?? null); setEntryMenuId(null); }}
+                                  style={{ display: "block", width: "100%", padding: ".625rem .875rem", fontSize: ".8rem", color: "#3D2B1F", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                                  {isFR ? "Modifier" : "Edit"}
+                                </button>
+                                <button onClick={() => { setDeletingEntryId(entry.id); setEntryMenuId(null); }}
+                                  style={{ display: "block", width: "100%", padding: ".625rem .875rem", fontSize: ".8rem", color: "#A32D2D", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                                  {isFR ? "Supprimer" : "Delete"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {entry.content.trim() && <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.65, margin: 0 }}>{entry.content}</p>}
+                      </div>
                       {entry.photo_urls && entry.photo_urls.length > 0 && (
                         <div style={{ display: "grid", gridTemplateColumns: entry.photo_urls.length === 1 ? "1fr" : entry.photo_urls.length === 2 ? "1fr 1fr" : "1fr 1fr 1fr", gap: "2px" }}>
                           {entry.photo_urls.slice(0, 3).map((url: string, i: number) => (
@@ -614,15 +841,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
                           ))}
                         </div>
                       )}
-                      <div style={{ padding: ".875rem 1rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: entry.content.trim() ? ".5rem" : 0 }}>
-                          <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>
-                            {new Date(entry.entry_date).toLocaleDateString(dateLocale, { weekday: "short", month: "short", day: "numeric" })}
-                          </span>
-                          {entry.mood && <span style={{ fontSize: ".9rem" }}>{MOOD_OPTIONS.find(m => m.value === entry.mood)?.emoji}</span>}
-                        </div>
-                        {entry.content.trim() && <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.65, margin: 0 }}>{entry.content}</p>}
-                      </div>
                     </div>
                   ))}
                 </div>

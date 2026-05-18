@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   await resend.emails.send({
     from: "Everypaw <hello@everypaw.app>",
     to: "hello@everypaw.app",
-    replyTo: userEmail !== "unknown" ? userEmail : undefined,
+    reply_to: userEmail !== "unknown" ? userEmail : undefined,
     subject: `💬 Nouvelle suggestion — ${userEmail}`,
     html: `
       <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
