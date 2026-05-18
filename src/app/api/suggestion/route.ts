@@ -18,7 +18,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Message too long" }, { status: 400 });
   }
 
-  // Get user email from session (optional — won't block if not authenticated)
   let userEmail = "unknown";
   try {
     const supabase = await createClient();
@@ -34,7 +33,7 @@ export async function POST(req: Request) {
     from: "Everypaw <hello@everypaw.app>",
     to: "hello@everypaw.app",
     reply_to: userEmail !== "unknown" ? userEmail : undefined,
-    subject: `💬 Nouvelle suggestion — ${userEmail}`,
+    subject: "💡 Nouvelle suggestion Everypaw",
     html: `
       <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
         <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>

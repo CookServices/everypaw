@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
+  const [subscribeError, setSubscribeError] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [hasStories, setHasStories] = useState(false);
   const [monthlyEntryCount, setMonthlyEntryCount] = useState(0);
@@ -101,6 +102,7 @@ export default function DashboardPage() {
 
   const handleSubscribe = async (plan: "digital" | "print_monthly" = "digital") => {
     setSubscribing(true);
+    setSubscribeError(false);
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -108,9 +110,16 @@ export default function DashboardPage() {
         body: JSON.stringify({ plan }),
       });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setSubscribing(false);
-    } catch {
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("[subscribe] No URL returned:", data);
+        setSubscribeError(true);
+        setSubscribing(false);
+      }
+    } catch (err) {
+      console.error("[subscribe] Fetch error:", err);
+      setSubscribeError(true);
       setSubscribing(false);
     }
   };
@@ -363,6 +372,13 @@ export default function DashboardPage() {
                 </button>
               </div>
             </div>
+            {subscribeError && (
+              <p style={{ fontSize: ".8rem", color: "#A32D2D", marginTop: ".75rem", textAlign: "center" }}>
+                {isFR
+                  ? "Une erreur est survenue. Vérifie ta connexion ou réessaie."
+                  : "Something went wrong. Please check your connection and try again."}
+              </p>
+            )}
           </div>
         )}
 

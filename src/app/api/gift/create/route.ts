@@ -15,7 +15,7 @@ function escapeHtml(str: string): string {
 
 const copy = {
   fr: {
-    subject: (sender: string) => `${sender} vous offre un abonnement Everypaw 🐾`,
+    subject: (_sender: string) => `🎁 Vous avez reçu un cadeau Everypaw !`,
     heading: "Vous avez reçu un cadeau !",
     body: (sender: string) =>
       `<strong>${sender}</strong> vous offre 12 mois d'Everypaw Premium — le journal IA qui transforme les moments du quotidien de votre animal en un beau livre imprimé.`,
@@ -24,7 +24,7 @@ const copy = {
     footer: "Ce cadeau vous donne 12 mois d'Everypaw Premium gratuitement. Aucune carte bancaire requise pour l'activer.",
   },
   en: {
-    subject: (sender: string) => `${sender} gifted you an Everypaw subscription 🐾`,
+    subject: (_sender: string) => `🎁 You've received an Everypaw gift!`,
     heading: "You've received a gift!",
     body: (sender: string) =>
       `<strong>${sender}</strong> gifted you 12 months of Everypaw Premium — the AI journal that turns your pet's daily moments into a beautiful printed book.`,
@@ -127,6 +127,7 @@ export async function POST(req: Request) {
     const emailPayload: Parameters<typeof resend.emails.send>[0] = {
       from: "Everypaw <hello@everypaw.app>",
       to: recipientEmail,
+      reply_to: user.email ?? undefined,
       subject: c.subject(senderName),
       html: buildEmailHtml({
         locale: emailLocale,
