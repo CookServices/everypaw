@@ -1,15 +1,15 @@
 import { Entry } from "@/types";
 
 export const MILESTONE_TYPES = [
-  { type: "first_entry", title: "First memory captured 📝", keywords: [] },
-  { type: "first_bath", title: "First bath 🛁", keywords: ["bath", "bain", "shower", "douche", "baignade"] },
-  { type: "first_walk", title: "First walk 🦮", keywords: ["walk", "promenade", "marche", "balade", "walked"] },
-  { type: "first_vet", title: "First vet visit 🏥", keywords: ["vet", "vétérinaire", "veterinaire", "doctor", "clinic", "vaccin", "vaccine"] },
-  { type: "first_park", title: "First park visit 🌳", keywords: ["park", "parc", "garden", "jardin"] },
-  { type: "first_trip", title: "First trip 🚗", keywords: ["trip", "travel", "voyage", "vacances", "holiday", "vacation"] },
-  { type: "first_friend", title: "First dog friend 🐕", keywords: ["friend", "ami", "play", "joue", "copain", "buddy", "met a dog", "other dog"] },
-  { type: "first_swim", title: "First swim 🏊", keywords: ["swim", "nage", "pool", "piscine", "lake", "lac", "mer", "sea", "ocean"] },
-  { type: "birthday", title: "Birthday 🎂", keywords: ["birthday", "anniversaire", "born", "naissance", "1 year", "1 an", "2 year", "2 ans"] },
+  { type: "first_entry",  title: "First memory captured 📝", titleFR: "Premier souvenir capturé 📝", icon: "📝", keywords: [] },
+  { type: "first_bath",   title: "First bath 🛁",             titleFR: "Premier bain 🛁",              icon: "🛁", keywords: ["bath", "bain", "shower", "douche", "baignade"] },
+  { type: "first_walk",   title: "First walk 🦮",             titleFR: "Première promenade 🦮",         icon: "🦮", keywords: ["walk", "promenade", "marche", "balade", "walked"] },
+  { type: "first_vet",    title: "First vet visit 🏥",        titleFR: "Première visite vétérinaire 🏥", icon: "🏥", keywords: ["vet", "vétérinaire", "veterinaire", "doctor", "clinic", "vaccin", "vaccine"] },
+  { type: "first_park",   title: "First park visit 🌳",       titleFR: "Première visite au parc 🌳",   icon: "🌳", keywords: ["park", "parc", "garden", "jardin"] },
+  { type: "first_trip",   title: "First trip 🚗",             titleFR: "Premier voyage 🚗",             icon: "🚗", keywords: ["trip", "travel", "voyage", "vacances", "holiday", "vacation"] },
+  { type: "first_friend", title: "First dog friend 🐕",       titleFR: "Premier ami à 4 pattes 🐕",    icon: "🐕", keywords: ["friend", "ami", "play", "joue", "copain", "buddy", "met a dog", "other dog"] },
+  { type: "first_swim",   title: "First swim 🏊",             titleFR: "Premier bain de mer/piscine 🏊", icon: "🏊", keywords: ["swim", "nage", "pool", "piscine", "lake", "lac", "mer", "sea", "ocean"] },
+  { type: "birthday",     title: "Birthday 🎂",               titleFR: "Anniversaire 🎂",               icon: "🎂", keywords: ["birthday", "anniversaire", "born", "naissance", "1 year", "1 an", "2 year", "2 ans"] },
 ];
 
 export function detectMilestones(

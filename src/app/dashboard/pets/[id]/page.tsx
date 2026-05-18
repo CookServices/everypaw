@@ -1149,6 +1149,16 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "milestones" && (
           <div>
+            {/* Auto-detection info box */}
+            <div style={{ background: "rgba(200,129,58,.06)", borderRadius: 14, padding: ".875rem 1rem", marginBottom: "1.25rem", border: "1px solid rgba(200,129,58,.2)", display: "flex", gap: ".625rem", alignItems: "flex-start" }}>
+              <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: ".05rem" }}>💡</span>
+              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, lineHeight: 1.55 }}>
+                {isFR
+                  ? "Les étapes se débloquent automatiquement quand vous ajoutez des entrées dans le journal. Par exemple, mentionnez « bain » pour débloquer « Premier bain », « vétérinaire » pour « Première visite vétérinaire », etc."
+                  : "Steps unlock automatically when you add journal entries. For example, mention \"bath\" to unlock \"First bath\", \"vet\" to unlock \"First vet visit\", etc."}
+              </p>
+            </div>
+
             {/* Progress bar */}
             <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: "1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: ".625rem" }}>
@@ -1167,13 +1177,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
             <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
               {MILESTONE_TYPES.map(mt => {
                 const achieved = milestones.find(m => m.type === mt.type);
-                const parts = mt.title.split(" ");
-                const icon = parts[parts.length - 1];
+                const localTitle = isFR ? mt.titleFR : mt.title;
+                const parts = localTitle.split(" ");
                 const label = parts.slice(0, -1).join(" ");
                 return (
                   <div key={mt.type} style={{ background: "#FDFAF5", borderRadius: 14, padding: ".875rem 1.125rem", border: `1px solid ${achieved ? "rgba(200,129,58,.2)" : "rgba(61,43,31,.06)"}`, display: "flex", alignItems: "center", gap: ".875rem", opacity: achieved ? 1 : 0.6 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, background: achieved ? "rgba(200,129,58,.12)" : "rgba(61,43,31,.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.15rem", flexShrink: 0 }}>
-                      {achieved ? icon : "🔒"}
+                      {achieved ? mt.icon : "🔒"}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: ".875rem", fontWeight: 500, color: achieved ? "#3D2B1F" : "#7A5C44", margin: "0 0 .15rem" }}>{label}</p>

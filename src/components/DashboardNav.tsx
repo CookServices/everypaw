@@ -285,14 +285,14 @@ function PetSelector({
       >
         <div style={{
           width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-          background: "rgba(200,129,58,.15)",
+          background: selected && !selected.photo_url ? "#C8813A" : "rgba(200,129,58,.15)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: selected?.photo_url ? undefined : "1.25rem",
-          overflow: "hidden",
+          fontSize: selected?.photo_url ? undefined : ".9rem",
+          overflow: "hidden", color: "#FDFAF5", fontWeight: 600,
         }}>
           {selected?.photo_url
             ? <img src={selected.photo_url} alt={selected.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            : selected ? (emoji) : "🐾"}
+            : selected ? selected.name.slice(0, 2).toUpperCase() : "🐾"}
         </div>
         <div style={{ flex: 1, textAlign: "left", overflow: "hidden" }}>
           <p style={{ margin: 0, fontSize: ".875rem", fontWeight: 600, color: "#3D2B1F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.3 }}>
