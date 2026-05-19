@@ -15,7 +15,10 @@ export async function POST(req: Request) {
   const { data: profile } = await supabase.from("profiles").select("locale, language").eq("id", user.id).single();
   const lang = (profile?.locale || profile?.language || "fr").toLowerCase().startsWith("fr") ? "French" : "English";
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
-  if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (pet.user_id !== user.id) {
+    console.error("[generate] 403 Forbidden: pet.user_id", pet.user_id, "!= user.id", user.id);
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   // ── Plan gate ──────────────────────────────────────────────────────────────
   const { plan } = await getUserPlan();
@@ -25,8 +28,11 @@ export async function POST(req: Request) {
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id);
 
+  console.log("[generate] plan gate: plan=", plan, "storyCount=", storyCount);
+
   const blocked = canGenerateStory(plan, storyCount ?? 0);
   if (blocked === "story_limit") {
+    console.warn("[generate] 403 story_limit: plan=", plan, "storyCount=", storyCount);
     return NextResponse.json({ error: "story_limit" }, { status: 403 });
   }
 
