@@ -57,7 +57,6 @@ export default function LoginPage() {
     }
     setResendStatus("sending");
     const { error: resendErr } = await supabase.auth.resend({ type: "signup", email });
-    console.log("resend result:", { error: resendErr });
     if (resendErr) {
       setResendStatus("error");
       setError(isFR ? "Erreur lors de l'envoi. Veuillez réessayer." : "Error sending email. Please try again.");
