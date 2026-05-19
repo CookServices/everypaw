@@ -59,10 +59,10 @@ export default function LoginPage() {
     const { error: resendErr } = await supabase.auth.resend({ type: "signup", email });
     if (resendErr) {
       setResendStatus("error");
-      setError(resendErr.message);
+      setError(isFR ? "Erreur lors de l'envoi. Veuillez réessayer." : "Error sending email. Please try again.");
     } else {
       setResendStatus("sent");
-      setError(isFR ? `Un nouveau lien a été envoyé à ${email}` : `A new link was sent to ${email}`);
+      setError(isFR ? `Un nouveau lien a été envoyé à ${email}` : `A new link has been sent to ${email}`);
     }
   };
 
@@ -121,8 +121,8 @@ export default function LoginPage() {
                 {showResend && resendStatus !== "sent" && (
                   <button
                     onClick={handleResend}
-                    disabled={resendStatus !== "idle"}
-                    style={{ marginTop: ".5rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid #A32D2D", background: "transparent", color: "#A32D2D", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", opacity: resendStatus !== "idle" ? .7 : 1 }}
+                    disabled={resendStatus === "sending"}
+                    style={{ marginTop: ".5rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid #A32D2D", background: "transparent", color: "#A32D2D", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", opacity: resendStatus === "sending" ? .7 : 1 }}
                   >
                     {resendStatus === "sending"
                       ? (isFR ? "Envoi…" : "Sending…")
