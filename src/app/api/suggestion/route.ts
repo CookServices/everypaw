@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
   try {
     const { error: resendError } = await resend.emails.send({
-      from: "Everypaw <hello@everypaw.app>",
+      from: "Everypaw <noreply@everypaw.app>",
       to: "hello@everypaw.app",
       reply_to: userEmail !== "unknown" ? userEmail : undefined,
       subject: "💡 Nouvelle suggestion Everypaw",
