@@ -265,7 +265,7 @@ function PetSelector({
   const emoji = selected ? (SPECIES_EMOJI[selected.species] ?? "🐾") : "🐾";
   const petName = selected ? selected.name : (isFR ? "Tous mes animaux" : "All my pets");
   const speciesText = selected
-    ? (selected.breed || (isFR ? SPECIES_LABEL[selected.species]?.fr : SPECIES_LABEL[selected.species]?.en) ?? selected.species)
+    ? (selected.breed || ((isFR ? SPECIES_LABEL[selected.species]?.fr : SPECIES_LABEL[selected.species]?.en) ?? selected.species))
     : `${pets.length} ${isFR ? (pets.length > 1 ? "animaux" : "animal") : (pets.length > 1 ? "pets" : "pet")}`;
 
   return (
