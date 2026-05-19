@@ -40,7 +40,11 @@ export default function UpdatePasswordPage() {
     const supabase = createClient();
     const { error: err } = await supabase.auth.updateUser({ password });
     if (err) {
-      setError(err.message);
+      const msg = err.message;
+      const translated = isFR && msg.toLowerCase().includes("new password should be different")
+        ? "Le nouveau mot de passe doit être différent de l'ancien."
+        : msg;
+      setError(translated);
       setStatus("error");
     } else {
       setStatus("done");
