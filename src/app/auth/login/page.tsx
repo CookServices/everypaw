@@ -124,11 +124,9 @@ export default function LoginPage() {
                     disabled={resendStatus !== "idle"}
                     style={{ marginTop: ".5rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid #A32D2D", background: "transparent", color: "#A32D2D", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", opacity: resendStatus !== "idle" ? .7 : 1 }}
                   >
-                    {resendStatus === "sent"
-                      ? (isFR ? "✓ Email envoyé !" : "✓ Email sent!")
-                      : resendStatus === "sending"
-                        ? (isFR ? "Envoi…" : "Sending…")
-                        : (isFR ? "Renvoyer le lien de confirmation" : "Resend confirmation link")}
+                    {resendStatus === "sending"
+                      ? (isFR ? "Envoi…" : "Sending…")
+                      : (isFR ? "Renvoyer le lien de confirmation" : "Resend confirmation link")}
                   </button>
                 )}
               </div>
