@@ -879,7 +879,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
         {tab === "journal" && (
           <>
             {/* Period filter pills */}
-            {availableMonths.length > 1 && (
+            {availableMonths.length >= 1 && (
               <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
                 <button
                   onClick={() => setPeriodFilter(null)}
