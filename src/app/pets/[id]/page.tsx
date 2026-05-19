@@ -128,12 +128,27 @@ export default async function PublicPetPage({ params }: { params: { id: string }
             <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".12em", textTransform: "uppercase", color: "#C8813A", marginBottom: "1rem" }}>{t.public_pet.recent_moments}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
               {entries.map(entry => (
-                <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", border: "1px solid rgba(61,43,31,.06)", display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-                  <div style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300, minWidth: 70 }}>
-                    {new Date(entry.entry_date).toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}
-                    {entry.mood && <div style={{ marginTop: 4, fontSize: "1rem" }}>{MOOD_OPTIONS[entry.mood]}</div>}
+                <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(61,43,31,.06)", boxShadow: "0 1px 4px rgba(61,43,31,.04)" }}>
+                  <div style={{ padding: ".875rem 1rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: entry.content?.trim() ? ".5rem" : 0 }}>
+                      <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>
+                        {new Date(entry.entry_date).toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" })}
+                      </span>
+                      {entry.mood && <span style={{ fontSize: ".9rem" }}>{ALL_EMOJIS[entry.mood] ?? ""}</span>}
+                    </div>
+                    {entry.content?.trim() && (
+                      <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.65, margin: 0 }}>
+                        {entry.content.slice(0, 200)}{entry.content.length > 200 ? "…" : ""}
+                      </p>
+                    )}
                   </div>
-                  {entry.content.trim() && <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.6, margin: 0, flex: 1 }}>{entry.content.slice(0, 120)}{entry.content.length > 120 ? "…" : ""}</p>}
+                  {entry.photo_urls && entry.photo_urls.length > 0 && (
+                    <div style={{ display: "grid", gridTemplateColumns: entry.photo_urls.length === 1 ? "1fr" : "1fr 1fr", gap: "2px" }}>
+                      {entry.photo_urls.slice(0, 2).map((url: string, i: number) => (
+                        <img key={i} src={url} alt="" style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
