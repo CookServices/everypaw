@@ -861,11 +861,15 @@ export default function PetPage({ params }: { params: { id: string } }) {
             <div style={{ background: "rgba(200,129,58,.1)", borderRadius: 12, padding: ".5rem .875rem", textAlign: "center", minWidth: 70 }}>
               <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length} / {MILESTONE_TYPES.length}</div>
               <div style={{ fontSize: ".65rem", color: "#7A5C44", lineHeight: 1.3 }}>{t.milestones.label}</div>
-              {milestones[0] && (
-                <div style={{ fontSize: ".62rem", color: "#C8813A", marginTop: ".2rem", opacity: .8, lineHeight: 1.2 }}>
-                  🏆 {milestones[0].title.slice(0, 18)}{milestones[0].title.length > 18 ? "…" : ""}
-                </div>
-              )}
+              {milestones[0] && (() => {
+                const mt = MILESTONE_TYPES.find(m => m.type === milestones[0].type);
+                const localTitle = mt ? (isFR ? mt.titleFR : mt.title) : milestones[0].title;
+                return (
+                  <div style={{ fontSize: ".62rem", color: "#C8813A", marginTop: ".2rem", opacity: .8, lineHeight: 1.2 }}>
+                    🏆 {localTitle.slice(0, 22)}{localTitle.length > 22 ? "…" : ""}
+                  </div>
+                );
+              })()}
             </div>
           )}
 
