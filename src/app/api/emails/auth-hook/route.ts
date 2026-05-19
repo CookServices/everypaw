@@ -25,11 +25,14 @@ export async function POST(req: Request) {
     email?: string;
     email_data?: {
       email_action_type?: string;
+      token?: string;
       token_hash?: string;
       token_hash_new?: string;
-      token?: string;
+      token_new?: string;
       redirect_to?: string;
       new_email?: string;
+      confirmation_url?: string;
+      [key: string]: unknown;
     };
   };
   try {
@@ -38,12 +41,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  console.log("[auth-hook] payload:", JSON.stringify(body).slice(0, 400));
+  // Log payload complet pour diagnostiquer les champs disponibles
+  console.log("[auth-hook] FULL payload:", JSON.stringify(body, null, 2));
 
   const actionType = body.email_data?.email_action_type;
   const email = body.user?.email ?? body.email ?? "";
   const tokenHash = body.email_data?.token_hash ?? "";
   const tokenHashNew = body.email_data?.token_hash_new ?? tokenHash;
+  const token = body.email_data?.token ?? tokenHash;
+  const confirmationUrl = body.email_data?.confirmation_url;
   const redirectTo = body.email_data?.redirect_to;
 
   if (!email) {
@@ -73,18 +79,24 @@ export async function POST(req: Request) {
   let toEmail = email;
 
   if (actionType === "signup") {
-    const confirmUrl = `${SUPABASE_URL}/auth/v1/verify?token_hash=${tokenHash}&type=signup&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/dashboard`)}`;
+    const confirmUrl = confirmationUrl
+      ?? `${SUPABASE_URL}/auth/v1/verify?token=${token}&type=signup&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/dashboard`)}`;
+    console.log("[auth-hook] signup confirmUrl:", confirmUrl);
     ({ subject, html } = buildConfirmSignupEmail(lang, confirmUrl));
 
   } else if (actionType === "recovery") {
-    const resetUrl = `${SUPABASE_URL}/auth/v1/verify?token_hash=${tokenHash}&type=recovery&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/auth/update-password`)}`;
+    const resetUrl = confirmationUrl
+      ?? `${SUPABASE_URL}/auth/v1/verify?token=${token}&type=recovery&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/auth/update-password`)}`;
+    console.log("[auth-hook] recovery resetUrl:", resetUrl);
     ({ subject, html } = buildResetPasswordEmail(lang, resetUrl));
 
   } else if (actionType === "email_change") {
     const newEmail = body.user?.new_email ?? body.email_data?.new_email ?? email;
     toEmail = newEmail;
-    const confirmUrl = `${SUPABASE_URL}/auth/v1/verify?token_hash=${tokenHashNew}&type=email_change&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/dashboard`)}`;
-    ({ subject, html } = buildChangeEmailEmail(lang, confirmUrl, newEmail));
+    const changeUrl = confirmationUrl
+      ?? `${SUPABASE_URL}/auth/v1/verify?token=${tokenHashNew}&type=email_change&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/dashboard`)}`;
+    console.log("[auth-hook] email_change changeUrl:", changeUrl);
+    ({ subject, html } = buildChangeEmailEmail(lang, changeUrl, newEmail));
 
   } else {
     console.warn("[auth-hook] Unknown email_action_type:", actionType);
