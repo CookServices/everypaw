@@ -138,7 +138,12 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p style={{ textAlign: "center", marginTop: "1.25rem", fontSize: ".85rem", color: "#7A5C44" }}>
+        <p style={{ textAlign: "center", marginTop: "1rem", fontSize: ".85rem", color: "#7A5C44" }}>
+          <Link href="/auth/forgot-password" style={{ color: "#9A8070", fontWeight: 400, textDecoration: "none" }}>
+            {isFR ? "Mot de passe oublié ?" : "Forgot your password?"}
+          </Link>
+        </p>
+        <p style={{ textAlign: "center", marginTop: ".5rem", fontSize: ".85rem", color: "#7A5C44" }}>
           {isFR ? "Pas de compte ?" : "No account?"}{" "}
           <Link href="/auth/signup" style={{ color: "#C8813A", fontWeight: 500, textDecoration: "none" }}>
             {isFR ? "En créer un →" : "Create one →"}

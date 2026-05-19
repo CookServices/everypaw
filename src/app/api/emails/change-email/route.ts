@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
-    const { error } = await resend.emails.send({ from: "Everypaw <hello@everypaw.app>", to: newEmail, subject, html });
+    const { error } = await resend.emails.send({ from: "Everypaw <noreply@everypaw.app>", to: newEmail, subject, html });
     if (error) {
       console.error("[emails/change-email] Resend error:", error);
       return NextResponse.json({ error: "Email send failed" }, { status: 500 });
