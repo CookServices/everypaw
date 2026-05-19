@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState("");
   const [showResend, setShowResend] = useState(false);
-  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const supabase = createClient();
 
   useEffect(() => {
@@ -56,8 +56,14 @@ export default function LoginPage() {
       return;
     }
     setResendStatus("sending");
-    await supabase.auth.resend({ type: "signup", email });
-    setResendStatus("sent");
+    const { error: resendErr } = await supabase.auth.resend({ type: "signup", email });
+    if (resendErr) {
+      setResendStatus("error");
+      setError(resendErr.message);
+    } else {
+      setResendStatus("sent");
+      setError(isFR ? `Un nouveau lien a été envoyé à ${email}` : `A new link was sent to ${email}`);
+    }
   };
 
   const handleGoogle = async () => {
@@ -110,9 +116,9 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div style={{ background: "rgba(163,45,45,.06)", border: "1px solid rgba(163,45,45,.2)", borderRadius: 10, padding: ".75rem 1rem" }}>
-                <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>{error}</p>
-                {showResend && (
+              <div style={{ background: resendStatus === "sent" ? "rgba(46,94,30,.06)" : "rgba(163,45,45,.06)", border: `1px solid ${resendStatus === "sent" ? "rgba(46,94,30,.2)" : "rgba(163,45,45,.2)"}`, borderRadius: 10, padding: ".75rem 1rem" }}>
+                <p style={{ fontSize: ".8rem", color: resendStatus === "sent" ? "#2E5E1E" : "#A32D2D", margin: 0 }}>{error}</p>
+                {showResend && resendStatus !== "sent" && (
                   <button
                     onClick={handleResend}
                     disabled={resendStatus !== "idle"}
