@@ -874,21 +874,29 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "journal" && (
           <>
-            {/* Period filter dropdown */}
+            {/* Period filter pills */}
             {availableMonths.length > 1 && (
-              <div style={{ marginBottom: "1.25rem" }}>
-                <select
-                  value={periodFilter ?? ""}
-                  onChange={e => setPeriodFilter(e.target.value || null)}
-                  style={{ padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "#FDFAF5", fontFamily: "inherit", fontSize: ".82rem", color: "#3D2B1F", outline: "none", cursor: "pointer" }}
+              <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
+                <button
+                  onClick={() => setPeriodFilter(null)}
+                  style={{ padding: ".35rem .875rem", borderRadius: 100, border: `1.5px solid ${!periodFilter ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: !periodFilter ? "rgba(200,129,58,.1)" : "transparent", color: !periodFilter ? "#C8813A" : "#7A5C44", fontFamily: "inherit", fontSize: ".82rem", fontWeight: !periodFilter ? 500 : 400, cursor: "pointer" }}
                 >
-                  <option value="">{isFR ? "Tous les moments" : "All moments"}</option>
-                  {availableMonths.map(ym => {
-                    const [y, m] = ym.split("-");
-                    const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString(dateLocale, { month: "long", year: "numeric" });
-                    return <option key={ym} value={ym}>{label}</option>;
-                  })}
-                </select>
+                  {isFR ? "Tous" : "All"}
+                </button>
+                {availableMonths.map(ym => {
+                  const [y, m] = ym.split("-");
+                  const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString(dateLocale, { month: "long", year: "numeric" }).replace(/^./, s => s.toUpperCase());
+                  const active = periodFilter === ym;
+                  return (
+                    <button
+                      key={ym}
+                      onClick={() => setPeriodFilter(active ? null : ym)}
+                      style={{ padding: ".35rem .875rem", borderRadius: 100, border: `1.5px solid ${active ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: active ? "rgba(200,129,58,.1)" : "transparent", color: active ? "#C8813A" : "#7A5C44", fontFamily: "inherit", fontSize: ".82rem", fontWeight: active ? 500 : 400, cursor: "pointer" }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
