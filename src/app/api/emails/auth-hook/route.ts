@@ -78,24 +78,29 @@ export async function POST(req: Request) {
   let html: string;
   let toEmail = email;
 
+  // Build the action URL: use confirmation_url if Supabase provides it,
+  // otherwise construct with token_hash + action type.
+  const buildUrl = (type: string, fallbackRedirect: string) =>
+    confirmationUrl
+    ?? `${SUPABASE_URL}/auth/v1/verify?token=${tokenHash}&type=${type}&redirect_to=${encodeURIComponent(redirectTo ?? fallbackRedirect)}`;
+
   if (actionType === "signup") {
-    const confirmUrl = confirmationUrl
-      ?? `${SUPABASE_URL}/auth/v1/verify?token=${token}&type=signup&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/dashboard`)}`;
-    console.log("[auth-hook] signup confirmUrl:", confirmUrl);
-    ({ subject, html } = buildConfirmSignupEmail(lang, confirmUrl));
+    const url = buildUrl("signup", `${APP_URL}/dashboard`);
+    console.log("[auth-hook] signup url:", url);
+    ({ subject, html } = buildConfirmSignupEmail(lang, url));
 
   } else if (actionType === "recovery") {
-    const resetUrl = confirmationUrl
-      ?? `${SUPABASE_URL}/auth/v1/verify?token=${token}&type=recovery&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/auth/update-password`)}`;
-    console.log("[auth-hook] recovery resetUrl:", resetUrl);
-    ({ subject, html } = buildResetPasswordEmail(lang, resetUrl));
+    const url = buildUrl("recovery", `${APP_URL}/auth/update-password`);
+    console.log("[auth-hook] recovery url:", url);
+    ({ subject, html } = buildResetPasswordEmail(lang, url));
 
   } else if (actionType === "email_change") {
     const newEmail = body.user?.new_email ?? body.email_data?.new_email ?? email;
     toEmail = newEmail;
+    // email_change uses token_hash_new for the new address confirmation
     const changeUrl = confirmationUrl
-      ?? `${SUPABASE_URL}/auth/v1/verify?token=${tokenHashNew}&type=email_change&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/dashboard`)}`;
-    console.log("[auth-hook] email_change changeUrl:", changeUrl);
+      ?? `${SUPABASE_URL}/auth/v1/verify?token=${tokenHashNew || tokenHash}&type=email_change&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/dashboard`)}`;
+    console.log("[auth-hook] email_change url:", changeUrl);
     ({ subject, html } = buildChangeEmailEmail(lang, changeUrl, newEmail));
 
   } else {
