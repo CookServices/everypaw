@@ -21,6 +21,7 @@ export default function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [currentEmail, setCurrentEmail] = useState("");
   const [emailStatus, setEmailStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [passwordStatus, setPasswordStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [emailError, setEmailError] = useState("");
@@ -34,6 +35,7 @@ export default function SettingsPage() {
         supabase.auth.getUser(),
       ]);
       if (profileData) setEmailReminders(profileData.email_reminders ?? true);
+      if (user?.email) setCurrentEmail(user.email);
       if (user?.app_metadata?.provider === "google") setIsGoogleAccount(true);
       setLoading(false);
     };
@@ -163,6 +165,11 @@ export default function SettingsPage() {
                 {isFR ? "Changer l'adresse email" : "Change email address"}
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+                {currentEmail && (
+                  <p style={{ fontSize: ".85rem", color: "#9A8070", margin: "0 0 4px" }}>
+                    {isFR ? `Adresse actuelle : ${currentEmail}` : `Current address: ${currentEmail}`}
+                  </p>
+                )}
                 <input
                   type="email"
                   placeholder={isFR ? "Nouvelle adresse email" : "New email address"}
