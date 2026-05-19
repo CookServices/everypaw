@@ -53,7 +53,15 @@ export default async function PublicPetPage({ params }: { params: { id: string }
 
         {/* Pet header */}
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", marginBottom: "2rem", border: "1px solid rgba(61,43,31,.08)", textAlign: "center" }}>
-          <div style={{ fontSize: "4rem", marginBottom: "1rem" }}>{SPECIES_EMOJI[pet.species]}</div>
+          <div style={{ marginBottom: "1rem", display: "flex", justifyContent: "center" }}>
+            {pet.photo_url ? (
+              <img src={pet.photo_url} alt={pet.name} style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover" }} />
+            ) : (
+              <div style={{ width: 80, height: 80, borderRadius: "50%", background: "#C8813A", display: "flex", alignItems: "center", justifyContent: "center", color: "#FDFAF5", fontFamily: "Georgia, serif", fontSize: "1.75rem", fontWeight: 600 }}>
+                {pet.name.slice(0, 2).toUpperCase()}
+              </div>
+            )}
+          </div>
           <h1 style={{ fontFamily: "Georgia, serif", fontSize: "2rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .5rem" }}>{pet.name}</h1>
           <p style={{ fontSize: ".9rem", color: "#7A5C44", fontWeight: 300, margin: "0 0 1rem" }}>
             {pet.breed || pet.species}{pet.birthdate ? ` · ${t.pet.born} ${new Date(pet.birthdate).toLocaleDateString(dateLocale, { month: "long", year: "numeric" })}` : ""}
