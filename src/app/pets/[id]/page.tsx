@@ -5,8 +5,15 @@ import { getTranslations } from "@/lib/i18n";
 
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
-const MOOD_OPTIONS: Record<string, string> = {
-  happy: "😄", funny: "😂", tender: "🥰", sad: "😢", proud: "🏆"
+const ALL_EMOJIS: Record<string, string> = {
+  happy: "😄", funny: "😂", tender: "🥰", sad: "😢", proud: "🏆",
+  love: "❤️", surprised: "😲", sleepy: "😴", silly: "🤪", nervous: "😰",
+  walk: "🐾", play: "🎾", swim: "🏊", run: "🏃", sleep_act: "🛌",
+  bath: "🛁", car: "🚗", park: "🌳", beach: "🏖️", home: "🏠",
+  vet: "🏥", medicine: "💊", healthy: "💪", sick: "🤒", vaccine: "💉",
+  grooming: "✂️", checkup: "🩺", recovered: "🌟",
+  food: "🍖", treat: "🦴", fish: "🐟", carrot: "🥕", hungry: "😋", yummy: "🤤",
+  sun: "☀️", rain: "🌧️", snow: "❄️", flower: "🌸", leaf: "🍂", moon: "🌙", star: "⭐", rainbow: "🌈",
 };
 
 export default async function PublicPetPage({ params }: { params: { id: string } }) {
@@ -35,7 +42,7 @@ export default async function PublicPetPage({ params }: { params: { id: string }
     </div>
   );
 
-  const photos = entries?.flatMap(e => e.photo_urls || []).slice(0, 6) || [];
+  const photoEntries = entries?.filter(e => e.photo_urls && e.photo_urls.length > 0) || [];
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
@@ -69,13 +76,30 @@ export default async function PublicPetPage({ params }: { params: { id: string }
           {pet.bio && <p style={{ fontSize: ".95rem", color: "#7A5C44", fontStyle: "italic", fontFamily: "Georgia, serif", maxWidth: 480, margin: "0 auto" }}>{pet.bio}</p>}
         </div>
 
-        {/* Photos grid */}
-        {photos.length > 0 && (
+        {/* Moments with photos */}
+        {photoEntries.length > 0 && (
           <div style={{ marginBottom: "2rem" }}>
             <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".12em", textTransform: "uppercase", color: "#C8813A", marginBottom: "1rem" }}>{t.public_pet.moments}</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px", borderRadius: 16, overflow: "hidden" }}>
-              {photos.map((url: string, i: number) => (
-                <img key={i} src={url} alt="" style={{ width: "100%", height: 180, objectFit: "cover", display: "block" }} />
+            <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+              {photoEntries.map(entry => (
+                <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(61,43,31,.06)" }}>
+                  <div style={{ padding: ".875rem 1rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: entry.content?.trim() ? ".5rem" : 0 }}>
+                      <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>
+                        {new Date(entry.entry_date).toLocaleDateString(dateLocale, { day: "numeric", month: "long" })}
+                      </span>
+                      {entry.mood && <span style={{ fontSize: ".9rem" }}>{ALL_EMOJIS[entry.mood] ?? ""}</span>}
+                    </div>
+                    {entry.content?.trim() && <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.65, margin: 0 }}>{entry.content}</p>}
+                  </div>
+                  {entry.photo_urls && entry.photo_urls.length > 0 && (
+                    <div style={{ display: "grid", gridTemplateColumns: entry.photo_urls.length === 1 ? "1fr" : entry.photo_urls.length === 2 ? "1fr 1fr" : "1fr 1fr 1fr", gap: "2px" }}>
+                      {entry.photo_urls.slice(0, 3).map((url: string, i: number) => (
+                        <img key={i} src={url} alt="" style={{ width: "100%", height: entry.photo_urls.length === 1 ? 240 : 160, objectFit: "cover", display: "block" }} />
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
