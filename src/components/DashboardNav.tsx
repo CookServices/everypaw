@@ -229,7 +229,7 @@ function IconPlus() {
 
 // ── Pet selector ─────────────────────────────────────────────────────────────
 
-interface PetOption { id: string; name: string; species: string; photo_url?: string | null; }
+interface PetOption { id: string; name: string; species: string; breed?: string | null; photo_url?: string | null; }
 
 function PetSelector({
   pets,
@@ -265,7 +265,7 @@ function PetSelector({
   const emoji = selected ? (SPECIES_EMOJI[selected.species] ?? "🐾") : "🐾";
   const petName = selected ? selected.name : (isFR ? "Tous mes animaux" : "All my pets");
   const speciesText = selected
-    ? ((isFR ? SPECIES_LABEL[selected.species]?.fr : SPECIES_LABEL[selected.species]?.en) ?? selected.species)
+    ? (selected.breed || (isFR ? SPECIES_LABEL[selected.species]?.fr : SPECIES_LABEL[selected.species]?.en) ?? selected.species)
     : `${pets.length} ${isFR ? (pets.length > 1 ? "animaux" : "animal") : (pets.length > 1 ? "pets" : "pet")}`;
 
   return (
@@ -406,7 +406,7 @@ export default function DashboardNav() {
     const supabase = createClient();
     supabase
       .from("pets")
-      .select("id, name, species, photo_url")
+      .select("id, name, species, breed, photo_url")
       .order("created_at", { ascending: true })
       .then(({ data }) => {
         if (data && data.length > 0) setPets(data as PetOption[]);
