@@ -3,30 +3,59 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
+import { useRouter } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+
+
+type Plan = "free" | "digital" | "print";
+
+interface SubscriptionInfo {
+  status: string;
+  cancel_at_period_end: boolean;
+  cancel_at: number | null;
+  current_period_end: number;
+}
 
 export default function SettingsPage() {
   const { t, locale } = useLocale();
   const isFR = locale === "fr";
+  const router = useRouter();
+
+  // ── Preferences state ────────────────────────────────────────────────────────
   const [emailReminders, setEmailReminders] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<"success" | "error" | null>(null);
   const [toastMsg, setToastMsg] = useState("");
 
-  // Security
+  // ── Security state ───────────────────────────────────────────────────────────
   const [isGoogleAccount, setIsGoogleAccount] = useState(false);
   const [newEmail, setNewEmail] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
+  const [currentEmail, setCurrentEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [currentEmail, setCurrentEmail] = useState("");
   const [emailStatus, setEmailStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [passwordStatus, setPasswordStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
+  // ── Subscription state ───────────────────────────────────────────────────────
+  const [plan, setPlan] = useState<Plan>("free");
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
+  const [subLoading, setSubLoading] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null); // plan being upgraded to
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelledAt, setCancelledAt] = useState<number | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  // ── Delete account state ─────────────────────────────────────────────────────
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  // ── Load ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
@@ -40,14 +69,39 @@ export default function SettingsPage() {
       setLoading(false);
     };
     load();
+
+    // Load subscription info separately
+    const loadSub = async () => {
+      setSubLoading(true);
+      try {
+        const res = await fetch("/api/stripe/subscription");
+        if (res.ok) {
+          const data = await res.json();
+          setPlan(data.plan ?? "free");
+          setSubscription(data.subscription ?? null);
+          if (data.subscription?.cancel_at_period_end && data.subscription?.cancel_at) {
+            setCancelledAt(data.subscription.cancel_at);
+          }
+        }
+      } catch {}
+      setSubLoading(false);
+    };
+    loadSub();
   }, []);
 
+  // ── Helpers ──────────────────────────────────────────────────────────────────
   const showToast = (msg: string, type: "success" | "error") => {
     setToastMsg(msg);
     setSaveResult(type);
     setTimeout(() => { setSaveResult(null); setToastMsg(""); }, 3000);
   };
 
+  const formatDate = (ts: number) =>
+    new Date(ts * 1000).toLocaleDateString(isFR ? "fr-FR" : "en-US", {
+      day: "numeric", month: "long", year: "numeric",
+    });
+
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     setSaving(true);
     const supabase = createClient();
@@ -86,14 +140,112 @@ export default function SettingsPage() {
     setPasswordStatus("saving");
     const supabase = createClient();
     const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) { setPasswordError(error.message); setPasswordStatus("error"); }
-    else {
+    if (error) {
+      const msg = error.message;
+      const translated = isFR && msg.toLowerCase().includes("new password should be different")
+        ? "Le nouveau mot de passe doit être différent de l'ancien."
+        : msg;
+      setPasswordError(translated);
+      setPasswordStatus("error");
+    } else {
       setPasswordStatus("done");
-      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+      setNewPassword(""); setConfirmPassword("");
       showToast(isFR ? "Mot de passe mis à jour." : "Password updated.", "success");
     }
   };
 
+  const handleCheckout = async (targetPlan: "digital" | "print") => {
+    setCheckoutLoading(targetPlan);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: targetPlan }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else showToast(data.error ?? (isFR ? "Erreur lors de la redirection." : "Redirect error."), "error");
+    } catch {
+      showToast(isFR ? "Erreur réseau." : "Network error.", "error");
+    }
+    setCheckoutLoading(null);
+  };
+
+  const handleUpgrade = async (newPlan: string) => {
+    setUpgradeLoading(newPlan);
+    try {
+      const res = await fetch("/api/stripe/upgrade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPlan }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPlan(data.plan);
+        showToast(isFR ? "Plan mis à jour avec succès." : "Plan updated successfully.", "success");
+      } else {
+        showToast(data.error ?? (isFR ? "Erreur lors du changement de plan." : "Plan change failed."), "error");
+      }
+    } catch {
+      showToast(isFR ? "Erreur réseau." : "Network error.", "error");
+    }
+    setUpgradeLoading(null);
+  };
+
+  const handleCancel = async () => {
+    const confirmed = window.confirm(
+      isFR
+        ? "Êtes-vous sûr ? Vous perdrez accès aux fonctionnalités Premium à la fin de la période en cours."
+        : "Are you sure? You will lose access to Premium features at the end of the current billing period."
+    );
+    if (!confirmed) return;
+    setCancelLoading(true);
+    try {
+      const res = await fetch("/api/stripe/cancel", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setCancelledAt(data.cancel_at ?? data.current_period_end);
+        setSubscription(prev => prev ? { ...prev, cancel_at_period_end: true, cancel_at: data.cancel_at } : null);
+        showToast(
+          isFR
+            ? `Abonnement annulé. Accès conservé jusqu'au ${formatDate(data.cancel_at ?? data.current_period_end)}.`
+            : `Subscription cancelled. Access until ${formatDate(data.cancel_at ?? data.current_period_end)}.`,
+          "success"
+        );
+      } else {
+        showToast(data.error ?? (isFR ? "Erreur lors de l'annulation." : "Cancellation failed."), "error");
+      }
+    } catch {
+      showToast(isFR ? "Erreur réseau." : "Network error.", "error");
+    }
+    setCancelLoading(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== (isFR ? "SUPPRIMER" : "DELETE")) {
+      setDeleteError(isFR ? "Tapez SUPPRIMER pour confirmer." : "Type DELETE to confirm.");
+      return;
+    }
+    setDeleteLoading(true);
+    setDeleteError("");
+    try {
+      const res = await fetch("/api/account/delete", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.push("/");
+      } else {
+        setDeleteError(data.error ?? (isFR ? "Erreur lors de la suppression." : "Deletion failed."));
+        setDeleteLoading(false);
+      }
+    } catch {
+      setDeleteError(isFR ? "Erreur réseau." : "Network error.");
+      setDeleteLoading(false);
+    }
+  };
+
+  // ── Styles ───────────────────────────────────────────────────────────────────
   const inputStyle: React.CSSProperties = {
     width: "100%", boxSizing: "border-box",
     padding: ".65rem .875rem", borderRadius: 10,
@@ -102,17 +254,193 @@ export default function SettingsPage() {
     fontSize: ".875rem", color: "#3D2B1F", outline: "none",
   };
 
+  const btnPrimary: React.CSSProperties = {
+    padding: ".65rem 1.25rem", borderRadius: 100, border: "none",
+    background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit",
+    fontSize: ".875rem", fontWeight: 500, cursor: "pointer",
+  };
+
+  const btnOutline: React.CSSProperties = {
+    padding: ".6rem 1rem", borderRadius: 100,
+    border: "1.5px solid rgba(200,129,58,.4)", background: "transparent",
+    color: "#C8813A", fontFamily: "inherit", fontSize: ".875rem",
+    fontWeight: 500, cursor: "pointer", alignSelf: "flex-start" as const,
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* Toast */}
       {saveResult && (
         <div style={{ position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)", background: saveResult === "success" ? "#2E5E1E" : "#A32D2D", color: "#FDFAF5", padding: ".875rem 1.5rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", whiteSpace: "nowrap" }}>
           {toastMsg || (saveResult === "success" ? t.settings.save_success : t.settings.save_error)}
         </div>
       )}
 
+      {/* Delete account modal */}
+      {showDeleteModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, padding: "1rem" }}>
+          <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "2rem", maxWidth: 440, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,.25)" }}>
+            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#A32D2D", margin: "0 0 1rem" }}>
+              {isFR ? "Supprimer mon compte" : "Delete my account"}
+            </h3>
+            <p style={{ fontSize: ".875rem", color: "#3D2B1F", lineHeight: 1.6, margin: "0 0 1.25rem" }}>
+              {isFR
+                ? "Cette action est irréversible. Toutes vos données seront supprimées : profil, animaux, entrées, histoires, photos."
+                : "This action is irreversible. All your data will be deleted: profile, pets, entries, stories, photos."}
+            </p>
+            <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: "0 0 .5rem" }}>
+              {isFR ? 'Tapez "SUPPRIMER" pour confirmer' : 'Type "DELETE" to confirm'}
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              placeholder={isFR ? "SUPPRIMER" : "DELETE"}
+              style={{ ...inputStyle, marginBottom: ".75rem" }}
+            />
+            {deleteError && (
+              <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: "0 0 .75rem" }}>{deleteError}</p>
+            )}
+            <div style={{ display: "flex", gap: ".75rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(""); setDeleteError(""); }}
+                style={{ ...btnOutline, border: "1.5px solid rgba(61,43,31,.2)", color: "#3D2B1F" }}
+              >
+                {isFR ? "Annuler" : "Cancel"}
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteLoading}
+                style={{ ...btnPrimary, background: "#A32D2D", opacity: deleteLoading ? .7 : 1 }}
+              >
+                {deleteLoading
+                  ? (isFR ? "Suppression…" : "Deleting…")
+                  : (isFR ? "Supprimer définitivement" : "Delete permanently")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
 
-        {/* Préférences */}
+        {/* ── Subscription section ─────────────────────────────────────────── */}
+        <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1.25rem" }}>
+            {isFR ? "Mon abonnement" : "My subscription"}
+          </h2>
+
+          {subLoading ? (
+            <p style={{ color: "#9A8070", fontSize: ".875rem" }}>…</p>
+          ) : (
+            <>
+              {/* Current plan badge */}
+              <div style={{ display: "flex", alignItems: "center", gap: ".625rem", marginBottom: "1.25rem" }}>
+                <span style={{ display: "inline-block", padding: ".3rem .875rem", borderRadius: 100, background: plan === "free" ? "rgba(61,43,31,.08)" : "rgba(200,129,58,.12)", border: `1px solid ${plan === "free" ? "rgba(61,43,31,.15)" : "rgba(200,129,58,.3)"}`, fontSize: ".8rem", fontWeight: 600, color: plan === "free" ? "#7A5C44" : "#C8813A" }}>
+                  {plan === "free"
+                    ? (isFR ? "Plan gratuit" : "Free plan")
+                    : plan === "digital"
+                      ? "Premium Digital"
+                      : "Premium Print"}
+                </span>
+                {plan !== "free" && (
+                  <span style={{ fontSize: ".8rem", color: "#9A8070" }}>
+                    {plan === "digital" ? "4,99 €/mois" : "9,99 €/mois"}
+                  </span>
+                )}
+              </div>
+
+              {/* Cancellation notice */}
+              {cancelledAt && (
+                <div style={{ background: "rgba(163,45,45,.05)", border: "1px solid rgba(163,45,45,.2)", borderRadius: 10, padding: ".75rem 1rem", marginBottom: "1.25rem" }}>
+                  <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>
+                    {isFR
+                      ? `Votre abonnement sera annulé le ${formatDate(cancelledAt)}. Vous gardez l'accès jusqu'à cette date.`
+                      : `Your subscription will be cancelled on ${formatDate(cancelledAt)}. You keep access until then.`}
+                  </p>
+                </div>
+              )}
+
+              {/* Plan = free → upgrade CTAs */}
+              {plan === "free" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+                  <p style={{ fontSize: ".875rem", color: "#7A5C44", margin: "0 0 .5rem", fontWeight: 300 }}>
+                    {isFR ? "Passez à Premium pour débloquer toutes les fonctionnalités." : "Upgrade to Premium to unlock all features."}
+                  </p>
+                  <button
+                    onClick={() => handleCheckout("digital")}
+                    disabled={checkoutLoading === "digital"}
+                    style={{ ...btnPrimary, opacity: checkoutLoading === "digital" ? .7 : 1 }}
+                  >
+                    {checkoutLoading === "digital"
+                      ? "…"
+                      : (isFR ? "Passer à Premium Digital — 4,99 €/mois →" : "Upgrade to Premium Digital — $4.99/mo →")}
+                  </button>
+                  <button
+                    onClick={() => handleCheckout("print")}
+                    disabled={checkoutLoading === "print"}
+                    style={{ ...btnPrimary, background: "#3D2B1F", opacity: checkoutLoading === "print" ? .7 : 1 }}
+                  >
+                    {checkoutLoading === "print"
+                      ? "…"
+                      : (isFR ? "Passer à Premium Print — 9,99 €/mois →" : "Upgrade to Premium Print — $9.99/mo →")}
+                  </button>
+                </div>
+              )}
+
+              {/* Plan = digital */}
+              {plan === "digital" && !cancelledAt && (
+                <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+                  <button
+                    onClick={() => handleUpgrade("print")}
+                    disabled={!!upgradeLoading}
+                    style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, opacity: upgradeLoading ? .7 : 1 }}
+                  >
+                    {upgradeLoading
+                      ? (isFR ? "Mise à jour…" : "Updating…")
+                      : (isFR ? "Passer à Premium Print — 9,99 €/mois →" : "Upgrade to Premium Print — $9.99/mo →")}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    disabled={cancelLoading}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#A32D2D", fontSize: ".8rem", fontFamily: "inherit", padding: ".25rem 0", textDecoration: "underline", opacity: cancelLoading ? .6 : 1, textAlign: "left" as const }}
+                  >
+                    {cancelLoading
+                      ? (isFR ? "Annulation…" : "Cancelling…")
+                      : (isFR ? "Annuler mon abonnement" : "Cancel my subscription")}
+                  </button>
+                </div>
+              )}
+
+              {/* Plan = print */}
+              {plan === "print" && !cancelledAt && (
+                <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+                  <button
+                    onClick={() => handleUpgrade("digital")}
+                    disabled={!!upgradeLoading}
+                    style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, opacity: upgradeLoading ? .7 : 1 }}
+                  >
+                    {upgradeLoading
+                      ? (isFR ? "Mise à jour…" : "Updating…")
+                      : (isFR ? "Passer à Premium Digital — 4,99 €/mois →" : "Switch to Premium Digital — $4.99/mo →")}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    disabled={cancelLoading}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#A32D2D", fontSize: ".8rem", fontFamily: "inherit", padding: ".25rem 0", textDecoration: "underline", opacity: cancelLoading ? .6 : 1, textAlign: "left" as const }}
+                  >
+                    {cancelLoading
+                      ? (isFR ? "Annulation…" : "Cancelling…")
+                      : (isFR ? "Annuler mon abonnement" : "Cancel my subscription")}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── Preferences section ──────────────────────────────────────────── */}
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1.5rem" }}>{t.settings.title}</h2>
 
@@ -152,9 +480,9 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* Sécurité du compte */}
+        {/* ── Account security section ─────────────────────────────────────── */}
         {!loading && (
-          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)" }}>
+          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>
             <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1.5rem" }}>
               {isFR ? "Sécurité du compte" : "Account security"}
             </h2>
@@ -178,43 +506,23 @@ export default function SettingsPage() {
                   style={inputStyle}
                 />
                 {emailError && <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>{emailError}</p>}
-                <button
-                  onClick={handleEmailChange}
-                  disabled={emailStatus === "saving"}
-                  style={{ padding: ".6rem 1rem", borderRadius: 100, border: "1.5px solid rgba(200,129,58,.4)", background: "transparent", color: "#C8813A", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: emailStatus === "saving" ? .7 : 1, alignSelf: "flex-start" }}
-                >
+                <button onClick={handleEmailChange} disabled={emailStatus === "saving"} style={{ ...btnOutline, opacity: emailStatus === "saving" ? .7 : 1 }}>
                   {emailStatus === "saving" ? (isFR ? "Mise à jour…" : "Updating…") : (isFR ? "Mettre à jour l'email →" : "Update email →")}
                 </button>
               </div>
             </div>
 
-            {/* Changer le mot de passe — masqué pour Google */}
+            {/* Changer le mot de passe */}
             {!isGoogleAccount && (
               <div>
                 <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .75rem" }}>
                   {isFR ? "Changer le mot de passe" : "Change password"}
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-                  <input
-                    type="password"
-                    placeholder={isFR ? "Nouveau mot de passe" : "New password"}
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    style={inputStyle}
-                  />
-                  <input
-                    type="password"
-                    placeholder={isFR ? "Confirmer le mot de passe" : "Confirm password"}
-                    value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    style={inputStyle}
-                  />
+                  <input type="password" placeholder={isFR ? "Nouveau mot de passe" : "New password"} value={newPassword} onChange={e => setNewPassword(e.target.value)} style={inputStyle} />
+                  <input type="password" placeholder={isFR ? "Confirmer le mot de passe" : "Confirm password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={inputStyle} />
                   {passwordError && <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>{passwordError}</p>}
-                  <button
-                    onClick={handlePasswordChange}
-                    disabled={passwordStatus === "saving"}
-                    style={{ padding: ".6rem 1rem", borderRadius: 100, border: "1.5px solid rgba(200,129,58,.4)", background: "transparent", color: "#C8813A", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: passwordStatus === "saving" ? .7 : 1, alignSelf: "flex-start" }}
-                  >
+                  <button onClick={handlePasswordChange} disabled={passwordStatus === "saving"} style={{ ...btnOutline, opacity: passwordStatus === "saving" ? .7 : 1 }}>
                     {passwordStatus === "saving" ? (isFR ? "Mise à jour…" : "Updating…") : (isFR ? "Mettre à jour le mot de passe →" : "Update password →")}
                   </button>
                 </div>
@@ -228,6 +536,27 @@ export default function SettingsPage() {
             )}
           </div>
         )}
+
+        {/* ── Danger zone — delete account ─────────────────────────────────── */}
+        {!loading && (
+          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(163,45,45,.15)", marginBottom: "2rem" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#A32D2D", marginBottom: ".5rem" }}>
+              {isFR ? "Zone dangereuse" : "Danger zone"}
+            </h2>
+            <p style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, margin: "0 0 1.25rem" }}>
+              {isFR
+                ? "Ces actions sont irréversibles. Procédez avec précaution."
+                : "These actions are irreversible. Proceed with caution."}
+            </p>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#A32D2D", fontSize: ".875rem", fontFamily: "inherit", padding: 0, textDecoration: "underline" }}
+            >
+              {isFR ? "Supprimer mon compte et toutes mes données" : "Delete my account and all my data"}
+            </button>
+          </div>
+        )}
+
       </main>
     </div>
   );

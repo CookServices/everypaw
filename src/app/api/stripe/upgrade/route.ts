@@ -1,27 +1,26 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
-import { priceIdToPlan } from "@/lib/plan";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-const VALID_PRICE_IDS = new Set([
-  process.env.STRIPE_PRICE_DIGITAL_MONTHLY,
-  process.env.STRIPE_PRICE_ID_DIGITAL,
-  process.env.STRIPE_PRICE_PRINT_MONTHLY,
-  process.env.STRIPE_PRICE_ID_PRINT,
-].filter(Boolean));
+const PRICE_MAP: Record<string, string | undefined> = {
+  digital: process.env.STRIPE_PRICE_DIGITAL_MONTHLY ?? process.env.STRIPE_PRICE_ID_DIGITAL,
+  print:   process.env.STRIPE_PRICE_PRINT_MONTHLY   ?? process.env.STRIPE_PRICE_ID_PRINT,
+};
 
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { newPriceId } = await req.json();
+  const { newPlan } = await req.json();
 
-  if (!newPriceId || !VALID_PRICE_IDS.has(newPriceId)) {
-    return NextResponse.json({ error: "Invalid price ID" }, { status: 400 });
+  if (!newPlan || !PRICE_MAP[newPlan]) {
+    return NextResponse.json({ error: "Invalid plan or missing price ID" }, { status: 400 });
   }
+
+  const newPriceId = PRICE_MAP[newPlan]!;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -43,13 +42,12 @@ export async function POST(req: Request) {
       proration_behavior: "always_invoice",
     });
 
-    const newPlan = priceIdToPlan(newPriceId) ?? "digital";
     await supabase
       .from("profiles")
       .update({ plan: newPlan, is_premium: true })
       .eq("id", user.id);
 
-    console.log(`[stripe/upgrade] user ${user.id} upgraded to plan: ${newPlan}`);
+    console.log(`[stripe/upgrade] user ${user.id} → plan: ${newPlan}`);
     return NextResponse.json({ success: true, plan: newPlan });
   } catch (err) {
     console.error("[stripe/upgrade] Error:", err);
