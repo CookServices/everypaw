@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Pet, Entry, Story } from "@/types";
 import Link from "next/link";
-import { detectMilestones, MILESTONE_TYPES, translateMilestone } from "@/lib/milestones";
+import { detectMilestones, MILESTONE_TYPES, translateMilestone, MilestoneDefinition } from "@/lib/milestones";
 import { useLocale } from "@/hooks/useLocale";
 import { generateShareCard, shareOrDownloadCard } from "@/lib/shareCard";
 
@@ -160,6 +160,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [newMilestone, setNewMilestone] = useState<{ type: string; title: string } | null>(null);
+  const [milestoneDefinitions, setMilestoneDefinitions] = useState<MilestoneDefinition[]>([]);
   const [showMemorialModal, setShowMemorialModal] = useState(false);
   const [deceasedAt, setDeceasedAt] = useState("");
   const [memorialMessage, setMemorialMessage] = useState("");
@@ -221,18 +222,20 @@ export default function PetPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
-      const [{ data: petData }, { data: entriesData }, { data: storiesData }, { data: milestonesData }, { data: profile }] = await Promise.all([
+      const [{ data: petData }, { data: entriesData }, { data: storiesData }, { data: milestonesData }, { data: profile }, { data: definitionsData }] = await Promise.all([
         supabase.from("pets").select("*").eq("id", id).single(),
         supabase.from("entries").select("*").eq("pet_id", id).order("entry_date", { ascending: false }),
         supabase.from("stories").select("*").eq("pet_id", id).order("created_at", { ascending: false }),
         supabase.from("milestones").select("*").eq("pet_id", id).order("achieved_at", { ascending: false }),
         supabase.from("profiles").select("is_premium").single(),
+        supabase.from("milestone_definitions").select("*").order("order_index"),
       ]);
       setPet(petData);
       setEntries(entriesData || []);
       setStories(storiesData || []);
       setMilestones(milestonesData || []);
       setIsPremium(profile?.is_premium ?? false);
+      if (definitionsData?.length) setMilestoneDefinitions(definitionsData);
       setLoading(false);
     };
     load();
@@ -300,7 +303,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
       }
 
       const existingMilestoneTypes = milestones.map(m => m.type);
-      const detected = detectMilestones({ content: newEntry }, entries, existingMilestoneTypes);
+      const detected = detectMilestones({ content: newEntry }, entries, existingMilestoneTypes, milestoneDefinitions);
 
       for (const milestone of detected) {
         const { data: savedMilestone } = await supabase.from("milestones").insert({
@@ -473,7 +476,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
       {/* Milestone notification */}
       {newMilestone && (
         <div style={{ position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)", background: "#3D2B1F", color: "#FDFAF5", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
-          🏆 {t.milestones.new_notification.replace("{title}", translateMilestone(newMilestone.type, isFR))}
+          🏆 {t.milestones.new_notification.replace("{title}", translateMilestone(newMilestone.type, isFR, milestoneDefinitions))}
         </div>
       )}
 
@@ -859,11 +862,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
           {milestones.length > 0 && (
             <div style={{ background: "rgba(200,129,58,.1)", borderRadius: 12, padding: ".5rem .875rem", textAlign: "center", minWidth: 70 }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length} / {MILESTONE_TYPES.length}</div>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length} / {milestoneDefinitions.length || MILESTONE_TYPES.length}</div>
               <div style={{ fontSize: ".65rem", color: "#7A5C44", lineHeight: 1.3 }}>{t.milestones.label}</div>
               {milestones[0] && (() => {
-                const mt = MILESTONE_TYPES.find(m => m.type === milestones[0].type);
-                const localTitle = mt ? (isFR ? mt.titleFR : mt.title) : milestones[0].title;
+                const localTitle = translateMilestone(milestones[0].type, isFR, milestoneDefinitions);
                 return (
                   <div style={{ fontSize: ".62rem", color: "#C8813A", marginTop: ".2rem", opacity: .8, lineHeight: 1.2 }}>
                     🏆 {localTitle.slice(0, 22)}{localTitle.length > 22 ? "…" : ""}
@@ -1191,15 +1193,17 @@ export default function PetPage({ params }: { params: { id: string } }) {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-              {MILESTONE_TYPES.map(mt => {
-                const achieved = milestones.find(m => m.type === mt.type);
-                const localTitle = isFR ? mt.titleFR : mt.title;
+              {(milestoneDefinitions.length
+                ? milestoneDefinitions.map(def => ({ key: def.key, icon: def.icon ?? "🏆", localTitle: isFR ? def.name_fr : def.name_en }))
+                : MILESTONE_TYPES.map(mt => ({ key: mt.type, icon: mt.icon, localTitle: isFR ? mt.titleFR : mt.title }))
+              ).map(({ key, icon, localTitle }) => {
+                const achieved = milestones.find(m => m.type === key);
                 const parts = localTitle.split(" ");
-                const label = parts.slice(0, -1).join(" ");
+                const label = parts.slice(0, -1).join(" ") || localTitle;
                 return (
-                  <div key={mt.type} style={{ background: "#FDFAF5", borderRadius: 14, padding: ".875rem 1.125rem", border: `1px solid ${achieved ? "rgba(200,129,58,.2)" : "rgba(61,43,31,.06)"}`, display: "flex", alignItems: "center", gap: ".875rem", opacity: achieved ? 1 : 0.6 }}>
+                  <div key={key} style={{ background: "#FDFAF5", borderRadius: 14, padding: ".875rem 1.125rem", border: `1px solid ${achieved ? "rgba(200,129,58,.2)" : "rgba(61,43,31,.06)"}`, display: "flex", alignItems: "center", gap: ".875rem", opacity: achieved ? 1 : 0.6 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, background: achieved ? "rgba(200,129,58,.12)" : "rgba(61,43,31,.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.15rem", flexShrink: 0 }}>
-                      {achieved ? mt.icon : "🔒"}
+                      {achieved ? icon : "🔒"}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: ".875rem", fontWeight: 500, color: achieved ? "#3D2B1F" : "#7A5C44", margin: "0 0 .15rem" }}>{label}</p>

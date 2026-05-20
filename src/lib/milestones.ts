@@ -1,5 +1,17 @@
 import { Entry } from "@/types";
 
+// ── Type for DB-driven definitions ────────────────────────────────────────────
+export interface MilestoneDefinition {
+  id: string;
+  key: string;
+  name_fr: string;
+  name_en: string;
+  keywords: string[] | null;
+  icon: string | null;
+  order_index: number | null;
+}
+
+// ── Hardcoded fallback (used when milestone_definitions table is unavailable) ─
 export const MILESTONE_TYPES = [
   { type: "first_entry",  title: "First memory captured 📝", titleFR: "Premier souvenir capturé 📝", icon: "📝", keywords: [] },
   { type: "first_bath",   title: "First bath 🛁",             titleFR: "Premier bain 🛁",              icon: "🛁", keywords: ["bath", "bain", "shower", "douche", "baignade"] },
@@ -12,20 +24,54 @@ export const MILESTONE_TYPES = [
   { type: "birthday",     title: "Birthday 🎂",               titleFR: "Anniversaire 🎂",               icon: "🎂", keywords: ["birthday", "anniversaire", "born", "naissance", "1 year", "1 an", "2 year", "2 ans"] },
 ];
 
-export function translateMilestone(type: string, isFR: boolean): string {
+// ── Translate a milestone type to the user's locale ───────────────────────────
+// Uses DB definitions when available, falls back to MILESTONE_TYPES.
+export function translateMilestone(
+  type: string,
+  isFR: boolean,
+  definitions?: MilestoneDefinition[]
+): string {
+  if (definitions?.length) {
+    const found = definitions.find(d => d.key === type);
+    if (found) return isFR ? found.name_fr : found.name_en;
+  }
+  // Fallback: covers old types like "first_entry" stored before DB migration
   const found = MILESTONE_TYPES.find(m => m.type === type);
   if (!found) return type;
   return isFR ? found.titleFR : found.title;
 }
 
+// ── Detect milestones triggered by a new journal entry ────────────────────────
+// When `definitions` is provided (loaded from milestone_definitions table),
+// it drives detection. Otherwise the hardcoded MILESTONE_TYPES are used.
 export function detectMilestones(
   newEntry: { content: string },
   existingEntries: Entry[],
-  existingMilestoneTypes: string[]
+  existingMilestoneTypes: string[],
+  definitions?: MilestoneDefinition[]
 ): { type: string; title: string }[] {
   const detected: { type: string; title: string }[] = [];
   const content = newEntry.content.toLowerCase();
 
+  // ── DB-driven path ──────────────────────────────────────────────────────────
+  if (definitions?.length) {
+    for (const def of definitions) {
+      if (existingMilestoneTypes.includes(def.key)) continue;
+
+      // "first_memory" is a special trigger: fires on the very first entry
+      if (def.key === "first_memory" && existingEntries.length === 0) {
+        detected.push({ type: def.key, title: def.name_en });
+        continue;
+      }
+
+      if (def.keywords?.some(kw => content.includes(kw.toLowerCase()))) {
+        detected.push({ type: def.key, title: def.name_en });
+      }
+    }
+    return detected;
+  }
+
+  // ── Hardcoded fallback path ─────────────────────────────────────────────────
   for (const milestone of MILESTONE_TYPES) {
     if (existingMilestoneTypes.includes(milestone.type)) continue;
 
