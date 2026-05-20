@@ -79,7 +79,7 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { recipientEmail, recipientName, senderName, message, scheduledDate, locale } = body;
+  const { recipientEmail, recipientName, senderName, message, scheduledDate, locale, plan } = body;
 
   if (!recipientEmail || !recipientName || !senderName) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -124,6 +124,7 @@ export async function POST(req: Request) {
         recipient_email: recipientEmail,
         recipient_name: recipientName,
         sender_name: senderName,
+        plan: plan === "print" ? "print" : "digital",
       },
     });
 
