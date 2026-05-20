@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Pet, Entry, Story } from "@/types";
 import Link from "next/link";
-import { detectMilestones, MILESTONE_TYPES } from "@/lib/milestones";
+import { detectMilestones, MILESTONE_TYPES, translateMilestone } from "@/lib/milestones";
 import { useLocale } from "@/hooks/useLocale";
 import { generateShareCard, shareOrDownloadCard } from "@/lib/shareCard";
 
@@ -473,7 +473,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
       {/* Milestone notification */}
       {newMilestone && (
         <div style={{ position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)", background: "#3D2B1F", color: "#FDFAF5", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
-          🏆 {t.milestones.new_notification.replace("{title}", newMilestone.title)}
+          🏆 {t.milestones.new_notification.replace("{title}", translateMilestone(newMilestone.type, isFR))}
         </div>
       )}
 

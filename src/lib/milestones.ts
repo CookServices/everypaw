@@ -12,6 +12,12 @@ export const MILESTONE_TYPES = [
   { type: "birthday",     title: "Birthday 🎂",               titleFR: "Anniversaire 🎂",               icon: "🎂", keywords: ["birthday", "anniversaire", "born", "naissance", "1 year", "1 an", "2 year", "2 ans"] },
 ];
 
+export function translateMilestone(type: string, isFR: boolean): string {
+  const found = MILESTONE_TYPES.find(m => m.type === type);
+  if (!found) return type;
+  return isFR ? found.titleFR : found.title;
+}
+
 export function detectMilestones(
   newEntry: { content: string },
   existingEntries: Entry[],
