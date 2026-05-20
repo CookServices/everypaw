@@ -17,6 +17,7 @@ export default function GiftPage() {
   });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [code, setCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const todayStr = new Date().toISOString().split("T")[0];
 
@@ -76,8 +77,33 @@ export default function GiftPage() {
               ? t.gift.success_desc_scheduled.replace("{email}", form.recipientEmail).replace("{date}", scheduledDateFormatted)
               : t.gift.success_desc.replace("{email}", form.recipientEmail)}
           </p>
-          <div style={{ background: "#3D2B1F", color: "#F7C27A", fontFamily: "monospace", fontSize: "1.25rem", padding: "1rem", borderRadius: 12, textAlign: "center", letterSpacing: ".15em", marginBottom: "1.5rem" }}>
-            {code}
+          <div style={{ position: "relative", marginBottom: "1.5rem" }}>
+            <div style={{ background: "#3D2B1F", color: "#F7C27A", fontFamily: "monospace", fontSize: "1.25rem", padding: "1rem 3rem 1rem 1rem", borderRadius: 12, textAlign: "center", letterSpacing: ".15em" }}>
+              {code}
+            </div>
+            <button
+              onClick={async () => {
+                if (!code) return;
+                try {
+                  if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(code);
+                  } else {
+                    const el = document.createElement("textarea");
+                    el.value = code;
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(el);
+                  }
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                } catch {}
+              }}
+              title={isFR ? "Copier le code" : "Copy code"}
+              style={{ position: "absolute", right: ".625rem", top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,.1)", border: "none", borderRadius: 8, padding: ".35rem .5rem", cursor: "pointer", color: copied ? "#6fcf97" : "#F7C27A", fontSize: ".85rem", lineHeight: 1, transition: "color .15s", fontFamily: "inherit" }}
+            >
+              {copied ? "✓" : "📋"}
+            </button>
           </div>
           <Link href="/" style={{ background: "#C8813A", color: "#FDFAF5", padding: ".75rem 2rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
             {t.gift.back}
