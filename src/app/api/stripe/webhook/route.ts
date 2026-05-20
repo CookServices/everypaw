@@ -97,18 +97,42 @@ export async function POST(req: Request) {
   }
 
   // ── customer.subscription.updated ─────────────────────────────────────────
-  // Handles plan changes (e.g. digital → print upgrade)
+  // Handles plan changes, cancellations scheduled, and immediate cancellations
   if (event.type === "customer.subscription.updated") {
     const subscription = event.data.object as Stripe.Subscription;
     const customerId = subscription.customer as string;
     const priceId = subscription.items.data[0]?.price?.id;
     const plan = priceId ? priceIdToPlan(priceId) : null;
 
-    if (plan) {
+    // Subscription became fully canceled via updated event
+    if (subscription.status === "canceled") {
+      await supabase
+        .from("profiles")
+        .update({ plan: "free", is_premium: false, stripe_subscription_id: null })
+        .eq("stripe_customer_id", customerId);
+
+      console.log("[webhook] subscription.updated → status=canceled, downgraded to free:", customerId);
+      return NextResponse.json({ received: true });
+    }
+
+    // Plan change (upgrade/downgrade)
+    if (plan && !subscription.cancel_at_period_end) {
       await supabase
         .from("profiles")
         .update({ plan, is_premium: true })
         .eq("stripe_customer_id", customerId);
+
+      console.log("[webhook] subscription.updated → plan change:", plan, "for customer:", customerId);
+    }
+
+    // cancel_at_period_end = true → scheduled cancellation, keep access until period end
+    if (subscription.cancel_at_period_end) {
+      console.log(
+        "[webhook] subscription.updated → cancel_at_period_end scheduled for customer:",
+        customerId,
+        "cancel_at:", subscription.cancel_at
+      );
+      // is_premium stays true — customer.subscription.deleted handles the actual downgrade
     }
   }
 
