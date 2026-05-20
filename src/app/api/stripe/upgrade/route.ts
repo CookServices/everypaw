@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const PRICE_MAP: Record<string, string | undefined> = {
-  digital: process.env.STRIPE_PRICE_DIGITAL_MONTHLY ?? process.env.STRIPE_PRICE_ID_DIGITAL,
-  print:   process.env.STRIPE_PRICE_PRINT_MONTHLY   ?? process.env.STRIPE_PRICE_ID_PRINT,
+  digital: process.env.STRIPE_PRICE_ID_DIGITAL,
+  print:   process.env.STRIPE_PRICE_ID_PRINT,
 };
 
 export async function POST(req: Request) {
