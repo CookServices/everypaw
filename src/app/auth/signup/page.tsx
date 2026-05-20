@@ -10,6 +10,16 @@ export const dynamic = "force-dynamic";
 export default function SignupPage() {
   const { locale } = useLocale();
   const isFR = locale === "fr";
+
+  // Redirect params from gift redeem flow
+  const getRedirectTarget = () => {
+    if (typeof window === "undefined") return "/dashboard";
+    const p = new URLSearchParams(window.location.search);
+    const redirect = p.get("redirect");
+    const code = p.get("code");
+    if (redirect) return code ? `${redirect}?code=${code}` : redirect;
+    return "/dashboard";
+  };
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,13 +44,18 @@ export default function SignupPage() {
   };
 
   const handleGoogle = async () => {
+    const target = getRedirectTarget();
+    const callbackUrl = target === "/dashboard"
+      ? `${window.location.origin}/auth/callback`
+      : `${window.location.origin}/auth/callback?next=${encodeURIComponent(target)}`;
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: callbackUrl },
     });
   };
 
   if (status === "success") {
+    const giftCode = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("code") : null;
     return (
       <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", fontFamily: "'DM Sans', sans-serif" }}>
         <div style={{ textAlign: "center", maxWidth: 420 }}>
@@ -53,6 +68,13 @@ export default function SignupPage() {
               ? <>Nous avons envoyé un lien de confirmation à <strong>{email}</strong>. Cliquez dessus pour activer votre compte.</>
               : <>We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.</>}
           </p>
+          {giftCode && (
+            <p style={{ marginTop: "1rem", fontSize: ".875rem", color: "#C8813A", fontWeight: 500 }}>
+              {isFR
+                ? <>Votre code cadeau <strong>{giftCode}</strong> sera disponible dès votre connexion.</>
+                : <>Your gift code <strong>{giftCode}</strong> will be ready once you sign in.</>}
+            </p>
+          )}
         </div>
       </div>
     );

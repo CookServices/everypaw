@@ -2,18 +2,28 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
 
 export default function RedeemPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const isFR = locale === "fr";
   const [code, setCode] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState("");
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const c = params.get("code");
-    if (c) setCode(c);
+    if (c) setCode(c.toUpperCase());
+
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsLoggedIn(!!user);
+      setAuthChecked(true);
+    });
   }, []);
 
   const handleRedeem = async () => {
@@ -34,6 +44,10 @@ export default function RedeemPage() {
     }
   };
 
+  const redeemRedirect = `/redeem${code ? `?code=${code}` : ""}`;
+  const loginUrl = `/auth/login?redirect=/redeem${code ? `&code=${code}` : ""}`;
+  const signupUrl = `/auth/signup?redirect=/redeem${code ? `&code=${code}` : ""}`;
+
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", fontFamily: "'DM Sans', sans-serif" }}>
       <div style={{ maxWidth: 440, width: "100%" }}>
@@ -51,28 +65,56 @@ export default function RedeemPage() {
             {t.redeem.subtitle}
           </p>
 
-          <input
-            type="text"
-            value={code}
-            onChange={e => setCode(e.target.value.toUpperCase())}
-            placeholder={t.redeem.placeholder}
-            style={{ width: "100%", padding: ".875rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "monospace", fontSize: "1.1rem", color: "#3D2B1F", outline: "none", textAlign: "center", letterSpacing: ".15em", marginBottom: "1rem", boxSizing: "border-box" }}
-          />
+          {/* Not logged in — show auth prompt */}
+          {authChecked && !isLoggedIn ? (
+            <div>
+              <div style={{ background: "rgba(200,129,58,.07)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
+                <p style={{ fontSize: ".875rem", color: "#3D2B1F", margin: 0, lineHeight: 1.6 }}>
+                  {isFR
+                    ? "Connectez-vous ou créez un compte pour activer votre cadeau 🎁"
+                    : "Sign in or create an account to activate your gift 🎁"}
+                </p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+                <Link
+                  href={loginUrl}
+                  style={{ display: "block", padding: ".75rem", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, textDecoration: "none" }}
+                >
+                  {isFR ? "Se connecter →" : "Sign in →"}
+                </Link>
+                <Link
+                  href={signupUrl}
+                  style={{ display: "block", padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#3D2B1F", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, textDecoration: "none" }}
+                >
+                  {isFR ? "Créer un compte →" : "Create an account →"}
+                </Link>
+              </div>
+            </div>
+          ) : authChecked ? (
+            /* Logged in — show redeem form */
+            <>
+              <input
+                type="text"
+                value={code}
+                onChange={e => setCode(e.target.value.toUpperCase())}
+                placeholder={t.redeem.placeholder}
+                style={{ width: "100%", padding: ".875rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "monospace", fontSize: "1.1rem", color: "#3D2B1F", outline: "none", textAlign: "center", letterSpacing: ".15em", marginBottom: "1rem", boxSizing: "border-box" }}
+              />
 
-          {error && <p style={{ fontSize: ".8rem", color: "#A32D2D", marginBottom: "1rem" }}>{error}</p>}
+              {error && <p style={{ fontSize: ".8rem", color: "#A32D2D", marginBottom: "1rem" }}>{error}</p>}
 
-          <button
-            onClick={handleRedeem}
-            disabled={status === "loading"}
-            style={{ width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "loading" ? .7 : 1, marginBottom: "1rem" }}
-          >
-            {status === "loading" ? t.redeem.activating : t.redeem.activate}
-          </button>
-
-          <p style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300 }}>
-            {t.redeem.no_account}{" "}
-            <Link href="/auth/signup" style={{ color: "#C8813A", textDecoration: "none" }}>{t.redeem.create_one}</Link>
-          </p>
+              <button
+                onClick={handleRedeem}
+                disabled={status === "loading"}
+                style={{ width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "loading" ? .7 : 1, marginBottom: "1rem" }}
+              >
+                {status === "loading" ? t.redeem.activating : t.redeem.activate}
+              </button>
+            </>
+          ) : (
+            /* Auth check in progress */
+            <div style={{ padding: "1rem 0", color: "#9A8070", fontSize: ".875rem" }}>…</div>
+          )}
         </div>
       </div>
     </div>

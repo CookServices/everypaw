@@ -10,6 +10,16 @@ export const dynamic = "force-dynamic";
 export default function LoginPage() {
   const { locale } = useLocale();
   const isFR = locale === "fr";
+
+  // Redirect params from gift redeem flow
+  const getRedirectTarget = () => {
+    if (typeof window === "undefined") return "/dashboard";
+    const p = new URLSearchParams(window.location.search);
+    const redirect = p.get("redirect");
+    const code = p.get("code");
+    if (redirect) return code ? `${redirect}?code=${code}` : redirect;
+    return "/dashboard";
+  };
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
@@ -46,7 +56,7 @@ export default function LoginPage() {
       }
       setStatus("error");
     } else {
-      window.location.href = "/dashboard";
+      window.location.href = getRedirectTarget();
     }
   };
 
@@ -67,9 +77,13 @@ export default function LoginPage() {
   };
 
   const handleGoogle = async () => {
+    const target = getRedirectTarget();
+    const callbackUrl = target === "/dashboard"
+      ? `${window.location.origin}/auth/callback`
+      : `${window.location.origin}/auth/callback?next=${encodeURIComponent(target)}`;
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: callbackUrl },
     });
   };
 
