@@ -15,10 +15,15 @@ interface Props {
 export default function OnboardingModal({ hasPets, hasEntries, hasStories, onComplete }: Props) {
   const { t } = useLocale();
 
+  const totalSteps = 3;
+
   const initialStep = (() => {
     if (typeof window !== "undefined") {
       const saved = sessionStorage.getItem("ep_onboarding_step");
-      if (saved !== null) return parseInt(saved, 10);
+      if (saved !== null) {
+        const n = parseInt(saved, 10);
+        if (!isNaN(n) && n >= 0 && n < totalSteps) return n;
+      }
     }
     return 0;
   })();
@@ -26,11 +31,10 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
   const [step, setStep] = useState(initialStep);
   const [dismissing, setDismissing] = useState(false);
 
-  const totalSteps = 3;
-
   const goTo = (n: number) => {
-    sessionStorage.setItem("ep_onboarding_step", String(n));
-    setStep(n);
+    const clamped = Math.max(0, Math.min(totalSteps - 1, n));
+    sessionStorage.setItem("ep_onboarding_step", String(clamped));
+    setStep(clamped);
   };
 
   const handleDismiss = async () => {
