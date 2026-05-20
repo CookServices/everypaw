@@ -78,7 +78,11 @@ export default function ForgotPasswordPage() {
                   onKeyDown={e => e.key === "Enter" && handleSubmit()}
                   style={{ padding: ".75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none" }}
                 />
-                {error && <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>{error}</p>}
+                {error && (
+                  <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 8, padding: "12px 16px" }}>
+                    <p style={{ fontSize: ".8rem", color: "#991B1B", margin: 0 }}>{error}</p>
+                  </div>
+                )}
                 <button
                   onClick={handleSubmit}
                   disabled={status === "loading"}

@@ -135,7 +135,11 @@ export default function SignupPage() {
                 )}
               </button>
             </div>
-            {error && <p style={{ fontSize: ".8rem", color: "#A32D2D" }}>{error}</p>}
+            {error && (
+              <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 8, padding: "12px 16px" }}>
+                <p style={{ fontSize: ".8rem", color: "#991B1B", margin: 0 }}>{error}</p>
+              </div>
+            )}
             <button
               onClick={handleSignup}
               disabled={status === "loading"}

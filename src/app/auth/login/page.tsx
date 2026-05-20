@@ -45,14 +45,26 @@ export default function LoginPage() {
     setShowResend(false);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      const msg = error.message;
-      if (msg.toLowerCase().includes("email not confirmed")) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes("email not confirmed")) {
         setShowResend(true);
         setError(isFR
           ? "Votre email n'est pas encore confirmé. Renvoyez-vous le lien de confirmation."
           : "Your email is not confirmed yet. Resend the confirmation link.");
+      } else if (msg.includes("invalid login credentials") || msg.includes("invalid credentials")) {
+        setError(isFR
+          ? "Email ou mot de passe incorrect. Veuillez réessayer."
+          : "Incorrect email or password. Please try again.");
+      } else if (msg.includes("user not found") || msg.includes("no user found")) {
+        setError(isFR
+          ? "Aucun compte trouvé avec cet email."
+          : "No account found with this email.");
+      } else if (msg.includes("too many requests") || msg.includes("rate limit") || msg.includes("over_email_send_rate_limit")) {
+        setError(isFR
+          ? "Trop de tentatives. Réessayez dans quelques minutes."
+          : "Too many attempts. Please try again in a few minutes.");
       } else {
-        setError(msg);
+        setError(error.message);
       }
       setStatus("error");
     } else {
@@ -130,8 +142,8 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div style={{ background: resendStatus === "sent" ? "rgba(46,94,30,.06)" : "rgba(163,45,45,.06)", border: `1px solid ${resendStatus === "sent" ? "rgba(46,94,30,.2)" : "rgba(163,45,45,.2)"}`, borderRadius: 10, padding: ".75rem 1rem" }}>
-                <p style={{ fontSize: ".8rem", color: resendStatus === "sent" ? "#2E5E1E" : "#A32D2D", margin: 0 }}>{error}</p>
+              <div style={{ background: resendStatus === "sent" ? "rgba(46,94,30,.06)" : "#FEF2F2", border: `1px solid ${resendStatus === "sent" ? "rgba(46,94,30,.2)" : "#FCA5A5"}`, borderRadius: 8, padding: "12px 16px" }}>
+                <p style={{ fontSize: ".8rem", color: resendStatus === "sent" ? "#2E5E1E" : "#991B1B", margin: 0 }}>{error}</p>
                 {showResend && resendStatus !== "sent" && (
                   <button
                     onClick={handleResend}
