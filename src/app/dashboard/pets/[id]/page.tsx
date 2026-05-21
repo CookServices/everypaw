@@ -7,7 +7,6 @@ import { Pet, Entry, Story } from "@/types";
 import Link from "next/link";
 import { detectMilestones, MILESTONE_TYPES, translateMilestone, MilestoneDefinition } from "@/lib/milestones";
 import { useLocale } from "@/hooks/useLocale";
-import { generateShareCard, shareOrDownloadCard } from "@/lib/shareCard";
 
 const MOOD_OPTIONS = [
   { value: "happy", emoji: "😄", label: "Happy" },
@@ -169,6 +168,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingPet, setDeletingPet] = useState(false);
   const [sharingStoryId, setSharingStoryId] = useState<string | null>(null);
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const [entryMenuId, setEntryMenuId] = useState<string | null>(null);
@@ -369,14 +369,21 @@ export default function PetPage({ params }: { params: { id: string } }) {
     if (!pet) return;
     setSharingStoryId(story.id);
     try {
-      const blob = await generateShareCard({
-        petName: pet.name,
-        petPhotoUrl: pet.photo_url,
-        speciesEmoji: SPECIES_EMOJI[pet.species] ?? "🐾",
-        storyTitle: story.title || `${pet.name}'s Story`,
-        storyContent: story.content,
-      });
-      await shareOrDownloadCard(blob, pet.name, story.content.slice(0, 140));
+      const url = `${window.location.origin}/pets/${id}#story-${story.id}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setShareLinkCopied(true);
+      setTimeout(() => setShareLinkCopied(false), 3000);
     } catch {
       alert(t.stories.share_error);
     }
@@ -477,6 +484,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
       {newMilestone && (
         <div style={{ position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)", background: "#3D2B1F", color: "#FDFAF5", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
           🏆 {t.milestones.new_notification.replace("{title}", translateMilestone(newMilestone.type, isFR, milestoneDefinitions))}
+        </div>
+      )}
+
+      {/* Share link copied notification */}
+      {shareLinkCopied && (
+        <div style={{ position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)", background: "#2E5E1E", color: "#FDFAF5", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
+          🔗 {isFR ? "Lien copié !" : "Link copied!"}
         </div>
       )}
 
