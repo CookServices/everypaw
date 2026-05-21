@@ -39,7 +39,7 @@ Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suiv
 | Base de données | Supabase (PostgreSQL) | Auth + DB + Storage photos |
 | Auth | Supabase Auth | Google OAuth + email/password — Google OAuth en mode **Test** (à publier avant lancement) |
 | Paiements | Stripe | Webhooks dans `/api/stripe/webhook` |
-| IA | Anthropic Claude API | Modèle : `claude-sonnet-4-5` pour la génération de stories |
+| IA | Anthropic Claude API | Modèle : `claude-sonnet-4-6` pour la génération de stories |
 | Impression | Gelato | Print-on-demand livres |
 | Emails | Resend | 3 000/mois gratuit |
 | Hébergement | Vercel | Cron jobs configurés dans `vercel.json` |
@@ -75,9 +75,10 @@ ANTHROPIC_API_KEY
 
 STRIPE_SECRET_KEY              # sk_test_51TKay... (mode test)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-STRIPE_PRICE_ID
+STRIPE_PRICE_ID_DIGITAL        # plan digital 4,99€/mois
+STRIPE_PRICE_ID_PRINT          # plan print 9,99€/mois
 STRIPE_WEBHOOK_SECRET
-STRIPE_GIFT_COUPON_ID          # GLTgXWbF
+STRIPE_GIFT_COUPON_ID          # coupon 100% off 12 mois
 
 RESEND_API_KEY
 WAITLIST_TO                    # email destinataire waitlist
@@ -116,6 +117,12 @@ stories: id, pet_id, user_id, title, content, cover_url,
 
 -- milestones
 milestones: id, pet_id, user_id, type, title, achieved_at, entry_id, created_at
+
+-- milestone_definitions (extensibilité sans déploiement)
+milestone_definitions: id, key (unique), name_fr, name_en, keywords text[], icon, order_index
+-- RLS : SELECT public, pas d'écriture client
+-- Utilisée en priorité par detectMilestones() et translateMilestone() ; fallback sur MILESTONE_TYPES hardcodé
+-- Clé spéciale "first_memory" : déclenche sur existingEntries.length === 0
 ```
 
 SQL migrations dans `supabase/migrations/`. Toujours utiliser `IF NOT EXISTS` et blocs `DO $$ … $$` pour rester idempotent.
@@ -321,12 +328,19 @@ currency: "USD"
 - Filtres mood pills dans le journal
 - Dashboard avec chips navigation pet + KPI améliorés
 
+### ✅ QA audit 2026-05-22 — Bugs corrigés
+- **Sécurité** : changement de mot de passe désormais protégé par vérification du mot de passe actuel (`signInWithPassword` avant `updateUser`)
+- **Milestones** : noms d'étapes complets (suppression du `slice(0,-1)` qui retirait le dernier mot quand `name_fr` DB est sans emoji)
+- **i18n** : bouton Google et séparateur "ou" désormais traduits FR/EN sur la page signup (étaient en dur en anglais)
+- **Share** : "Partager ce chapitre" copie l'URL publique `${origin}/pets/[id]#story-[storyId]` dans le presse-papiers + toast "Lien copié !" (remplace la génération canvas sans feedback visible)
+- **CTA page publique** : bouton nav affiche "Commencer gratuitement →" (`cta_button`) au lieu de "Commencez l'histoire de votre animal →" (`start_story`)
+- **Forgot-password** : doublon du lien "← Retour à la connexion" supprimé (hors carte)
+
 ### 🚧 Prochaine étape
 - Passer Stripe en mode **Live**
 - Passer Google OAuth en mode **Published**
 - Chapitre mensuel automatique (cron IA le 1er de chaque mois)
 - Page mémorial complète (`/memorial/[id]`)
-- Partage social (carte générative)
 
 ---
 
@@ -348,6 +362,8 @@ currency: "USD"
 - Ne jamais supprimer un ancien Price ID Stripe avant que le nouveau soit testé en Live
 - Tab actif dans la pet page : **lire depuis `useSearchParams()`**, jamais un `useState` avec `useEffect` vide (ne se met pas à jour sur navigation client-side)
 - Toujours ajouter les nouvelles clés i18n dans `messages/en.json` ET `messages/fr.json`
+- **Milestones** : utiliser `localTitle` directement dans l'affichage — ne pas découper par espaces pour retirer l'emoji (l'icône est rendue séparément via le champ `icon`)
+- **Auth sécurité** : tout changement de mot de passe doit vérifier le mot de passe actuel via `signInWithPassword` avant `updateUser`
 
 ---
 
@@ -372,4 +388,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-18*
+*Dernière mise à jour : 2026-05-22*
