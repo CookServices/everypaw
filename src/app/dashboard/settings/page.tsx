@@ -33,6 +33,7 @@ export default function SettingsPage() {
   const [isGoogleAccount, setIsGoogleAccount] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [currentEmail, setCurrentEmail] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [emailStatus, setEmailStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
@@ -129,8 +130,16 @@ export default function SettingsPage() {
 
   const handlePasswordChange = async () => {
     setPasswordError("");
+    if (!currentPassword) {
+      setPasswordError(isFR ? "Entrez votre mot de passe actuel." : "Enter your current password.");
+      return;
+    }
     if (!newPassword || newPassword.length < 8) {
       setPasswordError(isFR ? "Le mot de passe doit faire au moins 8 caractères." : "Password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordError(isFR ? "Le nouveau mot de passe doit être différent de l'ancien." : "The new password must be different from the current one.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -139,6 +148,12 @@ export default function SettingsPage() {
     }
     setPasswordStatus("saving");
     const supabase = createClient();
+    const { error: verifyError } = await supabase.auth.signInWithPassword({ email: currentEmail, password: currentPassword });
+    if (verifyError) {
+      setPasswordError(isFR ? "Mot de passe actuel incorrect." : "Current password is incorrect.");
+      setPasswordStatus("error");
+      return;
+    }
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) {
       const msg = error.message;
@@ -149,7 +164,7 @@ export default function SettingsPage() {
       setPasswordStatus("error");
     } else {
       setPasswordStatus("done");
-      setNewPassword(""); setConfirmPassword("");
+      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
       showToast(isFR ? "Mot de passe mis à jour." : "Password updated.", "success");
     }
   };
@@ -519,6 +534,7 @@ export default function SettingsPage() {
                   {isFR ? "Changer le mot de passe" : "Change password"}
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+                  <input type="password" placeholder={isFR ? "Mot de passe actuel" : "Current password"} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} style={inputStyle} />
                   <input type="password" placeholder={isFR ? "Nouveau mot de passe" : "New password"} value={newPassword} onChange={e => setNewPassword(e.target.value)} style={inputStyle} />
                   <input type="password" placeholder={isFR ? "Confirmer le mot de passe" : "Confirm password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={inputStyle} />
                   {passwordError && <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>{passwordError}</p>}
