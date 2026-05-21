@@ -52,7 +52,7 @@ export default async function PublicPetPage({ params }: { params: { id: string }
           Everypaw
         </Link>
         <Link href="/auth/signup" style={{ background: "#C8813A", color: "#FDFAF5", padding: ".5rem 1.25rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
-          {t.public_pet.start_story}
+          {t.public_pet.cta_button}
         </Link>
       </nav>
 
