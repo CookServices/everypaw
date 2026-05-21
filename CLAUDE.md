@@ -75,8 +75,11 @@ ANTHROPIC_API_KEY
 
 STRIPE_SECRET_KEY              # sk_test_51TKay... (mode test)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-STRIPE_PRICE_ID_DIGITAL        # plan digital 4,99€/mois
-STRIPE_PRICE_ID_PRINT          # plan print 9,99€/mois
+STRIPE_PRICE_ID_DIGITAL_EUR    # plan digital 4,99 €/mois (Europe)
+STRIPE_PRICE_ID_DIGITAL_USD    # plan digital $4.99/mo (reste du monde)
+STRIPE_PRICE_ID_PRINT_EUR      # plan print 9,99 €/mois (Europe)
+STRIPE_PRICE_ID_PRINT_USD      # plan print $9.99/mo (reste du monde)
+STRIPE_PRICE_PRINT_ANNUAL      # plan print annuel (partagé EUR/USD jusqu'à séparation)
 STRIPE_WEBHOOK_SECRET
 STRIPE_GIFT_COUPON_ID          # coupon 100% off 12 mois
 
@@ -213,6 +216,7 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/api/cron/monthly-story` | Auto-génération histoires mensuelles |
 | `/api/cron/weekly-reminder` | Rappels email via Resend |
 | `/api/gift/create`, `/api/gift/redeem` | Flow carte cadeau |
+| `/api/currency` | Retourne `{ currency: "EUR"\|"USD", country }` via `x-vercel-ip-country` |
 | `/api/preview-pdf` | Preview PDF via `@react-pdf/renderer` |
 | `/api/locale` | Setter cookie i18n |
 
@@ -328,6 +332,14 @@ currency: "USD"
 - Filtres mood pills dans le journal
 - Dashboard avec chips navigation pet + KPI améliorés
 
+### ✅ Localisation EUR/USD (2026-05-22)
+- `src/lib/currency.ts` : `getCurrencyFromCountry(countryCode)` + `formatPrice(currency, key)` — liste Europe : AT BE BG CY CZ DE DK EE ES FI FR GR HR HU IE IT LT LU LV MT NL PL PT RO SE SI SK CH NO IS GB
+- `GET /api/currency` lit `x-vercel-ip-country`, retourne `{ currency, country }` — fallback USD
+- Checkout (`/api/stripe/checkout`) : sélectionne le price ID Stripe selon la devise détectée au moment du paiement
+- Upgrade (`/api/stripe/upgrade`) : lit `subscription.currency` depuis Stripe pour garder la cohérence EUR/USD sur la durée de l'abonnement
+- `priceIdToPlan` dans `plan.ts` supporte les 4 variantes EUR/USD (+ anciens IDs legacy)
+- Affichage dynamique dans toutes les pages de prix : landing, dashboard, settings, upgrade, gift — fetch `/api/currency` au mount, défaut USD
+
 ### ✅ QA audit 2026-05-22 — Bugs corrigés
 - **Sécurité** : changement de mot de passe désormais protégé par vérification du mot de passe actuel (`signInWithPassword` avant `updateUser`)
 - **Milestones** : noms d'étapes complets (suppression du `slice(0,-1)` qui retirait le dernier mot quand `name_fr` DB est sans emoji)
@@ -364,6 +376,7 @@ currency: "USD"
 - Toujours ajouter les nouvelles clés i18n dans `messages/en.json` ET `messages/fr.json`
 - **Milestones** : utiliser `localTitle` directement dans l'affichage — ne pas découper par espaces pour retirer l'emoji (l'icône est rendue séparément via le champ `icon`)
 - **Auth sécurité** : tout changement de mot de passe doit vérifier le mot de passe actuel via `signInWithPassword` avant `updateUser`
+- **Devise** : utiliser `getCurrencyFromCountry` + `formatPrice` de `src/lib/currency.ts` pour tout affichage de prix. Ne jamais utiliser `isFR` comme proxy de devise — langue ≠ pays. Les routes Stripe lisent `x-vercel-ip-country` (checkout) ou `subscription.currency` (upgrade).
 
 ---
 
@@ -388,4 +401,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-22*
+*Dernière mise à jour : 2026-05-22 (session 2)*
