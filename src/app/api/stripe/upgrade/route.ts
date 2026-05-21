@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
+import type { Currency } from "@/lib/currency";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-const PRICE_MAP: Record<string, string | undefined> = {
-  digital: process.env.STRIPE_PRICE_ID_DIGITAL,
-  print:   process.env.STRIPE_PRICE_ID_PRINT,
+const PRICE_MAP: Record<string, Record<Currency, string | undefined>> = {
+  digital: {
+    EUR: process.env.STRIPE_PRICE_ID_DIGITAL_EUR,
+    USD: process.env.STRIPE_PRICE_ID_DIGITAL_USD,
+  },
+  print: {
+    EUR: process.env.STRIPE_PRICE_ID_PRINT_EUR,
+    USD: process.env.STRIPE_PRICE_ID_PRINT_USD,
+  },
 };
 
 export async function POST(req: Request) {
@@ -19,8 +26,6 @@ export async function POST(req: Request) {
   if (!newPlan || !PRICE_MAP[newPlan]) {
     return NextResponse.json({ error: "Invalid plan or missing price ID" }, { status: 400 });
   }
-
-  const newPriceId = PRICE_MAP[newPlan]!;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -37,6 +42,15 @@ export async function POST(req: Request) {
     const itemId = subscription.items.data[0]?.id;
     if (!itemId) return NextResponse.json({ error: "Subscription item not found" }, { status: 400 });
 
+    // Use the subscription's existing currency so EUR/USD stays consistent throughout the lifecycle
+    const subCurrency = (subscription.currency?.toUpperCase() ?? "USD") as Currency;
+    const newPriceId = PRICE_MAP[newPlan]?.[subCurrency];
+
+    if (!newPriceId) {
+      console.error("[stripe/upgrade] Missing price ID for plan:", newPlan, "currency:", subCurrency);
+      return NextResponse.json({ error: "Missing price ID for this plan/currency combination" }, { status: 400 });
+    }
+
     await stripe.subscriptions.update(profile.stripe_subscription_id, {
       items: [{ id: itemId, price: newPriceId }],
       proration_behavior: "always_invoice",
@@ -47,7 +61,7 @@ export async function POST(req: Request) {
       .update({ plan: newPlan, is_premium: true })
       .eq("id", user.id);
 
-    console.log(`[stripe/upgrade] user ${user.id} → plan: ${newPlan}`);
+    console.log(`[stripe/upgrade] user ${user.id} → plan: ${newPlan} (${subCurrency})`);
     return NextResponse.json({ success: true, plan: newPlan });
   } catch (err) {
     console.error("[stripe/upgrade] Error:", err);

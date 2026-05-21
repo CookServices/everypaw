@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrencyFromCountry, type Currency } from "@/lib/currency";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// Support both naming conventions (STRIPE_PRICE_DIGITAL_MONTHLY or STRIPE_PRICE_ID_DIGITAL)
-const PRICE_MAP: Record<string, string | undefined> = {
-  digital:       process.env.STRIPE_PRICE_DIGITAL_MONTHLY ?? process.env.STRIPE_PRICE_ID_DIGITAL,
-  print_monthly: process.env.STRIPE_PRICE_PRINT_MONTHLY   ?? process.env.STRIPE_PRICE_ID_PRINT,
-  print_annual:  process.env.STRIPE_PRICE_PRINT_ANNUAL,
+const PRICE_MAP: Record<string, Record<Currency, string | undefined>> = {
+  digital: {
+    EUR: process.env.STRIPE_PRICE_ID_DIGITAL_EUR,
+    USD: process.env.STRIPE_PRICE_ID_DIGITAL_USD,
+  },
+  print_monthly: {
+    EUR: process.env.STRIPE_PRICE_ID_PRINT_EUR,
+    USD: process.env.STRIPE_PRICE_ID_PRINT_USD,
+  },
+  print_annual: {
+    EUR: process.env.STRIPE_PRICE_PRINT_ANNUAL_EUR ?? process.env.STRIPE_PRICE_PRINT_ANNUAL,
+    USD: process.env.STRIPE_PRICE_PRINT_ANNUAL_USD ?? process.env.STRIPE_PRICE_PRINT_ANNUAL,
+  },
 };
 
 export async function POST(req: Request) {
@@ -20,12 +30,16 @@ export async function POST(req: Request) {
   }
 
   const { plan = "digital" } = await req.json().catch(() => ({}));
-  const priceId = PRICE_MAP[plan];
 
-  console.log("[stripe/checkout] plan:", plan, "priceId:", priceId ?? "(not set)");
+  const h = await headers();
+  const country = h.get("x-vercel-ip-country");
+  const currency = getCurrencyFromCountry(country);
+  const priceId = PRICE_MAP[plan]?.[currency];
+
+  console.log("[stripe/checkout] plan:", plan, "country:", country ?? "unknown", "currency:", currency, "priceId:", priceId ?? "(not set)");
 
   if (!priceId) {
-    console.error("[stripe/checkout] Missing price ID for plan:", plan, "— check STRIPE_PRICE_DIGITAL_MONTHLY / STRIPE_PRICE_ID_DIGITAL env vars");
+    console.error("[stripe/checkout] Missing price ID for plan:", plan, "currency:", currency, "— check STRIPE_PRICE_ID_DIGITAL_EUR/USD and STRIPE_PRICE_ID_PRINT_EUR/USD env vars");
     return NextResponse.json({ error: "Invalid plan or missing price ID" }, { status: 400 });
   }
 

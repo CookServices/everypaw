@@ -88,10 +88,19 @@ export function canOrderBook(plan: Plan, bookCredits: number): string | null {
 
 export function priceIdToPlan(priceId: string): Plan | null {
   const map: Record<string, Plan> = {
+    // EUR variants
+    [process.env.STRIPE_PRICE_ID_DIGITAL_EUR ?? ""]:  "digital",
+    [process.env.STRIPE_PRICE_ID_PRINT_EUR ?? ""]:    "print",
+    // USD variants
+    [process.env.STRIPE_PRICE_ID_DIGITAL_USD ?? ""]:  "digital",
+    [process.env.STRIPE_PRICE_ID_PRINT_USD ?? ""]:    "print",
+    // Annual (shared across currencies until separate IDs are configured)
+    [process.env.STRIPE_PRICE_PRINT_ANNUAL ?? ""]:    "print",
+    [process.env.STRIPE_PRICE_PRINT_ANNUAL_EUR ?? ""]: "print",
+    [process.env.STRIPE_PRICE_PRINT_ANNUAL_USD ?? ""]: "print",
+    // Legacy
     [process.env.STRIPE_PRICE_DIGITAL_MONTHLY ?? ""]: "digital",
     [process.env.STRIPE_PRICE_PRINT_MONTHLY ?? ""]:   "print",
-    [process.env.STRIPE_PRICE_PRINT_ANNUAL ?? ""]:    "print",
-    // Legacy price ID — map to digital (closest equivalent)
     [process.env.STRIPE_PRICE_ID ?? ""]:              "digital",
   };
   return map[priceId] ?? null;
