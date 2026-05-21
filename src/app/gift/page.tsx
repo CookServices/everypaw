@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
+import { formatPrice, type Currency } from "@/lib/currency";
 
 export default function GiftPage() {
   const { t, locale } = useLocale();
@@ -18,8 +19,13 @@ export default function GiftPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [code, setCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [currency, setCurrency] = useState<Currency>("USD");
 
   const todayStr = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
+  }, []);
 
   const handleSubmit = async () => {
     if (!form.recipientEmail || !form.recipientName || !form.senderName) {
@@ -183,7 +189,7 @@ export default function GiftPage() {
               style={{ padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "digital" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "digital" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s" }}
             >
               <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Digital</p>
-              <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem" }}>4,99 €<span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/mois</span></p>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem" }}>{formatPrice(currency, "digital")}<span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span></p>
               <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: 0, fontWeight: 300, lineHeight: 1.4 }}>
                 {isFR ? "Entrées illimitées, histoires IA, PDF" : "Unlimited entries, AI stories, PDF"}
               </p>
@@ -197,7 +203,7 @@ export default function GiftPage() {
                 {isFR ? "Meilleure valeur" : "Best value"}
               </div>
               <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Print</p>
-              <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem" }}>9,99 €<span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/mois</span></p>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem" }}>{formatPrice(currency, "print")}<span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span></p>
               <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: 0, fontWeight: 300, lineHeight: 1.4 }}>
                 {isFR ? "Digital + livre relié annuel" : "Digital + annual hardcover book"}
               </p>
@@ -210,7 +216,7 @@ export default function GiftPage() {
               {isFR ? "Formule sélectionnée" : "Selected plan"}
             </span>
             <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#C8813A" }}>
-              {selectedPlan === "digital" ? "4,99 €/mois" : "9,99 €/mois"}
+              {`${formatPrice(currency, selectedPlan === "digital" ? "digital" : "print")}/${isFR ? "mois" : "mo"}`}
             </span>
           </div>
 

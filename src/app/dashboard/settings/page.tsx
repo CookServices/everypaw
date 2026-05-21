@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
 import { useRouter } from "next/navigation";
+import { formatPrice, type Currency } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,9 @@ export default function SettingsPage() {
   const [cancelledAt, setCancelledAt] = useState<number | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
+  // ── Currency ─────────────────────────────────────────────────────────────────
+  const [currency, setCurrency] = useState<Currency>("USD");
+
   // ── Delete account state ─────────────────────────────────────────────────────
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -70,6 +74,7 @@ export default function SettingsPage() {
       setLoading(false);
     };
     load();
+    fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
 
     // Load subscription info separately
     const loadSub = async () => {
@@ -361,7 +366,7 @@ export default function SettingsPage() {
                 </span>
                 {plan !== "free" && (
                   <span style={{ fontSize: ".8rem", color: "#9A8070" }}>
-                    {plan === "digital" ? "4,99 €/mois" : "9,99 €/mois"}
+                    {`${formatPrice(currency, plan === "digital" ? "digital" : "print")}/${isFR ? "mois" : "mo"}`}
                   </span>
                 )}
               </div>
@@ -390,7 +395,7 @@ export default function SettingsPage() {
                   >
                     {checkoutLoading === "digital"
                       ? "…"
-                      : (isFR ? "Passer à Premium Digital — 4,99 €/mois →" : "Upgrade to Premium Digital — $4.99/mo →")}
+                      : (isFR ? `Passer à Premium Digital — ${formatPrice(currency, "digital")}/mois →` : `Upgrade to Premium Digital — ${formatPrice(currency, "digital")}/mo →`)}
                   </button>
                   <button
                     onClick={() => handleCheckout("print")}
@@ -399,7 +404,7 @@ export default function SettingsPage() {
                   >
                     {checkoutLoading === "print"
                       ? "…"
-                      : (isFR ? "Passer à Premium Print — 9,99 €/mois →" : "Upgrade to Premium Print — $9.99/mo →")}
+                      : (isFR ? `Passer à Premium Print — ${formatPrice(currency, "print")}/mois →` : `Upgrade to Premium Print — ${formatPrice(currency, "print")}/mo →`)}
                   </button>
                 </div>
               )}
@@ -414,7 +419,7 @@ export default function SettingsPage() {
                   >
                     {upgradeLoading
                       ? (isFR ? "Mise à jour…" : "Updating…")
-                      : (isFR ? "Passer à Premium Print — 9,99 €/mois →" : "Upgrade to Premium Print — $9.99/mo →")}
+                      : (isFR ? `Passer à Premium Print — ${formatPrice(currency, "print")}/mois →` : `Upgrade to Premium Print — ${formatPrice(currency, "print")}/mo →`)}
                   </button>
                   <button
                     onClick={handleCancel}
@@ -438,7 +443,7 @@ export default function SettingsPage() {
                   >
                     {upgradeLoading
                       ? (isFR ? "Mise à jour…" : "Updating…")
-                      : (isFR ? "Passer à Premium Digital — 4,99 €/mois →" : "Switch to Premium Digital — $4.99/mo →")}
+                      : (isFR ? `Passer à Premium Digital — ${formatPrice(currency, "digital")}/mois →` : `Switch to Premium Digital — ${formatPrice(currency, "digital")}/mo →`)}
                   </button>
                   <button
                     onClick={handleCancel}

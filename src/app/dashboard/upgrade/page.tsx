@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocale } from "@/hooks/useLocale";
+import { formatPrice, type Currency } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,11 @@ export default function UpgradePage() {
 
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [loading, setLoading] = useState<string | null>(null);
+  const [currency, setCurrency] = useState<Currency>("USD");
+
+  useEffect(() => {
+    fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
+  }, []);
 
   const handleSubscribe = async (plan: "digital" | "print_monthly" | "print_annual") => {
     setLoading(plan);
@@ -49,7 +55,7 @@ export default function UpgradePage() {
     subtitle:     isFR ? "Commencez gratuitement — évoluez quand vous êtes prêt." : "Start free — upgrade when you're ready.",
     monthly:      isFR ? "Mensuel" : "Monthly",
     annual:       isFR ? "Annuel" : "Annual",
-    save:         isFR ? "Économisez 40 $/an" : "Save $40/year",
+    save:         isFR ? `Économisez ${currency === "EUR" ? "40 €" : "40 $"}/an` : `Save ${currency === "EUR" ? "€40" : "$40"}/year`,
     cta_loading:  isFR ? "Redirection…" : "Redirecting…",
     cancel:       isFR ? "Sans engagement" : "Cancel anytime",
 
@@ -65,7 +71,7 @@ export default function UpgradePage() {
 
     digital: {
       name:  isFR ? "Premium Digital" : "Premium Digital",
-      price: "$4.99",
+      price: formatPrice(currency, "digital"),
       desc:  isFR ? "Pour les passionnés" : "For dedicated pet parents",
       feats: isFR
         ? ["Entrées illimitées", "Histoires IA illimitées", "Profils animaux illimités", "Export PDF"]
@@ -75,9 +81,9 @@ export default function UpgradePage() {
 
     print: {
       name:         isFR ? "Premium Print" : "Premium Print",
-      priceMonthly: "$9.99",
-      priceAnnual:  "$79",
-      priceAnnualPer: isFR ? "$6.58/mois" : "$6.58/month",
+      priceMonthly: formatPrice(currency, "print"),
+      priceAnnual:  formatPrice(currency, "printAnnual"),
+      priceAnnualPer: `${formatPrice(currency, "printAnnualMonthly")}/${isFR ? "mois" : "month"}`,
       desc:         isFR ? "Avec un beau livre relié chaque année" : "With a beautiful hardcover book each year",
       feats: isFR
         ? ["Tout le plan Digital", "1 livre hardcover / an inclus", "Impression & livraison incluses", "Support prioritaire"]
@@ -88,7 +94,7 @@ export default function UpgradePage() {
 
     book: {
       name:  isFR ? "Livre à la carte" : "Book à la carte",
-      price: "$29",
+      price: formatPrice(currency, "book"),
       desc:  isFR ? "Un cadeau ou une commande unique" : "A gift or one-time order",
       feats: isFR
         ? ["1 livre hardcover imprimé", "Livraison incluse", "Aucun abonnement requis"]

@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useLocale } from "@/hooks/useLocale";
+import { formatPrice, type Currency } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
 export default function Home() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const isFR = locale === "fr";
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [demoSlide, setDemoSlide] = useState(0);
 
@@ -38,6 +40,11 @@ export default function Home() {
   ];
 
   const [pricingCycle, setPricingCycle] = useState<"monthly" | "annual">("monthly");
+  const [currency, setCurrency] = useState<Currency>("USD");
+
+  useEffect(() => {
+    fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
+  }, []);
 
   const freeFeatures    = [t.landing.free_f1, t.landing.free_f2, t.landing.free_f3];
   const digitalFeatures = [t.landing.premium_f1, t.landing.premium_f2, t.landing.premium_f3, t.landing.premium_f4];
@@ -420,7 +427,7 @@ export default function Home() {
           {/* Digital */}
           <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem 2rem", flex: 1, minWidth: 240, maxWidth: 300, textAlign: "left", border: "1.5px solid rgba(200,129,58,.25)", display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".1em", textTransform: "uppercase", color: "#C8813A", marginBottom: ".75rem" }}>{t.landing.premium_label}</div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem" }}>{t.landing.premium_price}</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem" }}>{formatPrice(currency, "digital")}</div>
             <div style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginBottom: "1.5rem" }}>{t.landing.premium_period}</div>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: ".6rem", marginBottom: "1.75rem", padding: 0, flex: 1 }}>
               {digitalFeatures.map(f => (
@@ -441,10 +448,12 @@ export default function Home() {
             </div>
             <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".1em", textTransform: "uppercase", color: "#E8A96A", marginBottom: ".75rem" }}>{t.landing.print_label}</div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem", color: "#F7F2EA" }}>
-              {pricingCycle === "annual" ? t.landing.print_price_annual : t.landing.print_price_monthly}
+              {pricingCycle === "annual" ? formatPrice(currency, "printAnnual") : formatPrice(currency, "print")}
             </div>
             <div style={{ fontSize: ".8rem", color: "rgba(247,242,234,.6)", fontWeight: 300, marginBottom: "1.5rem" }}>
-              {pricingCycle === "annual" ? t.landing.print_period_annual : t.landing.print_period_monthly}
+              {pricingCycle === "annual"
+                ? `${isFR ? "par an" : "per year"} · ${isFR ? "économisez" : "save"} ${currency === "EUR" ? "40 €" : "$40"}`
+                : t.landing.print_period_monthly}
             </div>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: ".6rem", marginBottom: "1.75rem", padding: 0, flex: 1 }}>
               {printFeatures.map(f => (
@@ -463,7 +472,9 @@ export default function Home() {
         {/* Book à la carte */}
         <p style={{ marginTop: "2rem", fontSize: ".85rem", color: "#7A5C44", fontWeight: 300 }}>
           <Link href="/auth/signup?plan=book" style={{ color: "#C8813A", textDecoration: "underline", textUnderlineOffset: 3 }}>
-            {t.landing.pricing_book_note}
+            {isFR
+            ? `Juste un livre ? Commandez à la carte pour ${formatPrice(currency, "book")} →`
+            : `Just want a book? Order à la carte for ${formatPrice(currency, "book")} →`}
           </Link>
         </p>
       </section>

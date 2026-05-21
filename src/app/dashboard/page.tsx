@@ -6,6 +6,7 @@ import { Pet, Entry } from "@/types";
 import Link from "next/link";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
 import { useLocale } from "@/hooks/useLocale";
+import { formatPrice, type Currency } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   const [isPremium, setIsPremium] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
   const [subscribeError, setSubscribeError] = useState(false);
+  const [currency, setCurrency] = useState<Currency>("USD");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [hasStories, setHasStories] = useState(false);
   const [monthlyEntryCount, setMonthlyEntryCount] = useState(0);
@@ -43,6 +45,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     try { setResolvedPetId(localStorage.getItem(LAST_PET_KEY)); } catch {}
+    fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -335,7 +338,7 @@ export default function DashboardPage() {
                   Premium Digital
                 </p>
                 <p style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", margin: 0, lineHeight: 1 }}>
-                  4,99 €<span style={{ fontSize: ".75rem", fontWeight: 400, color: "#7A5C44" }}>/mois</span>
+                  {formatPrice(currency, "digital")}<span style={{ fontSize: ".75rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span>
                 </p>
                 <p style={{ fontSize: ".75rem", color: "#7A5C44", margin: 0, fontWeight: 300, lineHeight: 1.5 }}>
                   {isFR ? "Entrées illimitées, histoires IA, export PDF" : "Unlimited entries, AI stories, PDF export"}
@@ -358,7 +361,7 @@ export default function DashboardPage() {
                   Premium Print
                 </p>
                 <p style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", margin: 0, lineHeight: 1 }}>
-                  9,99 €<span style={{ fontSize: ".75rem", fontWeight: 400, color: "#7A5C44" }}>/mois</span>
+                  {formatPrice(currency, "print")}<span style={{ fontSize: ".75rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span>
                 </p>
                 <p style={{ fontSize: ".75rem", color: "#7A5C44", margin: 0, fontWeight: 300, lineHeight: 1.5 }}>
                   {isFR ? "Tout Digital + livre relié annuel livré chez vous" : "All Digital + annual hardcover book delivered"}
