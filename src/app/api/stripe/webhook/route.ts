@@ -17,6 +17,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Webhook error" }, { status: 400 });
   }
 
+  console.log("[webhook] event:", event.id, event.type);
+
   const supabase = getServiceSupabase();
 
   // ── checkout.session.completed ─────────────────────────────────────────────
@@ -26,12 +28,26 @@ export async function POST(req: Request) {
     const metaPlan = session.metadata?.plan;
 
     if (!userId) {
-      console.error("No user_id in session metadata");
+      console.error("[webhook] No user_id in session metadata, event:", event.id);
       return NextResponse.json({ received: true });
     }
 
     // One-time book purchase
     if (session.mode === "payment" && metaPlan === "book_only") {
+      // Dedup: check if this Stripe event was already processed
+      const { data: existing } = await supabase
+        .from("events_log")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("event_type", "stripe_book_checkout")
+        .contains("metadata", { stripe_event_id: event.id })
+        .maybeSingle();
+
+      if (existing) {
+        console.log("[webhook] duplicate book_checkout, skipping:", event.id);
+        return NextResponse.json({ received: true });
+      }
+
       const { error } = await supabase.rpc("increment_book_credits", { p_user_id: userId });
 
       if (error) {
@@ -39,13 +55,30 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Database update failed" }, { status: 500 });
       }
 
-      console.log("Book credit added for user:", userId);
+      await supabase.from("events_log").insert({
+        user_id: userId,
+        event_type: "stripe_book_checkout",
+        metadata: { stripe_event_id: event.id, stripe_session_id: session.id },
+      });
+
+      console.log("[webhook] book credit added for user:", userId, "event:", event.id);
       return NextResponse.json({ received: true });
     }
 
     // Subscription checkout — determine plan from line items
     if (session.mode === "subscription") {
-      // Expand the line items to get the price ID
+      // Dedup: check if this subscription was already activated via stripe_customer_id
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("stripe_subscription_id, is_premium")
+        .eq("id", userId)
+        .single();
+
+      if (profile?.stripe_subscription_id === session.subscription && profile?.is_premium) {
+        console.log("[webhook] duplicate checkout.session.completed, skipping:", event.id);
+        return NextResponse.json({ received: true });
+      }
+
       const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
         expand: ["line_items"],
       });
@@ -70,7 +103,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Database update failed" }, { status: 500 });
       }
 
-      console.log(`User ${userId} upgraded to plan: ${plan}`);
+      console.log(`[webhook] user ${userId} upgraded to plan: ${plan}, event: ${event.id}`);
     }
   }
 
@@ -93,7 +126,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Database update failed" }, { status: 500 });
     }
 
-    console.log("Subscription cancelled for customer:", customerId);
+    console.log("[webhook] subscription cancelled for customer:", customerId, "event:", event.id);
   }
 
   // ── customer.subscription.updated ─────────────────────────────────────────
@@ -111,7 +144,7 @@ export async function POST(req: Request) {
         .update({ plan: "free", is_premium: false, stripe_subscription_id: null })
         .eq("stripe_customer_id", customerId);
 
-      console.log("[webhook] subscription.updated → status=canceled, downgraded to free:", customerId);
+      console.log("[webhook] subscription.updated → status=canceled, downgraded to free:", customerId, "event:", event.id);
       return NextResponse.json({ received: true });
     }
 
@@ -122,7 +155,7 @@ export async function POST(req: Request) {
         .update({ plan, is_premium: true })
         .eq("stripe_customer_id", customerId);
 
-      console.log("[webhook] subscription.updated → plan change:", plan, "for customer:", customerId);
+      console.log("[webhook] subscription.updated → plan change:", plan, "for customer:", customerId, "event:", event.id);
     }
 
     // cancel_at_period_end = true → scheduled cancellation, keep access until period end
@@ -130,7 +163,8 @@ export async function POST(req: Request) {
       console.log(
         "[webhook] subscription.updated → cancel_at_period_end scheduled for customer:",
         customerId,
-        "cancel_at:", subscription.cancel_at
+        "cancel_at:", subscription.cancel_at,
+        "event:", event.id,
       );
       // is_premium stays true — customer.subscription.deleted handles the actual downgrade
     }
