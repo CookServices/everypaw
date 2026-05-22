@@ -100,13 +100,17 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     });
   }, [id]);
 
-  // Initialize selectedStoryIds once stories are loaded (Point 4 / Point 9)
+  // Initialize yearFilter to most recent year with data, then select all stories for that year
   useEffect(() => {
     if (stories.length > 0) {
-      const visible = stories.filter(
-        s => new Date(s.period_start ?? s.created_at).getFullYear() === yearFilter
+      const years = stories.map(s => new Date(s.period_start ?? s.created_at).getFullYear());
+      const mostRecentYear = Math.max(...years);
+      setYearFilter(mostRecentYear);
+      setSelectedStoryIds(
+        stories
+          .filter(s => new Date(s.period_start ?? s.created_at).getFullYear() === mostRecentYear)
+          .map(s => s.id)
       );
-      setSelectedStoryIds(visible.map(s => s.id));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stories]);
@@ -141,8 +145,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const photoEntries = filteredEntries.filter(e => e.photo_urls?.length > 0);
   const photoCount = Math.min(photoEntries.flatMap(e => e.photo_urls).length, 6);
 
-  // All photos available for cover selection (Point 10)
-  const availablePhotos = filteredEntries
+  // All photos available for cover selection — from all entries, not filtered by year (Point 10)
+  const availablePhotos = entries
     .flatMap(e => e.photo_urls ?? [])
     .filter(Boolean)
     .slice(0, 8);
@@ -314,8 +318,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               {t.order.preview_title}
             </h2>
 
-            {/* Year filter — shown only if ≥2 years available (Point 9) */}
-            {availableYears.length >= 2 && (
+            {/* Year filter — shown as soon as there is data (Point 9) */}
+            {availableYears.length >= 1 && (
               <div style={{ marginBottom: "1.25rem" }}>
                 <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>
                   {bookYearLabel}
