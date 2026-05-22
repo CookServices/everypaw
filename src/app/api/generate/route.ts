@@ -7,6 +7,22 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // ── Rate limit: 10 generations per user per day (UTC) ─────────────────────
+  const todayUTC = new Date().toISOString().split("T")[0];
+  const { count: todayCount } = await supabase
+    .from("stories")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("created_at", `${todayUTC}T00:00:00.000Z`);
+
+  if ((todayCount ?? 0) >= 10) {
+    console.warn("[generate] rate limit hit for user:", user.id, "todayCount:", todayCount);
+    return NextResponse.json(
+      { error: "daily_generation_limit", message: "You have reached the limit of 10 story generations per day. Try again tomorrow." },
+      { status: 429 },
+    );
+  }
+
   const { petId, petName, species, bio, entries, style, periodStart, periodEnd } = await req.json();
 
   if (!petId) return NextResponse.json({ error: "Missing petId" }, { status: 400 });
