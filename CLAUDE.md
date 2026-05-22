@@ -158,6 +158,11 @@ Le webhook (`/api/stripe/webhook`) gère :
 - `customer.subscription.deleted`
 - `customer.subscription.updated`
 
+**Idempotence webhook (2026-05-22)** : protection contre les retries Stripe.
+- Abonnement : compare `stripe_subscription_id` en DB avant d'agir — skip si déjà activé.
+- Achat livre : vérifie `events_log` via `metadata @> { stripe_event_id }` avant d'incrémenter les crédits ; insère une trace après succès.
+- Tous les événements loggent le Stripe event ID dès réception (`[webhook] event: evt_xxx …`).
+
 ---
 
 ## Architecture
@@ -208,7 +213,7 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 
 | Route | Rôle |
 |---|---|
-| `/api/generate` | Génération histoire IA — gate plan server-side via `getUserPlan()` |
+| `/api/generate` | Génération histoire IA — gate plan server-side via `getUserPlan()` + rate limit 10/jour/user (UTC) |
 | `/api/stripe/checkout` | Checkout abonnement (accepte `{ plan: "digital" \| "print_monthly" \| "print_annual" }`) |
 | `/api/stripe/book-checkout` | Achat livre one-time |
 | `/api/stripe/webhook` | Webhook Stripe (doit utiliser le client Supabase service role) |
@@ -382,6 +387,11 @@ currency: "USD"
 - La page `/fr/` est gérée par `src/app/fr/page.tsx` (composant autonome, `getTranslations("fr")` direct, pas de `useLocale`)
 - `<html lang>` est dynamique via middleware (`x-pathname`) — ne pas repasser à `lang="en"` statique
 
+### ✅ Sécurité backend (2026-05-22)
+- **Webhook Stripe idempotent** : guard contre les retries — `stripe_subscription_id` pour les abonnements, `events_log.metadata.stripe_event_id` pour les achats livre, event ID loggé sur tous les événements
+- **Rate limit `/api/generate`** : 10 générations/user/jour (UTC) — count `stories.created_at >= today` avant body parsing ; 429 `daily_generation_limit` si dépassé
+- **RLS Supabase** : policies ajoutées sur `daily_prompts`, `events_log`, `milestones`, `milestone_definitions` + policies storage bucket `pet-photos` (migration `fix_rls_missing_tables.sql`)
+
 ### 🚧 Prochaine étape
 - Passer Stripe en mode **Live**
 - Passer Google OAuth en mode **Published**
@@ -435,4 +445,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-22 (session 3 — SEO sprints 1-2-3)*
+*Dernière mise à jour : 2026-05-22 (session 4 — Stripe webhook idempotence + rate limit generate)*
