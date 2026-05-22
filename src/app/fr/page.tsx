@@ -2,21 +2,21 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { useLocale } from "@/hooks/useLocale";
+import { getTranslations } from "@/lib/i18n";
 import { formatPrice, type Currency } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
-const FAQ_JSONLD = {
+const FAQ_JSONLD_FR = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   mainEntity: [
-    { "@type": "Question", name: "How does the AI work?", acceptedAnswer: { "@type": "Answer", text: "Each month, our AI reads all your journal entries and weaves them into a warm, flowing narrative chapter — written in first person, as if your pet is narrating their own life. The more moments you add, the richer and more personal the story becomes." } },
-    { "@type": "Question", name: "What happens if my pet passes away?", acceptedAnswer: { "@type": "Answer", text: "All your memories stay accessible forever. You can create a dedicated memorial page, share their profile with loved ones, and order a commemorative hardcover book that gathers every story and moment from their life — a keepsake to hold onto." } },
-    { "@type": "Question", name: "Can I customise the book?", acceptedAnswer: { "@type": "Answer", text: "The book is automatically generated from your stories and photos, with your pet's name and the years covered on the cover. Advanced customisation options — dedication page, custom title, cover colour — are currently in development." } },
-    { "@type": "Question", name: "What is the print quality like?", acceptedAnswer: { "@type": "Answer", text: "Our books are printed on 170gsm coated silk paper with a rigid hardcover and matt lamination. 20×20 cm format, perfect-bound. Professional quality, comparable to premium photo books from specialist studios." } },
-    { "@type": "Question", name: "Is the free plan really free?", acceptedAnswer: { "@type": "Answer", text: "Yes, completely and with no conditions. You can create a pet profile, add up to 10 journal entries, and generate one AI story chapter — all for free. No credit card required to get started." } },
-    { "@type": "Question", name: "How do I cancel my subscription?", acceptedAnswer: { "@type": "Answer", text: "From your account settings, in one click. No commitment, no cancellation fee. You keep full access to all your stories, entries, and account data even after cancelling." } },
+    { "@type": "Question", name: "Comment fonctionne l'IA ?", acceptedAnswer: { "@type": "Answer", text: "Chaque mois, notre IA lit toutes vos entrées de journal et les tisse en un chapitre narratif chaleureux — rédigé à la première personne, comme si votre animal racontait sa propre vie. Plus vous ajoutez de moments, plus l'histoire devient riche et personnelle." } },
+    { "@type": "Question", name: "Que se passe-t-il si mon animal nous quitte ?", acceptedAnswer: { "@type": "Answer", text: "Tous vos souvenirs restent accessibles pour toujours. Vous pouvez créer une page mémorial dédiée, partager son profil avec vos proches, et commander un livre relié commémoratif qui rassemble chaque histoire et chaque moment de sa vie — un objet précieux à conserver." } },
+    { "@type": "Question", name: "Puis-je personnaliser le livre ?", acceptedAnswer: { "@type": "Answer", text: "Le livre est généré automatiquement à partir de vos histoires et photos, avec le nom de votre animal et les années couvertes sur la couverture. Des options de personnalisation avancées — page de dédicace, titre personnalisé, couleur de couverture — sont en cours de développement." } },
+    { "@type": "Question", name: "Quelle est la qualité d'impression ?", acceptedAnswer: { "@type": "Answer", text: "Nos livres sont imprimés sur papier couché satiné 170 g/m² avec une couverture rigide et une plastification mate. Format 20×20 cm, reliure parfaite. Qualité professionnelle, comparable aux meilleurs livres photo des studios spécialisés." } },
+    { "@type": "Question", name: "Le plan gratuit est-il vraiment gratuit ?", acceptedAnswer: { "@type": "Answer", text: "Oui, complètement et sans conditions. Vous pouvez créer un profil d'animal, ajouter jusqu'à 10 entrées de journal et générer un chapitre d'histoire IA — entièrement gratuit. Aucune carte bancaire requise pour commencer." } },
+    { "@type": "Question", name: "Comment annuler mon abonnement ?", acceptedAnswer: { "@type": "Answer", text: "Depuis les paramètres de votre compte, en un clic. Sans engagement, sans frais d'annulation. Vous conservez l'accès à toutes vos histoires, entrées et données même après l'annulation." } },
   ],
 };
 
@@ -27,16 +27,16 @@ const APP_JSONLD = {
   applicationCategory: "LifestyleApplication",
   operatingSystem: "Web",
   offers: [
-    { "@type": "Offer", name: "Free",            price: "0",    priceCurrency: "USD" },
-    { "@type": "Offer", name: "Premium Digital", price: "4.99", priceCurrency: "USD" },
-    { "@type": "Offer", name: "Premium Print",   price: "9.99", priceCurrency: "USD" },
+    { "@type": "Offer", name: "Gratuit",         price: "0",    priceCurrency: "EUR" },
+    { "@type": "Offer", name: "Premium Digital", price: "4.99", priceCurrency: "EUR" },
+    { "@type": "Offer", name: "Premium Print",   price: "9.99", priceCurrency: "EUR" },
   ],
   aggregateRating: { "@type": "AggregateRating", ratingValue: "5", reviewCount: "3" },
 };
 
-export default function Home() {
-  const { t, locale } = useLocale();
-  const isFR = locale === "fr";
+export default function FrHome() {
+  const t = getTranslations("fr");
+
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [demoSlide, setDemoSlide] = useState(0);
 
@@ -67,7 +67,7 @@ export default function Home() {
   ];
 
   const [pricingCycle, setPricingCycle] = useState<"monthly" | "annual">("monthly");
-  const [currency, setCurrency] = useState<Currency>("USD");
+  const [currency, setCurrency] = useState<Currency>("EUR");
 
   useEffect(() => {
     fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
@@ -79,7 +79,7 @@ export default function Home() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSONLD) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSONLD_FR) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APP_JSONLD) }} />
 
       {/* NAV */}
@@ -91,10 +91,10 @@ export default function Home() {
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid rgba(61,43,31,.08)",
       }}>
-        <span style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", display: "flex", alignItems: "center", gap: ".4rem" }}>
+        <Link href="/fr" style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", textDecoration: "none", display: "flex", alignItems: "center", gap: ".4rem" }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
           Everypaw
-        </span>
+        </Link>
         <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
           <Link href="/gift" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
             {t.nav.give_gift}
@@ -216,9 +216,9 @@ export default function Home() {
                 <div style={{ background: "#F7F2EA", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "7px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
                   <div>
                     <div style={{ fontFamily: "Georgia, serif", fontSize: 12.5, fontWeight: 600, color: "#3D2B1F", lineHeight: 1 }}>
-                      {demoSlide === 0 ? "Max · Journal" : demoSlide === 1 ? "Max · AI Story" : "Max · Book 2025"}
+                      {demoSlide === 0 ? "Max · Journal" : demoSlide === 1 ? "Max · Histoire IA" : "Max · Livre 2025"}
                     </div>
-                    <div style={{ fontSize: 9, color: "#7A5C44", marginTop: 2, fontWeight: 300 }}>Golden Retriever · 2 yrs</div>
+                    <div style={{ fontSize: 9, color: "#7A5C44", marginTop: 2, fontWeight: 300 }}>Golden Retriever · 2 ans</div>
                   </div>
                   <div style={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg,#C8813A,#5C3A1E)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🐾</div>
                 </div>
@@ -229,8 +229,8 @@ export default function Home() {
                   {/* Slide 0 — Journal */}
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 0 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                     {[
-                      { icon: "🚶", text: "Walk at the park — 2h run!", when: "2 days ago" },
-                      { icon: "🍽️", text: "Refused kibble... again.", when: "yesterday" },
+                      { icon: "🚶", text: "Balade au parc — 2h de course !", when: "il y a 2 jours" },
+                      { icon: "🍽️", text: "Refusé ses croquettes... encore.", when: "hier" },
                     ].map((e, i) => (
                       <div key={i} style={{ background: "#FDFAF5", borderRadius: 12, padding: "9px 11px", border: "1px solid rgba(61,43,31,.07)", animation: demoSlide === 0 ? `ep-fade-up .4s ease ${i * .12}s both` : "none" }}>
                         <div style={{ fontSize: 10.5, color: "#3D2B1F", display: "flex", gap: 6, alignItems: "flex-start" }}>
@@ -244,10 +244,10 @@ export default function Home() {
                     {/* Typing entry */}
                     {demoSlide === 0 && (
                       <div style={{ background: "#FDFAF5", borderRadius: 12, padding: "9px 11px", border: "1.5px solid rgba(200,129,58,.45)", animation: "ep-fade-up .4s ease .25s both" }}>
-                        <div style={{ fontSize: 10, color: "#7A5C44", fontWeight: 300, marginBottom: 4 }}>Today</div>
+                        <div style={{ fontSize: 10, color: "#7A5C44", fontWeight: 300, marginBottom: 4 }}>{"Aujourd'hui"}</div>
                         <div style={{ display: "flex", alignItems: "center" }}>
                           <span style={{ fontSize: 10.5, color: "#3D2B1F", overflow: "hidden", whiteSpace: "nowrap", display: "inline-block", animation: "ep-typing 2.2s steps(30, end) .8s both" }}>
-                            First bath — not happy! 🛁
+                            {"Premier bain — pas content ! 🛁"}
                           </span>
                           <span style={{ width: 1.5, height: 12, background: "#C8813A", display: "inline-block", animation: "ep-blink 1s step-end infinite", marginLeft: 1, flexShrink: 0 }} />
                         </div>
@@ -255,7 +255,7 @@ export default function Home() {
                     )}
 
                     <div style={{ marginTop: "auto", background: "#C8813A", borderRadius: 100, padding: "8px 0", textAlign: "center", animation: demoSlide === 0 ? "ep-fade-up .4s ease .4s both" : "none" }}>
-                      <span style={{ fontSize: 11, color: "#FDFAF5", fontWeight: 500 }}>+ Add a moment</span>
+                      <span style={{ fontSize: 11, color: "#FDFAF5", fontWeight: 500 }}>{"+ Ajouter un moment"}</span>
                     </div>
                   </div>
 
@@ -263,7 +263,7 @@ export default function Home() {
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 1 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
                     <div style={{ animation: demoSlide === 1 ? "ep-fade-up .4s ease both" : "none" }}>
                       <div style={{ fontSize: 11, color: "#C8813A", fontWeight: 500, marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
-                        <span>✨</span> Generating story...
+                        <span>✨</span> {"Génération en cours..."}
                       </div>
                       <div style={{ background: "rgba(200,129,58,.15)", borderRadius: 100, height: 4, overflow: "hidden" }}>
                         <div style={{ height: "100%", background: "linear-gradient(90deg,#C8813A,#F7C27A)", borderRadius: 100, animation: demoSlide === 1 ? "ep-progress 2.8s ease .3s both" : "none" }} />
@@ -271,12 +271,12 @@ export default function Home() {
                     </div>
 
                     <div style={{ flex: 1, background: "#FDFAF5", borderRadius: 14, padding: 12, border: "1px solid rgba(61,43,31,.07)", animation: demoSlide === 1 ? "ep-fade-in .6s ease 2s both" : "none", opacity: 0 }}>
-                      <div style={{ fontSize: 9, color: "#C8813A", fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 8 }}>Chapter 3 · November 2025</div>
+                      <div style={{ fontSize: 9, color: "#C8813A", fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 8 }}>{"Chapitre 3 · Novembre 2025"}</div>
                       <p style={{ fontFamily: "Georgia, serif", fontSize: 10.5, color: "#3D2B1F", lineHeight: 1.75, fontStyle: "italic", margin: 0 }}>
-                        "This month was particularly magical. My first walk through the autumn leaves, nose buried in every new scent...
+                        {"\"Ce mois-ci a été particulièrement magique. Ma première balade sous les feuilles d'automne, le nez plongé dans chaque odeur nouvelle..."}
                       </p>
                       <p style={{ fontFamily: "Georgia, serif", fontSize: 10.5, color: "#3D2B1F", lineHeight: 1.75, fontStyle: "italic", margin: "8px 0 0", opacity: .75 }}>
-                        And that infamous bath I absolutely didn't need — according to me."
+                        {"Et ce fameux bain dont je n'avais absolument pas besoin, selon moi.\""}
                       </p>
                     </div>
                   </div>
@@ -300,12 +300,12 @@ export default function Home() {
                     </div>
 
                     <div style={{ textAlign: "center", animation: demoSlide === 2 ? "ep-fade-up .5s ease .15s both" : "none" }}>
-                      <div style={{ fontFamily: "Georgia, serif", fontSize: 12, fontWeight: 600, color: "#3D2B1F", marginBottom: 3 }}>Your book preview</div>
-                      <div style={{ fontSize: 9.5, color: "#7A5C44", fontWeight: 300 }}>Printed & shipped each year</div>
+                      <div style={{ fontFamily: "Georgia, serif", fontSize: 12, fontWeight: 600, color: "#3D2B1F", marginBottom: 3 }}>{"Aperçu de votre livre"}</div>
+                      <div style={{ fontSize: 9.5, color: "#7A5C44", fontWeight: 300 }}>{"Imprimé & expédié chaque année"}</div>
                     </div>
 
                     <div style={{ background: "rgba(200,129,58,.1)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 100, padding: "7px 16px", animation: demoSlide === 2 ? "ep-fade-up .5s ease .3s both" : "none" }}>
-                      <span style={{ fontSize: 10.5, color: "#C8813A", fontWeight: 500 }}>📖 Included with Premium</span>
+                      <span style={{ fontSize: 10.5, color: "#C8813A", fontWeight: 500 }}>{"📖 Inclus avec Premium"}</span>
                     </div>
                   </div>
                 </div>
@@ -321,7 +321,7 @@ export default function Home() {
 
             {/* Label below phone */}
             <p style={{ fontSize: ".72rem", color: "#7A5C44", opacity: .5, fontWeight: 300, textAlign: "center", margin: 0 }}>
-              {demoSlide === 0 ? "📝 Life journal" : demoSlide === 1 ? "✨ AI-generated story" : "📖 Annual book preview"}
+              {demoSlide === 0 ? "📝 Journal de vie" : demoSlide === 1 ? "✨ Histoire générée par l'IA" : "📖 Aperçu du livre annuel"}
             </p>
           </div>
 
@@ -482,7 +482,7 @@ export default function Home() {
             </div>
             <div style={{ fontSize: ".8rem", color: "rgba(247,242,234,.6)", fontWeight: 300, marginBottom: "1.5rem" }}>
               {pricingCycle === "annual"
-                ? `${isFR ? "par an" : "per year"} · ${isFR ? "économisez" : "save"} ${currency === "EUR" ? "40 €" : "$40"}`
+                ? `par an · économisez ${currency === "EUR" ? "40 €" : "$40"}`
                 : t.landing.print_period_monthly}
             </div>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: ".6rem", marginBottom: "1.75rem", padding: 0, flex: 1 }}>
@@ -502,9 +502,7 @@ export default function Home() {
         {/* Book à la carte */}
         <p style={{ marginTop: "2rem", fontSize: ".85rem", color: "#7A5C44", fontWeight: 300 }}>
           <Link href="/auth/signup?plan=book" style={{ color: "#C8813A", textDecoration: "underline", textUnderlineOffset: 3 }}>
-            {isFR
-            ? `Juste un livre ? Commandez à la carte pour ${formatPrice(currency, "book")} →`
-            : `Just want a book? Order à la carte for ${formatPrice(currency, "book")} →`}
+            {`Juste un livre ? Commandez à la carte pour ${formatPrice(currency, "book")} →`}
           </Link>
         </p>
       </section>
