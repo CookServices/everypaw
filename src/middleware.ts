@@ -38,9 +38,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  supabaseResponse.headers.set("x-pathname", request.nextUrl.pathname);
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/auth/:path*"],
+  matcher: ["/dashboard/:path*", "/auth/:path*", "/fr/:path*", "/fr"],
 };
