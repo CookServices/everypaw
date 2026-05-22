@@ -160,11 +160,15 @@ export default function Home() {
             <h1 style={{
               fontFamily: "Georgia, serif", fontSize: "clamp(2.1rem, 4vw, 4rem)",
               fontWeight: 600, lineHeight: 1.1, color: "#3D2B1F",
-              margin: "0 0 1.25rem",
+              margin: "0 0 1rem",
             }}>
               {t.landing.hero_title_1}<br />
               <em style={{ color: "#C8813A", fontStyle: "italic" }}>{t.landing.hero_title_em}</em> {t.landing.hero_title_2}
             </h1>
+
+            <h2 style={{ fontSize: "1rem", fontWeight: 300, color: "#7A5C44", maxWidth: 440, lineHeight: 1.7, margin: "0 0 .5rem" }}>
+              The AI-powered pet journal that prints into a hardcover book every year
+            </h2>
 
             <p style={{ fontSize: "1rem", fontWeight: 300, color: "#7A5C44", maxWidth: 440, lineHeight: 1.7, margin: "0 0 2rem" }}>
               {t.landing.hero_desc}
