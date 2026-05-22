@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrencyFromCountry } from "@/lib/currency";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -14,7 +15,14 @@ export async function POST(req: Request) {
 
   const { petId } = await req.json().catch(() => ({}));
 
-  const priceId = process.env.STRIPE_PRICE_BOOK_ONCE;
+  const country = req.headers.get("x-vercel-ip-country");
+  const currency = getCurrencyFromCountry(country);
+
+  const priceId =
+    currency === "EUR"
+      ? (process.env.STRIPE_PRICE_BOOK_ONCE_EUR ?? process.env.STRIPE_PRICE_BOOK_ONCE)
+      : (process.env.STRIPE_PRICE_BOOK_ONCE_USD ?? process.env.STRIPE_PRICE_BOOK_ONCE);
+
   if (!priceId) {
     return NextResponse.json({ error: "Book price not configured" }, { status: 500 });
   }

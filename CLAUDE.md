@@ -401,11 +401,41 @@ currency: "USD"
 - `.claude/settings.json` : enregistre le hook `SessionStart`
 - Garantit que `node_modules` est disponible dès l'ouverture de session web/mobile/desktop
 
+### ✅ Commande de livre — 10 personnalisations (2026-05-22)
+
+**Backend `preview-pdf/route.ts`**
+- Route convertie de POST → **GET** (Gelato fetch le fichier en GET depuis ses serveurs)
+- **Service role** : plus d'auth session requise (petId UUID = token implicite)
+- `export const dynamic = "force-dynamic"` pour éviter le prerender Next.js au build
+- **i18n** (Point 1) : dict `STRINGS` EN/FR — couverture, chapitres, dédicace, dates localisées
+- **Dédicace** (Point 7) : page insérée après la couverture si `?dedication=...`
+- **Photo de couverture** (Point 10) : `linear-gradient` + image si `?coverPhoto=...`
+- **Filtre année** (Point 9) : stories et entries filtrées par `?year=YYYY`
+- **Filtre chapitres** (Point 4) : `?storyIds=id1,id2,...`
+- **pageCount dynamique** (Point 3) : calculé depuis le contenu réel (min 20, arrondi au pair)
+
+**Backend `gelato/order/route.ts`**
+- **Guard `canOrderBook`** (Point 8) : `getUserPlan()` + `canOrderBook()` avant tout appel Gelato
+- **Devise dynamique** (Point 2) : `getCurrencyFromCountry(x-vercel-ip-country)` remplace `"USD"` fixe
+- **pageCount dynamique** (Point 3) : passé à Gelato selon le contenu sélectionné
+- Tous les nouveaux params (`lang`, `storyIds`, `dedication`, `coverPhoto`, `year`) transmis à l'URL du PDF
+
+**Backend `book-checkout/route.ts`**
+- **EUR/USD** (Point 5) : `STRIPE_PRICE_BOOK_ONCE_EUR` / `STRIPE_PRICE_BOOK_ONCE_USD` selon pays, fallback `STRIPE_PRICE_BOOK_ONCE`
+
+**UI `order/page.tsx`**
+- **Filtre année** (Point 9) : sélecteur affiché si ≥2 années de données ; reset selectedStoryIds au changement
+- **Sélection chapitres** (Point 4) : checkboxes sur chaque chapitre visible
+- **Photo de couverture** (Point 10) : 8 miniatures cliquables + bouton "Par défaut"
+- **Dédicace** (Point 7) : textarea dans le step adresse, compteur 400 chars
+- **Pays élargi** (Point 6) : 25 pays via `COUNTRIES` array + `SHIPPING_BY_COUNTRY` étendu
+
 ### 🚧 Prochaine étape
 - Passer Stripe en mode **Live**
 - Passer Google OAuth en mode **Published**
 - Chapitre mensuel automatique (cron IA le 1er de chaque mois)
 - Page mémorial complète (`/memorial/[id]`)
+- Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` et `STRIPE_PRICE_BOOK_ONCE_USD` dans Vercel (book-checkout EUR/USD)
 
 ---
 
@@ -455,4 +485,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-22 (session 5 — audit sécurité routes API + HMAC auth-hook + session start hook)*
+*Dernière mise à jour : 2026-05-22 (session 6 — 10 personnalisations commande livre + fix build preview-pdf)*
