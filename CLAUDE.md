@@ -430,6 +430,11 @@ currency: "USD"
 - **Dédicace** (Point 7) : textarea dans le step adresse, compteur 400 chars
 - **Pays élargi** (Point 6) : 25 pays via `COUNTRIES` array + `SHIPPING_BY_COUNTRY` étendu
 
+### ✅ Fix step aperçu commande livre (2026-05-22)
+- `yearFilter` s'initialise désormais à l'année la plus récente avec des données (`Math.max(...years)`) au lieu de l'année courante — évite de masquer toutes les sections si les données sont d'une année précédente
+- `availablePhotos` (sélecteur photo de couverture) tire de toutes les entrées du pet, pas seulement celles filtrées par année
+- Sélecteur d'année affiché dès qu'il y a au moins 1 année de données (au lieu de ≥2)
+
 ### 🚧 Prochaine étape
 - Passer Stripe en mode **Live**
 - Passer Google OAuth en mode **Published**
@@ -485,4 +490,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-22 (session 6 — 10 personnalisations commande livre + fix build preview-pdf)*
+*Dernière mise à jour : 2026-05-22 (session 6 — 10 personnalisations commande livre + fix yearFilter step aperçu)*
