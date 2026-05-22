@@ -392,6 +392,15 @@ currency: "USD"
 - **Rate limit `/api/generate`** : 10 générations/user/jour (UTC) — count `stories.created_at >= today` avant body parsing ; 429 `daily_generation_limit` si dépassé
 - **RLS Supabase** : policies ajoutées sur `daily_prompts`, `events_log`, `milestones`, `milestone_definitions` + policies storage bucket `pet-photos` (migration `fix_rls_missing_tables.sql`)
 
+### ✅ Audit sécurité routes API (2026-05-22)
+- **`/api/generate`** : confirmé correctement protégé — `createServerClient` + `getUser()` + 401 immédiat avant tout traitement, Anthropic jamais appelé sans session valide
+- **`/api/emails/auth-hook`** : vérification webhook remplacée — ancienne comparaison bearer token (fail-open si `SUPABASE_HOOK_SECRET` absent) → HMAC-SHA256 sur header `x-supabase-signature` avec `timingSafeEqual`, fail-closed (401 si secret absent ou signature invalide), body lu via `req.text()` avant tout parsing
+
+### ✅ Session start hook Claude Code (2026-05-22)
+- `.claude/hooks/session-start.sh` : lance `npm install` au démarrage de chaque session remote (no-op local)
+- `.claude/settings.json` : enregistre le hook `SessionStart`
+- Garantit que `node_modules` est disponible dès l'ouverture de session web/mobile/desktop
+
 ### 🚧 Prochaine étape
 - Passer Stripe en mode **Live**
 - Passer Google OAuth en mode **Published**
@@ -421,6 +430,7 @@ currency: "USD"
 - **Milestones** : utiliser `localTitle` directement dans l'affichage — ne pas découper par espaces pour retirer l'emoji (l'icône est rendue séparément via le champ `icon`)
 - **Auth sécurité** : tout changement de mot de passe doit vérifier le mot de passe actuel via `signInWithPassword` avant `updateUser`
 - **Devise** : utiliser `getCurrencyFromCountry` + `formatPrice` de `src/lib/currency.ts` pour tout affichage de prix. Ne jamais utiliser `isFR` comme proxy de devise — langue ≠ pays. Les routes Stripe lisent `x-vercel-ip-country` (checkout) ou `subscription.currency` (upgrade).
+- **Webhooks entrants** (Supabase auth hook) : toujours vérifier via HMAC-SHA256 sur le body brut (`req.text()` avant `JSON.parse`), comparer avec `timingSafeEqual`. Fail-closed : si la variable secrète est absente, retourner 401. Ne jamais utiliser une comparaison de chaîne simple ni un `if (secret)` qui laisse passer si la variable est vide.
 
 ---
 
@@ -445,4 +455,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-22 (session 4 — Stripe webhook idempotence + rate limit generate)*
+*Dernière mise à jour : 2026-05-22 (session 5 — audit sécurité routes API + HMAC auth-hook + session start hook)*
