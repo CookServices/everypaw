@@ -348,6 +348,40 @@ currency: "USD"
 - **CTA page publique** : bouton nav affiche "Commencer gratuitement →" (`cta_button`) au lieu de "Commencez l'histoire de votre animal →" (`start_story`)
 - **Forgot-password** : doublon du lien "← Retour à la connexion" supprimé (hors carte)
 
+### ✅ SEO — Sprints 1, 2, 3 (2026-05-22)
+
+**Sprint 1 — Quick wins**
+- Meta description mise à jour (<155 chars, mentionne "free" + "no credit card")
+- Balise canonical ajoutée (`alternates.canonical`) dans `layout.tsx`
+- `public/robots.txt` créé (`Allow: *` + pointer sitemap)
+- `src/app/sitemap.ts` généré (6 URLs : `/`, `/fr/`, 3 légales, contact)
+- Contenu démo homepage traduit EN (9 strings FR → EN dans `page.tsx`)
+
+**Sprint 2 — Données structurées & i18n**
+- JSON-LD `FAQPage` (6 Q&R EN) dans `page.tsx`
+- JSON-LD `FAQPage` FR dans `src/app/fr/page.tsx`
+- JSON-LD `SoftwareApplication` (3 offres + aggregateRating 5/3) dans les deux pages
+- hreflang `en`/`fr`/`x-default` dans `layout.tsx` (alternates.languages)
+- `src/app/fr/layout.tsx` : metadata FR (title, desc, canonical `/fr`, `og:locale fr_FR`)
+- `src/app/fr/page.tsx` : page française complète et interactive (toutes sections, pricing dynamique EUR, JSON-LD FR)
+- `<html lang>` dynamique : middleware injecte `x-pathname`, root layout lit le header pour basculer `lang="en"|"fr"`
+- Images publiques auditées — `alt` déjà correct sur les pages publiques
+
+**Sprint 3 — Contenu SEO**
+- H2 SEO après H1 (EN + FR) : style identique au sous-titre, H1 intact
+  - EN : "The AI-powered pet journal that prints into a hardcover book every year"
+  - FR : "Le journal pour animaux propulsé par l'IA, imprimé en livre relié chaque année"
+- Enrichissement copy — 4 mots-clés, ≥2 occurrences chacun, `messages/en.json` + `messages/fr.json` :
+  - `pet journal app` / `application journal pour animaux` → f1_desc + f4_desc
+  - `pet diary` / `carnet de vie pour animaux` → f1_desc + s1_desc
+  - `pet memory book` / `livre de souvenirs pour animaux` → f3_desc + f5_desc
+  - `animal journal` / `journal animalier` → f2_desc + s2_desc
+
+**Règles i18n SEO**
+- Toute modification copy dans `messages/en.json` doit avoir son équivalent dans `messages/fr.json`
+- La page `/fr/` est gérée par `src/app/fr/page.tsx` (composant autonome, `getTranslations("fr")` direct, pas de `useLocale`)
+- `<html lang>` est dynamique via middleware (`x-pathname`) — ne pas repasser à `lang="en"` statique
+
 ### 🚧 Prochaine étape
 - Passer Stripe en mode **Live**
 - Passer Google OAuth en mode **Published**
@@ -401,4 +435,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-22 (session 2)*
+*Dernière mise à jour : 2026-05-22 (session 3 — SEO sprints 1-2-3)*
