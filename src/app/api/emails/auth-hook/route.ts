@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHmac, timingSafeEqual } from "crypto";
 import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -11,13 +12,25 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://everypaw.app";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
 export async function POST(req: Request) {
-  // Verify Supabase hook secret
+  // Verify Supabase hook HMAC signature — fail-closed (no secret = reject all)
   const secret = process.env.SUPABASE_HOOK_SECRET;
-  if (secret) {
-    const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!secret) {
+    console.error("[auth-hook] SUPABASE_HOOK_SECRET is not configured");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rawBody = await req.text();
+
+  const signature = req.headers.get("x-supabase-signature");
+  if (!signature) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
+  const sigBuf = Buffer.from(signature);
+  const expectedBuf = Buffer.from(expected);
+  if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let body: {
@@ -36,7 +49,7 @@ export async function POST(req: Request) {
     };
   };
   try {
-    body = await req.json();
+    body = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
