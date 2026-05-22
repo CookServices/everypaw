@@ -33,19 +33,33 @@ interface Pet {
 }
 
 const SHIPPING_BY_COUNTRY: Record<string, string> = {
-  FR: "~5–10 €",
-  DE: "~5–10 €",
-  ES: "~5–10 €",
-  IT: "~5–10 €",
-  NL: "~5–10 €",
-  GB: "~£8–14",
-  US: "~$12–18",
-  CA: "~$15–22",
-  AU: "~$18–28",
+  FR: "~5–10 €", DE: "~5–10 €", ES: "~5–10 €", IT: "~5–10 €",
+  NL: "~5–10 €", BE: "~5–10 €", PT: "~5–10 €", AT: "~5–10 €",
+  CH: "~8–14 CHF", SE: "~80–120 SEK", DK: "~70–110 DKK", NO: "~90–140 NOK",
+  FI: "~5–10 €", IE: "~5–10 €", PL: "~5–10 €",
+  GB: "~£8–14", US: "~$12–18", CA: "~$15–22", AU: "~$18–28",
+  NZ: "~$22–32", SG: "~$18–26", JP: "~¥1800–2800", KR: "~₩18000–28000",
+  AE: "~$18–28", ZA: "~$20–32",
 };
 
+const COUNTRIES = [
+  { code: "FR", name: "France" }, { code: "DE", name: "Germany" },
+  { code: "GB", name: "United Kingdom" }, { code: "US", name: "United States" },
+  { code: "ES", name: "Spain" }, { code: "IT", name: "Italy" },
+  { code: "NL", name: "Netherlands" }, { code: "BE", name: "Belgium" },
+  { code: "PT", name: "Portugal" }, { code: "AT", name: "Austria" },
+  { code: "CH", name: "Switzerland" }, { code: "SE", name: "Sweden" },
+  { code: "DK", name: "Denmark" }, { code: "NO", name: "Norway" },
+  { code: "FI", name: "Finland" }, { code: "IE", name: "Ireland" },
+  { code: "PL", name: "Poland" }, { code: "CA", name: "Canada" },
+  { code: "AU", name: "Australia" }, { code: "NZ", name: "New Zealand" },
+  { code: "SG", name: "Singapore" }, { code: "JP", name: "Japan" },
+  { code: "KR", name: "South Korea" }, { code: "AE", name: "United Arab Emirates" },
+  { code: "ZA", name: "South Africa" },
+];
+
 export default function OrderPage({ params }: { params: { id: string } }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { id } = params;
   const searchParams = useSearchParams();
   const isMemorial = searchParams.get("memorial") === "true";
@@ -56,6 +70,13 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [step, setStep] = useState<Step>("preview");
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+
+  // New states for Points 4, 7, 9, 10
+  const [selectedStoryIds, setSelectedStoryIds] = useState<string[]>([]);
+  const [dedicationText, setDedicationText] = useState<string>("");
+  const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear());
+  const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null);
+
   const [address, setAddress] = useState(() => ({
     firstName: "",
     lastName: "",
@@ -79,19 +100,62 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     });
   }, [id]);
 
+  // Initialize selectedStoryIds once stories are loaded (Point 4 / Point 9)
+  useEffect(() => {
+    if (stories.length > 0) {
+      const visible = stories.filter(
+        s => new Date(s.period_start ?? s.created_at).getFullYear() === yearFilter
+      );
+      setSelectedStoryIds(visible.map(s => s.id));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stories]);
+
+  // Reset selectedStoryIds when yearFilter changes (Point 9)
+  const handleYearChange = (year: number) => {
+    setYearFilter(year);
+    const visible = stories.filter(
+      s => new Date(s.period_start ?? s.created_at).getFullYear() === year
+    );
+    setSelectedStoryIds(visible.map(s => s.id));
+  };
+
+  // Derived: available years (Point 9)
+  const availableYears = Array.from(
+    new Set(
+      stories.map(s => new Date(s.period_start ?? s.created_at).getFullYear())
+    )
+  ).sort((a, b) => b - a);
+
+  // Derived: stories filtered by year (Point 9)
+  const visibleStories = stories.filter(
+    s => new Date(s.period_start ?? s.created_at).getFullYear() === yearFilter
+  );
+
+  // Derived: entries filtered by year (Point 9)
+  const filteredEntries = entries.filter(
+    e => new Date(e.entry_date).getFullYear() === yearFilter
+  );
+
   const petName = pet?.name ?? "";
-  const photoEntries = entries.filter(e => e.photo_urls?.length > 0);
+  const photoEntries = filteredEntries.filter(e => e.photo_urls?.length > 0);
   const photoCount = Math.min(photoEntries.flatMap(e => e.photo_urls).length, 6);
+
+  // All photos available for cover selection (Point 10)
+  const availablePhotos = filteredEntries
+    .flatMap(e => e.photo_urls ?? [])
+    .filter(Boolean)
+    .slice(0, 8);
 
   const coverPeriod = (() => {
     if (!pet) return "";
     const allDates: Date[] = [];
     if (pet.birthdate) allDates.push(new Date(pet.birthdate));
-    stories.forEach(s => { if (s.period_start) allDates.push(new Date(s.period_start)); });
-    entries.forEach(e => { if (e.entry_date) allDates.push(new Date(e.entry_date)); });
+    visibleStories.forEach(s => { if (s.period_start) allDates.push(new Date(s.period_start)); });
+    filteredEntries.forEach(e => { if (e.entry_date) allDates.push(new Date(e.entry_date)); });
     const start = allDates.length ? allDates.reduce((a, b) => a < b ? a : b) : new Date(pet.created_at);
     const startYear = start.getFullYear();
-    const endYear = new Date().getFullYear();
+    const endYear = yearFilter;
     return startYear === endYear ? String(startYear) : `${startYear}–${endYear}`;
   })();
 
@@ -107,7 +171,15 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       const res = await fetch("/api/gelato/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ petId: id, shippingAddress: address, memorial: isMemorial }),
+        body: JSON.stringify({
+          petId: id,
+          shippingAddress: address,
+          memorial: isMemorial,
+          selectedStoryIds,
+          dedicationText: dedicationText.trim() || null,
+          coverPhotoUrl,
+          yearFilter,
+        }),
       });
       const data = await res.json();
       if (data.orderId) {
@@ -160,6 +232,15 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const stepLabels = [t.order.step_preview, t.order.step_address, t.order.step_payment];
 
   const shippingEstimate = SHIPPING_BY_COUNTRY[address.country];
+
+  const dedicationLabel = locale === "fr" ? "Dédicace (optionnel)" : "Dedication (optional)";
+  const dedicationPlaceholder = locale === "fr"
+    ? "Ex : À toi, notre fidèle compagnon…"
+    : "E.g.: To you, our faithful companion…";
+  const bookYearLabel = locale === "fr" ? "Année du livre" : "Book year";
+  const coverPhotoLabel = locale === "fr" ? "Photo de couverture" : "Cover photo";
+  const coverDefaultLabel = locale === "fr" ? "Par défaut" : "Default";
+  const chaptersLabel = locale === "fr" ? "Chapitres à inclure" : "Chapters to include";
 
   return (
     <div style={{ minHeight: "100vh", background: bg, fontFamily: "'DM Sans', sans-serif", transition: "background .3s" }}>
@@ -233,9 +314,32 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               {t.order.preview_title}
             </h2>
 
+            {/* Year filter — shown only if ≥2 years available (Point 9) */}
+            {availableYears.length >= 2 && (
+              <div style={{ marginBottom: "1.25rem" }}>
+                <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>
+                  {bookYearLabel}
+                </label>
+                <select
+                  value={yearFilter}
+                  onChange={e => handleYearChange(Number(e.target.value))}
+                  style={inputStyle}
+                >
+                  {availableYears.map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Book cover */}
             <div style={{
-              background: isMemorial ? "#0E0B08" : "#3D2B1F",
+              background: isMemorial ? "#0E0B08" : (coverPhotoUrl ? "transparent" : "#3D2B1F"),
+              backgroundImage: coverPhotoUrl
+                ? `linear-gradient(rgba(61,43,31,.7), rgba(61,43,31,.85)), url('${coverPhotoUrl}')`
+                : undefined,
+              backgroundSize: coverPhotoUrl ? "cover" : undefined,
+              backgroundPosition: coverPhotoUrl ? "center" : undefined,
               borderRadius: 20, padding: "3rem 2rem",
               textAlign: "center", marginBottom: "1.25rem",
               boxShadow: "0 12px 40px rgba(0,0,0,.25)",
@@ -260,6 +364,50 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               </div>
             </div>
 
+            {/* Cover photo picker (Point 10) */}
+            {availablePhotos.length > 0 && (
+              <div style={{ marginBottom: "1.25rem" }}>
+                <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+                  {coverPhotoLabel}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", alignItems: "center" }}>
+                  {/* Default button */}
+                  <button
+                    onClick={() => setCoverPhotoUrl(null)}
+                    style={{
+                      width: 60, height: 60, borderRadius: 8,
+                      background: "#3D2B1F",
+                      border: coverPhotoUrl === null ? "2px solid #C8813A" : "2px solid transparent",
+                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "rgba(247,242,234,.6)", fontSize: ".6rem", fontFamily: "sans-serif",
+                      textAlign: "center", padding: 4, lineHeight: 1.2,
+                    }}
+                  >
+                    {coverDefaultLabel}
+                  </button>
+                  {/* Photo thumbnails */}
+                  {availablePhotos.map((photoUrl, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCoverPhotoUrl(photoUrl)}
+                      style={{
+                        width: 60, height: 60, borderRadius: 8,
+                        border: coverPhotoUrl === photoUrl ? "2px solid #C8813A" : "2px solid transparent",
+                        padding: 0, cursor: "pointer", overflow: "hidden", background: "transparent",
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photoUrl}
+                        alt=""
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Content summary pill */}
             <div style={{
               background: cardBg, border: cardBorder, borderRadius: 14,
@@ -268,7 +416,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               gap: ".75rem", flexWrap: "wrap",
             }}>
               {[
-                t.order.summary_chapters.replace("{n}", String(stories.length)),
+                t.order.summary_chapters.replace("{n}", String(visibleStories.length)),
                 t.order.summary_photos.replace("{n}", String(photoCount)),
                 t.order.summary_months.replace("{n}", String(monthsCount)),
               ].map((item, i, arr) => (
@@ -281,27 +429,61 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               ))}
             </div>
 
-            {/* Interior preview */}
-            {stories.length > 0 && (
+            {/* Chapter selection (Point 4 & 9) */}
+            {visibleStories.length > 0 && (
               <div style={{ marginBottom: "1.25rem" }}>
                 <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
-                  {t.order.preview_interior}
+                  {chaptersLabel}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-                  {stories.slice(0, 3).map((story, i) => (
-                    <div key={story.id} style={{ background: cardBg, border: cardBorder, borderRadius: 16, padding: "1.25rem 1.5rem" }}>
-                      <div style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: ".4rem" }}>
-                        {t.order.preview_chapter} {i + 1}
+                  {visibleStories.map((story, i) => {
+                    const isSelected = selectedStoryIds.includes(story.id);
+                    return (
+                      <div
+                        key={story.id}
+                        onClick={() => {
+                          setSelectedStoryIds(prev =>
+                            isSelected
+                              ? prev.filter(sid => sid !== story.id)
+                              : [...prev, story.id]
+                          );
+                        }}
+                        style={{
+                          background: cardBg,
+                          border: isSelected
+                            ? `1.5px solid ${accentColor}`
+                            : cardBorder,
+                          borderRadius: 16, padding: "1.25rem 1.5rem",
+                          cursor: "pointer",
+                          display: "flex", alignItems: "flex-start", gap: "1rem",
+                          transition: "border-color .15s",
+                        }}
+                      >
+                        {/* Checkbox indicator */}
+                        <div style={{
+                          width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 2,
+                          background: isSelected ? accentColor : "transparent",
+                          border: `2px solid ${isSelected ? accentColor : isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          color: "#FDFAF5", fontSize: ".7rem", fontWeight: 700,
+                        }}>
+                          {isSelected ? "✓" : ""}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: ".4rem" }}>
+                            {t.order.preview_chapter} {i + 1}
+                          </div>
+                          <div style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem", lineHeight: 1.3 }}>
+                            {story.title || `${petName}'s Story`}
+                          </div>
+                          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: ".84rem", color: textMuted, lineHeight: 1.75 }}>
+                            {story.content.slice(0, 160).trim()}
+                            {story.content.length > 160 ? "…" : ""}
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem", lineHeight: 1.3 }}>
-                        {story.title || `${petName}'s Story`}
-                      </div>
-                      <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: ".84rem", color: textMuted, lineHeight: 1.75 }}>
-                        {story.content.slice(0, 220).trim()}
-                        {story.content.length > 220 ? "…" : ""}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -433,15 +615,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{t.order.country}</label>
                 <select value={address.country} onChange={e => setAddress({ ...address, country: e.target.value })} style={inputStyle}>
                   <option value="" disabled>—</option>
-                  <option value="FR">France</option>
-                  <option value="US">United States</option>
-                  <option value="GB">United Kingdom</option>
-                  <option value="DE">Germany</option>
-                  <option value="CA">Canada</option>
-                  <option value="AU">Australia</option>
-                  <option value="NL">Netherlands</option>
-                  <option value="ES">Spain</option>
-                  <option value="IT">Italy</option>
+                  {COUNTRIES.map(c => (
+                    <option key={c.code} value={c.code}>{c.name}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -462,6 +638,28 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 </div>
               </div>
             )}
+
+            {/* Dedication textarea (Point 7) */}
+            <div style={{ marginTop: "1.5rem" }}>
+              <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>
+                {dedicationLabel}
+              </label>
+              <textarea
+                value={dedicationText}
+                onChange={e => setDedicationText(e.target.value)}
+                maxLength={400}
+                rows={4}
+                placeholder={dedicationPlaceholder}
+                style={{
+                  ...inputStyle,
+                  resize: "vertical",
+                  lineHeight: 1.6,
+                }}
+              />
+              <div style={{ fontSize: ".7rem", color: textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
+                {dedicationText.length}/400
+              </div>
+            </div>
 
             <button
               onClick={() => {
