@@ -571,6 +571,11 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               </div>
             </div>
 
+            {selectedStoryIds.length < 3 && (
+              <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 12, padding: ".875rem 1rem", marginBottom: "1rem", fontSize: ".8rem", color: "#C8813A", lineHeight: 1.5, fontFamily: "sans-serif" }}>
+                {t.order.few_stories_warning}
+              </div>
+            )}
             <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 12, padding: ".875rem 1rem", marginBottom: "1rem", fontSize: ".8rem", color: textMuted, lineHeight: 1.5, fontFamily: "sans-serif" }}>
               {warningText}
             </div>

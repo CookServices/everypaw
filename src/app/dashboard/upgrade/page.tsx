@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
+import { createClient } from "@/lib/supabase/client";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +16,14 @@ export default function UpgradePage() {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [loading, setLoading] = useState<string | null>(null);
   const [currency, setCurrency] = useState<Currency>("USD");
+  const [userPlan, setUserPlan] = useState<string>("free");
 
   useEffect(() => {
     fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
+    const supabase = createClient();
+    supabase.from("profiles").select("plan").single().then(({ data }) => {
+      if (data?.plan) setUserPlan(data.plan);
+    });
   }, []);
 
   const handleSubscribe = async (plan: "digital" | "print_monthly" | "print_annual") => {
@@ -263,32 +269,34 @@ export default function UpgradePage() {
 
         </div>
 
-        {/* Book à la carte */}
-        <div style={{ background: "#FDFAF5", borderRadius: 20, border: "1px solid rgba(61,43,31,.08)", padding: "1.5rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1.25rem" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: ".5rem", marginBottom: ".35rem" }}>
-              <span style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 700, color: "#3D2B1F" }}>
-                {t.book.price}
-              </span>
-              <span style={{ fontSize: ".85rem", fontWeight: 600, color: "#3D2B1F" }}>{t.book.name}</span>
+        {/* Book à la carte — visible only for digital/print subscribers */}
+        {(userPlan === "digital" || userPlan === "print") && (
+          <div style={{ background: "#FDFAF5", borderRadius: 20, border: "1px solid rgba(61,43,31,.08)", padding: "1.5rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1.25rem" }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: ".5rem", marginBottom: ".35rem" }}>
+                <span style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 700, color: "#3D2B1F" }}>
+                  {t.book.price}
+                </span>
+                <span style={{ fontSize: ".85rem", fontWeight: 600, color: "#3D2B1F" }}>{t.book.name}</span>
+              </div>
+              <p style={{ fontSize: ".875rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.book.desc}</p>
+              <ul style={{ listStyle: "none", padding: 0, margin: ".75rem 0 0", display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
+                {t.book.feats.map(f => (
+                  <li key={f} style={{ fontSize: ".8rem", color: "#7A5C44", display: "flex", alignItems: "center", gap: ".35rem" }}>
+                    <span style={{ color: "#C8813A" }}>✓</span>{f}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <p style={{ fontSize: ".875rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.book.desc}</p>
-            <ul style={{ listStyle: "none", padding: 0, margin: ".75rem 0 0", display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
-              {t.book.feats.map(f => (
-                <li key={f} style={{ fontSize: ".8rem", color: "#7A5C44", display: "flex", alignItems: "center", gap: ".35rem" }}>
-                  <span style={{ color: "#C8813A" }}>✓</span>{f}
-                </li>
-              ))}
-            </ul>
+            <button
+              onClick={handleBookOnce}
+              disabled={!!loading}
+              style={{ padding: ".75rem 1.75rem", borderRadius: 100, border: "1.5px solid rgba(200,129,58,.4)", background: "rgba(200,129,58,.08)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: loading ? .7 : 1 }}
+            >
+              {loading === "book" ? t.cta_loading : t.book.cta}
+            </button>
           </div>
-          <button
-            onClick={handleBookOnce}
-            disabled={!!loading}
-            style={{ padding: ".75rem 1.75rem", borderRadius: 100, border: "1.5px solid rgba(200,129,58,.4)", background: "rgba(200,129,58,.08)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: loading ? .7 : 1 }}
-          >
-            {loading === "book" ? t.cta_loading : t.book.cta}
-          </button>
-        </div>
+        )}
 
         <p style={{ textAlign: "center", fontSize: ".78rem", color: "#7A5C44", fontWeight: 300, marginTop: "1.5rem", opacity: .7 }}>
           {t.cancel}

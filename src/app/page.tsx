@@ -503,14 +503,6 @@ export default function Home() {
 
         </div>
 
-        {/* Book à la carte */}
-        <p style={{ marginTop: "2rem", fontSize: ".85rem", color: "#7A5C44", fontWeight: 300 }}>
-          <Link href="/auth/signup?plan=book" style={{ color: "#C8813A", textDecoration: "underline", textUnderlineOffset: 3 }}>
-            {isFR
-            ? `Juste un livre ? Commandez à la carte pour ${formatPrice(currency, "book")} →`
-            : `Just want a book? Order à la carte for ${formatPrice(currency, "book")} →`}
-          </Link>
-        </p>
       </section>
 
       {/* CTA */}

@@ -397,7 +397,8 @@
     "summary_months": "{n} mois d'histoires",
     "estimated_shipping": "Livraison estimée",
     "price_book": "Livre",
-    "price_total_est": "Total estimé"
+    "price_total_est": "Total estimé",
+    "few_stories_warning": "Votre livre contiendra moins de 3 histoires. Nous recommandons d'en générer au moins 3 pour un résultat plus riche. Vous pouvez quand même commander."
   },
   "memorial": {
     "mark_passed": "Enregistrer le décès…",

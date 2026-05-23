@@ -170,6 +170,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [sharingStoryId, setSharingStoryId] = useState<string | null>(null);
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [userPlan, setUserPlan] = useState<string>("free");
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const [entryMenuId, setEntryMenuId] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
@@ -227,7 +228,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
         supabase.from("entries").select("*").eq("pet_id", id).order("entry_date", { ascending: false }),
         supabase.from("stories").select("*").eq("pet_id", id).order("created_at", { ascending: false }),
         supabase.from("milestones").select("*").eq("pet_id", id).order("achieved_at", { ascending: false }),
-        supabase.from("profiles").select("is_premium").single(),
+        supabase.from("profiles").select("is_premium, plan").single(),
         supabase.from("milestone_definitions").select("*").order("order_index"),
       ]);
       setPet(petData);
@@ -235,6 +236,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
       setStories(storiesData || []);
       setMilestones(milestonesData || []);
       setIsPremium(profile?.is_premium ?? false);
+      setUserPlan(profile?.plan ?? "free");
       if (definitionsData?.length) setMilestoneDefinitions(definitionsData);
       setLoading(false);
     };
@@ -1078,30 +1080,32 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "stories" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {pet.deceased_at ? (
-              <Link href={`/dashboard/pets/${id}/order?memorial=true`} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem", width: "100%", padding: ".875rem", borderRadius: 16, border: "1px solid rgba(139,107,74,.3)", background: "rgba(139,107,74,.08)", color: "#8B6B4A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, marginBottom: ".5rem", textAlign: "center", textDecoration: "none", boxSizing: "border-box" as const }}>
-                {t.memorial.order_book}
-              </Link>
-            ) : (
-              <>
-                <button onClick={handlePreviewPDF} disabled={previewLoading} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px solid rgba(200,129,58,.3)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", marginBottom: ".5rem", opacity: previewLoading ? .7 : 1 }}>
-                  {previewLoading ? t.stories.generating_preview : t.stories.preview_book}
-                </button>
-                <Link
-                  href={`/dashboard/pets/${id}/order`}
-                  style={{
-                    display: "block", width: "100%", padding: ".875rem", borderRadius: 16,
-                    border: isPremium ? "1.5px solid rgba(200,129,58,.35)" : "none",
-                    background: isPremium ? "rgba(200,129,58,.08)" : "#3D2B1F",
-                    color: isPremium ? "#C8813A" : "#FDFAF5",
-                    fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500,
-                    marginBottom: "1.5rem", textAlign: "center", textDecoration: "none",
-                    boxSizing: "border-box" as const,
-                  }}
-                >
-                  {isPremium ? t.stories.order_book_premium : t.stories.order_book}
+            {(userPlan === "digital" || userPlan === "print") && (
+              pet.deceased_at ? (
+                <Link href={`/dashboard/pets/${id}/order?memorial=true`} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem", width: "100%", padding: ".875rem", borderRadius: 16, border: "1px solid rgba(139,107,74,.3)", background: "rgba(139,107,74,.08)", color: "#8B6B4A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, marginBottom: ".5rem", textAlign: "center", textDecoration: "none", boxSizing: "border-box" as const }}>
+                  {t.memorial.order_book}
                 </Link>
-              </>
+              ) : (
+                <>
+                  <button onClick={handlePreviewPDF} disabled={previewLoading} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px solid rgba(200,129,58,.3)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", marginBottom: ".5rem", opacity: previewLoading ? .7 : 1 }}>
+                    {previewLoading ? t.stories.generating_preview : t.stories.preview_book}
+                  </button>
+                  <Link
+                    href={`/dashboard/pets/${id}/order`}
+                    style={{
+                      display: "block", width: "100%", padding: ".875rem", borderRadius: 16,
+                      border: isPremium ? "1.5px solid rgba(200,129,58,.35)" : "none",
+                      background: isPremium ? "rgba(200,129,58,.08)" : "#3D2B1F",
+                      color: isPremium ? "#C8813A" : "#FDFAF5",
+                      fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500,
+                      marginBottom: "1.5rem", textAlign: "center", textDecoration: "none",
+                      boxSizing: "border-box" as const,
+                    }}
+                  >
+                    {isPremium ? t.stories.order_book_premium : t.stories.order_book}
+                  </Link>
+                </>
+              )
             )}
             {stories.length === 0 ? (
               <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
