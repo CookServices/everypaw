@@ -12,10 +12,12 @@ export function getCurrencyFromCountry(countryCode: string | null): Currency {
   return EUROPE_COUNTRIES.includes(countryCode) ? "EUR" : "USD";
 }
 
-type PriceKey = "digital" | "print" | "printAnnual" | "printAnnualMonthly" | "book";
+type PriceKey = "digital" | "digitalAnnual" | "digitalAnnualMonthly" | "print" | "printAnnual" | "printAnnualMonthly" | "book";
 
 const PRICE_TABLE: Record<PriceKey, Record<Currency, string>> = {
-  digital:            { EUR: "4,99 €", USD: "$4.99" },
+  digital:              { EUR: "4,99 €", USD: "$4.99" },
+  digitalAnnual:        { EUR: "35,90 €", USD: "$35.90" },
+  digitalAnnualMonthly: { EUR: "2,99 €", USD: "$2.99" },
   print:              { EUR: "9,99 €", USD: "$9.99" },
   printAnnual:        { EUR: "79 €",   USD: "$79" },
   printAnnualMonthly: { EUR: "6,58 €", USD: "$6.58" },

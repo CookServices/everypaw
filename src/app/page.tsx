@@ -431,7 +431,7 @@ export default function Home() {
                 {cycle === "monthly" ? t.landing.pricing_monthly : t.landing.pricing_annual}
                 {cycle === "annual" && (
                   <span style={{ fontSize: ".68rem", background: "#C8813A", color: "#FDFAF5", padding: ".15rem .45rem", borderRadius: 100, fontWeight: 600 }}>
-                    −40 %
+                    −34 %
                   </span>
                 )}
               </button>
@@ -461,8 +461,14 @@ export default function Home() {
           {/* Digital */}
           <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem 2rem", flex: 1, minWidth: 240, maxWidth: 300, textAlign: "left", border: "1.5px solid rgba(200,129,58,.25)", display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".1em", textTransform: "uppercase", color: "#C8813A", marginBottom: ".75rem" }}>{t.landing.premium_label}</div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem" }}>{formatPrice(currency, "digital")}</div>
-            <div style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginBottom: "1.5rem" }}>{t.landing.premium_period}</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem" }}>
+              {pricingCycle === "annual" ? formatPrice(currency, "digitalAnnualMonthly") : formatPrice(currency, "digital")}
+            </div>
+            <div style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginBottom: "1.5rem" }}>
+              {pricingCycle === "annual"
+                ? `${isFR ? "facturé" : "billed"} ${formatPrice(currency, "digitalAnnual")}/${isFR ? "an" : "year"}`
+                : t.landing.premium_period}
+            </div>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: ".6rem", marginBottom: "1.75rem", padding: 0, flex: 1 }}>
               {digitalFeatures.map(f => (
                 <li key={f} style={{ fontSize: ".875rem", display: "flex", alignItems: "flex-start", gap: ".5rem", fontWeight: 300 }}>
