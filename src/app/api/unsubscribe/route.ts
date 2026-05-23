@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const { allowed } = checkRateLimit(`unsub:${getClientIp(req)}`, 5, 60_000);
+  if (!allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+
   const { token } = await req.json();
 
   if (!token || typeof token !== "string") {
@@ -20,12 +24,12 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("profiles")
-    .update({ email_reminders: false })
+    .update({ email_reminders: false }, { count: "exact" })
     .eq("unsubscribe_token", token);
 
-  if (error) {
+  if (error || !count || count === 0) {
     return NextResponse.json({ error: "Invalid token" }, { status: 400 });
   }
 

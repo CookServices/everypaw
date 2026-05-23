@@ -1,3 +1,5 @@
+import { escapeHtml } from "@/lib/html";
+
 const BRAND = {
   bg: "#FDFAF5",
   headerBg: "#3D1F0D",
@@ -94,7 +96,7 @@ export function buildChangeEmailEmail(lang: "fr" | "en", confirmUrl: string, new
       html: baseLayout(`
         <h1 style="font-family:Georgia,serif;font-size:1.4rem;font-weight:600;color:${BRAND.text};margin:0 0 12px;">Changement d'adresse email</h1>
         <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 8px;">Vous avez demandé à changer votre adresse email vers :</p>
-        <p style="font-size:.95rem;font-weight:600;color:${BRAND.text};margin:0 0 24px;">${newEmail}</p>
+        <p style="font-size:.95rem;font-weight:600;color:${BRAND.text};margin:0 0 24px;">${escapeHtml(newEmail)}</p>
         <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 24px;">Cliquez sur le bouton ci-dessous pour confirmer ce changement :</p>
         ${ctaButton(confirmUrl, "Confirmer le changement →")}
         <p style="font-size:.78rem;color:#9A8070;margin:16px 0 0;line-height:1.5;">Ce lien expire dans 24 heures. Si vous n'avez pas demandé ce changement, ignorez cet email.</p>

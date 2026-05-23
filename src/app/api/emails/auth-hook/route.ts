@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { Resend } from "resend";
-import { createClient } from "@/lib/supabase/server";
+import { getProfileLocale } from "@/lib/locale";
 import {
   buildConfirmSignupEmail,
   buildResetPasswordEmail,
@@ -54,16 +54,30 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  // Log payload complet pour diagnostiquer les champs disponibles
-  console.log("[auth-hook] FULL payload:", JSON.stringify(body, null, 2));
-
   const actionType = body.email_data?.email_action_type;
   const email = body.user?.email ?? body.email ?? "";
   const tokenHash = body.email_data?.token_hash ?? "";
   const tokenHashNew = body.email_data?.token_hash_new ?? tokenHash;
   const token = body.email_data?.token ?? tokenHash;
-  const confirmationUrl = body.email_data?.confirmation_url;
+  const rawConfirmationUrl = body.email_data?.confirmation_url;
   const redirectTo = body.email_data?.redirect_to;
+
+  // Validate confirmation_url is from our Supabase instance (prevent open redirect injection)
+  let confirmationUrl: string | undefined;
+  if (rawConfirmationUrl) {
+    try {
+      const parsed = new URL(rawConfirmationUrl);
+      const supabaseHost = new URL(SUPABASE_URL).hostname;
+      if (parsed.hostname !== supabaseHost || parsed.protocol !== "https:") {
+        console.error("[auth-hook] Invalid confirmation_url domain:", rawConfirmationUrl);
+        return NextResponse.json({ error: "Invalid confirmation URL" }, { status: 400 });
+      }
+      confirmationUrl = rawConfirmationUrl;
+    } catch {
+      console.error("[auth-hook] Malformed confirmation_url:", rawConfirmationUrl);
+      return NextResponse.json({ error: "Invalid confirmation URL" }, { status: 400 });
+    }
+  }
 
   if (!email) {
     console.error("[auth-hook] Missing email in payload");
@@ -74,17 +88,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing email_action_type" }, { status: 400 });
   }
 
-  // Detect language from profile
-  let lang: "fr" | "en" = "fr";
-  try {
-    const supabase = await createClient();
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("locale, language")
-      .eq("email", email)
-      .single();
-    if (profile?.locale?.startsWith("en") || profile?.language?.startsWith("en")) lang = "en";
-  } catch {}
+  const lang = await getProfileLocale(email);
 
   const resend = new Resend(process.env.RESEND_API_KEY);
   let subject: string;

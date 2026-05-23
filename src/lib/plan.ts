@@ -87,21 +87,22 @@ export function canOrderBook(plan: Plan, bookCredits: number): string | null {
 // ── Price ID → plan mapping ───────────────────────────────────────────────────
 
 export function priceIdToPlan(priceId: string): Plan | null {
-  const map: Record<string, Plan> = {
+  const candidates: Array<[string | undefined, Plan]> = [
     // EUR variants
-    [process.env.STRIPE_PRICE_ID_DIGITAL_EUR ?? ""]:  "digital",
-    [process.env.STRIPE_PRICE_ID_PRINT_EUR ?? ""]:    "print",
+    [process.env.STRIPE_PRICE_ID_DIGITAL_EUR,  "digital"],
+    [process.env.STRIPE_PRICE_ID_PRINT_EUR,    "print"],
     // USD variants
-    [process.env.STRIPE_PRICE_ID_DIGITAL_USD ?? ""]:  "digital",
-    [process.env.STRIPE_PRICE_ID_PRINT_USD ?? ""]:    "print",
-    // Annual (shared across currencies until separate IDs are configured)
-    [process.env.STRIPE_PRICE_PRINT_ANNUAL ?? ""]:    "print",
-    [process.env.STRIPE_PRICE_PRINT_ANNUAL_EUR ?? ""]: "print",
-    [process.env.STRIPE_PRICE_PRINT_ANNUAL_USD ?? ""]: "print",
+    [process.env.STRIPE_PRICE_ID_DIGITAL_USD,  "digital"],
+    [process.env.STRIPE_PRICE_ID_PRINT_USD,    "print"],
+    // Annual
+    [process.env.STRIPE_PRICE_PRINT_ANNUAL,    "print"],
+    [process.env.STRIPE_PRICE_PRINT_ANNUAL_EUR, "print"],
+    [process.env.STRIPE_PRICE_PRINT_ANNUAL_USD, "print"],
     // Legacy
-    [process.env.STRIPE_PRICE_DIGITAL_MONTHLY ?? ""]: "digital",
-    [process.env.STRIPE_PRICE_PRINT_MONTHLY ?? ""]:   "print",
-    [process.env.STRIPE_PRICE_ID ?? ""]:              "digital",
-  };
-  return map[priceId] ?? null;
+    [process.env.STRIPE_PRICE_DIGITAL_MONTHLY, "digital"],
+    [process.env.STRIPE_PRICE_PRINT_MONTHLY,   "print"],
+    [process.env.STRIPE_PRICE_ID,              "digital"],
+  ];
+  const match = candidates.find(([id]) => id && id === priceId);
+  return match ? match[1] : null;
 }

@@ -25,6 +25,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid or already used code" }, { status: 400 });
     }
 
+    // Prevent gift code theft: ensure code is intended for this user if recipient is specified
+    const recipientEmail = promoCode.metadata?.recipient_email;
+    if (recipientEmail && recipientEmail !== user.email) {
+      return NextResponse.json({ error: "This gift code is not for your account" }, { status: 403 });
+    }
+
     // Read plan from promotion code metadata
     const plan = promoCode.metadata?.plan === "print" ? "print" : "digital";
     const priceId = plan === "print"

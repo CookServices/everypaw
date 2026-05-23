@@ -76,6 +76,8 @@ export async function POST() {
     }
 
     await adminSupabase.from("pets").delete().eq("user_id", user.id);
+    await adminSupabase.from("events_log").delete().eq("user_id", user.id);
+    await adminSupabase.from("daily_prompts").delete().eq("user_id", user.id);
     await adminSupabase.from("profiles").delete().eq("id", user.id);
 
     console.log(`[account/delete] DB records deleted for user: ${user.id}`);

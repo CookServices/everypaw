@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { Resend } from "resend";
-import { createClient } from "@/lib/supabase/server";
 import { buildResetPasswordEmail } from "@/lib/auth-emails";
+import { getProfileLocale } from "@/lib/locale";
+
+function verifyBearer(authHeader: string | null, secret: string): boolean {
+  if (!authHeader) return false;
+  const expected = `Bearer ${secret}`;
+  try {
+    return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: Request) {
   const secret = process.env.SUPABASE_HOOK_SECRET;
-  if (secret) {
-    const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!secret) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!verifyBearer(req.headers.get("authorization"), secret)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let body: { email?: string; data?: { token_hash?: string; redirect_to?: string } };
@@ -29,12 +38,7 @@ export async function POST(req: Request) {
 
   const resetUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token_hash=${tokenHash}&type=recovery&redirect_to=${encodeURIComponent(redirectTo)}`;
 
-  let lang: "fr" | "en" = "fr";
-  try {
-    const supabase = await createClient();
-    const { data: profile } = await supabase.from("profiles").select("locale, language").eq("email", email).single();
-    if (profile?.locale?.startsWith("en") || profile?.language?.startsWith("en")) lang = "en";
-  } catch {}
+  const lang = await getProfileLocale(email);
 
   const { subject, html } = buildResetPasswordEmail(lang, resetUrl);
   const resend = new Resend(process.env.RESEND_API_KEY);

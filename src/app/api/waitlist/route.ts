@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { escapeHtml } from "@/lib/html";
 
 export async function POST(req: Request) {
   const { allowed } = checkRateLimit(`waitlist:${getClientIp(req)}`, 5, 60_000);
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
       from: "Everypaw Waitlist <hello@everypaw.app>",
       to: process.env.WAITLIST_TO_EMAIL!,
       subject: `New waitlist signup: ${email}`,
-      html: `<p>New signup: <strong>${email}</strong></p>`,
+      html: `<p>New signup: <strong>${escapeHtml(email)}</strong></p>`,
     });
 
     return NextResponse.json({ success: true });
