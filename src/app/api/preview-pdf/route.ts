@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { validatePdfToken } from "@/lib/pdf-token";
 
 export const dynamic = "force-dynamic";
+
 function getServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,10 +30,9 @@ function safeUrl(url: string): string {
 }
 
 function calcPageCount(storiesCount: number, hasPhotos: boolean, hasDedication: boolean): number {
-  // 1 cover + 1 back cover + stories + optional dedication + optional photos page
   const total = 2 + (hasDedication ? 1 : 0) + storiesCount + (hasPhotos ? 1 : 0);
-  const rounded = total % 2 === 0 ? total : total + 1; // must be even
-  return Math.max(20, rounded); // Gelato minimum 20 pages
+  const rounded = total % 2 === 0 ? total : total + 1;
+  return Math.max(20, rounded);
 }
 
 const STRINGS = {
@@ -59,27 +60,17 @@ const STRINGS = {
   },
 };
 
-export async function GET(req: Request) {
+async function buildHtml(params: {
+  petId: string;
+  lang: "en" | "fr";
+  storyIdsParam: string | null;
+  dedication: string;
+  yearFilter: number | null;
+  coverPhotoParam: string | null;
+}): Promise<NextResponse> {
+  const { petId, lang, storyIdsParam, dedication, yearFilter, coverPhotoParam } = params;
   const supabase = getServiceClient();
-
-  const url = new URL(req.url);
-  const petId = url.searchParams.get("petId");
-  const lang = (url.searchParams.get("lang") ?? "en") as "en" | "fr";
-  const storyIdsParam = url.searchParams.get("storyIds");
-  const dedication = url.searchParams.get("dedication")
-    ? decodeURIComponent(url.searchParams.get("dedication")!)
-    : "";
-  const yearParam = url.searchParams.get("year");
-  const yearFilter = yearParam ? parseInt(yearParam, 10) : null;
-  const coverPhotoParam = url.searchParams.get("coverPhoto")
-    ? decodeURIComponent(url.searchParams.get("coverPhoto")!)
-    : null;
-
   const s = STRINGS[lang] ?? STRINGS.en;
-
-  if (!petId) {
-    return NextResponse.json({ error: "petId required" }, { status: 400 });
-  }
 
   const [{ data: pet }, { data: allStories }, { data: allEntries }] = await Promise.all([
     supabase.from("pets").select("*").eq("id", petId).single(),
@@ -89,14 +80,11 @@ export async function GET(req: Request) {
 
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
 
-  // Filter stories by storyIds if provided
   let stories = allStories ?? [];
   if (storyIdsParam) {
     const ids = storyIdsParam.split(",").filter(Boolean);
     stories = stories.filter(story => ids.includes(story.id));
   }
-
-  // Filter by year if provided
   if (yearFilter) {
     stories = stories.filter(story => {
       const d = new Date(story.period_start ?? story.created_at);
@@ -104,7 +92,6 @@ export async function GET(req: Request) {
     });
   }
 
-  // Filter entries by year if provided
   const entries = yearFilter
     ? (allEntries ?? []).filter(e => new Date(e.entry_date).getFullYear() === yearFilter)
     : (allEntries ?? []);
@@ -221,8 +208,66 @@ export async function GET(req: Request) {
   `;
 
   return new NextResponse(html, {
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-    },
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
+// GET — called by Gelato's servers; requires a short-lived signed token
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const petId = url.searchParams.get("petId");
+
+  if (!petId) return NextResponse.json({ error: "petId required" }, { status: 400 });
+
+  const token = url.searchParams.get("token");
+  const expires = url.searchParams.get("expires");
+  if (!token || !validatePdfToken(petId, token, expires)) {
+    return NextResponse.json({ error: "Invalid or expired token" }, { status: 403 });
+  }
+
+  return buildHtml({
+    petId,
+    lang: (url.searchParams.get("lang") ?? "en") as "en" | "fr",
+    storyIdsParam: url.searchParams.get("storyIds"),
+    dedication: url.searchParams.get("dedication")
+      ? decodeURIComponent(url.searchParams.get("dedication")!)
+      : "",
+    yearFilter: url.searchParams.get("year") ? parseInt(url.searchParams.get("year")!, 10) : null,
+    coverPhotoParam: url.searchParams.get("coverPhoto")
+      ? decodeURIComponent(url.searchParams.get("coverPhoto")!)
+      : null,
+  });
+}
+
+// POST — called from the dashboard in-app preview; requires an authenticated session
+export async function POST(req: Request) {
+  const { createClient: createServerClient } = await import("@/lib/supabase/server");
+  const supabaseAuth = await createServerClient();
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  let body: { petId?: string; lang?: string; storyIds?: string; dedication?: string; year?: number; coverPhoto?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  const { petId, lang, storyIds, dedication, year, coverPhoto } = body;
+  if (!petId) return NextResponse.json({ error: "petId required" }, { status: 400 });
+
+  // Verify the authenticated user owns this pet
+  const supabase = getServiceClient();
+  const { data: pet } = await supabase.from("pets").select("user_id").eq("id", petId).single();
+  if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  return buildHtml({
+    petId,
+    lang: (lang ?? "en") as "en" | "fr",
+    storyIdsParam: storyIds ?? null,
+    dedication: dedication ?? "",
+    yearFilter: year ?? null,
+    coverPhotoParam: coverPhoto ?? null,
   });
 }

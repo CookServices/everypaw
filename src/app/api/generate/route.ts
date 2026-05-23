@@ -23,12 +23,22 @@ export async function POST(req: Request) {
     );
   }
 
-  const { petId, petName, species, bio, entries, style, periodStart, periodEnd } = await req.json();
+  const { petId, style, periodStart, periodEnd } = await req.json();
 
   if (!petId) return NextResponse.json({ error: "Missing petId" }, { status: 400 });
 
-  const { data: pet } = await supabase.from("pets").select("id, user_id").eq("id", petId).single();
-  const { data: profile } = await supabase.from("profiles").select("locale, language").eq("id", user.id).single();
+  // Whitelist style values to prevent prompt injection
+  const VALID_STYLES = ["poetic", "humorous", "classic", "epic", "tender"];
+  if (style && !VALID_STYLES.includes(style)) {
+    return NextResponse.json({ error: "Invalid style" }, { status: 400 });
+  }
+
+  // Re-fetch all data from DB — never trust client-supplied pet details or entry content
+  const [{ data: pet }, { data: profile }] = await Promise.all([
+    supabase.from("pets").select("id, user_id, name, species, bio").eq("id", petId).single(),
+    supabase.from("profiles").select("locale, language").eq("id", user.id).single(),
+  ]);
+
   const lang = (profile?.locale || profile?.language || "fr").toLowerCase().startsWith("fr") ? "French" : "English";
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   if (pet.user_id !== user.id) {
@@ -52,10 +62,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "story_limit" }, { status: 403 });
   }
 
-  // ── Entries check ──────────────────────────────────────────────────────────
+  // ── Fetch entries from DB (never trust client-supplied content) ────────────
+  let entriesQuery = supabase
+    .from("entries")
+    .select("entry_date, content, mood")
+    .eq("pet_id", petId)
+    .eq("user_id", user.id)
+    .order("entry_date", { ascending: true });
+
+  if (periodStart) entriesQuery = entriesQuery.gte("entry_date", periodStart.slice(0, 10));
+  if (periodEnd) entriesQuery = entriesQuery.lte("entry_date", periodEnd.slice(0, 10));
+
+  const { data: entries } = await entriesQuery;
+
   if (!entries || entries.length < 3) {
     return NextResponse.json({ error: "Need at least 3 entries" }, { status: 400 });
   }
+
+  const petName = pet.name;
+  const species = pet.species;
+  const bio = pet.bio;
 
   const entriesText = entries
     .map((e: { entry_date: string; content: string; mood?: string }) =>
@@ -143,10 +169,10 @@ You MUST respond with valid JSON only, no other text:
     const { title, story } = parsed;
     console.log("[generate] parsed title:", title, "| story length:", story?.length);
 
-    // Compute period dates (must be YYYY-MM-DD)
+    // Compute period dates (must be YYYY-MM-DD) — entries sorted ASC so [0]=oldest, [last]=most recent
     const today = new Date().toISOString().split("T")[0];
-    const firstEntry: string | undefined = entries[entries.length - 1]?.entry_date;
-    const lastEntry: string | undefined = entries[0]?.entry_date;
+    const firstEntry: string | undefined = entries[0]?.entry_date;
+    const lastEntry: string | undefined = entries[entries.length - 1]?.entry_date;
     const finalPeriodStart = (periodStart || firstEntry || today).slice(0, 10);
     const finalPeriodEnd = (
       periodEnd

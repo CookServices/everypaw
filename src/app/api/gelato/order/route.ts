@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getCurrencyFromCountry } from "@/lib/currency";
 import { getUserPlan, canOrderBook } from "@/lib/plan";
+import { generatePdfToken } from "@/lib/pdf-token";
 
 const GELATO_PRODUCT_UID = "photobooks-hardcover_pf_200x200-mm-8x8-inch_pt_170-gsm-65lb-coated-silk_cl_4-4_ccl_4-4_bt_glued-left_ct_matt-lamination_prt_1-0_cpt_130-gsm-65-lb-cover-coated-silk_ver";
 
@@ -72,6 +73,10 @@ export async function POST(req: Request) {
   const pdfUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/preview-pdf`);
   pdfUrl.searchParams.set("petId", petId);
 
+  const { token: pdfToken, expires: pdfExpires } = generatePdfToken(petId);
+  pdfUrl.searchParams.set("token", pdfToken);
+  pdfUrl.searchParams.set("expires", String(pdfExpires));
+
   if (Array.isArray(selectedStoryIds) && selectedStoryIds.length > 0) {
     pdfUrl.searchParams.set("storyIds", selectedStoryIds.join(","));
   }
@@ -133,11 +138,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Order failed", details: data }, { status: 400 });
     }
 
-    // Update all selected stories or all pet stories as ordered
+    // Update selected stories as ordered — always filter by user_id to prevent IDOR
     if (Array.isArray(selectedStoryIds) && selectedStoryIds.length > 0) {
-      await supabase.from("stories").update({ status: "ordered" }).in("id", selectedStoryIds);
+      await supabase.from("stories")
+        .update({ status: "ordered" })
+        .in("id", selectedStoryIds)
+        .eq("user_id", user.id);
     } else {
-      await supabase.from("stories").update({ status: "ordered" }).eq("pet_id", petId);
+      await supabase.from("stories")
+        .update({ status: "ordered" })
+        .eq("pet_id", petId)
+        .eq("user_id", user.id);
+    }
+
+    // Consume one book credit for non-print-plan users
+    if (plan !== "print") {
+      await supabase.rpc("decrement_book_credits", { p_user_id: user.id });
     }
 
     return NextResponse.json({ orderId: data.id, status: data.orderStatus });

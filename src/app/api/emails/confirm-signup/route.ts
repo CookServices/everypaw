@@ -5,11 +5,10 @@ import { buildConfirmSignupEmail } from "@/lib/auth-emails";
 
 export async function POST(req: Request) {
   const secret = process.env.SUPABASE_HOOK_SECRET;
-  if (secret) {
-    const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!secret) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authHeader = req.headers.get("authorization");
+  if (authHeader !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let body: { email?: string; data?: { token_hash?: string; redirect_to?: string } };
