@@ -442,6 +442,11 @@ currency: "USD"
 - **Page upgrade** (`/dashboard/upgrade`) : section "Book à la carte" masquée pour `free` et `book_only` — visible uniquement pour `digital` et `print`
 - **Étape confirm commande** : warning amber non bloquant si `selectedStoryIds.length < 3` — clé i18n `order.few_stories_warning` ajoutée en EN et FR
 
+### ✅ Fix pricing annuel landing (2026-05-23)
+- **Badge toggle "Annual"** : `−40 %` → `−34 %` (landing EN + FR)
+- **Digital card en mode annuel** : affiche `$2.99/mo` (`2,99 €/mois`) + sous-titre `"billed $35.90/year"` (`"facturé 35,90 €/an"`) — même logique que la carte Print
+- **`src/lib/currency.ts`** : ajout de `digitalAnnual` ($35.90 / 35,90 €) et `digitalAnnualMonthly` ($2.99 / 2,99 €)
+
 ### 🚧 Prochaine étape
 - Passer Stripe en mode **Live**
 - Passer Google OAuth en mode **Published**
@@ -497,4 +502,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-23 (session 7 — visibilité offre livre à la carte + digital peut commander + warning < 3 histoires)*
+*Dernière mise à jour : 2026-05-23 (session 8 — fix pricing annuel : badge −34%, Digital $2.99/mo en annuel)*
