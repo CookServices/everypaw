@@ -56,10 +56,15 @@ export async function POST(req: Request) {
       proration_behavior: "always_invoice",
     });
 
-    await supabase
+    // Stripe succeeded — update DB. If this fails, the webhook will reconcile.
+    const { error: dbError } = await supabase
       .from("profiles")
       .update({ plan: newPlan, is_premium: true })
       .eq("id", user.id);
+
+    if (dbError) {
+      console.error("[stripe/upgrade] DB update failed after Stripe success — webhook will reconcile:", dbError);
+    }
 
     console.log(`[stripe/upgrade] user ${user.id} → plan: ${newPlan} (${subCurrency})`);
     return NextResponse.json({ success: true, plan: newPlan });

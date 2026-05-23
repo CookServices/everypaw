@@ -151,7 +151,7 @@ canOrderBook(userId)         // Digital: non | Print: oui (1/an) | Book: oui (1 
 ```
 
 `priceIdToPlan()` mappe les Stripe price IDs (depuis env vars) aux plans.  
-Book credits : incrémentés atomiquement via RPC Postgres `increment_book_credits`.
+Book credits : incrémentés via RPC `increment_book_credits`, consommés atomiquement via `try_consume_book_credit` (verrou `FOR UPDATE`) **avant** l'appel Gelato, restaurés via `restore_book_credit` en cas d'échec Gelato. Prévient les race conditions sur les commandes simultanées.
 
 Le webhook (`/api/stripe/webhook`) gère :
 - `checkout.session.completed`
@@ -161,6 +161,7 @@ Le webhook (`/api/stripe/webhook`) gère :
 **Idempotence webhook (2026-05-22)** : protection contre les retries Stripe.
 - Abonnement : compare `stripe_subscription_id` en DB avant d'agir — skip si déjà activé.
 - Achat livre : vérifie `events_log` via `metadata @> { stripe_event_id }` avant d'incrémenter les crédits ; insère une trace après succès.
+- `subscription.updated` : loggé dans `events_log` (plan change + cancellation) depuis Round 2.
 - Tous les événements loggent le Stripe event ID dès réception (`[webhook] event: evt_xxx …`).
 
 ---
@@ -169,11 +170,13 @@ Le webhook (`/api/stripe/webhook`) gère :
 
 **Next.js 14 App Router** — toutes les pages dans `src/app/`. Toutes les pages dashboard sont `"use client"` ; elles fetchent les données dans `useEffect` via le client Supabase browser.
 
-### Supabase — deux clients
+### Supabase — trois clients
 
 - `src/lib/supabase/client.ts` — client browser, utilisé dans toutes les pages `"use client"`
-- `src/lib/supabase/server.ts` — client serveur, utilisé dans les routes API et le middleware
-- `getServiceSupabase()` dans `src/lib/plan.ts` — client service role (bypass RLS), uniquement dans le webhook Stripe
+- `src/lib/supabase/server.ts` — client serveur (anon key + cookie auth), utilisé dans les routes API et le middleware
+- `getServiceSupabase()` dans `src/lib/plan.ts` — client service role (bypass RLS) — utilisé dans le webhook Stripe, les cron jobs, gelato/order, preview-pdf (GET), la page publique `/pets/[id]`
+
+**Règle** : ne jamais instancier `createClient` depuis `@supabase/supabase-js` directement dans une route. Utiliser `getServiceSupabase()` de `src/lib/plan.ts` pour le service role.
 
 Auth enforced dans `src/middleware.ts` : les requêtes non authentifiées vers `/dashboard/*` redirigent vers `/auth/login`.
 
@@ -221,8 +224,8 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/api/cron/monthly-story` | Auto-génération histoires mensuelles |
 | `/api/cron/weekly-reminder` | Rappels email via Resend |
 | `/api/gift/create`, `/api/gift/redeem` | Flow carte cadeau |
-| `/api/currency` | Retourne `{ currency: "EUR"\|"USD", country }` via `x-vercel-ip-country` |
-| `/api/preview-pdf` | Preview PDF via `@react-pdf/renderer` |
+| `/api/currency` | Retourne `{ currency: "EUR"\|"USD" }` via `x-vercel-ip-country` (le champ `country` a été supprimé — privacy) |
+| `/api/preview-pdf` | Preview PDF HTML — `GET` pour Gelato (token HMAC signé requis), `POST` pour l'aperçu in-app (session utilisateur requise, vérifie ownership du pet) |
 | `/api/locale` | Setter cookie i18n |
 
 ---
@@ -339,7 +342,7 @@ currency: "USD"
 
 ### ✅ Localisation EUR/USD (2026-05-22)
 - `src/lib/currency.ts` : `getCurrencyFromCountry(countryCode)` + `formatPrice(currency, key)` — liste Europe : AT BE BG CY CZ DE DK EE ES FI FR GR HR HU IE IT LT LU LV MT NL PL PT RO SE SI SK CH NO IS GB
-- `GET /api/currency` lit `x-vercel-ip-country`, retourne `{ currency, country }` — fallback USD
+- `GET /api/currency` lit `x-vercel-ip-country`, retourne `{ currency }` — fallback USD (champ `country` supprimé en Round 2)
 - Checkout (`/api/stripe/checkout`) : sélectionne le price ID Stripe selon la devise détectée au moment du paiement
 - Upgrade (`/api/stripe/upgrade`) : lit `subscription.currency` depuis Stripe pour garder la cohérence EUR/USD sur la durée de l'abonnement
 - `priceIdToPlan` dans `plan.ts` supporte les 4 variantes EUR/USD (+ anciens IDs legacy)
@@ -404,8 +407,8 @@ currency: "USD"
 ### ✅ Commande de livre — 10 personnalisations (2026-05-22)
 
 **Backend `preview-pdf/route.ts`**
-- Route convertie de POST → **GET** (Gelato fetch le fichier en GET depuis ses serveurs)
-- **Service role** : plus d'auth session requise (petId UUID = token implicite)
+- **GET** (Gelato) : token HMAC-SHA256 signé obligatoire (`?token=...&expires=...`), généré par `gelato/order` via `src/lib/pdf-token.ts` (TTL 48h)
+- **POST** (aperçu in-app dashboard) : session requise + vérification ownership du pet via service role
 - `export const dynamic = "force-dynamic"` pour éviter le prerender Next.js au build
 - **i18n** (Point 1) : dict `STRINGS` EN/FR — couverture, chapitres, dédicace, dates localisées
 - **Dédicace** (Point 7) : page insérée après la couverture si `?dedication=...`
@@ -447,10 +450,100 @@ currency: "USD"
 - **Digital card en mode annuel** : affiche `$2.99/mo` (`2,99 €/mois`) + sous-titre `"billed $35.90/year"` (`"facturé 35,90 €/an"`) — même logique que la carte Print
 - **`src/lib/currency.ts`** : ajout de `digitalAnnual` ($35.90 / 35,90 €) et `digitalAnnualMonthly` ($2.99 / 2,99 €)
 
+### ✅ Security review Round 1 (2026-05-23) — PR #18
+
+**Critical fixes**
+- **Book credits décrémentés** : `gelato/order` appelle `decrement_book_credits` RPC après succès Gelato pour les plans non-`print` — supprime la possibilité de commander des livres à l'infini avec un seul crédit
+- **Email hook routes fail-closed** : `confirm-signup`, `change-email`, `reset-password` retournent 401 immédiatement si `SUPABASE_HOOK_SECRET` est absent (au lieu de laisser passer toute requête)
+
+**High fixes**
+- **`/api/preview-pdf` authentifié** : GET nécessite un token HMAC signé (généré par `gelato/order`), POST nécessite une session + ownership — plus d'accès anonyme au contenu du livre
+- **`/api/generate` prompt injection** : `petName`, `species`, `bio`, `entries` re-fetchés depuis la DB après vérification ownership — le client ne peut plus injecter de contenu dans le prompt Claude. Paramètre `style` whitelist-validé.
+- **IDOR stories** : `gelato/order` filtre les mises à jour `stories` par `user_id` — impossible de marquer les stories d'autres users comme "ordered"
+- **Rate limiter in-memory** : commentaire mis à jour — explicitement non fiable sur Vercel serverless (cold start = reset)
+
+**Medium fixes**
+- **RLS entries** : `entries_public_read USING (true)` remplacé par `entries_owner_read USING (auth.uid() = user_id)` — la clé anon ne peut plus lire les journaux en bulk. La page publique `/pets/[id]` utilise `getServiceSupabase()` avec filtre `pet_id` explicite.
+- **Limite entrées plan Free** : trigger Postgres `trg_enforce_free_entry_limit` (BEFORE INSERT) — `RAISE EXCEPTION 'entry_limit'` si plan free et count ≥ 10. Impossible à bypasser via l'API directe.
+- **Milestones INSERT RLS** : policy `milestones_owner_insert` ajoutée — les inserts client ne sont plus bloqués silencieusement
+- **Waitlist HTML injection** : email échappé via `escapeHtml` dans la notification interne
+- **stripe/upgrade** : erreur DB loggée explicitement après succès Stripe (le webhook réconcilie si nécessaire)
+
+**Low fixes**
+- **`/api/unsubscribe`** : rate limiting IP ajouté (5 req/min)
+
+### ✅ Refactoring maintenabilité (2026-05-23)
+
+**Nouvelles libs partagées**
+- `src/lib/html.ts` : `escapeHtml()` — remplace 3 copies inline identiques
+- `src/lib/locale.ts` : `getProfileLocale(email)` / `getProfileLocaleById(userId)` — remplace 4 blocs try/catch de détection de langue (auth-hook, confirm-signup, change-email, reset-password)
+- `src/lib/book.ts` : `calcPageCount()` — remplace 2 copies dans gelato et preview-pdf
+- `src/lib/pdf-token.ts` : `generatePdfToken()` / `validatePdfToken()` — HMAC-SHA256 pour l'accès à preview-pdf depuis Gelato
+
+**Nettoyages**
+- `cron/monthly-story` + `cron/weekly-reminder` : `getServiceSupabase()` au lieu de `createClient` inline
+- `gelato/order` : import dynamique de supabase/server converti en import statique
+- `preview-pdf` : suppression de `_pageCount` (variable calculée jamais utilisée)
+- `auth-hook` : suppression du log debug qui émettait le payload complet en clair (tokens inclus)
+- `plan.ts priceIdToPlan` : les env vars absentes ne créent plus de clé `""` dans la map de lookup
+
+**Dette connue (non bloquante)**
+- `verifyBearer()` dupliquée dans 3 routes (`confirm-signup`, `change-email`, `reset-password`) — à extraire dans `src/lib/auth.ts` lors du prochain passage
+
+### ✅ Security review Round 2 (2026-05-23) — PR #18
+
+**Critical fixes**
+- **CSS injection** (C1) : URL photo de couverture échappée pour contexte CSS — `'` → `%27` avant insertion dans `url('...')`
+- **Race condition book credits** (C2) : RPC `try_consume_book_credit` (verrou `FOR UPDATE`) consommé **avant** l'appel Gelato ; `restore_book_credit` appelé en cas d'échec — remplace le duo `canOrderBook` + `decrement_book_credits`
+- **UUID validation storyIds** (C3) : chaque `storyId` validé via regex UUID avant construction de l'URL PDF
+
+**High fixes**
+- **timingSafeEqual Bearer** (H1) : `===` remplacé par `timingSafeEqual` dans les 3 routes email hook (`confirm-signup`, `change-email`, `reset-password`) — prévient les attaques par timing
+- **Cookie locale sécurisé** (H2) : `httpOnly: true`, `secure: true` (prod), `sameSite: "lax"` + `try/catch` sur le JSON parse
+- **Unsubscribe fantôme** (H3) : vérification du nombre de lignes affectées — 400 si token introuvable en DB (au lieu de 200 silencieux)
+- **Vol de carte cadeau** (H4) : vérification `promoCode.metadata.recipient_email` === `user.email` avant activation
+- **Validation params preview-pdf** (H5) : `lang` whitelisté, `year` borné 2000–2100, `dedication` limité à 500 chars
+- **Injection date generate** (H7) : `periodStart`/`periodEnd` validés format `YYYY-MM-DD` avant usage en filtre DB
+
+**Medium fixes**
+- **URL injection auth-hook** (M2) : `confirmation_url` validée — hostname doit correspondre à l'instance Supabase
+- **XSS auth-emails** (M3) : `escapeHtml(newEmail)` dans `buildChangeEmailEmail`
+- **XSS weekly-reminder** (M4) : `escapeHtml(petNames)` dans l'email HTML
+- **Injection prompt monthly-story** (M5) : champs pet isolés dans des balises XML (`<pet_details>`, `<journal_entries>`) ; modèle mis à jour `claude-sonnet-4-5` → `claude-sonnet-4-6`
+- **XSS monthly-story email** (M5) : `escapeHtml(petNames)` + `escapeHtml(monthLabel)`
+- **XSS suggestion** (M6) : `escapeHtml(userEmail)` sur tous les contextes HTML (affichage + lien mailto)
+- **locale.ts service client** (M7) : `createClient` (server, RLS, session requise) remplacé par `getServiceSupabase()` — les hooks d'auth n'ont pas de session, les requêtes échouaient silencieusement et retournaient toujours "fr"
+- **Cap entrées generate** (M8) : `.limit(50)` sur la requête entries — borne la taille du prompt Anthropic
+- **Suppression compte complète** (M9) : `events_log` et `daily_prompts` supprimés avant la suppression du profil
+- **Avertissement pdf-token** (M11) : log warning si `PDF_ACCESS_SECRET` absent (fallback sur service role key)
+
+**Low fixes**
+- **Audit log webhook** (L1) : `subscription.updated` loggé dans `events_log` (plan change + cancellation)
+- **Privacy currency API** (L3) : champ `country` supprimé de la réponse `/api/currency`
+
+**Migration SQL** : `supabase/migrations/round2_security_fixes_2026_05_23.sql`
+- `try_consume_book_credit(p_user_id uuid) → boolean` — verrou `FOR UPDATE`, décrémente atomiquement
+- `restore_book_credit(p_user_id uuid)` — rollback sur échec Gelato (no-op pour plan `print`)
+
+### ✅ Option "Toutes les années" — dropdown commande livre (2026-05-23)
+- **`order/page.tsx`** : `yearFilter` passe de `number` à `number | null` (null = toutes les années)
+- Option "All years" / "Toutes les années" ajoutée en tête du select, visible uniquement si l'animal a des données sur **plusieurs** années
+- Sélection → `visibleStories` et `filteredEntries` non filtrés, toutes les stories pré-cochées
+- `coverPeriod` dérive l'année de fin depuis le max réel des données (plus l'année courante)
+- API (`gelato/order`, `preview-pdf`) géraient déjà `yearFilter = null` via guards `if (yearFilter)` — aucun changement backend
+
+### ✅ Filtres date journal — remplacement pills par selects (2026-05-23)
+- **`/dashboard/pets/[id]`** onglet Journal : pills horizontales par mois remplacées par 2 selects côte à côte
+- **Année** : "All years" / "Toutes les années" + années disponibles dans les entries, décroissant
+- **Mois** : "All months" / "Tous les mois" + 12 mois localisés FR/EN via `Intl.DateTimeFormat` — se remet à "All" au changement d'année
+- État : `periodFilter: string | null` → `filterYear: string | null` + `filterMonth: string | null`
+- Logique de filtrage identique : année seule → toutes les entries de l'année ; année+mois → mois précis ; les deux "All" → tout
+- Style : `#F7F2EA` fond, `#D4C5B0` bordure, `#3D2B1F` texte, `border-radius: 8px`, hauteur 36px, inline styles
+
 ### 🚧 Prochaine étape
+- **Exécuter les migrations SQL** dans le dashboard Supabase (`round2_security_fixes_2026_05_23.sql` + précédentes si pas encore fait)
 - Passer Stripe en mode **Live**
 - Passer Google OAuth en mode **Published**
-- Chapitre mensuel automatique (cron IA le 1er de chaque mois)
 - Page mémorial complète (`/memorial/[id]`)
 - Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` et `STRIPE_PRICE_BOOK_ONCE_USD` dans Vercel (book-checkout EUR/USD)
 
@@ -478,6 +571,16 @@ currency: "USD"
 - **Auth sécurité** : tout changement de mot de passe doit vérifier le mot de passe actuel via `signInWithPassword` avant `updateUser`
 - **Devise** : utiliser `getCurrencyFromCountry` + `formatPrice` de `src/lib/currency.ts` pour tout affichage de prix. Ne jamais utiliser `isFR` comme proxy de devise — langue ≠ pays. Les routes Stripe lisent `x-vercel-ip-country` (checkout) ou `subscription.currency` (upgrade).
 - **Webhooks entrants** (Supabase auth hook) : toujours vérifier via HMAC-SHA256 sur le body brut (`req.text()` avant `JSON.parse`), comparer avec `timingSafeEqual`. Fail-closed : si la variable secrète est absente, retourner 401. Ne jamais utiliser une comparaison de chaîne simple ni un `if (secret)` qui laisse passer si la variable est vide.
+- **Routes email hooks** (`confirm-signup`, `change-email`, `reset-password`) : vérification `Bearer ${SUPABASE_HOOK_SECRET}` fail-closed — retourner 401 immédiatement si la variable est absente.
+- **`/api/generate`** : ne jamais faire confiance aux données du body client (petName, species, bio, entries). Re-fetcher depuis la DB après vérification de l'ownership du pet.
+- **`/api/gelato/order`** : toujours filtrer les updates de stories par `user_id` (même avec service role). Consommer les crédits via `try_consume_book_credit` **avant** l'appel Gelato, et restaurer via `restore_book_credit` en cas d'échec.
+- **`/api/preview-pdf`** : l'accès GET (Gelato) nécessite un token HMAC signé généré par `gelato/order`. L'accès POST (in-app) nécessite une session + vérification de l'ownership du pet. Ne jamais exposer le contenu du livre sans authentification. Les URLs insérées dans du CSS (`url('...')`) doivent être passées par `safeCssUrl()` qui échappe les apostrophes.
+- **Helpers partagés** : pour escaper du HTML → `src/lib/html.ts`. Pour détecter la locale d'un profil → `src/lib/locale.ts` (utilise `getServiceSupabase()` — pas de session requise). Pour le calcul du nombre de pages → `src/lib/book.ts`. Pour les tokens PDF → `src/lib/pdf-token.ts`. Ne pas réimplémenter ces fonctions inline.
+- **Rate limiting** : le rate limiter in-memory (`src/lib/rate-limit.ts`) n'est PAS fiable sur Vercel serverless (cold start = reset, pas de partage entre instances). Pour les limites critiques, utiliser un count DB (voir `/api/generate`) ou Upstash Redis.
+- **Comparaisons de secrets** : toujours utiliser `timingSafeEqual` de `node:crypto` pour comparer des tokens/secrets (Bearer, HMAC, etc.). Ne jamais utiliser `===` pour ces comparaisons — vulnérable aux attaques par timing.
+- **Validation dates** : les paramètres `periodStart`/`periodEnd` reçus du client doivent être validés comme `YYYY-MM-DD` avant usage comme filtre DB.
+- **Cookies** : tout cookie posé via API doit avoir `httpOnly: true`, `secure: process.env.NODE_ENV === "production"`, `sameSite: "lax"`.
+- **Prompts IA avec données utilisateur** : isoler les données dans des balises XML (`<pet_details>`, `<journal_entries>`) pour prévenir les injections de prompt. Voir `cron/monthly-story` pour le pattern.
 
 ---
 
@@ -489,6 +592,7 @@ currency: "USD"
 - [ ] Tester le webhook Stripe en mode Live avec un vrai paiement
 - [ ] Vérifier que le cron weekly-reminder envoie bien les emails
 - [ ] Vérifier que Gelato est configuré avec une carte de paiement valide
+- [ ] Exécuter `supabase/migrations/round2_security_fixes_2026_05_23.sql` dans le dashboard Supabase (RPCs `try_consume_book_credit` + `restore_book_credit`)
 
 ---
 
@@ -502,4 +606,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-23 (session 8 — fix pricing annuel : badge −34%, Digital $2.99/mo en annuel)*
+*Dernière mise à jour : 2026-05-23 (session 9 — "All years" book dropdown + filtres date journal selects + merge security review R1/R2)*

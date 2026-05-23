@@ -8,5 +8,5 @@ export async function GET() {
   const h = await headers();
   const country = h.get("x-vercel-ip-country");
   const currency = getCurrencyFromCountry(country);
-  return NextResponse.json({ currency, country });
+  return NextResponse.json({ currency });
 }

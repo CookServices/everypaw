@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { NextResponse } from "next/server";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
+import { escapeHtml } from "@/lib/html";
 
 export async function POST(req: Request) {
   const { allowed } = checkRateLimit(`suggestion:${getClientIp(req)}`, 3, 60_000);
@@ -39,9 +40,9 @@ export async function POST(req: Request) {
         <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
           <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>
           <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 16px;">Nouvelle suggestion Everypaw</h1>
-          <p style="font-size: 13px; color: #9A8070; margin: 0 0 20px;">De : <strong>${userEmail}</strong></p>
-          <div style="background: #FAF6EF; border-left: 3px solid #C8813A; padding: 16px 20px; border-radius: 8px; font-size: 15px; line-height: 1.7; color: #3D2B1F; white-space: pre-wrap;">${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
-          ${userEmail !== "unknown" ? `<p style="font-size: 13px; color: #9A8070; margin: 20px 0 0;">Répondre directement à : <a href="mailto:${userEmail}" style="color: #C8813A;">${userEmail}</a></p>` : ""}
+          <p style="font-size: 13px; color: #9A8070; margin: 0 0 20px;">De : <strong>${escapeHtml(userEmail)}</strong></p>
+          <div style="background: #FAF6EF; border-left: 3px solid #C8813A; padding: 16px 20px; border-radius: 8px; font-size: 15px; line-height: 1.7; color: #3D2B1F; white-space: pre-wrap;">${escapeHtml(message)}</div>
+          ${userEmail !== "unknown" ? `<p style="font-size: 13px; color: #9A8070; margin: 20px 0 0;">Répondre directement à : <a href="mailto:${escapeHtml(userEmail)}" style="color: #C8813A;">${escapeHtml(userEmail)}</a></p>` : ""}
         </div>
       `,
     });

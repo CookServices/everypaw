@@ -139,10 +139,20 @@ export async function POST(req: Request) {
 
     // Subscription became fully canceled via updated event
     if (subscription.status === "canceled") {
-      await supabase
+      const { data: canceledProfile } = await supabase
         .from("profiles")
-        .update({ plan: "free", is_premium: false, stripe_subscription_id: null })
-        .eq("stripe_customer_id", customerId);
+        .update({ plan: "free", is_premium: false, stripe_subscription_id: null }, { count: "exact" })
+        .eq("stripe_customer_id", customerId)
+        .select("id")
+        .single();
+
+      if (canceledProfile) {
+        await supabase.from("events_log").insert({
+          user_id: canceledProfile.id,
+          event_type: "stripe_subscription_updated",
+          metadata: { stripe_event_id: event.id, status: "canceled" },
+        });
+      }
 
       console.log("[webhook] subscription.updated → status=canceled, downgraded to free:", customerId, "event:", event.id);
       return NextResponse.json({ received: true });
@@ -150,10 +160,20 @@ export async function POST(req: Request) {
 
     // Plan change (upgrade/downgrade)
     if (plan && !subscription.cancel_at_period_end) {
-      await supabase
+      const { data: updatedProfile } = await supabase
         .from("profiles")
         .update({ plan, is_premium: true })
-        .eq("stripe_customer_id", customerId);
+        .eq("stripe_customer_id", customerId)
+        .select("id")
+        .single();
+
+      if (updatedProfile) {
+        await supabase.from("events_log").insert({
+          user_id: updatedProfile.id,
+          event_type: "stripe_subscription_updated",
+          metadata: { stripe_event_id: event.id, plan, status: subscription.status },
+        });
+      }
 
       console.log("[webhook] subscription.updated → plan change:", plan, "for customer:", customerId, "event:", event.id);
     }
