@@ -158,8 +158,12 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     visibleStories.forEach(s => { if (s.period_start) allDates.push(new Date(s.period_start)); });
     filteredEntries.forEach(e => { if (e.entry_date) allDates.push(new Date(e.entry_date)); });
     const start = allDates.length ? allDates.reduce((a, b) => a < b ? a : b) : new Date(pet.created_at);
+    const endDates: Date[] = [];
+    visibleStories.forEach(s => { if (s.period_end) endDates.push(new Date(s.period_end)); else if (s.period_start) endDates.push(new Date(s.period_start)); });
+    filteredEntries.forEach(e => { if (e.entry_date) endDates.push(new Date(e.entry_date)); });
+    const end = endDates.length ? endDates.reduce((a, b) => a > b ? a : b) : new Date();
     const startYear = start.getFullYear();
-    const endYear = yearFilter ?? new Date().getFullYear();
+    const endYear = yearFilter ?? end.getFullYear();
     return startYear === endYear ? String(startYear) : `${startYear}–${endYear}`;
   })();
 
