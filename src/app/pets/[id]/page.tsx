@@ -1,7 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { getTranslations } from "@/lib/i18n";
+import { getServiceSupabase } from "@/lib/plan";
 
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
@@ -23,12 +23,9 @@ export default async function PublicPetPage({ params }: { params: { id: string }
   const t = getTranslations(locale);
   const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
 
-  // Anon key is sufficient here — RLS allows public reads on pets/stories/entries.
-  // Never use the service role key in public server components.
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  // Service role is required here: entries RLS is restricted to authenticated owners.
+  // The key never leaves the server; explicit pet_id filters limit the scope.
+  const supabase = getServiceSupabase();
 
   const [{ data: pet }, { data: stories }, { data: entries }] = await Promise.all([
     supabase.from("pets").select("*").eq("id", params.id).single(),
