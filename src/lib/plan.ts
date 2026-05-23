@@ -80,7 +80,7 @@ export function canGenerateStory(plan: Plan, totalStories: number): string | nul
  * bookCredits: user's current credit balance.
  */
 export function canOrderBook(plan: Plan, bookCredits: number): string | null {
-  if (plan === "print" || bookCredits > 0) return null;
+  if (plan === "print" || plan === "digital" || bookCredits > 0) return null;
   return "no_book_credits";
 }
 

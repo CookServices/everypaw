@@ -397,7 +397,8 @@
     "summary_months": "{n} months of stories",
     "estimated_shipping": "Estimated shipping",
     "price_book": "Book",
-    "price_total_est": "Estimated total"
+    "price_total_est": "Estimated total",
+    "few_stories_warning": "Your book will contain fewer than 3 stories. We recommend generating at least 3 for a richer result. You can still order."
   },
   "memorial": {
     "mark_passed": "Record passing…",
