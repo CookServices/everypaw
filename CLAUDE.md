@@ -525,6 +525,21 @@ currency: "USD"
 - `try_consume_book_credit(p_user_id uuid) → boolean` — verrou `FOR UPDATE`, décrémente atomiquement
 - `restore_book_credit(p_user_id uuid)` — rollback sur échec Gelato (no-op pour plan `print`)
 
+### ✅ Option "Toutes les années" — dropdown commande livre (2026-05-23)
+- **`order/page.tsx`** : `yearFilter` passe de `number` à `number | null` (null = toutes les années)
+- Option "All years" / "Toutes les années" ajoutée en tête du select, visible uniquement si l'animal a des données sur **plusieurs** années
+- Sélection → `visibleStories` et `filteredEntries` non filtrés, toutes les stories pré-cochées
+- `coverPeriod` dérive l'année de fin depuis le max réel des données (plus l'année courante)
+- API (`gelato/order`, `preview-pdf`) géraient déjà `yearFilter = null` via guards `if (yearFilter)` — aucun changement backend
+
+### ✅ Filtres date journal — remplacement pills par selects (2026-05-23)
+- **`/dashboard/pets/[id]`** onglet Journal : pills horizontales par mois remplacées par 2 selects côte à côte
+- **Année** : "All years" / "Toutes les années" + années disponibles dans les entries, décroissant
+- **Mois** : "All months" / "Tous les mois" + 12 mois localisés FR/EN via `Intl.DateTimeFormat` — se remet à "All" au changement d'année
+- État : `periodFilter: string | null` → `filterYear: string | null` + `filterMonth: string | null`
+- Logique de filtrage identique : année seule → toutes les entries de l'année ; année+mois → mois précis ; les deux "All" → tout
+- Style : `#F7F2EA` fond, `#D4C5B0` bordure, `#3D2B1F` texte, `border-radius: 8px`, hauteur 36px, inline styles
+
 ### 🚧 Prochaine étape
 - **Exécuter les migrations SQL** dans le dashboard Supabase (`round2_security_fixes_2026_05_23.sql` + précédentes si pas encore fait)
 - Passer Stripe en mode **Live**
@@ -591,4 +606,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-23 (session 8 — fix pricing annuel + security review Round 2 : badge −34%, Digital $2.99/mo, 21 findings C/H/M/L corrigés)*
+*Dernière mise à jour : 2026-05-23 (session 9 — "All years" book dropdown + filtres date journal selects + merge security review R1/R2)*
