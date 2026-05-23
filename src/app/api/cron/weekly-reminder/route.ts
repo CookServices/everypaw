@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getServiceSupabase } from "@/lib/plan";
+import { escapeHtml } from "@/lib/html";
 
 export async function GET(req: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -47,6 +48,7 @@ export async function GET(req: Request) {
       .limit(5);
 
     const petNames = pets.map(p => p.name).join(", ");
+    const petNamesHtml = escapeHtml(petNames);
     const entriesCount = recentEntries?.length || 0;
     const unsubscribeUrl = `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`;
 
@@ -57,10 +59,10 @@ export async function GET(req: Request) {
       html: `
         <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
           <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>
-          <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 16px;">This week in ${petNames}'s life</h1>
+          <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 16px;">This week in ${petNamesHtml}'s life</h1>
           ${entriesCount > 0
             ? `<p style="font-size: 16px; line-height: 1.6; color: #7A5C44; margin: 0 0 24px;">You added ${entriesCount} moment${entriesCount > 1 ? "s" : ""} this week — keep going! Every entry builds the story.</p>`
-            : `<p style="font-size: 16px; line-height: 1.6; color: #7A5C44; margin: 0 0 24px;">No entries this week yet. What did ${petNames} get up to? Even a small moment is worth remembering.</p>`
+            : `<p style="font-size: 16px; line-height: 1.6; color: #7A5C44; margin: 0 0 24px;">No entries this week yet. What did ${petNamesHtml} get up to? Even a small moment is worth remembering.</p>`
           }
           <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 15px; font-weight: 500;">Add this week's moments →</a>
           <p style="font-size: 12px; color: #7A5C44; margin-top: 32px; font-family: sans-serif;">

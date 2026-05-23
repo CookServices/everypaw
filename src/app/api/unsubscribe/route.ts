@@ -24,12 +24,12 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("profiles")
-    .update({ email_reminders: false })
+    .update({ email_reminders: false }, { count: "exact" })
     .eq("unsubscribe_token", token);
 
-  if (error) {
+  if (error || !count || count === 0) {
     return NextResponse.json({ error: "Invalid token" }, { status: 400 });
   }
 

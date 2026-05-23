@@ -59,8 +59,25 @@ export async function POST(req: Request) {
   const tokenHash = body.email_data?.token_hash ?? "";
   const tokenHashNew = body.email_data?.token_hash_new ?? tokenHash;
   const token = body.email_data?.token ?? tokenHash;
-  const confirmationUrl = body.email_data?.confirmation_url;
+  const rawConfirmationUrl = body.email_data?.confirmation_url;
   const redirectTo = body.email_data?.redirect_to;
+
+  // Validate confirmation_url is from our Supabase instance (prevent open redirect injection)
+  let confirmationUrl: string | undefined;
+  if (rawConfirmationUrl) {
+    try {
+      const parsed = new URL(rawConfirmationUrl);
+      const supabaseHost = new URL(SUPABASE_URL).hostname;
+      if (parsed.hostname !== supabaseHost || parsed.protocol !== "https:") {
+        console.error("[auth-hook] Invalid confirmation_url domain:", rawConfirmationUrl);
+        return NextResponse.json({ error: "Invalid confirmation URL" }, { status: 400 });
+      }
+      confirmationUrl = rawConfirmationUrl;
+    } catch {
+      console.error("[auth-hook] Malformed confirmation_url:", rawConfirmationUrl);
+      return NextResponse.json({ error: "Invalid confirmation URL" }, { status: 400 });
+    }
+  }
 
   if (!email) {
     console.error("[auth-hook] Missing email in payload");

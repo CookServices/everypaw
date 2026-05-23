@@ -1,13 +1,23 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { Resend } from "resend";
 import { buildChangeEmailEmail } from "@/lib/auth-emails";
 import { getProfileLocale } from "@/lib/locale";
 
+function verifyBearer(authHeader: string | null, secret: string): boolean {
+  if (!authHeader) return false;
+  const expected = `Bearer ${secret}`;
+  try {
+    return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: Request) {
   const secret = process.env.SUPABASE_HOOK_SECRET;
   if (!secret) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${secret}`) {
+  if (!verifyBearer(req.headers.get("authorization"), secret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

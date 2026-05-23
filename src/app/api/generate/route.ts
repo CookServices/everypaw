@@ -27,6 +27,15 @@ export async function POST(req: Request) {
 
   if (!petId) return NextResponse.json({ error: "Missing petId" }, { status: 400 });
 
+  // Validate date format (YYYY-MM-DD) to prevent unexpected DB behavior
+  const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+  if (periodStart && !DATE_REGEX.test(periodStart)) {
+    return NextResponse.json({ error: "Invalid periodStart format" }, { status: 400 });
+  }
+  if (periodEnd && !DATE_REGEX.test(periodEnd)) {
+    return NextResponse.json({ error: "Invalid periodEnd format" }, { status: 400 });
+  }
+
   // Whitelist style values to prevent prompt injection
   const VALID_STYLES = ["poetic", "humorous", "classic", "epic", "tender"];
   if (style && !VALID_STYLES.includes(style)) {
@@ -68,7 +77,8 @@ export async function POST(req: Request) {
     .select("entry_date, content, mood")
     .eq("pet_id", petId)
     .eq("user_id", user.id)
-    .order("entry_date", { ascending: true });
+    .order("entry_date", { ascending: true })
+    .limit(50);
 
   if (periodStart) entriesQuery = entriesQuery.gte("entry_date", periodStart.slice(0, 10));
   if (periodEnd) entriesQuery = entriesQuery.lte("entry_date", periodEnd.slice(0, 10));

@@ -6,6 +6,12 @@ import { calcPageCount } from "@/lib/book";
 
 export const dynamic = "force-dynamic";
 
+const VALID_LANGS = ["en", "fr"] as const;
+type Lang = typeof VALID_LANGS[number];
+const MAX_DEDICATION_LENGTH = 500;
+const MIN_YEAR = 2000;
+const MAX_YEAR = 2100;
+
 function getServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,6 +26,11 @@ function safeUrl(url: string): string {
   } catch {
     return "";
   }
+}
+
+// Escape a URL for use inside a CSS url('...') value
+function safeCssUrl(url: string): string {
+  return safeUrl(url).replace(/'/g, "%27");
 }
 
 const STRINGS = {
@@ -49,7 +60,7 @@ const STRINGS = {
 
 async function buildHtml(params: {
   petId: string;
-  lang: "en" | "fr";
+  lang: Lang;
   storyIdsParam: string | null;
   dedication: string;
   yearFilter: number | null;
@@ -91,10 +102,10 @@ async function buildHtml(params: {
     ? `<div class="cover-subtitle">${escapeHtml(s.birthdate(new Date(pet.birthdate)))}</div>`
     : "";
 
-  const coverStyle =
-    coverPhotoParam && safeUrl(coverPhotoParam)
-      ? `background: linear-gradient(rgba(61,43,31,.7), rgba(61,43,31,.85)), url('${safeUrl(coverPhotoParam)}') center/cover no-repeat;`
-      : `background: #3D2B1F;`;
+  const coverCssUrl = coverPhotoParam ? safeCssUrl(coverPhotoParam) : "";
+  const coverStyle = coverCssUrl
+    ? `background: linear-gradient(rgba(61,43,31,.7), rgba(61,43,31,.85)), url('${coverCssUrl}') center/cover no-repeat;`
+    : `background: #3D2B1F;`;
 
   const dedicationPage = hasDedication
     ? `
@@ -210,14 +221,33 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Invalid or expired token" }, { status: 403 });
   }
 
+  // Validate lang
+  const langParam = url.searchParams.get("lang");
+  const lang: Lang = VALID_LANGS.includes(langParam as Lang) ? (langParam as Lang) : "en";
+
+  // Validate year
+  const yearParam = url.searchParams.get("year");
+  let yearFilter: number | null = null;
+  if (yearParam) {
+    yearFilter = parseInt(yearParam, 10);
+    if (isNaN(yearFilter) || yearFilter < MIN_YEAR || yearFilter > MAX_YEAR) {
+      return NextResponse.json({ error: "Invalid year" }, { status: 400 });
+    }
+  }
+
+  // Validate dedication length
+  const dedicationRaw = url.searchParams.get("dedication");
+  const dedication = dedicationRaw ? decodeURIComponent(dedicationRaw) : "";
+  if (dedication.length > MAX_DEDICATION_LENGTH) {
+    return NextResponse.json({ error: "Dedication too long" }, { status: 400 });
+  }
+
   return buildHtml({
     petId,
-    lang: (url.searchParams.get("lang") ?? "en") as "en" | "fr",
+    lang,
     storyIdsParam: url.searchParams.get("storyIds"),
-    dedication: url.searchParams.get("dedication")
-      ? decodeURIComponent(url.searchParams.get("dedication")!)
-      : "",
-    yearFilter: url.searchParams.get("year") ? parseInt(url.searchParams.get("year")!, 10) : null,
+    dedication,
+    yearFilter,
     coverPhotoParam: url.searchParams.get("coverPhoto")
       ? decodeURIComponent(url.searchParams.get("coverPhoto")!)
       : null,
@@ -241,6 +271,21 @@ export async function POST(req: Request) {
   const { petId, lang, storyIds, dedication, year, coverPhoto } = body;
   if (!petId) return NextResponse.json({ error: "petId required" }, { status: 400 });
 
+  // Validate lang
+  const validLang: Lang = VALID_LANGS.includes(lang as Lang) ? (lang as Lang) : "en";
+
+  // Validate year
+  if (year !== undefined && year !== null) {
+    if (!Number.isInteger(year) || year < MIN_YEAR || year > MAX_YEAR) {
+      return NextResponse.json({ error: "Invalid year" }, { status: 400 });
+    }
+  }
+
+  // Validate dedication length
+  if (dedication && dedication.length > MAX_DEDICATION_LENGTH) {
+    return NextResponse.json({ error: "Dedication too long" }, { status: 400 });
+  }
+
   // Verify the authenticated user owns this pet
   const supabase = getServiceClient();
   const { data: pet } = await supabase.from("pets").select("user_id").eq("id", petId).single();
@@ -249,7 +294,7 @@ export async function POST(req: Request) {
 
   return buildHtml({
     petId,
-    lang: (lang ?? "en") as "en" | "fr",
+    lang: validLang,
     storyIdsParam: storyIds ?? null,
     dedication: dedication ?? "",
     yearFilter: year ?? null,

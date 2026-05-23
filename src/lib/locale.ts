@@ -1,8 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
+import { getServiceSupabase } from "@/lib/plan";
 
 export async function getProfileLocale(email: string): Promise<"en" | "fr"> {
   try {
-    const supabase = await createClient();
+    const supabase = getServiceSupabase();
     const { data } = await supabase
       .from("profiles")
       .select("locale, language")
@@ -15,7 +15,7 @@ export async function getProfileLocale(email: string): Promise<"en" | "fr"> {
 
 export async function getProfileLocaleById(userId: string): Promise<"en" | "fr"> {
   try {
-    const supabase = await createClient();
+    const supabase = getServiceSupabase();
     const { data } = await supabase
       .from("profiles")
       .select("locale, language")

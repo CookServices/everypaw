@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getServiceSupabase } from "@/lib/plan";
+import { escapeHtml } from "@/lib/html";
 
 export async function GET(req: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -71,7 +72,7 @@ export async function GET(req: Request) {
             "anthropic-beta": "prompt-caching-2024-07-31",
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-5",
+            model: "claude-sonnet-4-6",
             max_tokens: 1024,
             system: [
               {
@@ -84,7 +85,8 @@ export async function GET(req: Request) {
             messages: [
               {
                 role: "user",
-                content: `Generate a monthly story for ${monthLabel}.\n\nPet details:\n- Name: ${pet.name}\n- Species: ${pet.species}\n- Bio: ${pet.bio || "Not provided"}\n\nJournal entries from this month:\n${entriesText}`,
+                // Pet details isolated in XML tags to prevent prompt injection
+                content: `Generate a monthly story for ${monthLabel}.\n\n<pet_details>\n  <name>${pet.name}</name>\n  <species>${pet.species}</species>\n  <bio>${pet.bio || "Not provided"}</bio>\n</pet_details>\n\n<journal_entries>\n${entriesText}\n</journal_entries>`,
               },
             ],
           }),
@@ -122,6 +124,7 @@ export async function GET(req: Request) {
     if (storiesGenerated.length === 0) continue;
 
     const petNames = storiesGenerated.join(", ");
+    const petNamesHtml = escapeHtml(petNames);
     const subject =
       storiesGenerated.length === 1
         ? `✨ ${petNames}'s ${monthLabel} story is ready`
@@ -134,12 +137,12 @@ export async function GET(req: Request) {
       html: `
         <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
           <p style="font-size: 28px; margin: 0 0 8px;">✨</p>
-          <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 16px;">${monthLabel} — a new chapter</h1>
+          <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 16px;">${escapeHtml(monthLabel)} — a new chapter</h1>
           <p style="font-size: 16px; line-height: 1.6; color: #7A5C44; margin: 0 0 24px;">
             ${
               storiesGenerated.length === 1
-                ? `${petNames}'s story for ${monthLabel} has just been written. Head to their journal to read it.`
-                : `New stories for ${petNames} are ready for ${monthLabel}. Head to your dashboard to read them.`
+                ? `${petNamesHtml}'s story for ${escapeHtml(monthLabel)} has just been written. Head to their journal to read it.`
+                : `New stories for ${petNamesHtml} are ready for ${escapeHtml(monthLabel)}. Head to your dashboard to read them.`
             }
           </p>
           <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 15px; font-weight: 500;">Read the stor${storiesGenerated.length === 1 ? "y" : "ies"} →</a>
