@@ -148,7 +148,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [milestones, setMilestones] = useState<{ id: string; type: string; title: string; achieved_at: string }[]>([]);
   const [newEntry, setNewEntry] = useState("");
   const [mood, setMood] = useState<string | null>(null);
-  const [periodFilter, setPeriodFilter] = useState<string | null>(null);
+  const [filterYear, setFilterYear] = useState<string | null>(null);
+  const [filterMonth, setFilterMonth] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [entryError, setEntryError] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -468,8 +469,16 @@ export default function PetPage({ params }: { params: { id: string } }) {
   );
   if (!pet) return <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>{t.pet.not_found}</div>;
 
-  const availableMonths = Array.from(new Set(entries.map(e => e.entry_date.slice(0, 7)))).sort().reverse();
-  const filteredEntries = periodFilter ? entries.filter(e => e.entry_date.startsWith(periodFilter)) : entries;
+  const availableYears = Array.from(new Set(entries.map(e => e.entry_date.slice(0, 4)))).sort().reverse();
+  const MONTHS = Array.from({ length: 12 }, (_, i) => ({
+    value: String(i + 1).padStart(2, "0"),
+    label: new Date(2000, i, 1).toLocaleDateString(dateLocale, { month: "long" }).replace(/^./, s => s.toUpperCase()),
+  }));
+  const filteredEntries = entries.filter(e => {
+    if (filterYear && e.entry_date.slice(0, 4) !== filterYear) return false;
+    if (filterMonth && e.entry_date.slice(5, 7) !== filterMonth) return false;
+    return true;
+  });
   const groupedEntries = groupEntriesByMonth(filteredEntries, locale);
   const isFR = locale === "fr";
 
@@ -896,29 +905,25 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "journal" && (
           <>
-            {/* Period filter pills */}
-            {availableMonths.length >= 1 && (
-              <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
-                <button
-                  onClick={() => setPeriodFilter(null)}
-                  style={{ padding: ".35rem .875rem", borderRadius: 100, border: `1.5px solid ${!periodFilter ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: !periodFilter ? "rgba(200,129,58,.1)" : "transparent", color: !periodFilter ? "#C8813A" : "#7A5C44", fontFamily: "inherit", fontSize: ".82rem", fontWeight: !periodFilter ? 500 : 400, cursor: "pointer" }}
+            {/* Date filter dropdowns */}
+            {availableYears.length >= 1 && (
+              <div style={{ display: "flex", gap: ".5rem", marginBottom: "1.25rem" }}>
+                <select
+                  value={filterYear ?? ""}
+                  onChange={e => { setFilterYear(e.target.value || null); setFilterMonth(null); }}
+                  style={{ flex: "0 0 auto", height: 36, padding: "0 .625rem", borderRadius: 8, border: "1.5px solid #D4C5B0", background: "#F7F2EA", color: "#3D2B1F", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", outline: "none" }}
                 >
-                  {isFR ? "Tous" : "All"}
-                </button>
-                {availableMonths.map(ym => {
-                  const [y, m] = ym.split("-");
-                  const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString(dateLocale, { month: "long", year: "numeric" }).replace(/^./, s => s.toUpperCase());
-                  const active = periodFilter === ym;
-                  return (
-                    <button
-                      key={ym}
-                      onClick={() => setPeriodFilter(active ? null : ym)}
-                      style={{ padding: ".35rem .875rem", borderRadius: 100, border: `1.5px solid ${active ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: active ? "rgba(200,129,58,.1)" : "transparent", color: active ? "#C8813A" : "#7A5C44", fontFamily: "inherit", fontSize: ".82rem", fontWeight: active ? 500 : 400, cursor: "pointer" }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+                  <option value="">{isFR ? "Toutes les années" : "All years"}</option>
+                  {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+                <select
+                  value={filterMonth ?? ""}
+                  onChange={e => setFilterMonth(e.target.value || null)}
+                  style={{ flex: "0 0 auto", height: 36, padding: "0 .625rem", borderRadius: 8, border: "1.5px solid #D4C5B0", background: "#F7F2EA", color: "#3D2B1F", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", outline: "none" }}
+                >
+                  <option value="">{isFR ? "Tous les mois" : "All months"}</option>
+                  {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                </select>
               </div>
             )}
 
@@ -1017,7 +1022,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
             {filteredEntries.length === 0 ? (
               <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#7A5C44", fontSize: ".9rem" }}>
-                {periodFilter ? (isFR ? "Aucune entrée pour cette période." : "No entries for this period.") : t.journal.no_entries}
+                {(filterYear || filterMonth) ? (isFR ? "Aucune entrée pour cette période." : "No entries for this period.") : t.journal.no_entries}
               </div>
             ) : groupedEntries.map(group => (
               <div key={group.month} style={{ marginBottom: "2rem" }}>
