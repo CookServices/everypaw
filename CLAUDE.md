@@ -435,6 +435,13 @@ currency: "USD"
 - `availablePhotos` (sélecteur photo de couverture) tire de toutes les entrées du pet, pas seulement celles filtrées par année
 - Sélecteur d'année affiché dès qu'il y a au moins 1 année de données (au lieu de ≥2)
 
+### ✅ Visibilité offre livre à la carte (2026-05-23)
+- **Landing EN + FR** : bloc "Book à la carte" supprimé de la section pricing (footnote `?plan=book`) — grille reste à 3 colonnes : Free · Digital · Print
+- **`canOrderBook()`** (`src/lib/plan.ts`) : plan `digital` ajouté comme autorisé à commander un livre (avant : seulement `print` + `bookCredits > 0`)
+- **Pet stories tab** (`/dashboard/pets/[id]`) : CTA "Order book" + bouton preview PDF affichés uniquement si `plan === 'digital' || plan === 'print'` — masqués pour `free` et `book_only` ; page fetche désormais `plan` en plus de `is_premium` depuis `profiles`
+- **Page upgrade** (`/dashboard/upgrade`) : section "Book à la carte" masquée pour `free` et `book_only` — visible uniquement pour `digital` et `print`
+- **Étape confirm commande** : warning amber non bloquant si `selectedStoryIds.length < 3` — clé i18n `order.few_stories_warning` ajoutée en EN et FR
+
 ### 🚧 Prochaine étape
 - Passer Stripe en mode **Live**
 - Passer Google OAuth en mode **Published**
@@ -490,4 +497,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-22 (session 6 — 10 personnalisations commande livre + fix yearFilter step aperçu)*
+*Dernière mise à jour : 2026-05-23 (session 7 — visibilité offre livre à la carte + digital peut commander + warning < 3 histoires)*
