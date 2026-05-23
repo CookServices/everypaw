@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { validatePdfToken } from "@/lib/pdf-token";
+import { escapeHtml } from "@/lib/html";
+import { calcPageCount } from "@/lib/book";
 
 export const dynamic = "force-dynamic";
 
@@ -11,15 +13,6 @@ function getServiceClient() {
   );
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;");
-}
-
 function safeUrl(url: string): string {
   try {
     const parsed = new URL(url);
@@ -27,12 +20,6 @@ function safeUrl(url: string): string {
   } catch {
     return "";
   }
-}
-
-function calcPageCount(storiesCount: number, hasPhotos: boolean, hasDedication: boolean): number {
-  const total = 2 + (hasDedication ? 1 : 0) + storiesCount + (hasPhotos ? 1 : 0);
-  const rounded = total % 2 === 0 ? total : total + 1;
-  return Math.max(20, rounded);
 }
 
 const STRINGS = {
@@ -99,8 +86,6 @@ async function buildHtml(params: {
   const photosWithEntries = entries.filter(e => e.photo_urls?.length > 0).slice(0, 6);
   const hasPhotos = photosWithEntries.length > 0;
   const hasDedication = dedication.trim().length > 0;
-
-  const _pageCount = calcPageCount(stories.length, hasPhotos, hasDedication);
 
   const birthdateHtml = pet.birthdate
     ? `<div class="cover-subtitle">${escapeHtml(s.birthdate(new Date(pet.birthdate)))}</div>`

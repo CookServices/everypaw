@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import { createClient } from "@/lib/supabase/server";
 import { buildResetPasswordEmail } from "@/lib/auth-emails";
+import { getProfileLocale } from "@/lib/locale";
 
 export async function POST(req: Request) {
   const secret = process.env.SUPABASE_HOOK_SECRET;
@@ -28,12 +28,7 @@ export async function POST(req: Request) {
 
   const resetUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token_hash=${tokenHash}&type=recovery&redirect_to=${encodeURIComponent(redirectTo)}`;
 
-  let lang: "fr" | "en" = "fr";
-  try {
-    const supabase = await createClient();
-    const { data: profile } = await supabase.from("profiles").select("locale, language").eq("email", email).single();
-    if (profile?.locale?.startsWith("en") || profile?.language?.startsWith("en")) lang = "en";
-  } catch {}
+  const lang = await getProfileLocale(email);
 
   const { subject, html } = buildResetPasswordEmail(lang, resetUrl);
   const resend = new Resend(process.env.RESEND_API_KEY);

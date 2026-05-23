@@ -1,20 +1,13 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getCurrencyFromCountry } from "@/lib/currency";
-import { getUserPlan, canOrderBook } from "@/lib/plan";
+import { getUserPlan, canOrderBook, getServiceSupabase } from "@/lib/plan";
 import { generatePdfToken } from "@/lib/pdf-token";
+import { calcPageCount } from "@/lib/book";
 
 const GELATO_PRODUCT_UID = "photobooks-hardcover_pf_200x200-mm-8x8-inch_pt_170-gsm-65lb-coated-silk_cl_4-4_ccl_4-4_bt_glued-left_ct_matt-lamination_prt_1-0_cpt_130-gsm-65-lb-cover-coated-silk_ver";
 
-function calcPageCount(storiesCount: number, hasPhotos: boolean, hasDedication: boolean): number {
-  // 1 cover + 1 back cover + stories + optional dedication + optional photos page
-  const total = 2 + (hasDedication ? 1 : 0) + storiesCount + (hasPhotos ? 1 : 0);
-  const rounded = total % 2 === 0 ? total : total + 1; // must be even
-  return Math.max(20, rounded); // Gelato minimum 20 pages
-}
-
 export async function POST(req: Request) {
-  const { createClient: createServerClient } = await import("@/lib/supabase/server");
   const supabaseAuth = await createServerClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -34,10 +27,7 @@ export async function POST(req: Request) {
     yearFilter,
   } = await req.json();
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabase = getServiceSupabase();
 
   const { data: pet } = await supabase.from("pets").select("*").eq("id", petId).single();
 

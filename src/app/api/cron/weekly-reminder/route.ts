@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { getServiceSupabase } from "@/lib/plan";
 
 export async function GET(req: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -13,10 +13,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabase = getServiceSupabase();
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const oneWeekAgo = new Date();

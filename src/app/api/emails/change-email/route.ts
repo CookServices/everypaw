@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import { createClient } from "@/lib/supabase/server";
 import { buildChangeEmailEmail } from "@/lib/auth-emails";
+import { getProfileLocale } from "@/lib/locale";
 
 export async function POST(req: Request) {
   const secret = process.env.SUPABASE_HOOK_SECRET;
@@ -28,15 +28,7 @@ export async function POST(req: Request) {
 
   const confirmUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token_hash=${tokenHash}&type=email_change&redirect_to=${encodeURIComponent(redirectTo)}`;
 
-  let lang: "fr" | "en" = "fr";
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase.from("profiles").select("locale, language").eq("id", user.id).single();
-      if (profile?.locale?.startsWith("en") || profile?.language?.startsWith("en")) lang = "en";
-    }
-  } catch {}
+  const lang = await getProfileLocale(newEmail);
 
   const { subject, html } = buildChangeEmailEmail(lang, confirmUrl, newEmail);
   const resend = new Resend(process.env.RESEND_API_KEY);

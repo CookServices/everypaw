@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { escapeHtml } from "@/lib/html";
 
 export async function POST(req: Request) {
   const { allowed } = checkRateLimit(`waitlist:${getClientIp(req)}`, 5, 60_000);
@@ -43,12 +44,11 @@ export async function POST(req: Request) {
     });
 
     // 2. Internal notification
-    const safeEmail = email.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     await resend.emails.send({
       from: "Everypaw Waitlist <hello@everypaw.app>",
       to: process.env.WAITLIST_TO_EMAIL!,
       subject: `New waitlist signup: ${email}`,
-      html: `<p>New signup: <strong>${safeEmail}</strong></p>`,
+      html: `<p>New signup: <strong>${escapeHtml(email)}</strong></p>`,
     });
 
     return NextResponse.json({ success: true });
