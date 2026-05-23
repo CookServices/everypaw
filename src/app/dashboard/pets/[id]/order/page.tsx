@@ -74,7 +74,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   // New states for Points 4, 7, 9, 10
   const [selectedStoryIds, setSelectedStoryIds] = useState<string[]>([]);
   const [dedicationText, setDedicationText] = useState<string>("");
-  const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear());
+  const [yearFilter, setYearFilter] = useState<number | null>(new Date().getFullYear());
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null);
 
   const [address, setAddress] = useState(() => ({
@@ -116,11 +116,11 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   }, [stories]);
 
   // Reset selectedStoryIds when yearFilter changes (Point 9)
-  const handleYearChange = (year: number) => {
+  const handleYearChange = (year: number | null) => {
     setYearFilter(year);
-    const visible = stories.filter(
-      s => new Date(s.period_start ?? s.created_at).getFullYear() === year
-    );
+    const visible = year === null
+      ? stories
+      : stories.filter(s => new Date(s.period_start ?? s.created_at).getFullYear() === year);
     setSelectedStoryIds(visible.map(s => s.id));
   };
 
@@ -132,14 +132,14 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   ).sort((a, b) => b - a);
 
   // Derived: stories filtered by year (Point 9)
-  const visibleStories = stories.filter(
-    s => new Date(s.period_start ?? s.created_at).getFullYear() === yearFilter
-  );
+  const visibleStories = yearFilter === null
+    ? stories
+    : stories.filter(s => new Date(s.period_start ?? s.created_at).getFullYear() === yearFilter);
 
   // Derived: entries filtered by year (Point 9)
-  const filteredEntries = entries.filter(
-    e => new Date(e.entry_date).getFullYear() === yearFilter
-  );
+  const filteredEntries = yearFilter === null
+    ? entries
+    : entries.filter(e => new Date(e.entry_date).getFullYear() === yearFilter);
 
   const petName = pet?.name ?? "";
   const photoEntries = filteredEntries.filter(e => e.photo_urls?.length > 0);
@@ -159,7 +159,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     filteredEntries.forEach(e => { if (e.entry_date) allDates.push(new Date(e.entry_date)); });
     const start = allDates.length ? allDates.reduce((a, b) => a < b ? a : b) : new Date(pet.created_at);
     const startYear = start.getFullYear();
-    const endYear = yearFilter;
+    const endYear = yearFilter ?? new Date().getFullYear();
     return startYear === endYear ? String(startYear) : `${startYear}–${endYear}`;
   })();
 
@@ -242,6 +242,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     ? "Ex : À toi, notre fidèle compagnon…"
     : "E.g.: To you, our faithful companion…";
   const bookYearLabel = locale === "fr" ? "Année du livre" : "Book year";
+  const allYearsLabel = locale === "fr" ? "Toutes les années" : "All years";
   const coverPhotoLabel = locale === "fr" ? "Photo de couverture" : "Cover photo";
   const coverDefaultLabel = locale === "fr" ? "Par défaut" : "Default";
   const chaptersLabel = locale === "fr" ? "Chapitres à inclure" : "Chapters to include";
@@ -325,10 +326,13 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                   {bookYearLabel}
                 </label>
                 <select
-                  value={yearFilter}
-                  onChange={e => handleYearChange(Number(e.target.value))}
+                  value={yearFilter ?? ""}
+                  onChange={e => handleYearChange(e.target.value === "" ? null : Number(e.target.value))}
                   style={inputStyle}
                 >
+                  {availableYears.length > 1 && (
+                    <option value="">{allYearsLabel}</option>
+                  )}
                   {availableYears.map(y => (
                     <option key={y} value={y}>{y}</option>
                   ))}
