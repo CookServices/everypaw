@@ -527,10 +527,10 @@ currency: "USD"
 
 ### ✅ Option "Toutes les années" — dropdown commande livre (2026-05-23)
 - **`order/page.tsx`** : `yearFilter` passe de `number` à `number | null` (null = toutes les années)
-- Option "All years" / "Toutes les années" ajoutée en tête du select, visible uniquement si l'animal a des données sur **plusieurs** années
-- Sélection → `visibleStories` et `filteredEntries` non filtrés, toutes les stories pré-cochées
-- `coverPeriod` dérive l'année de fin depuis le max réel des données (plus l'année courante)
-- API (`gelato/order`, `preview-pdf`) géraient déjà `yearFilter = null` via guards `if (yearFilter)` — aucun changement backend
+- **Défaut = null** : au chargement, toutes les stories sont pré-sélectionnées (plus d'initialisation sur l'année courante)
+- Option "All years" / "Toutes les années" en tête du select, visible uniquement si l'animal a des données sur **plusieurs** années
+- `visibleStories` et `filteredEntries` retournent tout quand `null` ; `coverPeriod` dérive l'année de fin depuis le max réel des données
+- API (`gelato/order`, `preview-pdf`) géraient déjà `yearFilter = null` via guard `if (yearFilter)` — aucun changement backend
 
 ### ✅ Filtres date journal — remplacement pills par selects (2026-05-23)
 - **`/dashboard/pets/[id]`** onglet Journal : pills horizontales par mois remplacées par 2 selects côte à côte
@@ -606,4 +606,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-23 (session 9 — "All years" book dropdown + filtres date journal selects + merge security review R1/R2)*
+*Dernière mise à jour : 2026-05-24 (session 10 — finalisation "Toutes les années" : null par défaut + résolution conflits rebase)*
