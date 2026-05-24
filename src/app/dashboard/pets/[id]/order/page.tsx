@@ -74,7 +74,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   // New states for Points 4, 7, 9, 10
   const [selectedStoryIds, setSelectedStoryIds] = useState<string[]>([]);
   const [dedicationText, setDedicationText] = useState<string>("");
-  const [yearFilter, setYearFilter] = useState<number | null>(new Date().getFullYear());
+  const [yearFilter, setYearFilter] = useState<number | null>(null);
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null);
 
   const [address, setAddress] = useState(() => ({
@@ -100,22 +100,16 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     });
   }, [id]);
 
-  // Initialize yearFilter to most recent year with data, then select all stories for that year
+  // Initialize: select all stories across all years (null = toutes les années)
   useEffect(() => {
     if (stories.length > 0) {
-      const years = stories.map(s => new Date(s.period_start ?? s.created_at).getFullYear());
-      const mostRecentYear = Math.max(...years);
-      setYearFilter(mostRecentYear);
-      setSelectedStoryIds(
-        stories
-          .filter(s => new Date(s.period_start ?? s.created_at).getFullYear() === mostRecentYear)
-          .map(s => s.id)
-      );
+      setYearFilter(null);
+      setSelectedStoryIds(stories.map(s => s.id));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stories]);
 
-  // Reset selectedStoryIds when yearFilter changes (Point 9)
+  // Reset selectedStoryIds when yearFilter changes (null = all years)
   const handleYearChange = (year: number | null) => {
     setYearFilter(year);
     const visible = year === null
@@ -131,12 +125,12 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     )
   ).sort((a, b) => b - a);
 
-  // Derived: stories filtered by year (Point 9)
+  // Derived: stories filtered by year (null = all years)
   const visibleStories = yearFilter === null
     ? stories
     : stories.filter(s => new Date(s.period_start ?? s.created_at).getFullYear() === yearFilter);
 
-  // Derived: entries filtered by year (Point 9)
+  // Derived: entries filtered by year (null = all years)
   const filteredEntries = yearFilter === null
     ? entries
     : entries.filter(e => new Date(e.entry_date).getFullYear() === yearFilter);
