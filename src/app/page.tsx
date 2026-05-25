@@ -600,7 +600,7 @@ export default function Home() {
         <div style={{ borderTop: "1px solid rgba(247,242,234,.06)", paddingTop: "1.25rem", display: "flex", flexWrap: "wrap", gap: ".375rem .1rem" }}>
           {[
             { label: t.landing.legal_cgv, href: "/legal/cgv" },
-            { label: t.landing.legal_privacy, href: "/legal/confidentialite" },
+            { label: t.landing.legal_privacy, href: "https://cookservices.github.io/patisio-privacy/" },
             { label: t.landing.legal_mentions, href: "/legal/mentions" },
             { label: t.landing.legal_contact, href: "/contact" },
           ].map(({ label, href }, i, arr) => (
