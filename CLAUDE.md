@@ -540,6 +540,30 @@ currency: "USD"
 - Logique de filtrage identique : année seule → toutes les entries de l'année ; année+mois → mois précis ; les deux "All" → tout
 - Style : `#F7F2EA` fond, `#D4C5B0` bordure, `#3D2B1F` texte, `border-radius: 8px`, hauteur 36px, inline styles
 
+### ✅ Corrections et améliorations page commande livre (2026-05-26, session 11)
+
+**Bugs corrigés**
+- **`monthsCount` ignorait `yearFilter`** : désormais, si une année est sélectionnée → span entre la 1ère et la dernière entrée/histoire de cette année ; si "Toutes les années" → depuis la 1ère histoire écrite (plus depuis la naissance). Fallback sur `created_at` si aucun contenu.
+- **`availablePhotos` tirait de toutes les années** même quand un filtre d'année était actif → "0 photos" dans les stats mais des photos proposées en couverture. Corrigé : `availablePhotos` utilise désormais `filteredEntries`.
+- **`coverPhotoUrl` non réinitialisée** au changement d'année → `handleYearChange` reset maintenant `setCoverPhotoUrl(null)`.
+- **`lang` non transmis** au PDF → `locale` (fr/en) est maintenant envoyé dans le body `POST /api/gelato/order` et propagé à l'URL du PDF.
+- **Période absente sur chapitre 1** : fallback `period_start ?? created_at` comme partout dans le code.
+
+**Nouvelles fonctionnalités**
+- **Upload photo de couverture custom** : bouton `+` / Importer dans le picker de couverture → upload vers `pet-photos/{userId}/book-cover-{ts}.jpg` ; preview avec bouton `✕` pour retirer ; section toujours visible (pas conditionnée aux photos du journal).
+- **5 thèmes de couleur** (Classique · Noir · Forêt · Océan · Rose) : swatches cliquables dans une section "Personnalisation" — preview live de la couverture ; transmis au PDF via `?theme=`.
+- **Titre du livre custom** (max 60 chars) avec preview live sur la couverture ; transmis au PDF via `?customTitle=`.
+- **Modale "Aperçu complet du livre"** : bouton 📖 dans le step preview → `POST /api/preview-pdf` avec tous les paramètres de personnalisation (thème, titre, couverture, année, chapitres, dédicace, langue) → iframe `srcdoc` (évite les restrictions blob URL/CSP).
+- **Photos dans les chapitres** : chaque entrée avec photos est associée au chapitre dont la `period_start → period_end` couvre sa `entry_date`. Photos affichées en grille 2 colonnes à la fin du chapitre (max 4, avec date en caption). Les entrées orphelines (hors période de toute histoire) restent sur une page "Souvenirs" séparée.
+- **Période affichée sur les cartes de chapitre** (front) et dans le PDF (`.chapter-period` sous le numéro de chapitre).
+
+**Architecture `preview-pdf/route.ts`**
+- `COVER_THEMES` dict avec bg/title/accent/back par thème — appliqué sur couverture, numéros de chapitre, dédicace, 4ème de couverture.
+- `entryToStoryIdx` Map : association entry → story par best-match (latest `period_start` couvrant `entry_date`).
+- `chapterPhotos[][]` : groupement des entrées par index de chapitre (max 4/chapitre).
+- `orphanEntries[]` : entrées non couvertes par aucune période de story.
+- Paramètres PDF : `?theme=`, `?customTitle=`, `?lang=`, `?year=`, `?storyIds=`, `?dedication=`, `?coverPhoto=`.
+
 ### 🚧 Prochaine étape
 - **Exécuter les migrations SQL** dans le dashboard Supabase (`round2_security_fixes_2026_05_23.sql` + précédentes si pas encore fait)
 - Passer Stripe en mode **Live**
@@ -606,4 +630,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-24 (session 10 — finalisation "Toutes les années" : null par défaut + résolution conflits rebase)*
+*Dernière mise à jour : 2026-05-26 (session 11 — page commande livre : fixes year filter, personnalisation thème/titre/photo, aperçu complet, photos dans chapitres)*
