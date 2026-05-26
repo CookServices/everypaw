@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { validatePdfToken } from "@/lib/pdf-token";
 import { escapeHtml } from "@/lib/html";
-import { calcPageCount } from "@/lib/book";
 
 export const dynamic = "force-dynamic";
 
@@ -108,9 +107,38 @@ async function buildHtml(params: {
     ? (allEntries ?? []).filter(e => new Date(e.entry_date).getFullYear() === yearFilter)
     : (allEntries ?? []);
 
-  const photosWithEntries = entries.filter(e => e.photo_urls?.length > 0).slice(0, 6);
-  const hasPhotos = photosWithEntries.length > 0;
   const hasDedication = dedication.trim().length > 0;
+
+  // Associate each photo entry to its story by date range
+  // entry → story with best (latest) period_start that still covers entry_date
+  const entryToStoryIdx = new Map<string, number>();
+  for (const entry of entries) {
+    if (!entry.photo_urls?.length) continue;
+    const d = new Date(entry.entry_date);
+    let bestIdx = -1;
+    let bestStart: Date | null = null;
+    for (let i = 0; i < stories.length; i++) {
+      const story = stories[i];
+      const start = story.period_start ? new Date(story.period_start) : null;
+      const end = story.period_end ? new Date(story.period_end) : null;
+      if (!start || d < start) continue;
+      if (end && d > end) continue;
+      if (bestStart === null || start > bestStart) { bestIdx = i; bestStart = start; }
+    }
+    if (bestIdx >= 0) entryToStoryIdx.set(entry.id, bestIdx);
+  }
+
+  // Group photo entries by chapter index (max 4 photos per chapter)
+  const chapterPhotos: (typeof entries)[] = stories.map(() => []);
+  for (const entry of entries) {
+    if (!entry.photo_urls?.length) continue;
+    const idx = entryToStoryIdx.get(entry.id);
+    if (idx !== undefined && chapterPhotos[idx].length < 4) chapterPhotos[idx].push(entry);
+  }
+
+  // Orphan entries not covered by any story period
+  const orphanEntries = entries.filter(e => e.photo_urls?.length > 0 && !entryToStoryIdx.has(e.id)).slice(0, 6);
+  const hasOrphanPhotos = orphanEntries.length > 0;
 
   const birthdateHtml = pet.birthdate
     ? `<div class="cover-subtitle">${escapeHtml(s.birthdate(new Date(pet.birthdate)))}</div>`
@@ -155,10 +183,12 @@ async function buildHtml(params: {
     .chapter-num { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: 1rem; }
     .chapter-title { font-family: 'Playfair Display', serif; font-size: 1.75rem; font-weight: 600; color: #3D2B1F; margin-bottom: 2rem; line-height: 1.3; }
     .chapter-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.05rem; line-height: 1.9; color: #3D2B1F; }
-    .photo-page { padding: 2rem; background: #F7F2EA; page-break-after: always; }
+    .chapter-photos { margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid rgba(61,43,31,.08); }
     .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .photo-grid img { width: 100%; height: 220px; object-fit: cover; border-radius: 12px; }
-    .photo-caption { font-size: .8rem; color: #7A5C44; margin-top: .5rem; font-style: italic; }
+    .photo-grid img { width: 100%; height: 180px; object-fit: cover; border-radius: 10px; display: block; }
+    .photo-caption { font-size: .75rem; color: #7A5C44; margin-top: .4rem; font-style: italic; text-align: center; }
+    .photo-page { padding: 2rem; background: #F7F2EA; page-break-after: always; }
+    .photo-page .photo-grid img { height: 220px; border-radius: 12px; }
     .back-cover { width: 100%; min-height: 100vh; background: ${colors.back}; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem; }
     .back-cover-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #FDFAF5; margin-bottom: 1rem; }
     .back-cover-text { font-size: .9rem; color: rgba(253,250,245,.7); max-width: 360px; line-height: 1.7; }
@@ -178,14 +208,30 @@ async function buildHtml(params: {
   <!-- Dedication page -->
   ${dedicationPage}
 
-  <!-- Stories as chapters -->
-  ${stories.length > 0 ? stories.map((story, i) => `
+  <!-- Stories as chapters — photos embedded per chapter -->
+  ${stories.length > 0 ? stories.map((story, i) => {
+    const photos = chapterPhotos[i] ?? [];
+    const dateLocale = lang === "fr" ? "fr-FR" : "en-US";
+    const photosHtml = photos.length > 0 ? `
+    <div class="chapter-photos">
+      <div class="photo-grid">
+        ${photos.flatMap(e =>
+          (e.photo_urls as string[]).slice(0, Math.ceil(4 / photos.length)).map(url => `
+          <div>
+            ${safeUrl(url) ? `<img src="${safeUrl(url)}" alt="" />` : ""}
+            <div class="photo-caption">${escapeHtml(new Date(e.entry_date).toLocaleDateString(dateLocale, { day: "numeric", month: "long", year: "numeric" }))}</div>
+          </div>`
+        )).join("")}
+      </div>
+    </div>` : "";
+    return `
   <div class="chapter">
     <div class="chapter-num">${escapeHtml(s.chapter)} ${i + 1}</div>
     <div class="chapter-title">${escapeHtml(story.title || `${pet.name}'s Story`)}</div>
     <div class="chapter-text">${escapeHtml(story.content).replace(/\n/g, "<br>")}</div>
-  </div>
-  `).join("") : `
+    ${photosHtml}
+  </div>`;
+  }).join("") : `
   <div class="chapter">
     <div class="chapter-num">${escapeHtml(s.chapter)} 1</div>
     <div class="chapter-title">The story begins…</div>
@@ -195,12 +241,12 @@ async function buildHtml(params: {
   </div>
   `}
 
-  <!-- Photos page -->
-  ${hasPhotos ? `
+  <!-- Orphan photos page (entries not covered by any story period) -->
+  ${hasOrphanPhotos ? `
   <div class="photo-page">
     <div class="chapter-num" style="margin-bottom: 1.5rem;">${escapeHtml(s.moments)}</div>
     <div class="photo-grid">
-      ${photosWithEntries.flatMap(e => e.photo_urls.slice(0, 1)).map((url: string) => `
+      ${orphanEntries.flatMap(e => (e.photo_urls as string[]).slice(0, 1)).map((url: string) => `
         <div>
           ${safeUrl(url) ? `<img src="${safeUrl(url)}" alt="" />` : ""}
         </div>
