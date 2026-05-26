@@ -88,6 +88,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [coverTheme, setCoverTheme] = useState<ThemeId>("classic");
   const [customTitle, setCustomTitle] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const [address, setAddress] = useState(() => ({
     firstName: "",
@@ -156,6 +158,40 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       setUploadingCover(false);
       e.target.value = "";
     }
+  };
+
+  const handleFullPreview = async () => {
+    setPreviewLoading(true);
+    try {
+      const res = await fetch("/api/preview-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          petId: id,
+          lang: locale,
+          storyIds: selectedStoryIds.join(","),
+          dedication: dedicationText.trim() || undefined,
+          year: yearFilter ?? undefined,
+          coverPhoto: coverPhotoUrl ?? undefined,
+          theme: coverTheme,
+          customTitle: customTitle.trim() || undefined,
+        }),
+      });
+      const html = await res.text();
+      // Revoke previous blob URL to avoid memory leaks
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      const blob = new Blob([html], { type: "text/html" });
+      setPreviewUrl(URL.createObjectURL(blob));
+    } catch (err) {
+      console.error("Preview error:", err);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const closePreview = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
   };
 
   // Derived: available years (Point 9)
@@ -318,7 +354,46 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const coverDefaultLabel = locale === "fr" ? "Par défaut" : "Default";
   const chaptersLabel = locale === "fr" ? "Chapitres à inclure" : "Chapters to include";
 
+  const previewLabel = locale === "fr" ? "Aperçu complet du livre" : "Full book preview";
+  const closeLabel = locale === "fr" ? "Fermer" : "Close";
+
   return (
+    <>
+    {/* Full-book preview modal */}
+    {previewUrl && (
+      <div
+        onClick={closePreview}
+        style={{
+          position: "fixed", inset: 0, zIndex: 1000,
+          background: "rgba(0,0,0,.75)", backdropFilter: "blur(4px)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          padding: "1rem",
+        }}
+      >
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{ width: "100%", maxWidth: 860, height: "90vh", display: "flex", flexDirection: "column", borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.5)" }}
+        >
+          {/* Modal header */}
+          <div style={{ background: "#3D2B1F", padding: ".75rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+            <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", color: "#F7C27A" }}>{previewLabel}</span>
+            <button
+              onClick={closePreview}
+              style={{ background: "rgba(247,242,234,.12)", border: "none", color: "#F7F2EA", borderRadius: 8, padding: ".35rem .75rem", cursor: "pointer", fontFamily: "inherit", fontSize: ".8rem" }}
+            >
+              {closeLabel} ✕
+            </button>
+          </div>
+          {/* iframe */}
+          <iframe
+            src={previewUrl}
+            style={{ flex: 1, border: "none", background: "#F7F2EA" }}
+            title="Book preview"
+          />
+        </div>
+      </div>
+    )}
+
     <div style={{ minHeight: "100vh", background: bg, fontFamily: "'DM Sans', sans-serif", transition: "background .3s" }}>
       <nav style={{ background: isMemorial ? "rgba(28,20,16,.9)" : "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.08)"}`, padding: "1rem 2rem", display: "flex", alignItems: "center", gap: "1rem" }}>
         <Link href={`/dashboard/pets/${id}`} style={{ fontSize: ".85rem", color: textMuted, textDecoration: "none" }}>{t.order.back}</Link>
@@ -695,6 +770,19 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               >
                 {t.order.preview_cta}
               </button>
+              <button
+                onClick={handleFullPreview}
+                disabled={previewLoading}
+                style={{
+                  width: "100%", padding: ".75rem", borderRadius: 100,
+                  border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
+                  background: "transparent", fontFamily: "inherit", fontSize: ".875rem",
+                  color: textPrimary, cursor: previewLoading ? "wait" : "pointer",
+                  opacity: previewLoading ? .6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem",
+                }}
+              >
+                {previewLoading ? "…" : "📖"} {previewLabel}
+              </button>
               <Link
                 href={`/dashboard/pets/${id}`}
                 style={{ display: "block", textAlign: "center", padding: ".75rem", borderRadius: 100, border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`, color: textMuted, textDecoration: "none", fontSize: ".875rem" }}
@@ -864,5 +952,6 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         )}
       </main>
     </div>
+    </>
   );
 }
