@@ -158,7 +158,14 @@ export default function SignupPage() {
                 type="email"
                 placeholder="Email"
                 value={email}
-                onChange={e => { setEmail(e.target.value); if (emailError) setEmailError(""); }}
+                onChange={e => {
+                  setEmail(e.target.value);
+                  if (emailError && EMAIL_REGEX.test(e.target.value)) setEmailError("");
+                }}
+                onBlur={() => {
+                  if (!email.trim() || !EMAIL_REGEX.test(email))
+                    setEmailError(isFR ? "L'adresse email n'est pas valide." : "The email address is not valid.");
+                }}
                 style={{
                   padding: ".75rem 1rem", borderRadius: 12,
                   border: `1.5px solid ${emailError ? "#FCA5A5" : "rgba(61,43,31,.15)"}`,
@@ -177,7 +184,14 @@ export default function SignupPage() {
                   type={showPassword ? "text" : "password"}
                   placeholder={isFR ? "Mot de passe (min. 8 caractères)" : "Password (min. 8 characters)"}
                   value={password}
-                  onChange={e => { setPassword(e.target.value); if (passwordError) setPasswordError(""); }}
+                  onChange={e => {
+                    setPassword(e.target.value);
+                    if (passwordError && e.target.value.length >= 8) setPasswordError("");
+                  }}
+                  onBlur={() => {
+                    if (password.length < 8)
+                      setPasswordError(isFR ? "Le mot de passe doit contenir au moins 8 caractères." : "Password must be at least 8 characters.");
+                  }}
                   onKeyDown={e => e.key === "Enter" && handleSignup()}
                   style={{
                     width: "100%", boxSizing: "border-box",
@@ -212,8 +226,8 @@ export default function SignupPage() {
 
             <button
               onClick={handleSignup}
-              disabled={status === "loading"}
-              style={{ padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "loading" ? .7 : 1 }}
+              disabled={status === "loading" || !EMAIL_REGEX.test(email) || password.length < 8}
+              style={{ padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: (status === "loading" || !EMAIL_REGEX.test(email) || password.length < 8) ? "not-allowed" : "pointer", opacity: (status === "loading" || !EMAIL_REGEX.test(email) || password.length < 8) ? .5 : 1, transition: "opacity .15s" }}
             >
               {status === "loading"
                 ? (isFR ? "Création du compte…" : "Creating account…")

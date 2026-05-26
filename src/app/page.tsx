@@ -167,7 +167,9 @@ export default function Home() {
             </h1>
 
             <h2 style={{ fontSize: "1rem", fontWeight: 300, color: "#7A5C44", maxWidth: 440, lineHeight: 1.7, margin: "0 0 .5rem" }}>
-              The AI-powered pet journal that prints into a hardcover book every year
+              {isFR
+                ? "Le journal de vie de votre animal, raconté par l'IA et imprimé en livre chaque année."
+                : "The AI-powered pet journal that prints into a hardcover book every year"}
             </h2>
 
             <p style={{ fontSize: "1rem", fontWeight: 300, color: "#7A5C44", maxWidth: 440, lineHeight: 1.7, margin: "0 0 2rem" }}>
@@ -325,7 +327,11 @@ export default function Home() {
 
             {/* Label below phone */}
             <p style={{ fontSize: ".72rem", color: "#7A5C44", opacity: .5, fontWeight: 300, textAlign: "center", margin: 0 }}>
-              {demoSlide === 0 ? "📝 Life journal" : demoSlide === 1 ? "✨ AI-generated story" : "📖 Annual book preview"}
+              {demoSlide === 0
+                ? (isFR ? "📝 Journal de vie" : "📝 Life journal")
+                : demoSlide === 1
+                  ? (isFR ? "✨ Histoire générée par l'IA" : "✨ AI-generated story")
+                  : (isFR ? "📖 Aperçu du livre annuel" : "📖 Annual book preview")}
             </p>
           </div>
 

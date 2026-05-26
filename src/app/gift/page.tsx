@@ -8,7 +8,9 @@ import { formatPrice, type Currency } from "@/lib/currency";
 export default function GiftPage() {
   const { t, locale } = useLocale();
   const isFR = locale === "fr";
+
   const [selectedPlan, setSelectedPlan] = useState<"digital" | "print">("digital");
+  const [step, setStep] = useState<"form" | "confirm">("form");
   const [form, setForm] = useState({
     recipientEmail: "",
     recipientName: "",
@@ -27,7 +29,8 @@ export default function GiftPage() {
     fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
   }, []);
 
-  const handleSubmit = async () => {
+  // Step 1 : validate form then go to confirm screen
+  const handleGoToConfirm = () => {
     if (!form.recipientEmail || !form.recipientName || !form.senderName) {
       alert(t.gift.required_fields);
       return;
@@ -36,6 +39,12 @@ export default function GiftPage() {
       alert(t.gift.send_date_future_error);
       return;
     }
+    setStatus("idle");
+    setStep("confirm");
+  };
+
+  // Step 2 : actually call the API
+  const handleConfirm = async () => {
     setStatus("loading");
     const res = await fetch("/api/gift/create", {
       method: "POST",
@@ -68,6 +77,10 @@ export default function GiftPage() {
     ? new Date(form.scheduledDate + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })
     : "";
 
+  const planLabel = selectedPlan === "digital" ? "Premium Digital" : "Premium Print";
+  const planPrice = `${formatPrice(currency, selectedPlan)}/${isFR ? "mois" : "mo"}`;
+
+  // ── Success screen ────────────────────────────────────────────────────────
   if (status === "success") return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", fontFamily: "'DM Sans', sans-serif" }}>
       <div style={{ maxWidth: 480, width: "100%", textAlign: "center" }}>
@@ -119,8 +132,11 @@ export default function GiftPage() {
     </div>
   );
 
+  // ── Main page ─────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* NAV */}
       <nav style={{ background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Link href="/" style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", textDecoration: "none", display: "flex", alignItems: "center", gap: ".4rem" }}>
           <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
@@ -140,6 +156,7 @@ export default function GiftPage() {
       </nav>
 
       <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+
         {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>🎁</div>
@@ -157,136 +174,184 @@ export default function GiftPage() {
               { icon: t.gift.step1_icon, title: t.gift.step1_title, desc: t.gift.step1_desc },
               { icon: t.gift.step2_icon, title: t.gift.step2_title, desc: t.gift.step2_desc },
               { icon: t.gift.step3_icon, title: t.gift.step3_title, desc: t.gift.step3_desc },
-            ] as { icon: string; title: string; desc: string }[]).map((step, i, arr) => (
+            ] as { icon: string; title: string; desc: string }[]).map((s, i, arr) => (
               <div key={i} style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-                {/* Icon + connector */}
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: "50%",
-                    background: "#FDFAF5", border: "1.5px solid rgba(200,129,58,.25)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "1.25rem", flexShrink: 0,
-                  }}>
-                    {step.icon}
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#FDFAF5", border: "1.5px solid rgba(200,129,58,.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.25rem", flexShrink: 0 }}>
+                    {s.icon}
                   </div>
                   {i < arr.length - 1 && (
                     <div style={{ width: 1.5, height: 28, background: "rgba(200,129,58,.2)", margin: ".25rem 0" }} />
                   )}
                 </div>
-                {/* Text */}
                 <div style={{ paddingTop: ".625rem", paddingBottom: i < arr.length - 1 ? "1rem" : 0 }}>
-                  <div style={{ fontSize: ".9rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".2rem", lineHeight: 1.3 }}>
-                    {step.title}
-                  </div>
-                  <div style={{ fontSize: ".82rem", color: "#7A5C44", lineHeight: 1.6, fontWeight: 300 }}>
-                    {step.desc}
-                  </div>
+                  <div style={{ fontSize: ".9rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".2rem", lineHeight: 1.3 }}>{s.title}</div>
+                  <div style={{ fontSize: ".82rem", color: "#7A5C44", lineHeight: 1.6, fontWeight: 300 }}>{s.desc}</div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Form card */}
+        {/* Card : form OR confirm */}
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)" }}>
-          {/* Plan selection */}
-          <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
-            {isFR ? "Choisir la formule" : "Choose a plan"}
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".625rem", marginBottom: ".75rem" }}>
-            {/* Digital */}
-            <button
-              onClick={() => setSelectedPlan("digital")}
-              style={{ padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "digital" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "digital" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s" }}
-            >
-              <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Digital</p>
-              <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem" }}>{formatPrice(currency, "digital")}<span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span></p>
-              <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: 0, fontWeight: 300, lineHeight: 1.4 }}>
-                {isFR ? "Entrées illimitées, histoires IA, PDF" : "Unlimited entries, AI stories, PDF"}
-              </p>
-            </button>
-            {/* Print */}
-            <button
-              onClick={() => setSelectedPlan("print")}
-              style={{ padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "print" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "print" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s", position: "relative" }}
-            >
-              <div style={{ position: "absolute", top: "-.5rem", right: ".75rem", background: "#C8813A", color: "#FDFAF5", fontSize: ".6rem", fontWeight: 600, borderRadius: 100, padding: ".15rem .5rem", letterSpacing: ".04em" }}>
-                {isFR ? "Meilleure valeur" : "Best value"}
+
+          {step === "confirm" ? (
+            /* ── Confirmation screen ──────────────────────────────────── */
+            <>
+              <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 1.25rem" }}>
+                {isFR ? "Récapitulatif" : "Summary"}
+              </h3>
+
+              <div style={{ display: "flex", flexDirection: "column", marginBottom: "1.5rem" }}>
+                {([
+                  [isFR ? "Formule" : "Plan", `${planLabel} · ${planPrice}`],
+                  [isFR ? "Destinataire" : "Recipient", form.recipientName],
+                  ["Email", form.recipientEmail],
+                  ...(form.message ? [[isFR ? "Message" : "Message", form.message]] : []),
+                  [isFR ? "Envoi" : "Sending", scheduledDateFormatted || (isFR ? "Immédiat" : "Immediate")],
+                ] as [string, string][]).map(([label, value]) => (
+                  <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", padding: ".625rem 0", borderBottom: "1px solid rgba(61,43,31,.06)" }}>
+                    <span style={{ fontSize: ".82rem", color: "#7A5C44", fontWeight: 400, flexShrink: 0 }}>{label}</span>
+                    <span style={{ fontSize: ".82rem", color: "#3D2B1F", fontWeight: 500, textAlign: "right", wordBreak: "break-word" }}>{value}</span>
+                  </div>
+                ))}
               </div>
-              <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Print</p>
-              <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem" }}>{formatPrice(currency, "print")}<span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span></p>
-              <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: 0, fontWeight: 300, lineHeight: 1.4 }}>
-                {isFR ? "Digital + livre relié annuel" : "Digital + annual hardcover book"}
-              </p>
-            </button>
-          </div>
 
-          {/* Dynamic price summary */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: ".625rem .875rem", background: "rgba(200,129,58,.06)", borderRadius: 10, marginBottom: "1.5rem" }}>
-            <span style={{ fontSize: ".8rem", color: "#7A5C44" }}>
-              {isFR ? "Formule sélectionnée" : "Selected plan"}
-            </span>
-            <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#C8813A" }}>
-              {`${formatPrice(currency, selectedPlan === "digital" ? "digital" : "print")}/${isFR ? "mois" : "mo"}`}
-            </span>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {([
-              { key: "recipientName", label: t.gift.recipient_name, placeholder: "Jane" },
-              { key: "recipientEmail", label: t.gift.recipient_email, placeholder: "jane@example.com", type: "email" },
-              { key: "senderName", label: t.gift.sender_name, placeholder: "John" },
-            ] as { key: string; label: string; placeholder: string; type?: string }[]).map(field => (
-              <div key={field.key}>
-                <label style={labelStyle}>{field.label}</label>
-                <input
-                  type={field.type || "text"}
-                  placeholder={field.placeholder}
-                  value={form[field.key as keyof typeof form]}
-                  onChange={e => setForm({ ...form, [field.key]: e.target.value })}
-                  style={inputStyle}
-                />
+              <div style={{ display: "flex", gap: ".75rem" }}>
+                <button
+                  onClick={() => setStep("form")}
+                  style={{ flex: "0 0 auto", padding: ".75rem 1.25rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#3D2B1F", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer" }}
+                >
+                  {isFR ? "← Modifier" : "← Edit"}
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  disabled={status === "loading"}
+                  style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "loading" ? .7 : 1 }}
+                >
+                  {status === "loading" ? t.gift.sending : (isFR ? "Confirmer et payer →" : "Confirm & pay →")}
+                </button>
               </div>
-            ))}
 
-            <div>
-              <label style={labelStyle}>{t.gift.message_label}</label>
-              <textarea
-                placeholder={t.gift.message_placeholder}
-                value={form.message}
-                onChange={e => setForm({ ...form, message: e.target.value })}
-                rows={3}
-                style={{ ...inputStyle, resize: "vertical" }}
-              />
-            </div>
-
-            {/* Send date field */}
-            <div>
-              <label style={labelStyle}>{t.gift.send_date_label}</label>
-              <input
-                type="date"
-                min={new Date(Date.now() + 86400000).toISOString().split("T")[0]}
-                value={form.scheduledDate}
-                onChange={e => setForm({ ...form, scheduledDate: e.target.value })}
-                style={inputStyle}
-              />
-              <p style={{ fontSize: ".75rem", color: "#7A5C44", marginTop: ".4rem", lineHeight: 1.5 }}>
-                {t.gift.send_date_hint}
+              {status === "error" && (
+                <p style={{ fontSize: ".8rem", color: "#A32D2D", marginTop: ".75rem", textAlign: "center" }}>{t.gift.error}</p>
+              )}
+            </>
+          ) : (
+            /* ── Form ────────────────────────────────────────────────── */
+            <>
+              {/* Plan selection */}
+              <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
+                {isFR ? "Choisir la formule" : "Choose a plan"}
               </p>
-            </div>
-          </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".625rem", marginBottom: ".75rem" }}>
 
-          {status === "error" && (
-            <p style={{ fontSize: ".8rem", color: "#A32D2D", marginTop: "1rem" }}>{t.gift.error}</p>
+                {/* Digital */}
+                <button
+                  onClick={() => setSelectedPlan("digital")}
+                  style={{ padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "digital" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "digital" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s" }}
+                >
+                  <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Digital</p>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .4rem" }}>
+                    {formatPrice(currency, "digital")}<span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span>
+                  </p>
+                  <ul style={{ margin: 0, padding: "0 0 0 .9rem", display: "flex", flexDirection: "column", gap: ".2rem" }}>
+                    {(isFR
+                      ? ["Entrées illimitées", "Histoires générées par l'IA", "Export PDF"]
+                      : ["Unlimited journal entries", "AI-generated stories", "PDF export"]
+                    ).map(f => (
+                      <li key={f} style={{ fontSize: ".72rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.4 }}>{f}</li>
+                    ))}
+                  </ul>
+                </button>
+
+                {/* Print */}
+                <button
+                  onClick={() => setSelectedPlan("print")}
+                  style={{ padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "print" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "print" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s", position: "relative" }}
+                >
+                  <div style={{ position: "absolute", top: "-.5rem", right: ".75rem", background: "#C8813A", color: "#FDFAF5", fontSize: ".6rem", fontWeight: 600, borderRadius: 100, padding: ".15rem .5rem", letterSpacing: ".04em" }}>
+                    {isFR ? "Meilleure valeur" : "Best value"}
+                  </div>
+                  <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Print</p>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .4rem" }}>
+                    {formatPrice(currency, "print")}<span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span>
+                  </p>
+                  <ul style={{ margin: 0, padding: "0 0 0 .9rem", display: "flex", flexDirection: "column", gap: ".2rem" }}>
+                    {(isFR
+                      ? ["Tout le plan Digital", "Livre relié inclus chaque année", "Livraison offerte"]
+                      : ["Everything in Digital", "Annual hardcover book included", "Free shipping"]
+                    ).map(f => (
+                      <li key={f} style={{ fontSize: ".72rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.4 }}>{f}</li>
+                    ))}
+                  </ul>
+                </button>
+              </div>
+
+              {/* Dynamic price summary */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: ".625rem .875rem", background: "rgba(200,129,58,.06)", borderRadius: 10, marginBottom: "1.5rem" }}>
+                <span style={{ fontSize: ".8rem", color: "#7A5C44" }}>
+                  {isFR ? "Formule sélectionnée" : "Selected plan"}
+                </span>
+                <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#C8813A" }}>
+                  {planPrice}
+                </span>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                {([
+                  { key: "recipientName", label: t.gift.recipient_name, placeholder: "Jane" },
+                  { key: "recipientEmail", label: t.gift.recipient_email, placeholder: "jane@example.com", type: "email" },
+                  { key: "senderName", label: t.gift.sender_name, placeholder: "John" },
+                ] as { key: string; label: string; placeholder: string; type?: string }[]).map(field => (
+                  <div key={field.key}>
+                    <label style={labelStyle}>{field.label}</label>
+                    <input
+                      type={field.type || "text"}
+                      placeholder={field.placeholder}
+                      value={form[field.key as keyof typeof form]}
+                      onChange={e => setForm({ ...form, [field.key]: e.target.value })}
+                      style={inputStyle}
+                    />
+                  </div>
+                ))}
+
+                <div>
+                  <label style={labelStyle}>{t.gift.message_label}</label>
+                  <textarea
+                    placeholder={t.gift.message_placeholder}
+                    value={form.message}
+                    onChange={e => setForm({ ...form, message: e.target.value })}
+                    rows={3}
+                    style={{ ...inputStyle, resize: "vertical" }}
+                  />
+                </div>
+
+                {/* Send date field */}
+                <div>
+                  <label style={labelStyle}>{t.gift.send_date_label}</label>
+                  <input
+                    type="date"
+                    min={new Date(Date.now() + 86400000).toISOString().split("T")[0]}
+                    value={form.scheduledDate}
+                    onChange={e => setForm({ ...form, scheduledDate: e.target.value })}
+                    style={inputStyle}
+                  />
+                  <p style={{ fontSize: ".75rem", color: "#7A5C44", marginTop: ".4rem", lineHeight: 1.5 }}>
+                    {t.gift.send_date_hint}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleGoToConfirm}
+                style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer" }}
+              >
+                {t.gift.send}
+              </button>
+            </>
           )}
-
-          <button
-            onClick={handleSubmit}
-            disabled={status === "loading"}
-            style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "loading" ? .7 : 1 }}
-          >
-            {status === "loading" ? t.gift.sending : t.gift.send}
-          </button>
         </div>
       </main>
     </div>
