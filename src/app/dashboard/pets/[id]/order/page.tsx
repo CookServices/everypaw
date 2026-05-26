@@ -89,7 +89,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [coverTheme, setCoverTheme] = useState<ThemeId>("classic");
   const [customTitle, setCustomTitle] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
   const [address, setAddress] = useState(() => ({
     firstName: "",
@@ -178,10 +178,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         }),
       });
       const html = await res.text();
-      // Revoke previous blob URL to avoid memory leaks
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      const blob = new Blob([html], { type: "text/html" });
-      setPreviewUrl(URL.createObjectURL(blob));
+      setPreviewHtml(html);
     } catch (err) {
       console.error("Preview error:", err);
     } finally {
@@ -189,10 +186,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     }
   };
 
-  const closePreview = () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null);
-  };
+  const closePreview = () => setPreviewHtml(null);
 
   // Derived: available years (Point 9)
   const availableYears = Array.from(
@@ -360,7 +354,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   return (
     <>
     {/* Full-book preview modal */}
-    {previewUrl && (
+    {previewHtml && (
       <div
         onClick={closePreview}
         style={{
@@ -384,9 +378,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               {closeLabel} ✕
             </button>
           </div>
-          {/* iframe */}
+          {/* iframe via srcdoc — evite les restrictions blob: URL / CSP */}
           <iframe
-            src={previewUrl}
+            srcDoc={previewHtml}
             style={{ flex: 1, border: "none", background: "#F7F2EA" }}
             title="Book preview"
           />
