@@ -36,6 +36,9 @@ export async function POST(req: Request) {
   if (!message || message.trim().length < 20) {
     return NextResponse.json({ error: "Message too short" }, { status: 400 });
   }
+  if (message.length > 5000) {
+    return NextResponse.json({ error: "Message too long (max 5000 chars)" }, { status: 400 });
+  }
 
   const to = SUBJECT_ROUTING[subject];
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { validatePdfToken } from "@/lib/pdf-token";
 import { escapeHtml } from "@/lib/html";
+import { getServiceSupabase } from "@/lib/plan";
 
 export const dynamic = "force-dynamic";
 
@@ -22,12 +22,7 @@ const COVER_THEMES = {
 type ThemeId = keyof typeof COVER_THEMES;
 const VALID_THEMES = Object.keys(COVER_THEMES) as ThemeId[];
 
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function safeUrl(url: string): string {
   try {
@@ -79,7 +74,7 @@ async function buildHtml(params: {
   customTitle: string | null;
 }): Promise<NextResponse> {
   const { petId, lang, storyIdsParam, dedication, yearFilter, coverPhotoParam, theme, customTitle } = params;
-  const supabase = getServiceClient();
+  const supabase = getServiceSupabase();
   const s = STRINGS[lang] ?? STRINGS.en;
   const colors = COVER_THEMES[theme] ?? COVER_THEMES.classic;
 
@@ -304,6 +299,7 @@ export async function GET(req: Request) {
   const petId = url.searchParams.get("petId");
 
   if (!petId) return NextResponse.json({ error: "petId required" }, { status: 400 });
+  if (!UUID_REGEX.test(petId)) return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
 
   const token = url.searchParams.get("token");
   const expires = url.searchParams.get("expires");
@@ -370,6 +366,25 @@ export async function POST(req: Request) {
 
   const { petId, lang, storyIds, dedication, year, coverPhoto, theme, customTitle } = body;
   if (!petId) return NextResponse.json({ error: "petId required" }, { status: 400 });
+  if (!UUID_REGEX.test(petId)) return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
+
+  // Validate storyIds format
+  if (storyIds) {
+    const ids = storyIds.split(",").filter(Boolean);
+    const invalid = ids.find((id: string) => !UUID_REGEX.test(id));
+    if (invalid !== undefined) {
+      return NextResponse.json({ error: "Invalid storyId format" }, { status: 400 });
+    }
+  }
+
+  // Validate coverPhoto: https only
+  if (coverPhoto) {
+    try {
+      if (new URL(coverPhoto).protocol !== "https:") throw new Error();
+    } catch {
+      return NextResponse.json({ error: "Invalid coverPhoto" }, { status: 400 });
+    }
+  }
 
   // Validate lang
   const validLang: Lang = VALID_LANGS.includes(lang as Lang) ? (lang as Lang) : "en";
@@ -395,7 +410,7 @@ export async function POST(req: Request) {
     : null;
 
   // Verify the authenticated user owns this pet
-  const supabase = getServiceClient();
+  const supabase = getServiceSupabase();
   const { data: pet } = await supabase.from("pets").select("user_id").eq("id", petId).single();
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });

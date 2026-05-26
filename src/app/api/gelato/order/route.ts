@@ -58,6 +58,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid shipping address" }, { status: 400 });
   }
 
+  if (!petId || !UUID_REGEX.test(petId)) {
+    return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
+  }
+
+  if (!process.env.GELATO_API_KEY) {
+    console.error("[gelato/order] GELATO_API_KEY is not set");
+    return NextResponse.json({ error: "Order service not configured" }, { status: 500 });
+  }
+
   const supabase = getServiceSupabase();
 
   const { data: pet } = await supabase.from("pets").select("*").eq("id", petId).single();
@@ -187,7 +196,7 @@ export async function POST(req: Request) {
       console.error("Gelato error:", data);
       // Restore the credit since the order failed
       await supabase.rpc("restore_book_credit", { p_user_id: user.id });
-      return NextResponse.json({ error: "Order failed", details: data }, { status: 400 });
+      return NextResponse.json({ error: "Order failed" }, { status: 400 });
     }
 
     // Update selected stories as ordered — always filter by user_id to prevent IDOR
