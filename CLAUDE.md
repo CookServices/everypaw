@@ -602,6 +602,21 @@ currency: "USD"
 - Cards de plan : descriptions remplacées par des listes à puces explicites — Digital (Entrées illimitées · Histoires IA · Export PDF), Print (Tout le Digital · Livre relié inclus chaque année · Livraison offerte)
 - **Étape de confirmation** : state `step: "form" | "confirm"` — aucune navigation, inline dans la card. Clic "Envoyer le cadeau →" → validation → récapitulatif (formule + prix, destinataire, email, message optionnel, date ou "Immédiat"). Bouton "← Modifier" retour au formulaire pré-rempli. Bouton "Confirmer et payer →" déclenche l'appel API.
 
+### ✅ UI pricing + plan Digital annuel (2026-05-26, session 13)
+
+**UI landing — section tarifs**
+- **Badge `−34 %`** : `padding: "2px 8px"` (explicite, immune au zoom), `flexShrink: 0`, `lineHeight: 1.4` — ne déborde plus sur le bord du toggle pill
+- **Prix annuel Digital** : `digitalAnnual` dans `currency.ts` corrigé `35,90 €/$35.90` → `35,88 €/$35.88` (= 2,99 × 12 exact)
+- **CTA "Commencer Digital →"** : fond plein `#C8813A` + `color: #FDFAF5` + `fontWeight: 600` + hover `#B5712E` — remplace l'outline pâle ; hiérarchie Print > Digital > Gratuit cohérente
+- **Affichage prix annuel Digital harmonisé sur Print** : prix principal = total annuel (`35,88 €`) au lieu du mensuel (`2,99 €`) ; sous-titre `par an · économisez 24 €` (économies = 4,99 × 12 − 35,88 = 24 €) — même pattern que Print (`par an · économisez 40 €`)
+
+**Plan Digital annuel — implémentation complète**
+- Nouvelles vars Vercel : `STRIPE_PRICE_ID_DIGITAL_ANNUAL_EUR`, `STRIPE_PRICE_ID_DIGITAL_ANNUAL_USD`, `STRIPE_PRICE_PRINT_ANNUAL_EUR`, `STRIPE_PRICE_PRINT_ANNUAL_USD`
+- **`checkout/route.ts`** : `digital_annual` ajouté dans `PRICE_MAP` — le toggle annuel déclenche désormais un vrai Price ID Stripe annuel
+- **`upgrade/route.ts`** : `digital_annual` + `print_annual` ajoutés — un abonné peut passer de mensuel → annuel via `POST /api/stripe/upgrade { newPlan: "digital_annual" }`
+- **`plan.ts` → `priceIdToPlan()`** : les 2 nouveaux Price IDs digital annuel mappés → plan `"digital"` en DB (le plan DB ne distingue pas mensuel/annuel, c'est Stripe qui gère)
+- **Landing CTA Digital** : `href` passe `?plan=digital_annual` quand `pricingCycle === "annual"`, `?plan=digital` sinon
+
 ### 🚧 Prochaine étape
 - **Exécuter les migrations SQL** dans le dashboard Supabase (`round2_security_fixes_2026_05_23.sql` + précédentes si pas encore fait)
 - Passer Stripe en mode **Live**
