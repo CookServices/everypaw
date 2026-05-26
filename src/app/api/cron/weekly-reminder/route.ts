@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
+import { verifyBearer } from "@/lib/auth";
 
 export async function GET(req: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -9,8 +10,7 @@ export async function GET(req: Request) {
     console.error("CRON_SECRET is not set or too short (min 32 chars)");
     return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
   }
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  if (!verifyBearer(req.headers.get("authorization"), cronSecret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

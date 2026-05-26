@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
+import { verifyBearer } from "@/lib/auth";
+
+function escapeXml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
 
 export async function GET(req: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -9,8 +14,7 @@ export async function GET(req: Request) {
     console.error("CRON_SECRET is not set or too short (min 32 chars)");
     return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
   }
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  if (!verifyBearer(req.headers.get("authorization"), cronSecret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -86,7 +90,7 @@ export async function GET(req: Request) {
               {
                 role: "user",
                 // Pet details isolated in XML tags to prevent prompt injection
-                content: `Generate a monthly story for ${monthLabel}.\n\n<pet_details>\n  <name>${pet.name}</name>\n  <species>${pet.species}</species>\n  <bio>${pet.bio || "Not provided"}</bio>\n</pet_details>\n\n<journal_entries>\n${entriesText}\n</journal_entries>`,
+                content: `Generate a monthly story for ${escapeXml(monthLabel)}.\n\n<pet_details>\n  <name>${escapeXml(pet.name)}</name>\n  <species>${escapeXml(pet.species || "")}</species>\n  <bio>${escapeXml(pet.bio || "Not provided")}</bio>\n</pet_details>\n\n<journal_entries>\n${escapeXml(entriesText)}\n</journal_entries>`,
               },
             ],
           }),

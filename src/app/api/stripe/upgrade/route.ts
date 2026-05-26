@@ -64,10 +64,13 @@ export async function POST(req: Request) {
       proration_behavior: "always_invoice",
     });
 
+    // Map plan key to valid DB plan value ("digital_annual" → "digital", etc.)
+    const dbPlan = newPlan.startsWith("digital") ? "digital" : "print";
+
     // Stripe succeeded — update DB. If this fails, the webhook will reconcile.
     const { error: dbError } = await supabase
       .from("profiles")
-      .update({ plan: newPlan, is_premium: true })
+      .update({ plan: dbPlan, is_premium: true })
       .eq("id", user.id);
 
     if (dbError) {

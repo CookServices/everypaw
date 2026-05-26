@@ -1,18 +1,8 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
 import { Resend } from "resend";
 import { buildResetPasswordEmail } from "@/lib/auth-emails";
 import { getProfileLocale } from "@/lib/locale";
-
-function verifyBearer(authHeader: string | null, secret: string): boolean {
-  if (!authHeader) return false;
-  const expected = `Bearer ${secret}`;
-  try {
-    return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected));
-  } catch {
-    return false;
-  }
-}
+import { verifyBearer, validateRedirectTo } from "@/lib/auth";
 
 export async function POST(req: Request) {
   const secret = process.env.SUPABASE_HOOK_SECRET;
@@ -30,7 +20,10 @@ export async function POST(req: Request) {
 
   const email = body.email;
   const tokenHash = body.data?.token_hash;
-  const redirectTo = body.data?.redirect_to ?? `${process.env.NEXT_PUBLIC_APP_URL}/auth/update-password`;
+  const redirectTo = validateRedirectTo(
+    body.data?.redirect_to,
+    `${process.env.NEXT_PUBLIC_APP_URL}/auth/update-password`
+  );
 
   if (!email || !tokenHash) {
     return NextResponse.json({ error: "Missing email or token" }, { status: 400 });

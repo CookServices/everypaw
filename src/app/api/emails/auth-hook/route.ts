@@ -27,9 +27,14 @@ export async function POST(req: Request) {
   }
 
   const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
-  const sigBuf = Buffer.from(signature);
-  const expectedBuf = Buffer.from(expected);
-  if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) {
+  try {
+    // Compare as decoded bytes so the comparison is over 32 bytes regardless of encoding
+    const sigBytes = Buffer.from(signature, "hex");
+    const expectedBytes = Buffer.from(expected, "hex");
+    if (sigBytes.length !== 32 || !timingSafeEqual(sigBytes, expectedBytes)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

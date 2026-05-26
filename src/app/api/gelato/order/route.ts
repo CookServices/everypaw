@@ -34,6 +34,30 @@ export async function POST(req: Request) {
     }
   }
 
+  // Validate coverPhotoUrl protocol — only https URLs accepted
+  if (coverPhotoUrl !== undefined && coverPhotoUrl !== null && coverPhotoUrl !== "") {
+    try {
+      const parsed = new URL(coverPhotoUrl);
+      if (parsed.protocol !== "https:") {
+        return NextResponse.json({ error: "Invalid coverPhotoUrl" }, { status: 400 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid coverPhotoUrl" }, { status: 400 });
+    }
+  }
+
+  // Validate shippingAddress fields — presence + max length
+  const ADDR_MAX = 100;
+  if (!shippingAddress ||
+      typeof shippingAddress.firstName !== "string" || shippingAddress.firstName.length > ADDR_MAX ||
+      typeof shippingAddress.lastName !== "string" || shippingAddress.lastName.length > ADDR_MAX ||
+      typeof shippingAddress.addressLine1 !== "string" || shippingAddress.addressLine1.length > ADDR_MAX ||
+      typeof shippingAddress.city !== "string" || shippingAddress.city.length > ADDR_MAX ||
+      typeof shippingAddress.postCode !== "string" || shippingAddress.postCode.length > 20 ||
+      typeof shippingAddress.country !== "string" || shippingAddress.country.length > 3) {
+    return NextResponse.json({ error: "Invalid shipping address" }, { status: 400 });
+  }
+
   const supabase = getServiceSupabase();
 
   const { data: pet } = await supabase.from("pets").select("*").eq("id", petId).single();
