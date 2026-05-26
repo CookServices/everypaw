@@ -691,8 +691,27 @@ currency: "USD"
 - Flow : page mémorial → clic "Modifier" → dashboard → modal mémorial pré-ouvert (photo, message, date)
 - Les visiteurs non-propriétaires voient la page normalement, sans bouton
 
+### ✅ Security review Round 3 (2026-05-26) — PR #26
+
+**Medium fixes**
+- **`try_consume_book_credit` plan Digital** (M4) : la RPC bloquait les abonnés `digital` (0 crédits) alors qu'ils ont droit aux livres. `digital` ajouté comme cas libre (pas de crédit consommé) ; `restore_book_credit` mis à jour en cohérence. Migration : `round3_security_fixes_2026_05_26.sql`.
+- **XSS `/api/contact`** (M1) : `email` et `subject` interpolés en HTML sans échappement → `escapeHtml()` appliqué.
+- **SSRF `coverPhotoUrl`** (M2) : URL transmise à Gelato sans validation de protocole → `https:` enforced côté serveur dans `gelato/order`.
+- **Validation `shippingAddress`** (M3) : champs sans contrôle de présence ni limite de taille → validation + plafond 100 chars.
+- **`CRON_SECRET` timing attack** (M5) : `===` remplacé par `timingSafeEqual` via `verifyBearer()` dans les 2 routes cron.
+
+**Low fixes**
+- **Open redirect `redirect_to`** (L1) : `redirect_to` non validé dans `confirm-signup`, `change-email`, `reset-password` → `validateRedirectTo()` ajouté, fallback si hostname invalide.
+- **`verifyBearer` extrait** (L2) : fonction dupliquée dans 3 fichiers → extraite dans `src/lib/auth.ts` avec `validateRedirectTo`. Dette CLAUDE.md soldée.
+- **Plan DB `upgrade`** (L3) : `digital_annual` / `print_annual` écrits tels quels en DB (type invalide) → mappés en `"digital"` / `"print"` avant écriture.
+- **HMAC bytes `auth-hook`** (L4) : `timingSafeEqual` portait sur les strings hex UTF-8 → `Buffer.from(sig, "hex")` (32 bytes constants).
+
+**Info fixes**
+- **Rate limit `/api/contact`** (I2) : 3 req/min par IP via `checkRateLimit`.
+- **XML injection cron** (I3) : `pet.name`, `pet.species`, `pet.bio`, `entriesText` XML-escapés avant interpolation dans les balises `<pet_details>` / `<journal_entries>`.
+
 ### 🚧 Prochaine étape
-- **Exécuter les migrations SQL** dans le dashboard Supabase (`round2_security_fixes_2026_05_23.sql` + précédentes si pas encore fait)
+- **Exécuter les migrations SQL** dans le dashboard Supabase (`round2_security_fixes_2026_05_23.sql` + `round3_security_fixes_2026_05_26.sql` + précédentes si pas encore fait)
 - Passer Stripe en mode **Live**
 - Passer Google OAuth en mode **Published**
 - Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` et `STRIPE_PRICE_BOOK_ONCE_USD` dans Vercel (book-checkout EUR/USD)
@@ -725,7 +744,7 @@ currency: "USD"
 - **`/api/generate`** : ne jamais faire confiance aux données du body client (petName, species, bio, entries). Re-fetcher depuis la DB après vérification de l'ownership du pet.
 - **`/api/gelato/order`** : toujours filtrer les updates de stories par `user_id` (même avec service role). Consommer les crédits via `try_consume_book_credit` **avant** l'appel Gelato, et restaurer via `restore_book_credit` en cas d'échec.
 - **`/api/preview-pdf`** : l'accès GET (Gelato) nécessite un token HMAC signé généré par `gelato/order`. L'accès POST (in-app) nécessite une session + vérification de l'ownership du pet. Ne jamais exposer le contenu du livre sans authentification. Les URLs insérées dans du CSS (`url('...')`) doivent être passées par `safeCssUrl()` qui échappe les apostrophes.
-- **Helpers partagés** : pour escaper du HTML → `src/lib/html.ts`. Pour détecter la locale d'un profil → `src/lib/locale.ts` (utilise `getServiceSupabase()` — pas de session requise). Pour le calcul du nombre de pages → `src/lib/book.ts`. Pour les tokens PDF → `src/lib/pdf-token.ts`. Pour mapper les erreurs Supabase Auth → messages FR/EN → `src/lib/auth-errors.ts` (`getSignupError`). Ne pas réimplémenter ces fonctions inline.
+- **Helpers partagés** : pour escaper du HTML → `src/lib/html.ts`. Pour détecter la locale d'un profil → `src/lib/locale.ts` (utilise `getServiceSupabase()` — pas de session requise). Pour le calcul du nombre de pages → `src/lib/book.ts`. Pour les tokens PDF → `src/lib/pdf-token.ts`. Pour mapper les erreurs Supabase Auth → messages FR/EN → `src/lib/auth-errors.ts` (`getSignupError`). Pour `verifyBearer` (Bearer token constant-time) et `validateRedirectTo` (open redirect guard) → `src/lib/auth.ts`. Ne pas réimplémenter ces fonctions inline.
 - **Rate limiting** : le rate limiter in-memory (`src/lib/rate-limit.ts`) n'est PAS fiable sur Vercel serverless (cold start = reset, pas de partage entre instances). Pour les limites critiques, utiliser un count DB (voir `/api/generate`) ou Upstash Redis.
 - **Comparaisons de secrets** : toujours utiliser `timingSafeEqual` de `node:crypto` pour comparer des tokens/secrets (Bearer, HMAC, etc.). Ne jamais utiliser `===` pour ces comparaisons — vulnérable aux attaques par timing.
 - **Validation dates** : les paramètres `periodStart`/`periodEnd` reçus du client doivent être validés comme `YYYY-MM-DD` avant usage comme filtre DB.
@@ -742,7 +761,7 @@ currency: "USD"
 - [ ] Tester le webhook Stripe en mode Live avec un vrai paiement
 - [ ] Vérifier que le cron weekly-reminder envoie bien les emails
 - [ ] Vérifier que Gelato est configuré avec une carte de paiement valide
-- [ ] Exécuter `supabase/migrations/round2_security_fixes_2026_05_23.sql` dans le dashboard Supabase (RPCs `try_consume_book_credit` + `restore_book_credit`)
+- [ ] Exécuter `supabase/migrations/round2_security_fixes_2026_05_23.sql` puis `round3_security_fixes_2026_05_26.sql` dans le dashboard Supabase (RPCs `try_consume_book_credit` + `restore_book_credit` — round3 corrige le plan `digital`)
 
 ---
 
@@ -756,4 +775,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-26 (session 15 — fix switch langue, PublicNav/Footer partagés, FAQ Q3, bouton Modifier page mémorial + auto-open modal dashboard)*
+*Dernière mise à jour : 2026-05-26 (session 16 — security review Round 3 : 11 findings, PR #26 mergée — digital plan book order fix, timingSafeEqual crons, XSS contact, SSRF coverPhoto, shippingAddress validation, redirect_to validation, verifyBearer extrait dans auth.ts, XML escape cron prompt)*
