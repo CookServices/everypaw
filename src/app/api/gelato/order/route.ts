@@ -21,6 +21,9 @@ export async function POST(req: Request) {
     dedicationText,
     coverPhotoUrl,
     yearFilter,
+    lang,
+    coverTheme,
+    customTitle,
   } = await req.json();
 
   // Validate selectedStoryIds format to prevent injection into URL params
@@ -88,6 +91,16 @@ export async function POST(req: Request) {
   }
   if (coverPhotoUrl) {
     pdfUrl.searchParams.set("coverPhoto", encodeURIComponent(coverPhotoUrl));
+  }
+  if (lang === "fr" || lang === "en") {
+    pdfUrl.searchParams.set("lang", lang);
+  }
+  const VALID_THEMES = ["classic", "noir", "forest", "ocean", "rose"];
+  if (typeof coverTheme === "string" && VALID_THEMES.includes(coverTheme)) {
+    pdfUrl.searchParams.set("theme", coverTheme);
+  }
+  if (typeof customTitle === "string" && customTitle.trim().length > 0) {
+    pdfUrl.searchParams.set("customTitle", encodeURIComponent(customTitle.trim().slice(0, 60)));
   }
 
   const orderPayload = {

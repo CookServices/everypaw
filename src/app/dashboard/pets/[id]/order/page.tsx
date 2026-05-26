@@ -58,6 +58,15 @@ const COUNTRIES = [
   { code: "ZA", name: "South Africa" },
 ];
 
+const COVER_THEMES = [
+  { id: "classic", labelFr: "Classique", labelEn: "Classic", bg: "#3D2B1F", title: "#F7C27A", accent: "#C8813A", back: "#C8813A" },
+  { id: "noir",    labelFr: "Noir",      labelEn: "Noir",    bg: "#1A1A1E", title: "#F0EEE8", accent: "#B8AFA0", back: "#2C2C2E" },
+  { id: "forest",  labelFr: "Forêt",     labelEn: "Forest",  bg: "#1B3028", title: "#AACCA0", accent: "#6A9E78", back: "#2A4A38" },
+  { id: "ocean",   labelFr: "Océan",     labelEn: "Ocean",   bg: "#152040", title: "#A8C8E8", accent: "#5880B8", back: "#1E3060" },
+  { id: "rose",    labelFr: "Rose",      labelEn: "Rose",    bg: "#3A1525", title: "#F0B8C8", accent: "#C87890", back: "#8A3050" },
+] as const;
+type ThemeId = typeof COVER_THEMES[number]["id"];
+
 export default function OrderPage({ params }: { params: { id: string } }) {
   const { t, locale } = useLocale();
   const { id } = params;
@@ -76,6 +85,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [dedicationText, setDedicationText] = useState<string>("");
   const [yearFilter, setYearFilter] = useState<number | null>(null);
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverTheme, setCoverTheme] = useState<ThemeId>("classic");
+  const [customTitle, setCustomTitle] = useState("");
 
   const [address, setAddress] = useState(() => ({
     firstName: "",
@@ -116,6 +128,34 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       ? stories
       : stories.filter(s => new Date(s.period_start ?? s.created_at).getFullYear() === year);
     setSelectedStoryIds(visible.map(s => s.id));
+    // Reset cover photo — it may no longer exist in the new year's entries
+    setCoverPhotoUrl(null);
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+      const path = `${user.id}/book-cover-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("pet-photos")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage
+        .from("pet-photos")
+        .getPublicUrl(path);
+      setCoverPhotoUrl(publicUrl);
+    } catch (err) {
+      console.error("Cover upload error:", err);
+    } finally {
+      setUploadingCover(false);
+      e.target.value = "";
+    }
   };
 
   // Derived: available years (Point 9)
@@ -139,8 +179,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const photoEntries = filteredEntries.filter(e => e.photo_urls?.length > 0);
   const photoCount = Math.min(photoEntries.flatMap(e => e.photo_urls).length, 6);
 
-  // All photos available for cover selection — from all entries, not filtered by year (Point 10)
-  const availablePhotos = entries
+  // Cover photo picker uses the same year filter as the rest of the preview
+  const availablePhotos = filteredEntries
     .flatMap(e => e.photo_urls ?? [])
     .filter(Boolean)
     .slice(0, 8);
@@ -163,8 +203,29 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
   const monthsCount = (() => {
     if (!pet) return 1;
-    const start = pet.birthdate ? new Date(pet.birthdate) : new Date(pet.created_at);
-    return Math.max(1, Math.round((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+    if (yearFilter === null) {
+      // Toutes les années : depuis la première histoire/entrée jusqu'à aujourd'hui
+      const allDates: Date[] = [
+        ...entries.map(e => new Date(e.entry_date)),
+        ...stories.map(s => new Date(s.period_start ?? s.created_at)),
+      ];
+      if (allDates.length === 0) {
+        // Fallback si aucun contenu : depuis la création du profil
+        const start = pet.birthdate ? new Date(pet.birthdate) : new Date(pet.created_at);
+        return Math.max(1, Math.round((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+      }
+      const minDate = allDates.reduce((a, b) => a < b ? a : b);
+      return Math.max(1, Math.round((Date.now() - minDate.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+    }
+    // Année spécifique : span entre la première et la dernière entrée/histoire de cette année
+    const dates: Date[] = [
+      ...filteredEntries.map(e => new Date(e.entry_date)),
+      ...visibleStories.map(s => new Date(s.period_start ?? s.created_at)),
+    ];
+    if (dates.length === 0) return 1;
+    const minDate = dates.reduce((a, b) => a < b ? a : b);
+    const maxDate = dates.reduce((a, b) => a > b ? a : b);
+    return Math.max(1, Math.round((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1);
   })();
 
   const handleOrder = async () => {
@@ -181,6 +242,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           dedicationText: dedicationText.trim() || null,
           coverPhotoUrl,
           yearFilter,
+          lang: locale,
+          coverTheme,
+          customTitle: customTitle.trim() || null,
         }),
       });
       const data = await res.json();
@@ -204,6 +268,15 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     { key: "city", label: t.order.city, placeholder: "" },
     { key: "postCode", label: t.order.postal_code, placeholder: "" },
   ];
+
+  const selectedTheme = COVER_THEMES.find(t => t.id === coverTheme) ?? COVER_THEMES[0];
+  const bookBg = isMemorial ? "#0E0B08" : selectedTheme.bg;
+  const bookTitleColor = isMemorial ? "#F7C27A" : selectedTheme.title;
+  const bookAccentColor = isMemorial ? "#8B6B4A" : selectedTheme.accent;
+  const defaultCoverTitle = isMemorial
+    ? t.order.memorial_cover_title.replace("{name}", petName || "…")
+    : t.order.book_cover_title.replace("{name}", petName || "…");
+  const displayCoverTitle = customTitle.trim() || defaultCoverTitle;
 
   const bg = isMemorial ? "#1C1410" : "#F7F2EA";
   const cardBg = isMemorial ? "rgba(247,242,234,.04)" : "#FDFAF5";
@@ -338,11 +411,69 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               </div>
             )}
 
+            {/* Customization — theme + title */}
+            {!isMemorial && (
+              <div style={{ marginBottom: "1.25rem", background: cardBg, border: cardBorder, borderRadius: 14, padding: "1rem 1.25rem" }}>
+                <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+                  {locale === "fr" ? "Personnalisation" : "Customization"}
+                </div>
+                {/* Theme swatches */}
+                <div style={{ marginBottom: ".875rem" }}>
+                  <div style={{ fontSize: ".7rem", color: textMuted, marginBottom: ".5rem", fontFamily: "sans-serif" }}>
+                    {locale === "fr" ? "Thème de couleur" : "Color theme"}
+                  </div>
+                  <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
+                    {COVER_THEMES.map(theme => (
+                      <button
+                        key={theme.id}
+                        onClick={() => setCoverTheme(theme.id)}
+                        title={locale === "fr" ? theme.labelFr : theme.labelEn}
+                        style={{
+                          width: 36, height: 36, borderRadius: 8,
+                          background: theme.bg,
+                          border: coverTheme === theme.id ? `2.5px solid ${accentColor}` : "2.5px solid transparent",
+                          cursor: "pointer", position: "relative",
+                          boxShadow: coverTheme === theme.id ? `0 0 0 1px ${accentColor}` : "none",
+                          transition: "border .15s, box-shadow .15s",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {/* Accent color strip at bottom */}
+                        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 8, background: theme.accent }} />
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: ".65rem", color: textMuted, marginTop: ".35rem", fontFamily: "sans-serif" }}>
+                    {locale === "fr"
+                      ? (COVER_THEMES.find(t => t.id === coverTheme)?.labelFr ?? "")
+                      : (COVER_THEMES.find(t => t.id === coverTheme)?.labelEn ?? "")}
+                  </div>
+                </div>
+                {/* Custom title */}
+                <div>
+                  <div style={{ fontSize: ".7rem", color: textMuted, marginBottom: ".5rem", fontFamily: "sans-serif" }}>
+                    {locale === "fr" ? "Titre du livre (optionnel)" : "Book title (optional)"}
+                  </div>
+                  <input
+                    type="text"
+                    value={customTitle}
+                    onChange={e => setCustomTitle(e.target.value)}
+                    maxLength={60}
+                    placeholder={defaultCoverTitle}
+                    style={{ ...inputStyle, fontSize: ".85rem" }}
+                  />
+                  <div style={{ fontSize: ".65rem", color: textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
+                    {customTitle.length}/60
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Book cover */}
             <div style={{
-              background: isMemorial ? "#0E0B08" : (coverPhotoUrl ? "transparent" : "#3D2B1F"),
+              background: coverPhotoUrl ? "transparent" : bookBg,
               backgroundImage: coverPhotoUrl
-                ? `linear-gradient(rgba(61,43,31,.7), rgba(61,43,31,.85)), url('${coverPhotoUrl}')`
+                ? `linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.65)), url('${coverPhotoUrl}')`
                 : undefined,
               backgroundSize: coverPhotoUrl ? "cover" : undefined,
               backgroundPosition: coverPhotoUrl ? "center" : undefined,
@@ -350,69 +481,114 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               textAlign: "center", marginBottom: "1.25rem",
               boxShadow: "0 12px 40px rgba(0,0,0,.25)",
               position: "relative", overflow: "hidden",
+              transition: "background .3s",
             }}>
               {/* Decorative spine line */}
-              <div style={{ position: "absolute", left: 18, top: 0, bottom: 0, width: 4, background: isMemorial ? "rgba(139,107,74,.4)" : "rgba(200,129,58,.35)", borderRadius: 2 }} />
+              <div style={{ position: "absolute", left: 18, top: 0, bottom: 0, width: 4, background: `${bookAccentColor}60`, borderRadius: 2 }} />
               <div style={{ fontSize: "2.75rem", marginBottom: "1.25rem" }}>{isMemorial ? "🕊️" : "🐾"}</div>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.9rem", fontWeight: 600, color: "#F7C27A", lineHeight: 1.25, marginBottom: ".75rem" }}>
-                {isMemorial
-                  ? t.order.memorial_cover_title.replace("{name}", petName || "…")
-                  : t.order.book_cover_title.replace("{name}", petName || "…")}
+              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.9rem", fontWeight: 600, color: bookTitleColor, lineHeight: 1.25, marginBottom: ".75rem", transition: "color .3s" }}>
+                {displayCoverTitle}
               </div>
               {coverPeriod && (
                 <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "1rem", color: "rgba(247,242,234,.45)", marginBottom: "1.5rem" }}>
                   {petName} · {coverPeriod}
                 </div>
               )}
-              <div style={{ width: 48, height: 2, background: accentColor, margin: "0 auto 1.5rem", borderRadius: 1 }} />
+              <div style={{ width: 48, height: 2, background: bookAccentColor, margin: "0 auto 1.5rem", borderRadius: 1, transition: "background .3s" }} />
               <div style={{ fontSize: ".7rem", color: "rgba(247,242,234,.3)", letterSpacing: ".12em", textTransform: "uppercase" }}>
                 {t.order.book_cover_label}
               </div>
             </div>
 
-            {/* Cover photo picker (Point 10) */}
-            {availablePhotos.length > 0 && (
-              <div style={{ marginBottom: "1.25rem" }}>
-                <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
-                  {coverPhotoLabel}
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", alignItems: "center" }}>
-                  {/* Default button */}
+            {/* Cover photo picker (Point 10) — always visible */}
+            <div style={{ marginBottom: "1.25rem" }}>
+              <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+                {coverPhotoLabel}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", alignItems: "center" }}>
+                {/* Default button */}
+                <button
+                  onClick={() => setCoverPhotoUrl(null)}
+                  style={{
+                    width: 60, height: 60, borderRadius: 8,
+                    background: "#3D2B1F",
+                    border: coverPhotoUrl === null ? "2px solid #C8813A" : "2px solid transparent",
+                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "rgba(247,242,234,.6)", fontSize: ".6rem", fontFamily: "sans-serif",
+                    textAlign: "center", padding: 4, lineHeight: 1.2,
+                  }}
+                >
+                  {coverDefaultLabel}
+                </button>
+                {/* Journal photo thumbnails (filtered by year) */}
+                {availablePhotos.map((photoUrl, i) => (
                   <button
-                    onClick={() => setCoverPhotoUrl(null)}
+                    key={i}
+                    onClick={() => setCoverPhotoUrl(photoUrl)}
                     style={{
                       width: 60, height: 60, borderRadius: 8,
-                      background: "#3D2B1F",
-                      border: coverPhotoUrl === null ? "2px solid #C8813A" : "2px solid transparent",
-                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "rgba(247,242,234,.6)", fontSize: ".6rem", fontFamily: "sans-serif",
-                      textAlign: "center", padding: 4, lineHeight: 1.2,
+                      border: coverPhotoUrl === photoUrl ? "2px solid #C8813A" : "2px solid transparent",
+                      padding: 0, cursor: "pointer", overflow: "hidden", background: "transparent",
                     }}
                   >
-                    {coverDefaultLabel}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photoUrl}
+                      alt=""
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
                   </button>
-                  {/* Photo thumbnails */}
-                  {availablePhotos.map((photoUrl, i) => (
+                ))}
+                {/* Upload custom cover photo */}
+                <label style={{
+                  width: 60, height: 60, borderRadius: 8, flexShrink: 0,
+                  border: `2px dashed ${isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
+                  cursor: uploadingCover ? "wait" : "pointer",
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  gap: 3, color: textMuted, fontSize: ".55rem", fontFamily: "sans-serif",
+                  textAlign: "center", lineHeight: 1.2,
+                  opacity: uploadingCover ? 0.5 : 1,
+                  transition: "opacity .15s",
+                }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={uploadingCover}
+                    onChange={handleCoverUpload}
+                    style={{ display: "none" }}
+                  />
+                  {uploadingCover
+                    ? <span style={{ fontSize: ".8rem" }}>⏳</span>
+                    : <>
+                        <span style={{ fontSize: ".9rem" }}>+</span>
+                        <span>{locale === "fr" ? "Importer" : "Upload"}</span>
+                      </>
+                  }
+                </label>
+                {/* Preview of custom uploaded photo (if not from journal) */}
+                {coverPhotoUrl && !availablePhotos.includes(coverPhotoUrl) && (
+                  <div style={{ position: "relative", width: 60, height: 60 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={coverPhotoUrl}
+                      alt=""
+                      style={{ width: 60, height: 60, borderRadius: 8, objectFit: "cover", display: "block", border: "2px solid #C8813A" }}
+                    />
                     <button
-                      key={i}
-                      onClick={() => setCoverPhotoUrl(photoUrl)}
+                      onClick={() => setCoverPhotoUrl(null)}
                       style={{
-                        width: 60, height: 60, borderRadius: 8,
-                        border: coverPhotoUrl === photoUrl ? "2px solid #C8813A" : "2px solid transparent",
-                        padding: 0, cursor: "pointer", overflow: "hidden", background: "transparent",
+                        position: "absolute", top: -6, right: -6,
+                        width: 18, height: 18, borderRadius: "50%",
+                        background: "#C8813A", border: "none",
+                        color: "#fff", fontSize: ".6rem", fontWeight: 700,
+                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                        lineHeight: 1,
                       }}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photoUrl}
-                        alt=""
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                      />
-                    </button>
-                  ))}
-                </div>
+                    >✕</button>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Content summary pill */}
             <div style={{
