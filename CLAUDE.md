@@ -710,6 +710,30 @@ currency: "USD"
 - **Rate limit `/api/contact`** (I2) : 3 req/min par IP via `checkRateLimit`.
 - **XML injection cron** (I3) : `pet.name`, `pet.species`, `pet.bio`, `entriesText` XML-escapés avant interpolation dans les balises `<pet_details>` / `<journal_entries>`.
 
+### ✅ Security review Round 4 (2026-05-26) — PR #27
+
+**High fixes**
+- **Prompt injection `/api/generate`** (H1) : `pet.name`, `pet.species`, `pet.bio`, `entriesText` interpolés directement dans le prompt → wrappés dans `<pet_details>` / `<journal_entries>` + `escapeXml()`. `escapeXml` extraite dans `src/lib/html.ts` (partagée). Copie locale dans `monthly-story` remplacée par l'import.
+- **UUID non validés `preview-pdf` POST** (H2) : `storyIds` du client sans validation → UUID_REGEX ajouté, cohérent avec `gelato/order`.
+- **Détails Gelato exposés au client** (H3) : `details: data` dans la réponse d'erreur supprimé — l'erreur complète reste en logs serveur uniquement.
+
+**Medium fixes**
+- **Détail erreur Anthropic exposé** (M1) : `detail: anthropicData.error` supprimé de la réponse `/api/generate`.
+- **Plafond message contact** (M2) : max 5000 chars sur le message `/api/contact`.
+- **Format `scheduledDate`** (M4) : regex `YYYY-MM-DD` validée avant construction de la Date dans `/api/gift/create`.
+- **`coverPhoto` HTTPS `preview-pdf` POST** (M5) : validation `https:` ajoutée (cohérence avec `gelato/order`).
+- **`createClient` inline** (M6) : remplacé par `getServiceSupabase()` dans `preview-pdf` et `unsubscribe` (règle projet).
+
+**Low fixes**
+- **`user_id` dans logs** (L1) : retiré du log INSERT payload dans `/api/generate` (RGPD).
+- **UUID `petId`** (L4) : validation UUID_REGEX ajoutée dans `generate`, `gelato/order`, `preview-pdf` GET+POST.
+- **CSP `'unsafe-eval'`** (L5) : retiré de `script-src` dans `next.config.js`.
+
+**Info fixes**
+- **`GELATO_API_KEY` manquante** (I1) : guard explicite avant l'appel Gelato — évite consommation d'un crédit sur appel voué à l'échec.
+- **`WAITLIST_TO_EMAIL` crash** (I2) : rendu optionnel avec `console.warn` si absent (plus de crash).
+- **Redirect protocol-relative** (I3) : `!next.startsWith("//")` ajouté dans `/auth/callback`.
+
 ### 🚧 Prochaine étape
 - **Exécuter les migrations SQL** dans le dashboard Supabase (`round2_security_fixes_2026_05_23.sql` + `round3_security_fixes_2026_05_26.sql` + précédentes si pas encore fait)
 - Passer Stripe en mode **Live**
@@ -744,12 +768,15 @@ currency: "USD"
 - **`/api/generate`** : ne jamais faire confiance aux données du body client (petName, species, bio, entries). Re-fetcher depuis la DB après vérification de l'ownership du pet.
 - **`/api/gelato/order`** : toujours filtrer les updates de stories par `user_id` (même avec service role). Consommer les crédits via `try_consume_book_credit` **avant** l'appel Gelato, et restaurer via `restore_book_credit` en cas d'échec.
 - **`/api/preview-pdf`** : l'accès GET (Gelato) nécessite un token HMAC signé généré par `gelato/order`. L'accès POST (in-app) nécessite une session + vérification de l'ownership du pet. Ne jamais exposer le contenu du livre sans authentification. Les URLs insérées dans du CSS (`url('...')`) doivent être passées par `safeCssUrl()` qui échappe les apostrophes.
-- **Helpers partagés** : pour escaper du HTML → `src/lib/html.ts`. Pour détecter la locale d'un profil → `src/lib/locale.ts` (utilise `getServiceSupabase()` — pas de session requise). Pour le calcul du nombre de pages → `src/lib/book.ts`. Pour les tokens PDF → `src/lib/pdf-token.ts`. Pour mapper les erreurs Supabase Auth → messages FR/EN → `src/lib/auth-errors.ts` (`getSignupError`). Pour `verifyBearer` (Bearer token constant-time) et `validateRedirectTo` (open redirect guard) → `src/lib/auth.ts`. Ne pas réimplémenter ces fonctions inline.
+- **Helpers partagés** : pour escaper du HTML → `escapeHtml()` dans `src/lib/html.ts`. Pour escaper du XML dans les prompts IA → `escapeXml()` dans `src/lib/html.ts`. Pour détecter la locale d'un profil → `src/lib/locale.ts` (utilise `getServiceSupabase()` — pas de session requise). Pour le calcul du nombre de pages → `src/lib/book.ts`. Pour les tokens PDF → `src/lib/pdf-token.ts`. Pour mapper les erreurs Supabase Auth → messages FR/EN → `src/lib/auth-errors.ts` (`getSignupError`). Pour `verifyBearer` (Bearer token constant-time) et `validateRedirectTo` (open redirect guard) → `src/lib/auth.ts`. Ne pas réimplémenter ces fonctions inline.
 - **Rate limiting** : le rate limiter in-memory (`src/lib/rate-limit.ts`) n'est PAS fiable sur Vercel serverless (cold start = reset, pas de partage entre instances). Pour les limites critiques, utiliser un count DB (voir `/api/generate`) ou Upstash Redis.
 - **Comparaisons de secrets** : toujours utiliser `timingSafeEqual` de `node:crypto` pour comparer des tokens/secrets (Bearer, HMAC, etc.). Ne jamais utiliser `===` pour ces comparaisons — vulnérable aux attaques par timing.
 - **Validation dates** : les paramètres `periodStart`/`periodEnd` reçus du client doivent être validés comme `YYYY-MM-DD` avant usage comme filtre DB.
 - **Cookies** : tout cookie sensible posé via API doit avoir `httpOnly: true`, `secure: process.env.NODE_ENV === "production"`, `sameSite: "lax"`. **Exception** : le cookie `locale` (préférence de langue) est intentionnellement sans `httpOnly` — il doit être lisible par `document.cookie` dans `useLocale`. La convention ne s'applique qu'aux données sensibles (session, tokens).
-- **Prompts IA avec données utilisateur** : isoler les données dans des balises XML (`<pet_details>`, `<journal_entries>`) pour prévenir les injections de prompt. Voir `cron/monthly-story` pour le pattern.
+- **Prompts IA avec données utilisateur** : isoler les données dans des balises XML (`<pet_details>`, `<journal_entries>`) pour prévenir les injections de prompt ET appliquer `escapeXml()` sur chaque valeur insérée dans les balises. Voir `cron/monthly-story` et `/api/generate` pour le pattern.
+- **Réponses API erreurs** : ne jamais retourner des détails d'erreurs internes (Stripe, Gelato, Anthropic) au client — les logger côté serveur et retourner uniquement un message générique.
+- **UUID validation** : toujours valider `petId`, `storyId` et tout autre identifiant reçu du client via `UUID_REGEX` avant usage en DB ou en URL. La route `gelato/order` et `preview-pdf` font référence.
+- **`/auth/callback` redirect** : `next` doit commencer par `/` ET ne pas commencer par `//` pour bloquer les redirects protocol-relative vers des domaines externes.
 
 ---
 
@@ -775,4 +802,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-26 (session 16 — security review Round 3 : 11 findings, PR #26 mergée — digital plan book order fix, timingSafeEqual crons, XSS contact, SSRF coverPhoto, shippingAddress validation, redirect_to validation, verifyBearer extrait dans auth.ts, XML escape cron prompt)*
+*Dernière mise à jour : 2026-05-26 (session 16 — security reviews Round 3 PR #26 + Round 4 PR #27 — 0 Critical, 0 High restant : prompt injection generate, UUID validation, Gelato/Anthropic info leak, CSP unsafe-eval, escapeXml partagé, getServiceSupabase cohérent, redirect callback, WAITLIST_TO_EMAIL optionnel)*
