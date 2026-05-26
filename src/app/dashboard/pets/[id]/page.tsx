@@ -246,6 +246,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
     load();
   }, [id]);
 
+  // Auto-open memorial modal when coming from the memorial page edit link (?openMemorial=1)
+  useEffect(() => {
+    if (pet && searchParams.get("openMemorial") === "1") {
+      openMemorialModal();
+    }
+  }, [pet, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const remaining = 5 - pendingPhotos.length;

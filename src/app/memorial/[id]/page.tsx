@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { getTranslations } from "@/lib/i18n";
@@ -17,6 +18,10 @@ export default async function MemorialPage({ params }: { params: { id: string } 
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  // Check if the viewer is the owner (for edit button)
+  const supabaseAuth = await createServerClient();
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+
   const [{ data: pet }, { data: stories }] = await Promise.all([
     supabase.from("pets").select("*").eq("id", params.id).single(),
     supabase
@@ -26,6 +31,8 @@ export default async function MemorialPage({ params }: { params: { id: string } 
       .order("created_at", { ascending: false })
       .limit(3),
   ]);
+
+  const isOwner = user?.id === pet?.user_id;
 
   if (!pet || !pet.deceased_at) return (
     <div style={{ minHeight: "100vh", background: "#1C1410", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", color: "rgba(247,242,234,.4)" }}>
@@ -51,9 +58,19 @@ export default async function MemorialPage({ params }: { params: { id: string } 
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
           Everypaw
         </Link>
-        <span style={{ fontSize: ".7rem", letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(247,242,234,.3)", fontFamily: "sans-serif" }}>
-          {t.memorial.badge}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          {isOwner && (
+            <Link
+              href={`/dashboard/pets/${params.id}?openMemorial=1`}
+              style={{ fontSize: ".75rem", color: "rgba(200,129,58,.7)", textDecoration: "none", fontFamily: "sans-serif", border: "1px solid rgba(200,129,58,.25)", padding: ".3rem .75rem", borderRadius: 100 }}
+            >
+              {locale === "fr" ? "✏️ Modifier" : "✏️ Edit"}
+            </Link>
+          )}
+          <span style={{ fontSize: ".7rem", letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(247,242,234,.3)", fontFamily: "sans-serif" }}>
+            {t.memorial.badge}
+          </span>
+        </div>
       </nav>
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "4rem 1.5rem 6rem" }}>

@@ -112,7 +112,7 @@ profiles: id, email, full_name, avatar_url,
 pets: id, user_id, name, species, breed, birthdate, photo_url, bio,
       deceased_at,           -- date nullable — active le mode mémorial
       memorial_message,      -- text nullable
-      memorial_photo_url,    -- text nullable — photo affichée sur la page mémorial (migration requise)
+      memorial_photo_url,    -- text nullable — photo affichée sur la page mémorial
       created_at
 
 -- entries (journal)
@@ -685,7 +685,6 @@ currency: "USD"
 - JSON-LD `FAQ_JSONLD` (page.tsx) et `FAQ_JSONLD_FR` (fr/page.tsx) synchronisés avec les nouvelles réponses
 
 ### 🚧 Prochaine étape
-- **Migration SQL** : `ALTER TABLE pets ADD COLUMN IF NOT EXISTS memorial_photo_url TEXT;` (photo mémorial — fonctionnalité implémentée mais colonne manquante en prod)
 - **Exécuter les migrations SQL** dans le dashboard Supabase (`round2_security_fixes_2026_05_23.sql` + précédentes si pas encore fait)
 - Passer Stripe en mode **Live**
 - Passer Google OAuth en mode **Published**
