@@ -725,12 +725,13 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                             <span style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".1em" }}>
                               {t.order.preview_chapter} {i + 1}
                             </span>
-                            {(story.period_start || story.period_end) && (() => {
+                            {(() => {
                               const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
                               const fmt = (d: string) => new Date(d).toLocaleDateString(dateLocale, { month: "short", year: "numeric" });
-                              const start = story.period_start ? fmt(story.period_start) : null;
+                              // Fallback sur created_at si period_start est absent
+                              const start = fmt(story.period_start ?? story.created_at);
                               const end = story.period_end ? fmt(story.period_end) : null;
-                              const label = start && end && start !== end ? `${start} – ${end}` : (start ?? end ?? "");
+                              const label = end && end !== start ? `${start} – ${end}` : start;
                               return (
                                 <span style={{ fontSize: ".68rem", color: textMuted, fontFamily: "sans-serif" }}>
                                   {label}

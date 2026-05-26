@@ -180,7 +180,8 @@ async function buildHtml(params: {
     .dedication-label { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: 1.5rem; }
     .dedication-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.15rem; line-height: 1.85; color: #3D2B1F; max-width: 480px; }
     .chapter { padding: 4rem 3rem; page-break-after: always; background: #FDFAF5; }
-    .chapter-num { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: 1rem; }
+    .chapter-num { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: .4rem; }
+    .chapter-period { font-size: .8rem; color: #7A5C44; margin-bottom: 1.25rem; font-family: 'DM Sans', sans-serif; }
     .chapter-title { font-family: 'Playfair Display', serif; font-size: 1.75rem; font-weight: 600; color: #3D2B1F; margin-bottom: 2rem; line-height: 1.3; }
     .chapter-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.05rem; line-height: 1.9; color: #3D2B1F; }
     .chapter-photos { margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid rgba(61,43,31,.08); }
@@ -212,6 +213,10 @@ async function buildHtml(params: {
   ${stories.length > 0 ? stories.map((story, i) => {
     const photos = chapterPhotos[i] ?? [];
     const dateLocale = lang === "fr" ? "fr-FR" : "en-US";
+    const fmt = (d: string) => new Date(d).toLocaleDateString(dateLocale, { month: "long", year: "numeric" });
+    const periodStart = fmt(story.period_start ?? story.created_at);
+    const periodEnd = story.period_end ? fmt(story.period_end) : null;
+    const periodLabel = periodEnd && periodEnd !== periodStart ? `${periodStart} – ${periodEnd}` : periodStart;
     const photosHtml = photos.length > 0 ? `
     <div class="chapter-photos">
       <div class="photo-grid">
@@ -227,6 +232,7 @@ async function buildHtml(params: {
     return `
   <div class="chapter">
     <div class="chapter-num">${escapeHtml(s.chapter)} ${i + 1}</div>
+    <div class="chapter-period">${escapeHtml(periodLabel)}</div>
     <div class="chapter-title">${escapeHtml(story.title || `${pet.name}'s Story`)}</div>
     <div class="chapter-text">${escapeHtml(story.content).replace(/\n/g, "<br>")}</div>
     ${photosHtml}
