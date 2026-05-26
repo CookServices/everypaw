@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { escapeHtml } from "@/lib/html";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -12,6 +14,9 @@ const SUBJECT_ROUTING: Record<string, string> = {
 };
 
 export async function POST(req: Request) {
+  const { allowed } = checkRateLimit(`contact:${getClientIp(req)}`, 3, 60_000);
+  if (!allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+
   let body: { subject?: string; email?: string; message?: string };
   try {
     body = await req.json();
@@ -39,12 +44,12 @@ export async function POST(req: Request) {
       from: "Everypaw Contact <noreply@everypaw.app>",
       to,
       reply_to: email,
-      subject: `[Contact] ${subject}`,
+      subject: `[Contact] ${escapeHtml(subject!)}`,
       html: `
         <div style="font-family: 'DM Sans', sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-          <h2 style="font-family: Georgia, serif; color: #3D2B1F; margin-bottom: 8px;">[Contact] ${subject}</h2>
+          <h2 style="font-family: Georgia, serif; color: #3D2B1F; margin-bottom: 8px;">[Contact] ${escapeHtml(subject!)}</h2>
           <p style="color: #7A5C44; font-size: 14px; margin-bottom: 24px;">
-            De : <strong>${email}</strong>
+            De : <strong>${escapeHtml(email!)}</strong>
           </p>
           <div style="background: #F7F2EA; border-radius: 12px; padding: 20px; color: #3D2B1F; font-size: 15px; line-height: 1.7; white-space: pre-wrap;">
             ${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
