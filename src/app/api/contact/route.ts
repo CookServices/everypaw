@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     await resend.emails.send({
       from: "Everypaw Contact <noreply@everypaw.app>",
       to,
-      replyTo: email,
+      reply_to: email,
       subject: `[Contact] ${subject}`,
       html: `
         <div style="font-family: 'DM Sans', sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
