@@ -68,6 +68,7 @@ export default function Home() {
 
   const [pricingCycle, setPricingCycle] = useState<"monthly" | "annual">("monthly");
   const [currency, setCurrency] = useState<Currency>("USD");
+  const [digitalCtaHovered, setDigitalCtaHovered] = useState(false);
 
   useEffect(() => {
     fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
@@ -441,7 +442,7 @@ export default function Home() {
               >
                 {cycle === "monthly" ? t.landing.pricing_monthly : t.landing.pricing_annual}
                 {cycle === "annual" && (
-                  <span style={{ fontSize: ".68rem", background: "#C8813A", color: "#FDFAF5", padding: ".15rem .45rem", borderRadius: 100, fontWeight: 600 }}>
+                  <span style={{ fontSize: ".68rem", background: "#C8813A", color: "#FDFAF5", padding: "2px 8px", borderRadius: 100, fontWeight: 600, flexShrink: 0, lineHeight: 1.4 }}>
                     −34 %
                   </span>
                 )}
@@ -487,7 +488,12 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-            <Link href="/auth/signup?plan=digital" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, background: "rgba(200,129,58,.12)", border: "1.5px solid rgba(200,129,58,.3)", color: "#C8813A", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+            <Link
+              href="/auth/signup?plan=digital"
+              onMouseEnter={() => setDigitalCtaHovered(true)}
+              onMouseLeave={() => setDigitalCtaHovered(false)}
+              style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 600, background: digitalCtaHovered ? "#B5712E" : "#C8813A", border: "1.5px solid #C8813A", color: "#FDFAF5", textAlign: "center", textDecoration: "none", boxSizing: "border-box", transition: "background .15s" }}
+            >
               {t.landing.premium_cta}
             </Link>
           </div>

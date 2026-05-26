@@ -16,7 +16,7 @@ type PriceKey = "digital" | "digitalAnnual" | "digitalAnnualMonthly" | "print" |
 
 const PRICE_TABLE: Record<PriceKey, Record<Currency, string>> = {
   digital:              { EUR: "4,99 €", USD: "$4.99" },
-  digitalAnnual:        { EUR: "35,90 €", USD: "$35.90" },
+  digitalAnnual:        { EUR: "35,88 €", USD: "$35.88" },
   digitalAnnualMonthly: { EUR: "2,99 €", USD: "$2.99" },
   print:              { EUR: "9,99 €", USD: "$9.99" },
   printAnnual:        { EUR: "79 €",   USD: "$79" },
