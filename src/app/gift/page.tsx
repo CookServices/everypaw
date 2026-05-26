@@ -126,6 +126,17 @@ export default function GiftPage() {
           <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
           Everypaw
         </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
+          <Link href="/gift" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
+            {t.nav.give_gift}
+          </Link>
+          <Link href="/auth/login" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
+            {t.nav.sign_in}
+          </Link>
+          <Link href="/auth/signup" style={{ background: "#3D2B1F", color: "#F7F2EA", padding: ".5rem 1.25rem", borderRadius: "100px", fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
+            {t.nav.get_started}
+          </Link>
+        </div>
       </nav>
 
       <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>

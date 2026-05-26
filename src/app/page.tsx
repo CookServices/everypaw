@@ -336,7 +336,7 @@ export default function Home() {
       <section style={{ padding: "4rem 2rem", textAlign: "center", background: "#EDE5D4" }}>
         <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "1rem" }}>
           {[
-            ["94M", t.landing.stats_pets],
+            [isFR ? "20,3M" : "94M", t.landing.stats_pets],
             ["69%", t.landing.stats_millennials],
             ["12", t.landing.stats_memories],
           ].map(([num, lbl]) => (
@@ -346,6 +346,11 @@ export default function Home() {
             </div>
           ))}
         </div>
+        {isFR && (
+          <p style={{ fontSize: ".7rem", color: "#9A8070", fontWeight: 300, marginTop: "1.5rem", margin: "1.5rem 0 0" }}>
+            Source : FACCO / Kantar, 2023
+          </p>
+        )}
       </section>
 
       {/* FEATURES */}

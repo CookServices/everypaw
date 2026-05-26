@@ -4,8 +4,11 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
+import { getSignupError } from "@/lib/auth-errors";
 
 export const dynamic = "force-dynamic";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignupPage() {
   const { locale } = useLocale();
@@ -20,23 +23,52 @@ export default function SignupPage() {
     if (redirect) return code ? `${redirect}?code=${code}` : redirect;
     return "/dashboard";
   };
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const supabase = createClient();
 
   const handleSignup = async () => {
+    // ── Client-side validation (blocks API call) ──────────────────────────
+    let valid = true;
+
+    if (!email.trim() || !EMAIL_REGEX.test(email)) {
+      setEmailError(
+        isFR ? "L'adresse email n'est pas valide." : "The email address is not valid."
+      );
+      valid = false;
+    } else {
+      setEmailError("");
+    }
+
+    if (password.length < 8) {
+      setPasswordError(
+        isFR
+          ? "Le mot de passe doit contenir au moins 8 caractères."
+          : "Password must be at least 8 characters."
+      );
+      valid = false;
+    } else {
+      setPasswordError("");
+    }
+
+    if (!valid) return;
+
+    // ── Supabase call ─────────────────────────────────────────────────────
     setStatus("loading");
     setError("");
-    const { error } = await supabase.auth.signUp({
+    const { error: signupError } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
-    if (error) {
-      setError(error.message);
+    if (signupError) {
+      setError(getSignupError(signupError.message, isFR));
       setStatus("error");
     } else {
       setStatus("success");
@@ -45,9 +77,10 @@ export default function SignupPage() {
 
   const handleGoogle = async () => {
     const target = getRedirectTarget();
-    const callbackUrl = target === "/dashboard"
-      ? `${window.location.origin}/auth/callback`
-      : `${window.location.origin}/auth/callback?next=${encodeURIComponent(target)}`;
+    const callbackUrl =
+      target === "/dashboard"
+        ? `${window.location.origin}/auth/callback`
+        : `${window.location.origin}/auth/callback?next=${encodeURIComponent(target)}`;
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: callbackUrl },
@@ -55,7 +88,10 @@ export default function SignupPage() {
   };
 
   if (status === "success") {
-    const giftCode = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("code") : null;
+    const giftCode =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("code")
+        : null;
     return (
       <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", fontFamily: "'DM Sans', sans-serif" }}>
         <div style={{ textAlign: "center", maxWidth: 420 }}>
@@ -64,15 +100,19 @@ export default function SignupPage() {
             {isFR ? "Vérifiez votre boîte mail" : "Check your inbox"}
           </h2>
           <p style={{ color: "#7A5C44", fontWeight: 300, lineHeight: 1.6 }}>
-            {isFR
-              ? <>Nous avons envoyé un lien de confirmation à <strong>{email}</strong>. Cliquez dessus pour activer votre compte.</>
-              : <>We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.</>}
+            {isFR ? (
+              <>Nous avons envoyé un lien de confirmation à <strong>{email}</strong>. Cliquez dessus pour activer votre compte.</>
+            ) : (
+              <>We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.</>
+            )}
           </p>
           {giftCode && (
             <p style={{ marginTop: "1rem", fontSize: ".875rem", color: "#C8813A", fontWeight: 500 }}>
-              {isFR
-                ? <>Votre code cadeau <strong>{giftCode}</strong> sera disponible dès votre connexion.</>
-                : <>Your gift code <strong>{giftCode}</strong> will be ready once you sign in.</>}
+              {isFR ? (
+                <>Votre code cadeau <strong>{giftCode}</strong> sera disponible dès votre connexion.</>
+              ) : (
+                <>Your gift code <strong>{giftCode}</strong> will be ready once you sign in.</>
+              )}
             </p>
           )}
         </div>
@@ -111,41 +151,73 @@ export default function SignupPage() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              style={{ padding: ".75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none" }}
-            />
-            <div style={{ position: "relative" }}>
+
+            {/* Email */}
+            <div style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
               <input
-                type={showPassword ? "text" : "password"}
-                placeholder={isFR ? "Mot de passe (min. 8 caractères)" : "Password (min. 8 characters)"}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleSignup()}
-                style={{ width: "100%", boxSizing: "border-box", padding: ".75rem 2.75rem .75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none" }}
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={e => { setEmail(e.target.value); if (emailError) setEmailError(""); }}
+                style={{
+                  padding: ".75rem 1rem", borderRadius: 12,
+                  border: `1.5px solid ${emailError ? "#FCA5A5" : "rgba(61,43,31,.15)"}`,
+                  background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none",
+                }}
               />
-              <button type="button" onClick={() => setShowPassword(v => !v)} style={{ position: "absolute", right: ".75rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9A8070", padding: 0, display: "flex", alignItems: "center" }}>
-                {showPassword ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22" /></svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                )}
-              </button>
+              {emailError && (
+                <p style={{ fontSize: ".78rem", color: "#991B1B", margin: "0 0 0 .25rem" }}>{emailError}</p>
+              )}
             </div>
+
+            {/* Password */}
+            <div style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder={isFR ? "Mot de passe (min. 8 caractères)" : "Password (min. 8 characters)"}
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); if (passwordError) setPasswordError(""); }}
+                  onKeyDown={e => e.key === "Enter" && handleSignup()}
+                  style={{
+                    width: "100%", boxSizing: "border-box",
+                    padding: ".75rem 2.75rem .75rem 1rem", borderRadius: 12,
+                    border: `1.5px solid ${passwordError ? "#FCA5A5" : "rgba(61,43,31,.15)"}`,
+                    background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  style={{ position: "absolute", right: ".75rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9A8070", padding: 0, display: "flex", alignItems: "center" }}
+                >
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22" /></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                  )}
+                </button>
+              </div>
+              {passwordError && (
+                <p style={{ fontSize: ".78rem", color: "#991B1B", margin: "0 0 0 .25rem" }}>{passwordError}</p>
+              )}
+            </div>
+
+            {/* General Supabase error */}
             {error && (
               <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 8, padding: "12px 16px" }}>
                 <p style={{ fontSize: ".8rem", color: "#991B1B", margin: 0 }}>{error}</p>
               </div>
             )}
+
             <button
               onClick={handleSignup}
               disabled={status === "loading"}
               style={{ padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "loading" ? .7 : 1 }}
             >
-              {status === "loading" ? (isFR ? "Création du compte…" : "Creating account…") : (isFR ? "Créer un compte" : "Create account")}
+              {status === "loading"
+                ? (isFR ? "Création du compte…" : "Creating account…")
+                : (isFR ? "Créer un compte" : "Create account")}
             </button>
           </div>
         </div>

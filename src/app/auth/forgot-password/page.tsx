@@ -93,6 +93,11 @@ export default function ForgotPasswordPage() {
                     : (isFR ? "Envoyer le lien →" : "Send reset link →")}
                 </button>
               </div>
+              <p style={{ textAlign: "center", marginTop: ".75rem", marginBottom: 0 }}>
+                <Link href="/auth/login" style={{ fontSize: ".85rem", color: "#C8813A", fontWeight: 500, textDecoration: "none" }}>
+                  {isFR ? "← Retour à la connexion" : "← Back to sign in"}
+                </Link>
+              </p>
             </>
           )}
         </div>
