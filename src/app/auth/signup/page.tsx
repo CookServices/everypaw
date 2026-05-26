@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
@@ -13,6 +13,19 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function SignupPage() {
   const { locale } = useLocale();
   const isFR = locale === "fr";
+
+  // Plan banner
+  const [selectedPlan] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("plan");
+  });
+
+  const PLAN_LABELS: Record<string, { name: string; price: string; perks: string }> = {
+    digital_annual: { name: "Premium Digital", price: "35,88 €/an", perks: "Histoires IA illimitées · Export PDF" },
+    print:          { name: "Premium Print",   price: "79 €/an",    perks: "Livre hardcover inclus · Livraison offerte" },
+  };
+
+  const planInfo = selectedPlan ? PLAN_LABELS[selectedPlan] ?? null : null;
 
   // Redirect params from gift redeem flow
   const getRedirectTarget = () => {
@@ -31,33 +44,40 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
   const handleSignup = async () => {
-    // ── Client-side validation (blocks API call) ──────────────────────────
-    let valid = true;
+    // ── Client-side validation (tous les champs, même non touchés) ─────────
+    let firstErrorRef: React.RefObject<HTMLInputElement | null> | null = null;
 
-    if (!email.trim() || !EMAIL_REGEX.test(email)) {
-      setEmailError(
-        isFR ? "L'adresse email n'est pas valide." : "The email address is not valid."
-      );
-      valid = false;
-    } else {
-      setEmailError("");
+    let newEmailError = "";
+    if (!email.trim()) {
+      newEmailError = isFR ? "L'adresse email est requise." : "Email is required.";
+    } else if (!EMAIL_REGEX.test(email)) {
+      newEmailError = isFR ? "L'adresse email n'est pas valide." : "The email address is not valid.";
     }
 
-    if (password.length < 8) {
-      setPasswordError(
-        isFR
-          ? "Le mot de passe doit contenir au moins 8 caractères."
-          : "Password must be at least 8 characters."
-      );
-      valid = false;
-    } else {
-      setPasswordError("");
+    let newPasswordError = "";
+    if (!password) {
+      newPasswordError = isFR ? "Le mot de passe est requis." : "Password is required.";
+    } else if (password.length < 8) {
+      newPasswordError = isFR
+        ? "Le mot de passe doit contenir au moins 8 caractères."
+        : "Password must be at least 8 characters.";
     }
 
-    if (!valid) return;
+    setEmailError(newEmailError);
+    setPasswordError(newPasswordError);
+
+    if (newEmailError) firstErrorRef = emailRef;
+    else if (newPasswordError) firstErrorRef = passwordRef;
+
+    if (firstErrorRef) {
+      firstErrorRef.current?.focus();
+      return;
+    }
 
     // ── Supabase call ─────────────────────────────────────────────────────
     setStatus("loading");
@@ -134,6 +154,17 @@ export default function SignupPage() {
         </div>
 
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", boxShadow: "0 4px 40px rgba(61,43,31,.06)" }}>
+          {planInfo && (
+            <div style={{ background: "#FFF3E0", border: "1px solid #F7C27A", borderRadius: 14, padding: "12px 16px", marginBottom: "1.25rem" }}>
+              <p style={{ margin: 0, fontSize: ".875rem", color: "#3D2B1F", fontWeight: 600, lineHeight: 1.4 }}>
+                🐾 {isFR ? "Plan sélectionné" : "Selected plan"} : {planInfo.name} — {planInfo.price}
+              </p>
+              <p style={{ margin: "4px 0 0", fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.4 }}>
+                {planInfo.perks}
+              </p>
+            </div>
+          )}
+
           <button onClick={handleGoogle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: ".75rem", padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", cursor: "pointer", marginBottom: "1.5rem" }}>
             <svg width="18" height="18" viewBox="0 0 18 18">
               <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
@@ -155,6 +186,7 @@ export default function SignupPage() {
             {/* Email */}
             <div style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
               <input
+                ref={emailRef}
                 type="email"
                 placeholder="Email"
                 value={email}
@@ -163,7 +195,9 @@ export default function SignupPage() {
                   if (emailError && EMAIL_REGEX.test(e.target.value)) setEmailError("");
                 }}
                 onBlur={() => {
-                  if (!email.trim() || !EMAIL_REGEX.test(email))
+                  if (!email.trim())
+                    setEmailError(isFR ? "L'adresse email est requise." : "Email is required.");
+                  else if (!EMAIL_REGEX.test(email))
                     setEmailError(isFR ? "L'adresse email n'est pas valide." : "The email address is not valid.");
                 }}
                 style={{
@@ -181,6 +215,7 @@ export default function SignupPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
               <div style={{ position: "relative" }}>
                 <input
+                  ref={passwordRef}
                   type={showPassword ? "text" : "password"}
                   placeholder={isFR ? "Mot de passe (min. 8 caractères)" : "Password (min. 8 characters)"}
                   value={password}
@@ -189,7 +224,9 @@ export default function SignupPage() {
                     if (passwordError && e.target.value.length >= 8) setPasswordError("");
                   }}
                   onBlur={() => {
-                    if (password.length < 8)
+                    if (!password)
+                      setPasswordError(isFR ? "Le mot de passe est requis." : "Password is required.");
+                    else if (password.length < 8)
                       setPasswordError(isFR ? "Le mot de passe doit contenir au moins 8 caractères." : "Password must be at least 8 characters.");
                   }}
                   onKeyDown={e => e.key === "Enter" && handleSignup()}
@@ -226,8 +263,8 @@ export default function SignupPage() {
 
             <button
               onClick={handleSignup}
-              disabled={status === "loading" || !EMAIL_REGEX.test(email) || password.length < 8}
-              style={{ padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: (status === "loading" || !EMAIL_REGEX.test(email) || password.length < 8) ? "not-allowed" : "pointer", opacity: (status === "loading" || !EMAIL_REGEX.test(email) || password.length < 8) ? .5 : 1, transition: "opacity .15s" }}
+              disabled={status === "loading"}
+              style={{ padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: status === "loading" ? "not-allowed" : "pointer", opacity: status === "loading" ? .5 : 1, transition: "opacity .15s" }}
             >
               {status === "loading"
                 ? (isFR ? "Création du compte…" : "Creating account…")

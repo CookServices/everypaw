@@ -7,6 +7,21 @@
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
+  scroll-padding-top: 70px; /* compense la navbar fixed (~60px) pour les ancres */
+}
+
+/* ── Focus ring visible au clavier (WCAG 2.4.7) ─────────────────────────── */
+:focus-visible {
+  outline: 2px solid #C8813A;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Supprime l'outline par défaut uniquement si :focus-visible est supporté */
+@supports selector(:focus-visible) {
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
 }
 
 body {

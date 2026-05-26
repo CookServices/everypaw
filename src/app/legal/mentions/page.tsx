@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LEGAL_LAST_UPDATE } from "@/lib/legal";
 
 export const metadata = { title: "Mentions légales — Everypaw" };
 
@@ -18,7 +19,8 @@ export default function Mentions() {
         <h1 style={{ fontFamily: "Georgia, serif", fontSize: "2rem", fontWeight: 600, color: "#3D2B1F", margin: "2rem 0 .75rem" }}>
           Mentions légales
         </h1>
-        <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: "3rem" }}>Conformément à la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique.</p>
+        <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: ".5rem" }}>Conformément à la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique.</p>
+        <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: "3rem" }}>Dernière mise à jour : {LEGAL_LAST_UPDATE}</p>
 
         {[
           ["Éditeur du site", "Everypaw\nEmail : hello@everypaw.app\nSite web : www.everypaw.app"],

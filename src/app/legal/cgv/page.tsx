@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LEGAL_LAST_UPDATE } from "@/lib/legal";
 
 export const metadata = { title: "Conditions générales de vente — Everypaw" };
 
@@ -66,7 +67,7 @@ export default function CGV() {
         <h1 style={{ fontFamily: "Georgia, serif", fontSize: "2rem", fontWeight: 600, color: "#3D2B1F", margin: "2rem 0 .75rem" }}>
           Conditions générales de vente
         </h1>
-        <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: "3rem" }}>Dernière mise à jour : 26 mai 2026</p>
+        <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: "3rem" }}>Dernière mise à jour : {LEGAL_LAST_UPDATE}</p>
 
         {sections.map(({ title, body }) => (
           <section key={title} style={{ marginBottom: "2rem" }}>

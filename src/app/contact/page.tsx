@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ContactForm from "@/components/ContactForm";
 
 export const metadata = { title: "Contact — Everypaw" };
 
@@ -41,7 +42,11 @@ export default function Contact() {
           ))}
         </div>
 
-        <div style={{ marginTop: "3rem", background: "rgba(200,129,58,.06)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 16, padding: "1.25rem 1.5rem" }}>
+        <div style={{ marginTop: "2.5rem" }}>
+          <ContactForm />
+        </div>
+
+        <div style={{ marginTop: "2rem", background: "rgba(200,129,58,.06)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 16, padding: "1.25rem 1.5rem" }}>
           <p style={{ fontSize: ".875rem", color: "#7A5C44", lineHeight: 1.7, margin: 0, fontWeight: 300 }}>
             Pour toute demande relative à vos données personnelles (accès, rectification, suppression), contactez-nous à <strong style={{ color: "#3D2B1F", fontWeight: 500 }}>privacy@everypaw.app</strong> en mentionnant "Demande RGPD" en objet.
           </p>

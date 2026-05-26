@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
+import CookieBanner from "@/components/CookieBanner";
 
 export const metadata: Metadata = {
   title: "Everypaw — Your pet's life story, printed",
@@ -39,7 +40,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={lang}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <CookieBanner />
+      </body>
     </html>
   );
 }

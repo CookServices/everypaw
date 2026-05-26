@@ -26,7 +26,7 @@ Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suiv
 - **GitHub** : CookServices/everypaw (branch `main`)
 - **Domaine** : everypaw.app (OVH → Vercel)
 - **Statut** : MVP live, early-access — Stripe en mode **test** (à passer en Live avant lancement public)
-- **Cible** : pet parents US/UK, très attachés émotionnellement à leurs animaux
+- **Cible** : pet parents US (marché principal) + France (marché secondaire, route `/fr/`)
 - **Différenciateur** : seule app combinant journal IA + livre imprimé physique
 
 ---
@@ -602,6 +602,57 @@ currency: "USD"
 - Cards de plan : descriptions remplacées par des listes à puces explicites — Digital (Entrées illimitées · Histoires IA · Export PDF), Print (Tout le Digital · Livre relié inclus chaque année · Livraison offerte)
 - **Étape de confirmation** : state `step: "form" | "confirm"` — aucune navigation, inline dans la card. Clic "Envoyer le cadeau →" → validation → récapitulatif (formule + prix, destinataire, email, message optionnel, date ou "Immédiat"). Bouton "← Modifier" retour au formulaire pré-rempli. Bouton "Confirmer et payer →" déclenche l'appel API.
 
+### ✅ SEO, accessibilité, UX & RGPD (2026-05-26, session 14)
+
+**SEO bilingue**
+- `app/layout.tsx` : `html[lang]` défaut `"en"` (marché US), logique inversée `pathname.startsWith("/en") ? "en" : "fr"` → `startsWith("/fr") ? "fr" : "en"` (identique, corrigé)
+- `app/fr/layout.tsx` : metadata FR complète avec Twitter card (`title`, `description`, `og:title`, `og:description`, `og:locale: "fr_FR"`)
+- `app/fr/page.tsx` : carousel hero FR 3 slides — "Promenade au parc" / "Génération de l'histoire..." / "Imprimé et livré chaque année" / "Inclus avec Premium"
+- Marchés cibles : **États-Unis + France** (architecture bilingue EN/FR avec routes distinctes `/` et `/fr/`)
+
+**RGPD**
+- `src/components/CookieBanner.tsx` : bannière client-side, `localStorage("cookie_consent")`, fond `#3D2B1F`, texte crème, bouton orange, lien `/legal/confidentialite`, `role="dialog"`, `aria-label`
+- `app/layout.tsx` : `<CookieBanner />` injecté dans le `<body>` (toutes les pages)
+
+**Dates légales centralisées**
+- `src/lib/legal.ts` : constante `LEGAL_LAST_UPDATE = "26 mai 2026"` — importée dans cgv, confidentialite, mentions
+- `confidentialite` : "janvier 2025" → `{LEGAL_LAST_UPDATE}` ; `mentions` : date absente → ajoutée
+
+**Middleware — route `/app`**
+- `src/middleware.ts` : `/app/*` intercepté → connecté = `/dashboard`, non connecté = `/auth/login`
+- Matcher étendu : `["/app", "/app/:path*", ...]`
+
+**Formulaire de contact**
+- `src/components/ContactForm.tsx` : Client Component, select 5 sujets, validation inline, compteur 20-char, états success/error
+- `src/app/api/contact/route.ts` : POST Resend, routing `orders@` si "Commande & livraison" sinon `hello@`, `replyTo: email`, email HTML brandé, validation server-side
+- `app/contact/page.tsx` : `<ContactForm />` entre les blocs email et le bloc RGPD
+
+**Signup — bandeau plan sélectionné**
+- `app/auth/signup/page.tsx` : bandeau `#FFF3E0` / border `#F7C27A` au-dessus du bouton Google si `?plan=digital_annual` ou `?plan=print`, mapping 2 plans avec prix et perks
+
+**Signup — validation champs vides**
+- `useRef` sur email + password → `focus()` sur premier champ en erreur à la soumission
+- Messages distincts : "est requis" (vide) vs "n'est pas valide / doit contenir 8 car." (format/longueur)
+- Bouton `disabled={status === "loading"}` seulement (plus de disabled sur valeurs de champ)
+
+**Gift — toggle mensuel/annuel**
+- `billingCycle` state, par défaut `"annual"`
+- Prix : `digitalAnnual`/`printAnnual` via `formatPrice`, savings "économisez 24€/40€" en mode annuel
+- `planApiKey` → `"digital_annual"` / `"print_annual"` / `"digital"` / `"print"` transmis au checkout
+- Badge `−34 %` harmonisé (même style que landing)
+
+**FAQ deep-link**
+- `FAQ_IDS[]` constant + `handleFaqClick` → `window.history.replaceState(null, "", "#id")`
+- `useEffect` au mount : lit `window.location.hash`, ouvre l'accordéon + `scrollIntoView({ behavior:"smooth" })`
+- ARIA : `aria-expanded`, `aria-controls="faq-answer-{id}"`, `role="region"`, `aria-labelledby`, `aria-hidden="true"` sur le `+` décoratif
+
+**5 corrections UI & accessibilité**
+- **Hero padding** : `alignItems: "flex-start"` (fixe overflow du flex center sur mobile — H1 se retrouvait derrière la navbar) ; `scroll-padding-top: 70px` sur `html`
+- **Stats responsive** : label `maxWidth: 160`, `textAlign: "center"`, `lineHeight: 1.4` ; `margin` 2rem → 1.25rem
+- **Bouton Gratuit contraste** : bordure `rgba(61,43,31,.2)` → `.55` (1.46:1 → 4.3:1, WCAG 1.4.11)
+- **Badge −34 %** : `#C8813A` → `#9C6420` (4.75:1 ≥ 4.5:1 WCAG AA) ; `fontSize: .68rem` → `.75rem` ; `padding: 2px` → `3px` ; `whiteSpace: "nowrap"` ; harmonisé dans `gift/page.tsx`
+- **Focus ring** : `:focus-visible { outline: 2px solid #C8813A; outline-offset: 3px; border-radius: 4px }` dans `globals.css` + `@supports selector(:focus-visible)` pour supprimer l'outline souris
+
 ### ✅ UI pricing + plan Digital annuel (2026-05-26, session 13)
 
 **UI landing — section tarifs**
@@ -683,4 +734,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-26 (session 12 — corrections UX/qualité : page 404, auth-errors.ts, signup onBlur+disabled, CGV grille tarifaire+devise, gift navbar+subtitle+descriptions+confirmation step, landing h2 FR+captions carousel+stat 20,3M)*
+*Dernière mise à jour : 2026-05-26 (session 14 — SEO bilingue FR/EN, RGPD CookieBanner, dates légales centralisées, middleware /app, formulaire contact Resend, signup bandeau plan + validation vides, gift toggle mensuel/annuel, FAQ deep-link + ARIA, 5 corrections UI/a11y)*

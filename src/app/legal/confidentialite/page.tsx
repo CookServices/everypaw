@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LEGAL_LAST_UPDATE } from "@/lib/legal";
 
 export const metadata = { title: "Politique de confidentialité — Everypaw" };
 
@@ -18,7 +19,7 @@ export default function Confidentialite() {
         <h1 style={{ fontFamily: "Georgia, serif", fontSize: "2rem", fontWeight: 600, color: "#3D2B1F", margin: "2rem 0 .75rem" }}>
           Politique de confidentialité
         </h1>
-        <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: "3rem" }}>Dernière mise à jour : janvier 2025</p>
+        <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: "3rem" }}>Dernière mise à jour : {LEGAL_LAST_UPDATE}</p>
 
         {[
           ["1. Responsable du traitement", "Everypaw est responsable du traitement de vos données personnelles. Contact : hello@everypaw.app."],

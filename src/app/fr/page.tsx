@@ -233,7 +233,7 @@ export default function FrHome() {
                   {/* Slide 0 — Journal */}
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 0 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                     {[
-                      { icon: "🚶", text: "Balade au parc — 2h de course !", when: "il y a 2 jours" },
+                      { icon: "🚶", text: "Promenade au parc — 2h de course !", when: "il y a 2 jours" },
                       { icon: "🍽️", text: "Refusé ses croquettes... encore.", when: "hier" },
                     ].map((e, i) => (
                       <div key={i} style={{ background: "#FDFAF5", borderRadius: 12, padding: "9px 11px", border: "1px solid rgba(61,43,31,.07)", animation: demoSlide === 0 ? `ep-fade-up .4s ease ${i * .12}s both` : "none" }}>
@@ -267,7 +267,7 @@ export default function FrHome() {
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 1 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
                     <div style={{ animation: demoSlide === 1 ? "ep-fade-up .4s ease both" : "none" }}>
                       <div style={{ fontSize: 11, color: "#C8813A", fontWeight: 500, marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
-                        <span>✨</span> {"Génération en cours..."}
+                        <span>✨</span> {"Génération de l'histoire..."}
                       </div>
                       <div style={{ background: "rgba(200,129,58,.15)", borderRadius: 100, height: 4, overflow: "hidden" }}>
                         <div style={{ height: "100%", background: "linear-gradient(90deg,#C8813A,#F7C27A)", borderRadius: 100, animation: demoSlide === 1 ? "ep-progress 2.8s ease .3s both" : "none" }} />
@@ -305,7 +305,7 @@ export default function FrHome() {
 
                     <div style={{ textAlign: "center", animation: demoSlide === 2 ? "ep-fade-up .5s ease .15s both" : "none" }}>
                       <div style={{ fontFamily: "Georgia, serif", fontSize: 12, fontWeight: 600, color: "#3D2B1F", marginBottom: 3 }}>{"Aperçu de votre livre"}</div>
-                      <div style={{ fontSize: 9.5, color: "#7A5C44", fontWeight: 300 }}>{"Imprimé & expédié chaque année"}</div>
+                      <div style={{ fontSize: 9.5, color: "#7A5C44", fontWeight: 300 }}>{"Imprimé et livré chaque année"}</div>
                     </div>
 
                     <div style={{ background: "rgba(200,129,58,.1)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 100, padding: "7px 16px", animation: demoSlide === 2 ? "ep-fade-up .5s ease .3s both" : "none" }}>

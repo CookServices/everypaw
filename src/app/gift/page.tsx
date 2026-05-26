@@ -10,6 +10,7 @@ export default function GiftPage() {
   const isFR = locale === "fr";
 
   const [selectedPlan, setSelectedPlan] = useState<"digital" | "print">("digital");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const [step, setStep] = useState<"form" | "confirm">("form");
   const [form, setForm] = useState({
     recipientEmail: "",
@@ -49,7 +50,7 @@ export default function GiftPage() {
     const res = await fetch("/api/gift/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, locale, plan: selectedPlan }),
+      body: JSON.stringify({ ...form, locale, plan: planApiKey }),
     });
     const data = await res.json();
     if (data.success) {
@@ -77,8 +78,17 @@ export default function GiftPage() {
     ? new Date(form.scheduledDate + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })
     : "";
 
+  const isAnnual = billingCycle === "annual";
   const planLabel = selectedPlan === "digital" ? "Premium Digital" : "Premium Print";
-  const planPrice = `${formatPrice(currency, selectedPlan)}/${isFR ? "mois" : "mo"}`;
+  const planPriceKey = selectedPlan === "digital"
+    ? (isAnnual ? "digitalAnnual" : "digital")
+    : (isAnnual ? "printAnnual" : "print");
+  const planPricePeriod = isAnnual ? (isFR ? "an" : "yr") : (isFR ? "mois" : "mo");
+  const planPrice = `${formatPrice(currency, planPriceKey)}/${planPricePeriod}`;
+  // Clé transmise au checkout
+  const planApiKey = selectedPlan === "digital"
+    ? (isAnnual ? "digital_annual" : "digital")
+    : (isAnnual ? "print_annual" : "print");
 
   // ── Success screen ────────────────────────────────────────────────────────
   if (status === "success") return (
@@ -245,6 +255,26 @@ export default function GiftPage() {
               <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
                 {isFR ? "Choisir la formule" : "Choose a plan"}
               </p>
+
+              {/* Billing cycle toggle */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem", marginBottom: "1rem" }}>
+                <button
+                  onClick={() => setBillingCycle("monthly")}
+                  style={{ padding: ".35rem .9rem", borderRadius: 100, border: "none", background: billingCycle === "monthly" ? "#3D2B1F" : "transparent", color: billingCycle === "monthly" ? "#FDFAF5" : "#7A5C44", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", transition: "all .15s" }}
+                >
+                  {isFR ? "Mensuel" : "Monthly"}
+                </button>
+                <div style={{ background: "rgba(61,43,31,.1)", borderRadius: 100, padding: "3px" }}>
+                  <button
+                    onClick={() => setBillingCycle("annual")}
+                    style={{ padding: ".35rem .9rem", borderRadius: 100, border: "none", background: billingCycle === "annual" ? "#3D2B1F" : "transparent", color: billingCycle === "annual" ? "#FDFAF5" : "#7A5C44", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", transition: "all .15s", display: "flex", alignItems: "center", gap: ".35rem" }}
+                  >
+                    {isFR ? "Annuel" : "Annual"}
+                    <span style={{ background: "#9C6420", color: "#FDFAF5", fontSize: ".75rem", fontWeight: 700, borderRadius: 100, padding: "3px 8px", letterSpacing: ".02em", whiteSpace: "nowrap" }}>−34 %</span>
+                  </button>
+                </div>
+              </div>
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".625rem", marginBottom: ".75rem" }}>
 
                 {/* Digital */}
@@ -253,9 +283,15 @@ export default function GiftPage() {
                   style={{ padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "digital" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "digital" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s" }}
                 >
                   <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Digital</p>
-                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .4rem" }}>
-                    {formatPrice(currency, "digital")}<span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .15rem" }}>
+                    {formatPrice(currency, isAnnual ? "digitalAnnual" : "digital")}
+                    <span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? (isAnnual ? "an" : "mois") : (isAnnual ? "yr" : "mo")}</span>
                   </p>
+                  {isAnnual && (
+                    <p style={{ fontSize: ".68rem", color: "#C8813A", fontWeight: 500, margin: "0 0 .4rem" }}>
+                      {isFR ? "économisez 24 €" : "save $24"}
+                    </p>
+                  )}
                   <ul style={{ margin: 0, padding: "0 0 0 .9rem", display: "flex", flexDirection: "column", gap: ".2rem" }}>
                     {(isFR
                       ? ["Entrées illimitées", "Histoires générées par l'IA", "Export PDF"]
@@ -275,9 +311,15 @@ export default function GiftPage() {
                     {isFR ? "Meilleure valeur" : "Best value"}
                   </div>
                   <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Print</p>
-                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .4rem" }}>
-                    {formatPrice(currency, "print")}<span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .15rem" }}>
+                    {formatPrice(currency, isAnnual ? "printAnnual" : "print")}
+                    <span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? (isAnnual ? "an" : "mois") : (isAnnual ? "yr" : "mo")}</span>
                   </p>
+                  {isAnnual && (
+                    <p style={{ fontSize: ".68rem", color: "#C8813A", fontWeight: 500, margin: "0 0 .4rem" }}>
+                      {isFR ? "économisez 40 €" : "save $40"}
+                    </p>
+                  )}
                   <ul style={{ margin: 0, padding: "0 0 0 .9rem", display: "flex", flexDirection: "column", gap: ".2rem" }}>
                     {(isFR
                       ? ["Tout le plan Digital", "Livre relié inclus chaque année", "Livraison offerte"]

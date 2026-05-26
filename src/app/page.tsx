@@ -7,6 +7,15 @@ import { formatPrice, type Currency } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
+const FAQ_IDS = [
+  "comment-fonctionne-ia",
+  "animal-nous-quitte",
+  "personnaliser-livre",
+  "qualite-impression",
+  "plan-gratuit",
+  "annuler-abonnement",
+];
+
 const FAQ_JSONLD = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -44,6 +53,24 @@ export default function Home() {
     const id = setInterval(() => setDemoSlide(s => (s + 1) % 3), 5000);
     return () => clearInterval(id);
   }, []);
+
+  // Open FAQ from URL hash on first load
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    const idx = FAQ_IDS.indexOf(hash);
+    if (idx !== -1) {
+      setOpenFaq(idx);
+      setTimeout(() => {
+        document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+    }
+  }, []);
+
+  const handleFaqClick = (i: number) => {
+    const isOpening = openFaq !== i;
+    setOpenFaq(isOpening ? i : null);
+    window.history.replaceState(null, "", isOpening ? `#${FAQ_IDS[i]}` : window.location.pathname);
+  };
 
   const features = [
     ["📝", t.landing.f1_title, t.landing.f1_desc],
@@ -143,7 +170,7 @@ export default function Home() {
       `}</style>
       <section style={{
         minHeight: "100vh",
-        display: "flex", alignItems: "center", justifyContent: "center",
+        display: "flex", alignItems: "flex-start", justifyContent: "center",
         padding: "7rem 2rem 4rem",
         background: "radial-gradient(ellipse 80% 60% at 50% 30%, rgba(200,129,58,.12) 0%, transparent 70%)",
       }}>
@@ -347,9 +374,9 @@ export default function Home() {
             ["69%", t.landing.stats_millennials],
             ["12", t.landing.stats_memories],
           ].map(([num, lbl]) => (
-            <div key={num} style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", margin: "0 2rem" }}>
+            <div key={num} style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", margin: "0 1.25rem", minWidth: 0 }}>
               <span style={{ fontFamily: "Georgia, serif", fontSize: "3rem", fontWeight: 600, color: "#C8813A" }}>{num}</span>
-              <span style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginTop: ".25rem" }}>{lbl}</span>
+              <span style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginTop: ".25rem", textAlign: "center", maxWidth: 160, lineHeight: 1.4 }}>{lbl}</span>
             </div>
           ))}
         </div>
@@ -442,7 +469,7 @@ export default function Home() {
               >
                 {cycle === "monthly" ? t.landing.pricing_monthly : t.landing.pricing_annual}
                 {cycle === "annual" && (
-                  <span style={{ fontSize: ".68rem", background: "#C8813A", color: "#FDFAF5", padding: "2px 8px", borderRadius: 100, fontWeight: 600, flexShrink: 0, lineHeight: 1.4 }}>
+                  <span style={{ fontSize: ".75rem", background: "#9C6420", color: "#FDFAF5", padding: "3px 8px", borderRadius: 100, fontWeight: 700, flexShrink: 0, lineHeight: 1.4, whiteSpace: "nowrap" }}>
                     −34 %
                   </span>
                 )}
@@ -465,7 +492,7 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-            <Link href="/auth/signup" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#3D2B1F", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+            <Link href="/auth/signup" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, border: "1.5px solid rgba(61,43,31,.55)", background: "transparent", color: "#3D2B1F", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
               {t.landing.free_cta}
             </Link>
           </div>
@@ -574,10 +601,13 @@ export default function Home() {
         ] as [string, string][]).map(([q, a], i) => (
           <div
             key={i}
+            id={FAQ_IDS[i]}
             style={{ borderTop: i === 0 ? "1px solid rgba(61,43,31,.12)" : "none", borderBottom: "1px solid rgba(61,43,31,.12)" }}
           >
             <button
-              onClick={() => setOpenFaq(openFaq === i ? null : i)}
+              onClick={() => handleFaqClick(i)}
+              aria-expanded={openFaq === i}
+              aria-controls={`faq-answer-${FAQ_IDS[i]}`}
               style={{
                 width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
                 padding: "1.25rem 0", background: "none", border: "none", cursor: "pointer",
@@ -587,15 +617,20 @@ export default function Home() {
               <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 500, color: "#3D2B1F", lineHeight: 1.4 }}>
                 {q}
               </span>
-              <span style={{ fontSize: "1.1rem", color: "#C8813A", flexShrink: 0, transition: "transform .2s", transform: openFaq === i ? "rotate(45deg)" : "rotate(0deg)" }}>
+              <span aria-hidden="true" style={{ fontSize: "1.1rem", color: "#C8813A", flexShrink: 0, transition: "transform .2s", transform: openFaq === i ? "rotate(45deg)" : "rotate(0deg)" }}>
                 +
               </span>
             </button>
-            <div style={{
-              overflow: "hidden",
-              maxHeight: openFaq === i ? 400 : 0,
-              transition: "max-height .3s ease",
-            }}>
+            <div
+              id={`faq-answer-${FAQ_IDS[i]}`}
+              role="region"
+              aria-labelledby={FAQ_IDS[i]}
+              style={{
+                overflow: "hidden",
+                maxHeight: openFaq === i ? 400 : 0,
+                transition: "max-height .3s ease",
+              }}
+            >
               <p style={{ fontSize: ".95rem", color: "#7A5C44", lineHeight: 1.75, paddingBottom: "1.25rem", margin: 0, fontWeight: 300 }}>
                 {a}
               </p>
