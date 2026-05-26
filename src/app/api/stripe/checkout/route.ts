@@ -11,6 +11,10 @@ const PRICE_MAP: Record<string, Record<Currency, string | undefined>> = {
     EUR: process.env.STRIPE_PRICE_ID_DIGITAL_EUR,
     USD: process.env.STRIPE_PRICE_ID_DIGITAL_USD,
   },
+  digital_annual: {
+    EUR: process.env.STRIPE_PRICE_ID_DIGITAL_ANNUAL_EUR,
+    USD: process.env.STRIPE_PRICE_ID_DIGITAL_ANNUAL_USD,
+  },
   print_monthly: {
     EUR: process.env.STRIPE_PRICE_ID_PRINT_EUR,
     USD: process.env.STRIPE_PRICE_ID_PRINT_USD,

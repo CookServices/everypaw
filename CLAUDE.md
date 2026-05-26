@@ -79,7 +79,11 @@ STRIPE_PRICE_ID_DIGITAL_EUR    # plan digital 4,99 €/mois (Europe)
 STRIPE_PRICE_ID_DIGITAL_USD    # plan digital $4.99/mo (reste du monde)
 STRIPE_PRICE_ID_PRINT_EUR      # plan print 9,99 €/mois (Europe)
 STRIPE_PRICE_ID_PRINT_USD      # plan print $9.99/mo (reste du monde)
-STRIPE_PRICE_PRINT_ANNUAL      # plan print annuel (partagé EUR/USD jusqu'à séparation)
+STRIPE_PRICE_ID_DIGITAL_ANNUAL_EUR  # plan digital annuel EUR (2,99 €/mois · 35,88 €/an)
+STRIPE_PRICE_ID_DIGITAL_ANNUAL_USD  # plan digital annuel USD ($2.99/mo · $35.88/year)
+STRIPE_PRICE_PRINT_ANNUAL           # plan print annuel legacy (fallback si EUR/USD absents)
+STRIPE_PRICE_PRINT_ANNUAL_EUR       # plan print annuel EUR (79 €/an)
+STRIPE_PRICE_PRINT_ANNUAL_USD       # plan print annuel USD ($79/year)
 STRIPE_WEBHOOK_SECRET
 STRIPE_GIFT_COUPON_ID          # coupon 100% off 12 mois
 

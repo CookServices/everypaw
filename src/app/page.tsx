@@ -489,7 +489,7 @@ export default function Home() {
               ))}
             </ul>
             <Link
-              href="/auth/signup?plan=digital"
+              href={`/auth/signup?plan=${pricingCycle === "annual" ? "digital_annual" : "digital"}`}
               onMouseEnter={() => setDigitalCtaHovered(true)}
               onMouseLeave={() => setDigitalCtaHovered(false)}
               style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 600, background: digitalCtaHovered ? "#B5712E" : "#C8813A", border: "1.5px solid #C8813A", color: "#FDFAF5", textAlign: "center", textDecoration: "none", boxSizing: "border-box", transition: "background .15s" }}
