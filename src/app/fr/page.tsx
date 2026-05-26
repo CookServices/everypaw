@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getTranslations } from "@/lib/i18n";
 import { formatPrice, type Currency } from "@/lib/currency";
+import PublicNav from "@/components/PublicNav";
+import PublicFooter from "@/components/PublicFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +15,7 @@ const FAQ_JSONLD_FR = {
   mainEntity: [
     { "@type": "Question", name: "Comment fonctionne l'IA ?", acceptedAnswer: { "@type": "Answer", text: "Chaque mois, notre IA lit toutes vos entrées de journal et les tisse en un chapitre narratif chaleureux — rédigé à la première personne, comme si votre animal racontait sa propre vie. Plus vous ajoutez de moments, plus l'histoire devient riche et personnelle." } },
     { "@type": "Question", name: "Que se passe-t-il si mon animal nous quitte ?", acceptedAnswer: { "@type": "Answer", text: "Tous vos souvenirs restent accessibles pour toujours. Vous pouvez créer une page mémorial dédiée, partager son profil avec vos proches, et commander un livre relié commémoratif qui rassemble chaque histoire et chaque moment de sa vie — un objet précieux à conserver." } },
-    { "@type": "Question", name: "Puis-je personnaliser le livre ?", acceptedAnswer: { "@type": "Answer", text: "Le livre est généré automatiquement à partir de vos histoires et photos, avec le nom de votre animal et les années couvertes sur la couverture. Des options de personnalisation avancées — page de dédicace, titre personnalisé, couleur de couverture — sont en cours de développement." } },
+    { "@type": "Question", name: "Puis-je personnaliser le livre ?", acceptedAnswer: { "@type": "Answer", text: "Oui. Lors de la commande, vous choisissez le thème de couverture parmi 5 styles (Classic, Noir, Forest, Ocean, Rose), ajoutez un titre personnalisé, sélectionnez les chapitres à inclure, filtrez par année et ajoutez une page de dédicace. La photo de couverture est personnalisable également — choisissez une photo de votre journal ou téléchargez-en une." } },
     { "@type": "Question", name: "Quelle est la qualité d'impression ?", acceptedAnswer: { "@type": "Answer", text: "Nos livres sont imprimés sur papier couché satiné 170 g/m² avec une couverture rigide et une plastification mate. Format 20×20 cm, reliure parfaite. Qualité professionnelle, comparable aux meilleurs livres photo des studios spécialisés." } },
     { "@type": "Question", name: "Le plan gratuit est-il vraiment gratuit ?", acceptedAnswer: { "@type": "Answer", text: "Oui, complètement et sans conditions. Vous pouvez créer un profil d'animal, ajouter jusqu'à 10 entrées de journal et générer un chapitre d'histoire IA — entièrement gratuit. Aucune carte bancaire requise pour commencer." } },
     { "@type": "Question", name: "Comment annuler mon abonnement ?", acceptedAnswer: { "@type": "Answer", text: "Depuis les paramètres de votre compte, en un clic. Sans engagement, sans frais d'annulation. Vous conservez l'accès à toutes vos histoires, entrées et données même après l'annulation." } },
@@ -82,35 +84,7 @@ export default function FrHome() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSONLD_FR) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APP_JSONLD) }} />
 
-      {/* NAV */}
-      <nav style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "1.25rem 3rem",
-        background: "rgba(247,242,234,0.88)",
-        backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(61,43,31,.08)",
-      }}>
-        <Link href="/fr" style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", textDecoration: "none", display: "flex", alignItems: "center", gap: ".4rem" }}>
-          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
-          Everypaw
-        </Link>
-        <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
-          <Link href="/gift" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
-            {t.nav.give_gift}
-          </Link>
-          <Link href="/auth/login" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
-            {t.nav.sign_in}
-          </Link>
-          <Link href="/auth/signup" style={{
-            background: "#3D2B1F", color: "#F7F2EA",
-            padding: ".5rem 1.25rem", borderRadius: "100px",
-            fontSize: ".875rem", fontWeight: 500, textDecoration: "none",
-          }}>
-            {t.nav.get_started}
-          </Link>
-        </div>
-      </nav>
+      <PublicNav variant="full" fixed />
 
       {/* HERO */}
       <style>{`
@@ -588,33 +562,7 @@ export default function FrHome() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer style={{ padding: "2rem 3rem", background: "#3D2B1F", borderTop: "1px solid rgba(247,242,234,.08)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem", marginBottom: "1.25rem" }}>
-          <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", color: "rgba(247,242,234,.6)", display: "flex", alignItems: "center", gap: ".4rem" }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "rgba(247,242,234,.3)", display: "inline-block" }} />
-            Everypaw
-          </span>
-          <p style={{ fontSize: ".75rem", color: "rgba(247,242,234,.3)", margin: 0 }}>{t.landing.footer_copy}</p>
-        </div>
-        <div style={{ borderTop: "1px solid rgba(247,242,234,.06)", paddingTop: "1.25rem", display: "flex", flexWrap: "wrap", gap: ".375rem .1rem" }}>
-          {[
-            { label: t.landing.legal_cgv, href: "/legal/cgv" },
-            { label: t.landing.legal_privacy, href: "/legal/confidentialite" },
-            { label: t.landing.legal_mentions, href: "/legal/mentions" },
-            { label: t.landing.legal_contact, href: "/contact" },
-          ].map(({ label, href }, i, arr) => (
-            <span key={href} style={{ display: "flex", alignItems: "center", gap: ".1rem" }}>
-              <Link href={href} style={{ fontSize: ".72rem", color: "rgba(247,242,234,.28)", textDecoration: "none", fontWeight: 300, whiteSpace: "nowrap", padding: "0 .5rem" }}>
-                {label}
-              </Link>
-              {i < arr.length - 1 && (
-                <span style={{ fontSize: ".72rem", color: "rgba(247,242,234,.12)", userSelect: "none" }}>·</span>
-              )}
-            </span>
-          ))}
-        </div>
-      </footer>
+      <PublicFooter variant="full" />
     </>
   );
 }

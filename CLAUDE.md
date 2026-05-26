@@ -112,6 +112,7 @@ profiles: id, email, full_name, avatar_url,
 pets: id, user_id, name, species, breed, birthdate, photo_url, bio,
       deceased_at,           -- date nullable — active le mode mémorial
       memorial_message,      -- text nullable
+      memorial_photo_url,    -- text nullable — photo affichée sur la page mémorial (migration requise)
       created_at
 
 -- entries (journal)
@@ -503,7 +504,7 @@ currency: "USD"
 
 **High fixes**
 - **timingSafeEqual Bearer** (H1) : `===` remplacé par `timingSafeEqual` dans les 3 routes email hook (`confirm-signup`, `change-email`, `reset-password`) — prévient les attaques par timing
-- **Cookie locale sécurisé** (H2) : `httpOnly: true`, `secure: true` (prod), `sameSite: "lax"` + `try/catch` sur le JSON parse
+- **Cookie locale sécurisé** (H2) : `secure: true` (prod), `sameSite: "lax"` + `try/catch` sur le JSON parse. Note : `httpOnly` a été retiré ultérieurement (session 15) — le cookie doit être lisible par `document.cookie` dans `useLocale`.
 - **Unsubscribe fantôme** (H3) : vérification du nombre de lignes affectées — 400 si token introuvable en DB (au lieu de 200 silencieux)
 - **Vol de carte cadeau** (H4) : vérification `promoCode.metadata.recipient_email` === `user.email` avant activation
 - **Validation params preview-pdf** (H5) : `lang` whitelisté, `year` borné 2000–2100, `dedication` limité à 500 chars
@@ -668,11 +669,26 @@ currency: "USD"
 - **`plan.ts` → `priceIdToPlan()`** : les 2 nouveaux Price IDs digital annuel mappés → plan `"digital"` en DB (le plan DB ne distingue pas mensuel/annuel, c'est Stripe qui gère)
 - **Landing CTA Digital** : `href` passe `?plan=digital_annual` quand `pricingCycle === "annual"`, `?plan=digital` sinon
 
+### ✅ Fix switch langue + composants nav/footer partagés (2026-05-26, session 15)
+
+**Bug switch langue corrigé**
+- `/api/locale/route.ts` : `httpOnly: true` retiré du cookie `locale` — `document.cookie` (client-side) ne peut pas lire les cookies httpOnly. `useLocale()` ne trouvait jamais la préférence sauvegardée et retombait sur la langue du navigateur. Les pages serveur (`memorial`, `pets/[id]`) qui lisent via `cookieStore` (Next.js) continuent de fonctionner sans changement.
+
+**Composants publics partagés** (`src/components/`)
+- `PublicNav.tsx` ("use client") — `variant="full"` (logo + give_gift + sign_in + get_started) ou `"simple"` (logo seul) ; prop `fixed` pour la landing (position: fixed, zIndex: 50)
+- `PublicFooter.tsx` ("use client") — `variant="full"` (logo + copyright + liens légaux) ou `"minimal"` (© seul)
+- Appliqués à 8 pages : `/`, `/fr`, `/gift` (+ footer manquant ajouté), `/legal/cgv`, `/legal/confidentialite`, `/legal/mentions`, `/contact`, `/not-found`
+- Pages intentionnellement exclues : `/auth/*` (UX épurée), `/redeem` + `/unsubscribe` (centered layout), `/pets/[id]` + `/memorial/[id]` (nav spécifique), `/dashboard/*` (DashboardNav)
+
+**FAQ — mise à jour Q3 (personnalisation du livre)**
+- Q3 FR + EN : reformulé de "en cours de développement" → liste des options réellement disponibles (5 thèmes de couverture, titre custom, dédicace, sélection chapitres, filtre année, photo couverture)
+- JSON-LD `FAQ_JSONLD` (page.tsx) et `FAQ_JSONLD_FR` (fr/page.tsx) synchronisés avec les nouvelles réponses
+
 ### 🚧 Prochaine étape
+- **Migration SQL** : `ALTER TABLE pets ADD COLUMN IF NOT EXISTS memorial_photo_url TEXT;` (photo mémorial — fonctionnalité implémentée mais colonne manquante en prod)
 - **Exécuter les migrations SQL** dans le dashboard Supabase (`round2_security_fixes_2026_05_23.sql` + précédentes si pas encore fait)
 - Passer Stripe en mode **Live**
 - Passer Google OAuth en mode **Published**
-- Page mémorial complète (`/memorial/[id]`)
 - Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` et `STRIPE_PRICE_BOOK_ONCE_USD` dans Vercel (book-checkout EUR/USD)
 
 ---
@@ -707,7 +723,7 @@ currency: "USD"
 - **Rate limiting** : le rate limiter in-memory (`src/lib/rate-limit.ts`) n'est PAS fiable sur Vercel serverless (cold start = reset, pas de partage entre instances). Pour les limites critiques, utiliser un count DB (voir `/api/generate`) ou Upstash Redis.
 - **Comparaisons de secrets** : toujours utiliser `timingSafeEqual` de `node:crypto` pour comparer des tokens/secrets (Bearer, HMAC, etc.). Ne jamais utiliser `===` pour ces comparaisons — vulnérable aux attaques par timing.
 - **Validation dates** : les paramètres `periodStart`/`periodEnd` reçus du client doivent être validés comme `YYYY-MM-DD` avant usage comme filtre DB.
-- **Cookies** : tout cookie posé via API doit avoir `httpOnly: true`, `secure: process.env.NODE_ENV === "production"`, `sameSite: "lax"`.
+- **Cookies** : tout cookie sensible posé via API doit avoir `httpOnly: true`, `secure: process.env.NODE_ENV === "production"`, `sameSite: "lax"`. **Exception** : le cookie `locale` (préférence de langue) est intentionnellement sans `httpOnly` — il doit être lisible par `document.cookie` dans `useLocale`. La convention ne s'applique qu'aux données sensibles (session, tokens).
 - **Prompts IA avec données utilisateur** : isoler les données dans des balises XML (`<pet_details>`, `<journal_entries>`) pour prévenir les injections de prompt. Voir `cron/monthly-story` pour le pattern.
 
 ---
@@ -734,4 +750,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-26 (session 14 — SEO bilingue FR/EN, RGPD CookieBanner, dates légales centralisées, middleware /app, formulaire contact Resend, signup bandeau plan + validation vides, gift toggle mensuel/annuel, FAQ deep-link + ARIA, 5 corrections UI/a11y)*
+*Dernière mise à jour : 2026-05-26 (session 15 — fix switch langue (locale cookie httpOnly), PublicNav + PublicFooter partagés (8 pages), footer manquant /gift, FAQ Q3 mise à jour (personnalisation livre))*

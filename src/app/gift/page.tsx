@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
+import PublicNav from "@/components/PublicNav";
+import PublicFooter from "@/components/PublicFooter";
 
 export default function GiftPage() {
   const { t, locale } = useLocale();
@@ -146,24 +148,7 @@ export default function GiftPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* NAV */}
-      <nav style={{ background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Link href="/" style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", textDecoration: "none", display: "flex", alignItems: "center", gap: ".4rem" }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
-          Everypaw
-        </Link>
-        <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
-          <Link href="/gift" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
-            {t.nav.give_gift}
-          </Link>
-          <Link href="/auth/login" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
-            {t.nav.sign_in}
-          </Link>
-          <Link href="/auth/signup" style={{ background: "#3D2B1F", color: "#F7F2EA", padding: ".5rem 1.25rem", borderRadius: "100px", fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
-            {t.nav.get_started}
-          </Link>
-        </div>
-      </nav>
+      <PublicNav variant="full" />
 
       <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
 
@@ -396,6 +381,7 @@ export default function GiftPage() {
           )}
         </div>
       </main>
+      <PublicFooter variant="minimal" />
     </div>
   );
 }

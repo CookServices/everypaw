@@ -158,12 +158,15 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [pendingPhotos, setPendingPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
   const [newMilestone, setNewMilestone] = useState<{ type: string; title: string } | null>(null);
   const [milestoneDefinitions, setMilestoneDefinitions] = useState<MilestoneDefinition[]>([]);
   const [showMemorialModal, setShowMemorialModal] = useState(false);
   const [deceasedAt, setDeceasedAt] = useState("");
   const [memorialMessage, setMemorialMessage] = useState("");
+  const [memorialPhotoUrl, setMemorialPhotoUrl] = useState<string | null>(null);
+  const [memorialPhotoFile, setMemorialPhotoFile] = useState<File | null>(null);
+  const [memorialPhotoPreview, setMemorialPhotoPreview] = useState<string | null>(null);
+  const [showMemorialPhotoGrid, setShowMemorialPhotoGrid] = useState(false);
   const [savingMemorial, setSavingMemorial] = useState(false);
   const [showKebabMenu, setShowKebabMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -171,7 +174,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [sharingStoryId, setSharingStoryId] = useState<string | null>(null);
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
-  const [userPlan, setUserPlan] = useState<string>("free");
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const [entryMenuId, setEntryMenuId] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
@@ -190,6 +192,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [showEditEmojiPicker, setShowEditEmojiPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
+  const memorialPhotoInputRef = useRef<HTMLInputElement>(null);
   const kebabRef = useRef<HTMLDivElement>(null);
   const entryMenuRef = useRef<HTMLDivElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -237,7 +240,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
       setStories(storiesData || []);
       setMilestones(milestonesData || []);
       setIsPremium(profile?.is_premium ?? false);
-      setUserPlan(profile?.plan ?? "free");
       if (definitionsData?.length) setMilestoneDefinitions(definitionsData);
       setLoading(false);
     };
@@ -435,34 +437,52 @@ export default function PetPage({ params }: { params: { id: string } }) {
     setDeletingEntryId(null);
   };
 
+  const openMemorialModal = () => {
+    // Pre-populate if editing an already-deceased pet
+    setDeceasedAt(pet?.deceased_at ? pet.deceased_at.slice(0, 10) : "");
+    setMemorialMessage(pet?.memorial_message ?? "");
+    setMemorialPhotoUrl(pet?.memorial_photo_url ?? null);
+    setMemorialPhotoFile(null);
+    if (memorialPhotoPreview) URL.revokeObjectURL(memorialPhotoPreview);
+    setMemorialPhotoPreview(null);
+    setShowMemorialPhotoGrid(false);
+    setShowMemorialModal(true);
+  };
+
   const saveMemorial = async () => {
     if (!deceasedAt) return;
     setSavingMemorial(true);
     const supabase = createClient();
+
+    // Upload new file if provided
+    let finalPhotoUrl: string | null = memorialPhotoUrl;
+    if (memorialPhotoFile) {
+      const { data: { user } } = await supabase.auth.getUser();
+      const compressed = await compressImage(memorialPhotoFile);
+      const filename = `${user!.id}/${id}/memorial-${Date.now()}.jpg`;
+      const { error } = await supabase.storage.from("pet-photos").upload(filename, compressed, { contentType: "image/jpeg" });
+      if (!error) {
+        const { data: urlData } = supabase.storage.from("pet-photos").getPublicUrl(filename);
+        finalPhotoUrl = urlData.publicUrl;
+      }
+    }
+
     const { data } = await supabase
       .from("pets")
-      .update({ deceased_at: deceasedAt, memorial_message: memorialMessage || null })
+      .update({ deceased_at: deceasedAt, memorial_message: memorialMessage || null, memorial_photo_url: finalPhotoUrl })
       .eq("id", id)
       .select()
       .single();
     if (data) setPet(data);
+
+    // Cleanup preview blob URL
+    if (memorialPhotoPreview) URL.revokeObjectURL(memorialPhotoPreview);
+    setMemorialPhotoFile(null);
+    setMemorialPhotoPreview(null);
     setSavingMemorial(false);
     setShowMemorialModal(false);
   };
 
-  const handlePreviewPDF = async () => {
-    setPreviewLoading(true);
-    const res = await fetch("/api/preview-pdf", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ petId: id }),
-    });
-    const html = await res.text();
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
-    setPreviewLoading(false);
-  };
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", color: "#7A5C44" }}>{t.dashboard.loading}</div>
@@ -523,6 +543,97 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem" }}>{t.memorial.message_label}</label>
                 <textarea value={memorialMessage} onChange={e => setMemorialMessage(e.target.value)} placeholder={t.memorial.message_placeholder} rows={3} style={{ width: "100%", padding: ".75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none", resize: "none", boxSizing: "border-box" as const, lineHeight: 1.6 }} />
               </div>
+
+              {/* Photo du mémorial */}
+              {(() => {
+                const entryPhotos = Array.from(new Set(entries.flatMap(e => e.photo_urls ?? []).filter(Boolean)));
+                const displaySrc = memorialPhotoPreview ?? memorialPhotoUrl;
+                return (
+                  <div>
+                    <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".75rem" }}>
+                      {isFR ? "Photo du mémorial (optionnel)" : "Memorial photo (optional)"}
+                    </label>
+                    <div style={{ display: "flex", gap: "1rem", alignItems: "center", marginBottom: showMemorialPhotoGrid ? ".75rem" : 0 }}>
+                      {/* Preview */}
+                      <div style={{ width: 76, height: 76, borderRadius: 14, overflow: "hidden", background: "rgba(61,43,31,.07)", border: "1.5px solid rgba(61,43,31,.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {displaySrc
+                          ? <img src={displaySrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          : <span style={{ fontSize: "1.75rem" }}>🕊️</span>}
+                      </div>
+                      {/* Actions */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: ".4rem" }}>
+                        <button
+                          type="button"
+                          onClick={() => memorialPhotoInputRef.current?.click()}
+                          style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".375rem .75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "#7A5C44", cursor: "pointer" }}
+                        >
+                          📷 {isFR ? "Uploader une photo" : "Upload a photo"}
+                        </button>
+                        {entryPhotos.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowMemorialPhotoGrid(v => !v)}
+                            style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".375rem .75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "#7A5C44", cursor: "pointer" }}
+                          >
+                            🖼️ {isFR ? "Choisir dans le journal" : "Pick from journal"} {showMemorialPhotoGrid ? "▲" : "▼"}
+                          </button>
+                        )}
+                        {displaySrc && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMemorialPhotoUrl(null);
+                              setMemorialPhotoFile(null);
+                              if (memorialPhotoPreview) URL.revokeObjectURL(memorialPhotoPreview);
+                              setMemorialPhotoPreview(null);
+                            }}
+                            style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", padding: ".375rem .5rem", borderRadius: 100, border: "none", background: "transparent", fontFamily: "inherit", fontSize: ".72rem", color: "#9A8070", cursor: "pointer" }}
+                          >
+                            × {isFR ? "Retirer" : "Remove"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Grid de photos du journal */}
+                    {showMemorialPhotoGrid && entryPhotos.length > 0 && (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4, maxHeight: 168, overflowY: "auto", borderRadius: 10, padding: 2 }}>
+                        {entryPhotos.map((url, i) => (
+                          <div
+                            key={i}
+                            onClick={() => {
+                              setMemorialPhotoUrl(url);
+                              setMemorialPhotoFile(null);
+                              if (memorialPhotoPreview) URL.revokeObjectURL(memorialPhotoPreview);
+                              setMemorialPhotoPreview(null);
+                              setShowMemorialPhotoGrid(false);
+                            }}
+                            style={{ position: "relative", cursor: "pointer", borderRadius: 6, overflow: "hidden", border: `2px solid ${memorialPhotoUrl === url ? "#C8813A" : "transparent"}`, aspectRatio: "1 / 1" }}
+                          >
+                            <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <input
+                      ref={memorialPhotoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (memorialPhotoPreview) URL.revokeObjectURL(memorialPhotoPreview);
+                        setMemorialPhotoFile(file);
+                        setMemorialPhotoPreview(URL.createObjectURL(file));
+                        setMemorialPhotoUrl(null);
+                        e.target.value = "";
+                      }}
+                      style={{ display: "none" }}
+                    />
+                  </div>
+                );
+              })()}
             </div>
             <div style={{ display: "flex", gap: ".75rem", marginTop: "1.5rem" }}>
               <button onClick={() => setShowMemorialModal(false)} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".875rem", color: "#7A5C44", cursor: "pointer" }}>
@@ -844,14 +955,14 @@ export default function PetPage({ params }: { params: { id: string } }) {
                     >
                       {t.pet.edit_profile}
                     </Link>
-                    {!pet.deceased_at && (
-                      <button
-                        onClick={() => { setShowKebabMenu(false); setShowMemorialModal(true); }}
-                        style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "#8B6B4A", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}
-                      >
-                        {t.memorial.mark_passed}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => { setShowKebabMenu(false); openMemorialModal(); }}
+                      style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "#8B6B4A", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}
+                    >
+                      {pet.deceased_at
+                        ? (isFR ? "Modifier le mémorial" : "Edit memorial")
+                        : t.memorial.mark_passed}
+                    </button>
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
                       style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "#A32D2D", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}
@@ -1085,33 +1196,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "stories" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {(userPlan === "digital" || userPlan === "print") && (
-              pet.deceased_at ? (
-                <Link href={`/dashboard/pets/${id}/order?memorial=true`} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem", width: "100%", padding: ".875rem", borderRadius: 16, border: "1px solid rgba(139,107,74,.3)", background: "rgba(139,107,74,.08)", color: "#8B6B4A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, marginBottom: ".5rem", textAlign: "center", textDecoration: "none", boxSizing: "border-box" as const }}>
-                  {t.memorial.order_book}
-                </Link>
-              ) : (
-                <>
-                  <button onClick={handlePreviewPDF} disabled={previewLoading} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px solid rgba(200,129,58,.3)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", marginBottom: ".5rem", opacity: previewLoading ? .7 : 1 }}>
-                    {previewLoading ? t.stories.generating_preview : t.stories.preview_book}
-                  </button>
-                  <Link
-                    href={`/dashboard/pets/${id}/order`}
-                    style={{
-                      display: "block", width: "100%", padding: ".875rem", borderRadius: 16,
-                      border: isPremium ? "1.5px solid rgba(200,129,58,.35)" : "none",
-                      background: isPremium ? "rgba(200,129,58,.08)" : "#3D2B1F",
-                      color: isPremium ? "#C8813A" : "#FDFAF5",
-                      fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500,
-                      marginBottom: "1.5rem", textAlign: "center", textDecoration: "none",
-                      boxSizing: "border-box" as const,
-                    }}
-                  >
-                    {isPremium ? t.stories.order_book_premium : t.stories.order_book}
-                  </Link>
-                </>
-              )
-            )}
             {stories.length === 0 ? (
               <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
                 <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>✨</div>
@@ -1204,41 +1288,70 @@ export default function PetPage({ params }: { params: { id: string } }) {
             <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: "1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: ".625rem" }}>
                 <span style={{ fontSize: ".85rem", fontWeight: 500, color: "#3D2B1F" }}>
-                  {milestones.length} / {MILESTONE_TYPES.length} {isFR ? "étapes complétées" : "steps completed"}
+                  {milestones.length} / {milestoneDefinitions.length || MILESTONE_TYPES.length} {isFR ? "étapes complétées" : "steps completed"}
                 </span>
                 <span style={{ fontSize: ".8rem", color: "#C8813A", fontWeight: 600 }}>
-                  {Math.round(milestones.length / MILESTONE_TYPES.length * 100)}%
+                  {Math.round(milestones.length / (milestoneDefinitions.length || MILESTONE_TYPES.length) * 100)}%
                 </span>
               </div>
               <div style={{ height: 6, borderRadius: 100, background: "rgba(61,43,31,.1)", overflow: "hidden" }}>
-                <div style={{ height: "100%", borderRadius: 100, background: "#C8813A", width: `${milestones.length / MILESTONE_TYPES.length * 100}%`, transition: "width .5s ease" }} />
+                <div style={{ height: "100%", borderRadius: 100, background: "#C8813A", width: `${milestones.length / (milestoneDefinitions.length || MILESTONE_TYPES.length) * 100}%`, transition: "width .5s ease" }} />
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-              {(milestoneDefinitions.length
+            {(() => {
+              // Build full list with achieved flag, then sort:
+              // 1. achieved first, 2. alphabetical within each group
+              const allItems = (milestoneDefinitions.length
                 ? milestoneDefinitions.map(def => ({ key: def.key, icon: def.icon ?? "🏆", localTitle: isFR ? def.name_fr : def.name_en }))
                 : MILESTONE_TYPES.map(mt => ({ key: mt.type, icon: mt.icon, localTitle: isFR ? mt.titleFR : mt.title }))
-              ).map(({ key, icon, localTitle }) => {
-                const achieved = milestones.find(m => m.type === key);
-                return (
-                  <div key={key} style={{ background: "#FDFAF5", borderRadius: 14, padding: ".875rem 1.125rem", border: `1px solid ${achieved ? "rgba(200,129,58,.2)" : "rgba(61,43,31,.06)"}`, display: "flex", alignItems: "center", gap: ".875rem", opacity: achieved ? 1 : 0.6 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: achieved ? "rgba(200,129,58,.12)" : "rgba(61,43,31,.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.15rem", flexShrink: 0 }}>
-                      {achieved ? icon : "🔒"}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: ".875rem", fontWeight: 500, color: achieved ? "#3D2B1F" : "#7A5C44", margin: "0 0 .15rem" }}>{localTitle}</p>
-                      <p style={{ fontSize: ".72rem", color: achieved ? "#7A5C44" : "#9A8070", margin: 0, fontWeight: 300 }}>
-                        {achieved
-                          ? new Date(achieved.achieved_at).toLocaleDateString(dateLocale, { month: "long", day: "numeric", year: "numeric" })
-                          : (isFR ? "Non encore atteinte" : "Not yet unlocked")}
-                      </p>
-                    </div>
-                    {achieved && <span style={{ fontSize: ".9rem", flexShrink: 0 }}>✅</span>}
+              ).map(item => ({ ...item, achieved: milestones.find(m => m.type === item.key) ?? null }))
+                .sort((a, b) => {
+                  if (!!a.achieved !== !!b.achieved) return a.achieved ? -1 : 1;
+                  return a.localTitle.localeCompare(b.localTitle, isFR ? "fr" : "en", { sensitivity: "base" });
+                });
+
+              const achievedItems = allItems.filter(i => i.achieved);
+              const pendingItems = allItems.filter(i => !i.achieved);
+
+              const renderItem = ({ key, icon, localTitle, achieved }: typeof allItems[number]) => (
+                <div key={key} style={{ background: "#FDFAF5", borderRadius: 14, padding: ".875rem 1.125rem", border: `1px solid ${achieved ? "rgba(200,129,58,.2)" : "rgba(61,43,31,.06)"}`, display: "flex", alignItems: "center", gap: ".875rem", opacity: achieved ? 1 : 0.6 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: achieved ? "rgba(200,129,58,.12)" : "rgba(61,43,31,.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.15rem", flexShrink: 0 }}>
+                    {achieved ? icon : "🔒"}
                   </div>
-                );
-              })}
-            </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: ".875rem", fontWeight: 500, color: achieved ? "#3D2B1F" : "#7A5C44", margin: "0 0 .15rem" }}>{localTitle}</p>
+                    <p style={{ fontSize: ".72rem", color: achieved ? "#7A5C44" : "#9A8070", margin: 0, fontWeight: 300 }}>
+                      {achieved
+                        ? new Date(achieved.achieved_at).toLocaleDateString(dateLocale, { month: "long", day: "numeric", year: "numeric" })
+                        : (isFR ? "Non encore atteinte" : "Not yet unlocked")}
+                    </p>
+                  </div>
+                  {achieved && <span style={{ fontSize: ".9rem", flexShrink: 0 }}>✅</span>}
+                </div>
+              );
+
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+                  {achievedItems.length > 0 && (
+                    <>
+                      <p style={{ fontSize: ".68rem", fontWeight: 600, color: "#C8813A", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .1rem", fontFamily: "sans-serif" }}>
+                        {isFR ? `Débloquées · ${achievedItems.length}` : `Unlocked · ${achievedItems.length}`}
+                      </p>
+                      {achievedItems.map(renderItem)}
+                    </>
+                  )}
+                  {pendingItems.length > 0 && (
+                    <>
+                      <p style={{ fontSize: ".68rem", fontWeight: 600, color: "#9A8070", textTransform: "uppercase", letterSpacing: ".08em", margin: `${achievedItems.length > 0 ? ".5rem" : "0"} 0 .1rem`, fontFamily: "sans-serif" }}>
+                        {isFR ? `À débloquer · ${pendingItems.length}` : `Locked · ${pendingItems.length}`}
+                      </p>
+                      {pendingItems.map(renderItem)}
+                    </>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </main>

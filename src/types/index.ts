@@ -21,6 +21,7 @@ export interface Pet {
   bio: string | null;
   deceased_at: string | null;
   memorial_message: string | null;
+  memorial_photo_url: string | null;
   created_at: string;
 }
 

@@ -209,6 +209,25 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const photoEntries = filteredEntries.filter(e => e.photo_urls?.length > 0);
   const photoCount = Math.min(photoEntries.flatMap(e => e.photo_urls).length, 6);
 
+  // Estimated page count (without dedication — filled later at address step)
+  // Structure: 1 cover + N chapters (min 1) + 1 orphan-photos page (if any) + 1 back cover
+  // Gelato: must be even, minimum 20
+  const estimatedPages = (() => {
+    const selected = visibleStories.filter(s => selectedStoryIds.includes(s.id));
+    const hasOrphanPhotos = filteredEntries.some(e => {
+      if (!e.photo_urls?.length) return false;
+      const d = new Date(e.entry_date);
+      return !selected.some(story => {
+        const start = story.period_start ? new Date(story.period_start) : null;
+        const end = story.period_end ? new Date(story.period_end) : null;
+        return !!start && d >= start && (!end || d <= end);
+      });
+    });
+    const raw = 1 + Math.max(selected.length, 1) + (hasOrphanPhotos ? 1 : 0) + 1;
+    const rounded = raw % 2 === 0 ? raw : raw + 1;
+    return Math.max(20, rounded);
+  })();
+
   // Cover photo picker uses the same year filter as the rest of the preview
   const availablePhotos = filteredEntries
     .flatMap(e => e.photo_urls ?? [])
@@ -667,18 +686,27 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               gap: ".75rem", flexWrap: "wrap",
             }}>
               {[
-                t.order.summary_chapters.replace("{n}", String(visibleStories.length)),
+                t.order.summary_chapters.replace("{n}", String(selectedStoryIds.length || visibleStories.length)),
                 t.order.summary_photos.replace("{n}", String(photoCount)),
                 t.order.summary_months.replace("{n}", String(monthsCount)),
+                t.order.summary_pages.replace("{n}", String(estimatedPages)),
               ].map((item, i, arr) => (
                 <span key={i} style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
-                  <span style={{ fontSize: ".875rem", fontWeight: i === 1 ? 400 : 500, color: i === 1 ? accentColor : textPrimary }}>
+                  <span style={{
+                    fontSize: ".875rem",
+                    fontWeight: i === 3 ? 600 : i === 1 ? 400 : 500,
+                    color: i === 3 ? accentColor : i === 1 ? accentColor : textPrimary,
+                  }}>
                     {item}
                   </span>
                   {i < arr.length - 1 && <span style={{ color: isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)", fontSize: ".75rem" }}>·</span>}
                 </span>
               ))}
             </div>
+            {/* Note sur la dédicace */}
+            <p style={{ fontSize: ".7rem", color: textMuted, textAlign: "center", margin: "-.75rem 0 1.5rem", fontFamily: "sans-serif", opacity: .7 }}>
+              {t.order.summary_pages_note}
+            </p>
 
             {/* Chapter selection (Point 4 & 9) */}
             {visibleStories.length > 0 && (

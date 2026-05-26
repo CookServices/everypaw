@@ -1,17 +1,14 @@
 import Link from "next/link";
 import { LEGAL_LAST_UPDATE } from "@/lib/legal";
+import PublicNav from "@/components/PublicNav";
+import PublicFooter from "@/components/PublicFooter";
 
 export const metadata = { title: "Politique de confidentialité — Everypaw" };
 
 export default function Confidentialite() {
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <nav style={{ background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "1rem 2rem" }}>
-        <Link href="/" style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", textDecoration: "none", display: "flex", alignItems: "center", gap: ".4rem" }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
-          Everypaw
-        </Link>
-      </nav>
+      <PublicNav variant="simple" />
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "4rem 2rem 6rem" }}>
         <Link href="/" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>← Retour</Link>
@@ -38,9 +35,7 @@ export default function Confidentialite() {
         ))}
       </main>
 
-      <footer style={{ padding: "1.5rem 2rem", background: "#3D2B1F", textAlign: "center" }}>
-        <p style={{ fontSize: ".75rem", color: "rgba(247,242,234,.3)", margin: 0 }}>© 2025 Everypaw</p>
-      </footer>
+      <PublicFooter variant="minimal" />
     </div>
   );
 }

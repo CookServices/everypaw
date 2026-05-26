@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   response.cookies.set("locale", locale, {
     maxAge: 60 * 60 * 24 * 365,
     path: "/",
-    httpOnly: true,
+    // httpOnly intentionally omitted: useLocale reads this via document.cookie client-side
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
   });

@@ -60,9 +60,9 @@ export default async function MemorialPage({ params }: { params: { id: string } 
 
         {/* Photo + identity */}
         <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
-          {pet.photo_url ? (
+          {(pet.memorial_photo_url ?? pet.photo_url) ? (
             <img
-              src={pet.photo_url}
+              src={(pet.memorial_photo_url ?? pet.photo_url)!}
               alt={pet.name}
               style={{ width: 140, height: 140, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(200,129,58,.3)", marginBottom: "2rem", display: "block", margin: "0 auto 2rem" }}
             />

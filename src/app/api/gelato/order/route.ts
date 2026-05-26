@@ -51,26 +51,39 @@ export async function POST(req: Request) {
   const country = req.headers.get("x-vercel-ip-country");
   const currency = getCurrencyFromCountry(country);
 
-  // Count entries with photos to calculate pageCount
-  const entriesQuery = supabase
-    .from("entries")
-    .select("photo_urls, entry_date")
-    .eq("pet_id", petId);
-  const { data: allEntries } = await entriesQuery;
+  // Fetch entries + stories to compute page count accurately
+  const [{ data: allEntries }, { data: allStories }] = await Promise.all([
+    supabase.from("entries").select("id, photo_urls, entry_date").eq("pet_id", petId),
+    supabase.from("stories").select("id, period_start, period_end, created_at").eq("pet_id", petId),
+  ]);
 
   const filteredEntries = yearFilter
     ? (allEntries ?? []).filter(e => new Date(e.entry_date).getFullYear() === yearFilter)
     : (allEntries ?? []);
 
-  const hasPhotos = filteredEntries.some(e => e.photo_urls?.length > 0);
+  // Determine which stories are active (selected + year filter)
+  let activeStories = (allStories ?? []);
+  if (yearFilter) {
+    activeStories = activeStories.filter(s => new Date(s.period_start ?? s.created_at).getFullYear() === yearFilter);
+  }
+  if (Array.isArray(selectedStoryIds) && selectedStoryIds.length > 0) {
+    activeStories = activeStories.filter(s => selectedStoryIds.includes(s.id));
+  }
+
+  // hasOrphanPhotos: entries with photos that don't fall in any active story's period
+  const hasOrphanPhotos = filteredEntries.some(e => {
+    if (!e.photo_urls?.length) return false;
+    const d = new Date(e.entry_date);
+    return !activeStories.some(story => {
+      const start = story.period_start ? new Date(story.period_start) : null;
+      const end = story.period_end ? new Date(story.period_end) : null;
+      return !!start && d >= start && (!end || d <= end);
+    });
+  });
+
   const hasDedication = !!(dedicationText && dedicationText.trim().length > 0);
-
-  // Determine story count for page calculation
-  const storyCount = Array.isArray(selectedStoryIds) && selectedStoryIds.length > 0
-    ? selectedStoryIds.length
-    : 0;
-
-  const pageCount = calcPageCount(storyCount, hasPhotos, hasDedication);
+  const storyCount = activeStories.length;
+  const pageCount = calcPageCount(storyCount, hasOrphanPhotos, hasDedication);
 
   // Build PDF URL with all params
   const pdfUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/preview-pdf`);

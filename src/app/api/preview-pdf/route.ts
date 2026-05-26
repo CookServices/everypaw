@@ -140,6 +140,23 @@ async function buildHtml(params: {
   const orphanEntries = entries.filter(e => e.photo_urls?.length > 0 && !entryToStoryIdx.has(e.id)).slice(0, 6);
   const hasOrphanPhotos = orphanEntries.length > 0;
 
+  // ── Page count & blank-page padding ───────────────────────────────────────
+  // Gelato requires: (a) minimum 20 pages, (b) even page count.
+  // We compute the exact number of pages the HTML will generate and add blank
+  // pages before the back cover so the PDF always matches the declared pageCount.
+  const storyPageCount = stories.length > 0 ? stories.length : 1; // placeholder chapter counts
+  const actualPages =
+    1 +                           // cover
+    (hasDedication ? 1 : 0) +    // dedication
+    storyPageCount +              // chapters (or 1 placeholder)
+    (hasOrphanPhotos ? 1 : 0) +  // orphan photos page
+    1;                            // back cover
+  const targetPages = Math.max(20, actualPages % 2 === 0 ? actualPages : actualPages + 1);
+  const blankPagesToAdd = targetPages - actualPages;
+  const blankPagesHtml = blankPagesToAdd > 0
+    ? Array(blankPagesToAdd).fill('<div class="blank-page"></div>').join("\n  ")
+    : "";
+
   const birthdateHtml = pet.birthdate
     ? `<div class="cover-subtitle">${escapeHtml(s.birthdate(new Date(pet.birthdate)))}</div>`
     : "";
@@ -190,6 +207,7 @@ async function buildHtml(params: {
     .photo-caption { font-size: .75rem; color: #7A5C44; margin-top: .4rem; font-style: italic; text-align: center; }
     .photo-page { padding: 2rem; background: #F7F2EA; page-break-after: always; }
     .photo-page .photo-grid img { height: 220px; border-radius: 12px; }
+    .blank-page { page-break-after: always; background: #F7F2EA; min-height: 100vh; }
     .back-cover { width: 100%; min-height: 100vh; background: ${colors.back}; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem; }
     .back-cover-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #FDFAF5; margin-bottom: 1rem; }
     .back-cover-text { font-size: .9rem; color: rgba(253,250,245,.7); max-width: 360px; line-height: 1.7; }
@@ -260,6 +278,9 @@ async function buildHtml(params: {
     </div>
   </div>
   ` : ""}
+
+  <!-- Blank pages to reach Gelato minimum (20 pages, even count) -->
+  ${blankPagesHtml}
 
   <!-- Back cover -->
   <div class="back-cover">
