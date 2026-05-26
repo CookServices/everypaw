@@ -735,10 +735,10 @@ currency: "USD"
 - **Redirect protocol-relative** (I3) : `!next.startsWith("//")` ajouté dans `/auth/callback`.
 
 ### 🚧 Prochaine étape
-- **Exécuter les migrations SQL** dans le dashboard Supabase (`round2_security_fixes_2026_05_23.sql` + `round3_security_fixes_2026_05_26.sql` + précédentes si pas encore fait)
-- Passer Stripe en mode **Live**
-- Passer Google OAuth en mode **Published**
-- Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` et `STRIPE_PRICE_BOOK_ONCE_USD` dans Vercel (book-checkout EUR/USD)
+- ~~Exécuter les migrations SQL~~ ✅
+- ~~Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` / `STRIPE_PRICE_BOOK_ONCE_USD`~~ ✅
+- **Passer Stripe en mode Live** (voir checklist prod)
+- **Publier Google OAuth** (voir checklist prod)
 
 ---
 
@@ -788,7 +788,8 @@ currency: "USD"
 - [ ] Tester le webhook Stripe en mode Live avec un vrai paiement
 - [ ] Vérifier que le cron weekly-reminder envoie bien les emails
 - [ ] Vérifier que Gelato est configuré avec une carte de paiement valide
-- [ ] Exécuter `supabase/migrations/round2_security_fixes_2026_05_23.sql` puis `round3_security_fixes_2026_05_26.sql` dans le dashboard Supabase (RPCs `try_consume_book_credit` + `restore_book_credit` — round3 corrige le plan `digital`)
+- [x] Exécuter `round2_security_fixes_2026_05_23.sql` + `round3_security_fixes_2026_05_26.sql` dans Supabase ✅
+- [x] Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` + `STRIPE_PRICE_BOOK_ONCE_USD` dans Vercel ✅
 
 ---
 
