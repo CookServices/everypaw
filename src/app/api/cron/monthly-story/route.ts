@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getServiceSupabase } from "@/lib/plan";
-import { escapeHtml } from "@/lib/html";
+import { escapeHtml, escapeXml } from "@/lib/html";
 import { verifyBearer } from "@/lib/auth";
-
-function escapeXml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
-}
 
 export async function GET(req: Request) {
   const cronSecret = process.env.CRON_SECRET;

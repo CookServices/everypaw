@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  // Honour redirect param (e.g. from gift redeem flow)
-  const destination = next && next.startsWith("/") ? next : "/dashboard";
+  // Honour redirect param — must be a relative path (no protocol-relative or absolute URLs)
+  const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
   return NextResponse.redirect(`${origin}${destination}`);
 }

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getUserPlan, canGenerateStory } from "@/lib/plan";
+import { escapeXml } from "@/lib/html";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -26,6 +29,7 @@ export async function POST(req: Request) {
   const { petId, style, periodStart, periodEnd } = await req.json();
 
   if (!petId) return NextResponse.json({ error: "Missing petId" }, { status: 400 });
+  if (!UUID_REGEX.test(petId)) return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
 
   // Validate date format (YYYY-MM-DD) to prevent unexpected DB behavior
   const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -99,24 +103,28 @@ export async function POST(req: Request) {
     )
     .join("\n");
 
+  const STYLE_DESCRIPTIONS: Record<string, string> = {
+    poetic:   "Write in a poetic, lyrical style with rich metaphors and emotional imagery. Use beautiful language.",
+    humorous: "Write with humor and wit — light, playful, full of amusing observations and gentle self-deprecating comedy.",
+    classic:  "Write in a classic, clean narrative style — sober, well-structured, timeless.",
+    epic:     "Write in an epic, adventurous, dramatic style. Make everyday moments feel heroic.",
+    tender:   "Write like a love letter — deeply warm, intimate, soft, full of tenderness and affection.",
+  };
+
   const prompt = `You are writing a warm, emotional, first-person narrative story for a pet journal called Everypaw.
 
 IMPORTANT: Write this story entirely in ${lang}. Do not use any other language.
-${style ? `STYLE: ${({
-  poetic:   "Write in a poetic, lyrical style with rich metaphors and emotional imagery. Use beautiful language.",
-  humorous: "Write with humor and wit — light, playful, full of amusing observations and gentle self-deprecating comedy.",
-  classic:  "Write in a classic, clean narrative style — sober, well-structured, timeless.",
-  epic:     "Write in an epic, adventurous, dramatic style. Make everyday moments feel heroic.",
-  tender:   "Write like a love letter — deeply warm, intimate, soft, full of tenderness and affection.",
-} as Record<string,string>)[style] ?? ""}` : ""}
+${style ? `STYLE: ${STYLE_DESCRIPTIONS[style] ?? ""}` : ""}
 
-Pet details:
-- Name: ${petName}
-- Species: ${species}
-- Bio: ${bio || "Not provided"}
+<pet_details>
+  <name>${escapeXml(petName)}</name>
+  <species>${escapeXml(species || "")}</species>
+  <bio>${escapeXml(bio || "Not provided")}</bio>
+</pet_details>
 
-Journal entries written by their owner:
-${entriesText}
+<journal_entries>
+${escapeXml(entriesText)}
+</journal_entries>
 
 Write a beautiful narrative story of 400-500 words, structured in exactly 3 paragraphs. Separate each paragraph with a blank line. Do NOT include any section labels or headers (no "INTRO", "DÉVELOPPEMENT", "CHUTE", or similar):
 
@@ -124,12 +132,12 @@ Paragraph 1: Set the mood of the period — evoke atmosphere, season, daily rhyt
 
 Paragraphs 2-3: Bring to life the key moments from the journal entries. Use sensory details (smells, textures, sounds). Weave entries into a flowing narrative — never list them. Show emotion through action and sensation.
 
-Paragraph 4: End with a tender, introspective note from ${petName}'s point of view — a small reflection or realization. Close with a single memorable, resonant sentence.
+Paragraph 4: End with a tender, introspective note from the pet's point of view — a small reflection or realization. Close with a single memorable, resonant sentence.
 
 Style rules (follow strictly):
-- First-person voice: ${petName} is the narrator throughout
-- Mention ${petName}'s name at least 3 times naturally in the text
-- Reference the species (${species}) or breed at least once
+- First-person voice: the pet is the narrator throughout
+- Use the pet's name (from pet_details) at least 3 times naturally in the text
+- Reference the species (from pet_details) or breed at least once
 - Do NOT mechanically list journal entries — transform them into narrative
 - Tone: warm, intimate, slightly poetic — like a letter to the reader
 - Target exactly 400-500 words (count carefully)
@@ -163,7 +171,8 @@ You MUST respond with valid JSON only, no other text:
 
     if (!response.ok) {
       console.error("[generate] Anthropic API error:", anthropicData);
-      return NextResponse.json({ error: "Anthropic API error", detail: anthropicData.error }, { status: 500 });
+      console.error("[generate] Anthropic error detail:", anthropicData.error);
+      return NextResponse.json({ error: "Generation failed" }, { status: 500 });
     }
 
     const text = anthropicData.content?.[0]?.text || "";
@@ -190,7 +199,7 @@ You MUST respond with valid JSON only, no other text:
         : lastEntry ?? today
     ).slice(0, 10);
 
-    console.log("[generate] INSERT payload:", { pet_id: petId, user_id: user.id, style: style ?? "classic", period_start: finalPeriodStart, period_end: finalPeriodEnd });
+    console.log("[generate] INSERT payload:", { pet_id: petId, style: style ?? "classic", period_start: finalPeriodStart, period_end: finalPeriodEnd });
 
     const { data: saved, error: insertError } = await supabase
       .from("stories")

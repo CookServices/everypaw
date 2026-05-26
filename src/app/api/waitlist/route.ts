@@ -43,13 +43,18 @@ export async function POST(req: Request) {
       `,
     });
 
-    // 2. Internal notification
-    await resend.emails.send({
-      from: "Everypaw Waitlist <hello@everypaw.app>",
-      to: process.env.WAITLIST_TO_EMAIL!,
-      subject: `New waitlist signup: ${email}`,
-      html: `<p>New signup: <strong>${escapeHtml(email)}</strong></p>`,
-    });
+    // 2. Internal notification (optional — only if env var is set)
+    const notifTo = process.env.WAITLIST_TO_EMAIL;
+    if (notifTo) {
+      await resend.emails.send({
+        from: "Everypaw Waitlist <hello@everypaw.app>",
+        to: notifTo,
+        subject: `New waitlist signup: ${email}`,
+        html: `<p>New signup: <strong>${escapeHtml(email)}</strong></p>`,
+      });
+    } else {
+      console.warn("[waitlist] WAITLIST_TO_EMAIL not set — skipping internal notification");
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

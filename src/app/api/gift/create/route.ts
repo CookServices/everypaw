@@ -92,6 +92,9 @@ export async function POST(req: Request) {
   }
 
   if (scheduledDate) {
+    if (typeof scheduledDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)) {
+      return NextResponse.json({ error: "Invalid scheduledDate format (expected YYYY-MM-DD)" }, { status: 400 });
+    }
     const sendAt = new Date(scheduledDate + "T08:00:00Z");
     if (isNaN(sendAt.getTime()) || sendAt <= new Date()) {
       return NextResponse.json({ error: "Scheduled date must be a valid future date" }, { status: 400 });
