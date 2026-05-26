@@ -564,6 +564,40 @@ currency: "USD"
 - `orphanEntries[]` : entrées non couvertes par aucune période de story.
 - Paramètres PDF : `?theme=`, `?customTitle=`, `?lang=`, `?year=`, `?storyIds=`, `?dedication=`, `?coverPhoto=`.
 
+### ✅ Corrections UX, traductions et qualité (2026-05-26, session 12)
+
+**Nouveaux fichiers**
+- **`src/app/not-found.tsx`** : page 404 branded — fond crème, navbar complète (logo + liens give_gift / sign_in / get_started), titre "Page introuvable", sous-titre, bouton "← Retour à l'accueil" → `/`, footer
+- **`src/lib/auth-errors.ts`** : helper centralisé pour le mapping des erreurs Supabase Auth → messages FR/EN. Fonction `getSignupError(message, isFR)` avec 4 mappings + fallback générique. Prévu pour accueillir d'autres helpers (login, reset) au même endroit.
+
+**Auth — signup (`/auth/signup`)**
+- Validation client avant l'appel Supabase : regex email + longueur ≥ 8 chars
+- Erreurs par champ : bordure rouge sur l'input + message inline en `#991B1B`
+- `onBlur` email : erreur si vide ou format invalide ; `onBlur` password : erreur si < 8 chars
+- `onChange` : efface l'erreur seulement quand la valeur redevient valide (ne re-valide pas au keystroke)
+- Bouton "Créer un compte" : `disabled + opacity:.5 + cursor:not-allowed` tant que email et password sont invalides
+- Erreurs Supabase mappées via `auth-errors.ts` au lieu d'être affichées brutes
+
+**Auth — forgot-password**
+- Lien "← Retour à la connexion" ajouté sous le bouton submit (couleur `#C8813A`, `fontWeight:500`, sans soulignement, bilingue)
+
+**Landing (`/`)**
+- `<h2>` hero traduit en FR : *"Le journal de vie de votre animal, raconté par l'IA et imprimé en livre chaque année."* — EN inchangé
+- Captions carousel traduits avec `isFR` : *Journal de vie / Histoire générée par l'IA / Aperçu du livre annuel*
+- Stat `94M` → `isFR ? "20,3M" : "94M"` — source *FACCO / Kantar, 2023* affichée conditionnellement en FR sous le bloc stats
+
+**CGV (`/legal/cgv`)**
+- Section 2 — Prix : grille tarifaire mise à jour (Digital 4,99€/mois ou 2,99€/mois·35,88€/an ; Print 9,99€/mois ou 79€/an ; livre imprimé 35€ autres plans)
+- Clause multi-devise ajoutée en tête de section 2 : *"Les prix de référence sont indiqués en euros TTC. Ils peuvent être affichés dans une autre devise lors du paiement selon votre localisation, le montant en euros faisant foi."*
+- Structure `sections` passée à `Array<{ title: string; body: React.ReactNode }>` — sections texte gardent `<p>`, section 2 utilise `<div>` avec `<ul>` (HTML valide)
+- Date : *26 mai 2026*
+
+**Gift (`/gift`)**
+- Navbar : liens complets ajoutés (give_gift / sign_in / get_started) — cohérent avec la home
+- `gift.subtitle` mis à jour en FR + EN (invite à choisir entre Digital et Print, plus de mélange des features)
+- Cards de plan : descriptions remplacées par des listes à puces explicites — Digital (Entrées illimitées · Histoires IA · Export PDF), Print (Tout le Digital · Livre relié inclus chaque année · Livraison offerte)
+- **Étape de confirmation** : state `step: "form" | "confirm"` — aucune navigation, inline dans la card. Clic "Envoyer le cadeau →" → validation → récapitulatif (formule + prix, destinataire, email, message optionnel, date ou "Immédiat"). Bouton "← Modifier" retour au formulaire pré-rempli. Bouton "Confirmer et payer →" déclenche l'appel API.
+
 ### 🚧 Prochaine étape
 - **Exécuter les migrations SQL** dans le dashboard Supabase (`round2_security_fixes_2026_05_23.sql` + précédentes si pas encore fait)
 - Passer Stripe en mode **Live**
@@ -599,7 +633,7 @@ currency: "USD"
 - **`/api/generate`** : ne jamais faire confiance aux données du body client (petName, species, bio, entries). Re-fetcher depuis la DB après vérification de l'ownership du pet.
 - **`/api/gelato/order`** : toujours filtrer les updates de stories par `user_id` (même avec service role). Consommer les crédits via `try_consume_book_credit` **avant** l'appel Gelato, et restaurer via `restore_book_credit` en cas d'échec.
 - **`/api/preview-pdf`** : l'accès GET (Gelato) nécessite un token HMAC signé généré par `gelato/order`. L'accès POST (in-app) nécessite une session + vérification de l'ownership du pet. Ne jamais exposer le contenu du livre sans authentification. Les URLs insérées dans du CSS (`url('...')`) doivent être passées par `safeCssUrl()` qui échappe les apostrophes.
-- **Helpers partagés** : pour escaper du HTML → `src/lib/html.ts`. Pour détecter la locale d'un profil → `src/lib/locale.ts` (utilise `getServiceSupabase()` — pas de session requise). Pour le calcul du nombre de pages → `src/lib/book.ts`. Pour les tokens PDF → `src/lib/pdf-token.ts`. Ne pas réimplémenter ces fonctions inline.
+- **Helpers partagés** : pour escaper du HTML → `src/lib/html.ts`. Pour détecter la locale d'un profil → `src/lib/locale.ts` (utilise `getServiceSupabase()` — pas de session requise). Pour le calcul du nombre de pages → `src/lib/book.ts`. Pour les tokens PDF → `src/lib/pdf-token.ts`. Pour mapper les erreurs Supabase Auth → messages FR/EN → `src/lib/auth-errors.ts` (`getSignupError`). Ne pas réimplémenter ces fonctions inline.
 - **Rate limiting** : le rate limiter in-memory (`src/lib/rate-limit.ts`) n'est PAS fiable sur Vercel serverless (cold start = reset, pas de partage entre instances). Pour les limites critiques, utiliser un count DB (voir `/api/generate`) ou Upstash Redis.
 - **Comparaisons de secrets** : toujours utiliser `timingSafeEqual` de `node:crypto` pour comparer des tokens/secrets (Bearer, HMAC, etc.). Ne jamais utiliser `===` pour ces comparaisons — vulnérable aux attaques par timing.
 - **Validation dates** : les paramètres `periodStart`/`periodEnd` reçus du client doivent être validés comme `YYYY-MM-DD` avant usage comme filtre DB.
@@ -630,4 +664,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-26 (session 11 — page commande livre : fixes year filter, personnalisation thème/titre/photo, aperçu complet, photos dans chapitres)*
+*Dernière mise à jour : 2026-05-26 (session 12 — corrections UX/qualité : page 404, auth-errors.ts, signup onBlur+disabled, CGV grille tarifaire+devise, gift navbar+subtitle+descriptions+confirmation step, landing h2 FR+captions carousel+stat 20,3M)*
