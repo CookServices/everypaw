@@ -721,8 +721,22 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                           {isSelected ? "✓" : ""}
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: ".4rem" }}>
-                            {t.order.preview_chapter} {i + 1}
+                          <div style={{ display: "flex", alignItems: "baseline", gap: ".6rem", marginBottom: ".4rem", flexWrap: "wrap" }}>
+                            <span style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".1em" }}>
+                              {t.order.preview_chapter} {i + 1}
+                            </span>
+                            {(story.period_start || story.period_end) && (() => {
+                              const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
+                              const fmt = (d: string) => new Date(d).toLocaleDateString(dateLocale, { month: "short", year: "numeric" });
+                              const start = story.period_start ? fmt(story.period_start) : null;
+                              const end = story.period_end ? fmt(story.period_end) : null;
+                              const label = start && end && start !== end ? `${start} – ${end}` : (start ?? end ?? "");
+                              return (
+                                <span style={{ fontSize: ".68rem", color: textMuted, fontFamily: "sans-serif" }}>
+                                  {label}
+                                </span>
+                              );
+                            })()}
                           </div>
                           <div style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem", lineHeight: 1.3 }}>
                             {story.title || `${petName}'s Story`}
