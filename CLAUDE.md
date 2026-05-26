@@ -684,6 +684,13 @@ currency: "USD"
 - Q3 FR + EN : reformulé de "en cours de développement" → liste des options réellement disponibles (5 thèmes de couverture, titre custom, dédicace, sélection chapitres, filtre année, photo couverture)
 - JSON-LD `FAQ_JSONLD` (page.tsx) et `FAQ_JSONLD_FR` (fr/page.tsx) synchronisés avec les nouvelles réponses
 
+### ✅ Bouton "Modifier" sur la page mémorial (2026-05-26, session 15)
+
+- `memorial/[id]/page.tsx` : auth check server-side via `createServerClient` — si le visiteur est le propriétaire (`user.id === pet.user_id`), affiche un bouton **✏️ Modifier / Edit** dans le nav → `/dashboard/pets/{id}?openMemorial=1`
+- `dashboard/pets/[id]/page.tsx` : `useEffect` détecte `searchParams.get("openMemorial") === "1"` après chargement du pet → appelle `openMemorialModal()` automatiquement
+- Flow : page mémorial → clic "Modifier" → dashboard → modal mémorial pré-ouvert (photo, message, date)
+- Les visiteurs non-propriétaires voient la page normalement, sans bouton
+
 ### 🚧 Prochaine étape
 - **Exécuter les migrations SQL** dans le dashboard Supabase (`round2_security_fixes_2026_05_23.sql` + précédentes si pas encore fait)
 - Passer Stripe en mode **Live**
@@ -749,4 +756,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-26 (session 15 — fix switch langue (locale cookie httpOnly), PublicNav + PublicFooter partagés (8 pages), footer manquant /gift, FAQ Q3 mise à jour (personnalisation livre))*
+*Dernière mise à jour : 2026-05-26 (session 15 — fix switch langue, PublicNav/Footer partagés, FAQ Q3, bouton Modifier page mémorial + auto-open modal dashboard)*
