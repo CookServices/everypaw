@@ -550,7 +550,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                     placeholder={defaultCoverTitle}
                     style={{ ...inputStyle, fontSize: ".85rem" }}
                   />
-                  <div style={{ fontSize: ".65rem", color: textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
+                  <div style={{ fontSize: ".65rem", color: customTitle.length >= 54 ? "#A32D2D" : textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
                     {customTitle.length}/60
                   </div>
                 </div>
@@ -968,7 +968,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                   lineHeight: 1.6,
                 }}
               />
-              <div style={{ fontSize: ".7rem", color: textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
+              <div style={{ fontSize: ".7rem", color: dedicationText.length >= 360 ? "#A32D2D" : textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
                 {dedicationText.length}/400
               </div>
             </div>
