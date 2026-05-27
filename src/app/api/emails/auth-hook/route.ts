@@ -41,17 +41,23 @@ export async function POST(req: Request) {
   }
 
   const signedContent = `${webhookId}.${webhookTimestamp}.${rawBody}`;
-  // The secret stored in Vercel is base64-encoded (Standard Webhooks spec)
-  const secretBytes = Buffer.from(secret, "base64");
-  const expectedSig = createHmac("sha256", secretBytes).update(signedContent).digest("base64");
 
-  // Header may contain multiple space-separated signatures (key rotation support)
+  // DEBUG: compare raw-UTF8 vs base64-decoded secret to find which one Supabase uses
+  const expectedUtf8 = createHmac("sha256", Buffer.from(secret, "utf8")).update(signedContent).digest("base64");
+  const expectedB64  = createHmac("sha256", Buffer.from(secret, "base64")).update(signedContent).digest("base64");
   const providedSigs = webhookSignature.split(" ").map(s => s.startsWith("v1,") ? s.slice(3) : s);
+  const provided = providedSigs[0] ?? "";
+  console.log("[auth-hook] provided  :", provided.substring(0, 20));
+  console.log("[auth-hook] utf8 match:", provided === expectedUtf8, "| sig:", expectedUtf8.substring(0, 20));
+  console.log("[auth-hook] b64  match:", provided === expectedB64,  "| sig:", expectedB64.substring(0, 20));
+
   const valid = providedSigs.some(sig => {
     try {
-      const sigBuf = Buffer.from(sig, "base64");
-      const expBuf = Buffer.from(expectedSig, "base64");
-      return sigBuf.length === expBuf.length && timingSafeEqual(sigBuf, expBuf);
+      const sigBuf     = Buffer.from(sig, "base64");
+      const expBufUtf8 = Buffer.from(expectedUtf8, "base64");
+      const expBufB64  = Buffer.from(expectedB64, "base64");
+      return (sigBuf.length === expBufUtf8.length && timingSafeEqual(sigBuf, expBufUtf8))
+          || (sigBuf.length === expBufB64.length  && timingSafeEqual(sigBuf, expBufB64));
     } catch {
       return false;
     }
