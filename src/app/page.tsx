@@ -224,9 +224,15 @@ export default function Home() {
                 <div style={{ background: "#F7F2EA", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "7px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
                   <div>
                     <div style={{ fontFamily: "Georgia, serif", fontSize: 12.5, fontWeight: 600, color: "#3D2B1F", lineHeight: 1 }}>
-                      {demoSlide === 0 ? "Max · Journal" : demoSlide === 1 ? "Max · AI Story" : "Max · Book 2025"}
+                      {demoSlide === 0
+                        ? "Max · Journal"
+                        : demoSlide === 1
+                          ? (isFR ? "Max · Histoire IA" : "Max · AI Story")
+                          : (isFR ? "Max · Livre 2025" : "Max · Book 2025")}
                     </div>
-                    <div style={{ fontSize: 9, color: "#7A5C44", marginTop: 2, fontWeight: 300 }}>Golden Retriever · 2 yrs</div>
+                    <div style={{ fontSize: 9, color: "#7A5C44", marginTop: 2, fontWeight: 300 }}>
+                      {isFR ? "Golden Retriever · 2 ans" : "Golden Retriever · 2 yrs"}
+                    </div>
                   </div>
                   <div style={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg,#C8813A,#5C3A1E)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🐾</div>
                 </div>
@@ -236,10 +242,16 @@ export default function Home() {
 
                   {/* Slide 0 — Journal */}
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 0 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-                    {[
-                      { icon: "🚶", text: "Walk at the park — 2h run!", when: "2 days ago" },
-                      { icon: "🍽️", text: "Refused kibble... again.", when: "yesterday" },
-                    ].map((e, i) => (
+                    {(isFR
+                      ? [
+                          { icon: "🚶", text: "Promenade au parc — 2h de course !", when: "il y a 2 jours" },
+                          { icon: "🍽️", text: "A refusé ses croquettes... encore.", when: "hier" },
+                        ]
+                      : [
+                          { icon: "🚶", text: "Walk at the park — 2h run!", when: "2 days ago" },
+                          { icon: "🍽️", text: "Refused kibble... again.", when: "yesterday" },
+                        ]
+                    ).map((e, i) => (
                       <div key={i} style={{ background: "#FDFAF5", borderRadius: 12, padding: "9px 11px", border: "1px solid rgba(61,43,31,.07)", animation: demoSlide === 0 ? `ep-fade-up .4s ease ${i * .12}s both` : "none" }}>
                         <div style={{ fontSize: 10.5, color: "#3D2B1F", display: "flex", gap: 6, alignItems: "flex-start" }}>
                           <span style={{ flexShrink: 0 }}>{e.icon}</span>
@@ -252,10 +264,12 @@ export default function Home() {
                     {/* Typing entry */}
                     {demoSlide === 0 && (
                       <div style={{ background: "#FDFAF5", borderRadius: 12, padding: "9px 11px", border: "1.5px solid rgba(200,129,58,.45)", animation: "ep-fade-up .4s ease .25s both" }}>
-                        <div style={{ fontSize: 10, color: "#7A5C44", fontWeight: 300, marginBottom: 4 }}>Today</div>
+                        <div style={{ fontSize: 10, color: "#7A5C44", fontWeight: 300, marginBottom: 4 }}>
+                          {isFR ? "Aujourd'hui" : "Today"}
+                        </div>
                         <div style={{ display: "flex", alignItems: "center" }}>
                           <span style={{ fontSize: 10.5, color: "#3D2B1F", overflow: "hidden", whiteSpace: "nowrap", display: "inline-block", animation: "ep-typing 2.2s steps(30, end) .8s both" }}>
-                            First bath — not happy! 🛁
+                            {isFR ? "Premier bain — pas content ! 🛁" : "First bath — not happy! 🛁"}
                           </span>
                           <span style={{ width: 1.5, height: 12, background: "#C8813A", display: "inline-block", animation: "ep-blink 1s step-end infinite", marginLeft: 1, flexShrink: 0 }} />
                         </div>
@@ -263,7 +277,9 @@ export default function Home() {
                     )}
 
                     <div style={{ marginTop: "auto", background: "#C8813A", borderRadius: 100, padding: "8px 0", textAlign: "center", animation: demoSlide === 0 ? "ep-fade-up .4s ease .4s both" : "none" }}>
-                      <span style={{ fontSize: 11, color: "#FDFAF5", fontWeight: 500 }}>+ Add a moment</span>
+                      <span style={{ fontSize: 11, color: "#FDFAF5", fontWeight: 500 }}>
+                        {isFR ? "+ Ajouter un moment" : "+ Add a moment"}
+                      </span>
                     </div>
                   </div>
 
@@ -271,7 +287,7 @@ export default function Home() {
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 1 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
                     <div style={{ animation: demoSlide === 1 ? "ep-fade-up .4s ease both" : "none" }}>
                       <div style={{ fontSize: 11, color: "#C8813A", fontWeight: 500, marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
-                        <span>✨</span> Generating story...
+                        <span>✨</span> {isFR ? "Génération en cours..." : "Generating story..."}
                       </div>
                       <div style={{ background: "rgba(200,129,58,.15)", borderRadius: 100, height: 4, overflow: "hidden" }}>
                         <div style={{ height: "100%", background: "linear-gradient(90deg,#C8813A,#F7C27A)", borderRadius: 100, animation: demoSlide === 1 ? "ep-progress 2.8s ease .3s both" : "none" }} />
@@ -279,13 +295,28 @@ export default function Home() {
                     </div>
 
                     <div style={{ flex: 1, background: "#FDFAF5", borderRadius: 14, padding: 12, border: "1px solid rgba(61,43,31,.07)", animation: demoSlide === 1 ? "ep-fade-in .6s ease 2s both" : "none", opacity: 0 }}>
-                      <div style={{ fontSize: 9, color: "#C8813A", fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 8 }}>Chapter 3 · November 2025</div>
-                      <p style={{ fontFamily: "Georgia, serif", fontSize: 10.5, color: "#3D2B1F", lineHeight: 1.75, fontStyle: "italic", margin: 0 }}>
-                        "This month was particularly magical. My first walk through the autumn leaves, nose buried in every new scent...
-                      </p>
-                      <p style={{ fontFamily: "Georgia, serif", fontSize: 10.5, color: "#3D2B1F", lineHeight: 1.75, fontStyle: "italic", margin: "8px 0 0", opacity: .75 }}>
-                        And that infamous bath I absolutely didn't need — according to me."
-                      </p>
+                      <div style={{ fontSize: 9, color: "#C8813A", fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 8 }}>
+                        {isFR ? "Chapitre 3 · Novembre 2025" : "Chapter 3 · November 2025"}
+                      </div>
+                      {isFR ? (
+                        <>
+                          <p style={{ fontFamily: "Georgia, serif", fontSize: 10.5, color: "#3D2B1F", lineHeight: 1.75, fontStyle: "italic", margin: 0 }}>
+                            « Ce mois a été particulièrement magique. Ma première promenade dans les feuilles d'automne, le museau plongé dans chaque nouvelle odeur...
+                          </p>
+                          <p style={{ fontFamily: "Georgia, serif", fontSize: 10.5, color: "#3D2B1F", lineHeight: 1.75, fontStyle: "italic", margin: "8px 0 0", opacity: .75 }}>
+                            Et ce fameux bain dont je n'avais absolument pas besoin — selon moi. »
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p style={{ fontFamily: "Georgia, serif", fontSize: 10.5, color: "#3D2B1F", lineHeight: 1.75, fontStyle: "italic", margin: 0 }}>
+                            "This month was particularly magical. My first walk through the autumn leaves, nose buried in every new scent...
+                          </p>
+                          <p style={{ fontFamily: "Georgia, serif", fontSize: 10.5, color: "#3D2B1F", lineHeight: 1.75, fontStyle: "italic", margin: "8px 0 0", opacity: .75 }}>
+                            And that infamous bath I absolutely didn't need — according to me."
+                          </p>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -308,12 +339,18 @@ export default function Home() {
                     </div>
 
                     <div style={{ textAlign: "center", animation: demoSlide === 2 ? "ep-fade-up .5s ease .15s both" : "none" }}>
-                      <div style={{ fontFamily: "Georgia, serif", fontSize: 12, fontWeight: 600, color: "#3D2B1F", marginBottom: 3 }}>Your book preview</div>
-                      <div style={{ fontSize: 9.5, color: "#7A5C44", fontWeight: 300 }}>Printed & shipped each year</div>
+                      <div style={{ fontFamily: "Georgia, serif", fontSize: 12, fontWeight: 600, color: "#3D2B1F", marginBottom: 3 }}>
+                        {isFR ? "Aperçu de votre livre" : "Your book preview"}
+                      </div>
+                      <div style={{ fontSize: 9.5, color: "#7A5C44", fontWeight: 300 }}>
+                        {isFR ? "Imprimé et livré chaque année" : "Printed & shipped each year"}
+                      </div>
                     </div>
 
                     <div style={{ background: "rgba(200,129,58,.1)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 100, padding: "7px 16px", animation: demoSlide === 2 ? "ep-fade-up .5s ease .3s both" : "none" }}>
-                      <span style={{ fontSize: 10.5, color: "#C8813A", fontWeight: 500 }}>📖 Included with Premium</span>
+                      <span style={{ fontSize: 10.5, color: "#C8813A", fontWeight: 500 }}>
+                        {isFR ? "📖 Inclus avec Premium" : "📖 Included with Premium"}
+                      </span>
                     </div>
                   </div>
                 </div>

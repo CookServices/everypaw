@@ -1309,14 +1309,30 @@ export default function PetPage({ params }: { params: { id: string } }) {
             {(() => {
               // Build full list with achieved flag, then sort:
               // 1. achieved first, 2. alphabetical within each group
-              const allItems = (milestoneDefinitions.length
+              const definedItems = (milestoneDefinitions.length
                 ? milestoneDefinitions.map(def => ({ key: def.key, icon: def.icon ?? "🏆", localTitle: isFR ? def.name_fr : def.name_en }))
                 : MILESTONE_TYPES.map(mt => ({ key: mt.type, icon: mt.icon, localTitle: isFR ? mt.titleFR : mt.title }))
-              ).map(item => ({ ...item, achieved: milestones.find(m => m.type === item.key) ?? null }))
-                .sort((a, b) => {
-                  if (!!a.achieved !== !!b.achieved) return a.achieved ? -1 : 1;
-                  return a.localTitle.localeCompare(b.localTitle, isFR ? "fr" : "en", { sensitivity: "base" });
+              ).map(item => ({ ...item, achieved: milestones.find(m => m.type === item.key) ?? null }));
+
+              // Orphan milestones: recorded in DB but not present in milestone_definitions
+              // (e.g. "in_memory" set when marking a pet as deceased, or legacy "first_entry")
+              const definedKeys = new Set(definedItems.map(i => i.key));
+              const orphanItems = milestones
+                .filter(m => !definedKeys.has(m.type))
+                .map(m => {
+                  const fallback = MILESTONE_TYPES.find(mt => mt.type === m.type);
+                  return {
+                    key: m.type,
+                    icon: fallback?.icon ?? "🏆",
+                    localTitle: fallback ? (isFR ? fallback.titleFR : fallback.title) : (m.title ?? m.type),
+                    achieved: m,
+                  };
                 });
+
+              const allItems = [...definedItems, ...orphanItems].sort((a, b) => {
+                if (!!a.achieved !== !!b.achieved) return a.achieved ? -1 : 1;
+                return a.localTitle.localeCompare(b.localTitle, isFR ? "fr" : "en", { sensitivity: "base" });
+              });
 
               const achievedItems = allItems.filter(i => i.achieved);
               const pendingItems = allItems.filter(i => !i.achieved);
