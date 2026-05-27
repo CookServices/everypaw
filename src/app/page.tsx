@@ -26,11 +26,11 @@ const FAQ_JSONLD = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   mainEntity: [
-    { "@type": "Question", name: "How does the AI work?", acceptedAnswer: { "@type": "Answer", text: "Each month, our AI reads all your journal entries and weaves them into a warm, flowing narrative chapter — written in first person, as if your pet is narrating their own life. The more moments you add, the richer and more personal the story becomes." } },
-    { "@type": "Question", name: "What happens if my pet passes away?", acceptedAnswer: { "@type": "Answer", text: "All your memories stay accessible forever. You can create a dedicated memorial page, share their profile with loved ones, and order a commemorative hardcover book that gathers every story and moment from their life — a keepsake to hold onto." } },
-    { "@type": "Question", name: "Can I customise the book?", acceptedAnswer: { "@type": "Answer", text: "Yes. When ordering, you choose from 5 cover themes (Classic, Noir, Forest, Ocean, Rose), set a custom title, pick which chapters to include, filter by year, and add a personal dedication page. The cover photo is customisable too — pick one from your journal or upload your own." } },
+    { "@type": "Question", name: "How does the AI work?", acceptedAnswer: { "@type": "Answer", text: "Each month, our AI reads all your journal entries and weaves them into a warm, flowing narrative chapter , written in first person, as if your pet is narrating their own life. The more moments you add, the richer and more personal the story becomes." } },
+    { "@type": "Question", name: "What happens if my pet passes away?", acceptedAnswer: { "@type": "Answer", text: "All your memories stay accessible forever. You can create a dedicated memorial page, share their profile with loved ones, and order a commemorative hardcover book that gathers every story and moment from their life , a keepsake to hold onto." } },
+    { "@type": "Question", name: "Can I customise the book?", acceptedAnswer: { "@type": "Answer", text: "Yes. When ordering, you choose from 5 cover themes (Classic, Noir, Forest, Ocean, Rose), set a custom title, pick which chapters to include, filter by year, and add a personal dedication page. The cover photo is customisable too , pick one from your journal or upload your own." } },
     { "@type": "Question", name: "What is the print quality like?", acceptedAnswer: { "@type": "Answer", text: "Our books are printed on 170gsm coated silk paper with a rigid hardcover and matt lamination. 20×20 cm format, perfect-bound. Professional quality, comparable to premium photo books from specialist studios." } },
-    { "@type": "Question", name: "Is the free plan really free?", acceptedAnswer: { "@type": "Answer", text: "Yes, completely and with no conditions. You can create a pet profile, add up to 10 journal entries, and generate one AI story chapter — all for free. No credit card required to get started." } },
+    { "@type": "Question", name: "Is the free plan really free?", acceptedAnswer: { "@type": "Answer", text: "Yes, completely and with no conditions. You can create a pet profile, add up to 10 journal entries, and generate one AI story chapter , all for free. No credit card required to get started." } },
     { "@type": "Question", name: "How do I cancel my subscription?", acceptedAnswer: { "@type": "Answer", text: "From your account settings, in one click. No commitment, no cancellation fee. You keep full access to all your stories, entries, and account data even after cancelling." } },
   ],
 };
@@ -159,7 +159,7 @@ export default function Home() {
       }}>
         <div className="ep-hero-inner" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4rem", maxWidth: 1100, width: "100%", flexWrap: "wrap" }}>
 
-          {/* LEFT — copy */}
+          {/* LEFT , copy */}
           <div className="ep-hero-text" style={{ flex: "1 1 380px", maxWidth: 540, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 0 }}>
             <span style={{
               display: "inline-flex", alignItems: "center", gap: ".5rem",
@@ -206,7 +206,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* RIGHT — product demo */}
+          {/* RIGHT , product demo */}
           <div className="ep-hero-demo" style={{ flex: "0 1 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
             {/* Phone frame */}
             <div style={{
@@ -249,15 +249,15 @@ export default function Home() {
                 {/* Slide area */}
                 <div style={{ flex: 1, position: "relative", overflow: "hidden", background: "#F7F2EA" }}>
 
-                  {/* Slide 0 — Journal */}
+                  {/* Slide 0 , Journal */}
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 0 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                     {(isFR
                       ? [
-                          { icon: "🚶", text: "Promenade au parc — 2h de course !", when: "il y a 2 jours" },
+                          { icon: "🚶", text: "Promenade au parc , 2h de course !", when: "il y a 2 jours" },
                           { icon: "🍽️", text: "A refusé ses croquettes... encore.", when: "hier" },
                         ]
                       : [
-                          { icon: "🚶", text: "Walk at the park — 2h run!", when: "2 days ago" },
+                          { icon: "🚶", text: "Walk at the park , 2h run!", when: "2 days ago" },
                           { icon: "🍽️", text: "Refused kibble... again.", when: "yesterday" },
                         ]
                     ).map((e, i) => (
@@ -278,7 +278,7 @@ export default function Home() {
                         </div>
                         <div style={{ display: "flex", alignItems: "center" }}>
                           <span style={{ fontSize: 10.5, color: "#3D2B1F", overflow: "hidden", whiteSpace: "nowrap", display: "inline-block", animation: "ep-typing 2.2s steps(30, end) .8s both" }}>
-                            {isFR ? "Premier bain — pas content ! 🛁" : "First bath — not happy! 🛁"}
+                            {isFR ? "Premier bain , pas content ! 🛁" : "First bath , not happy! 🛁"}
                           </span>
                           <span style={{ width: 1.5, height: 12, background: "#C8813A", display: "inline-block", animation: "ep-blink 1s step-end infinite", marginLeft: 1, flexShrink: 0 }} />
                         </div>
@@ -292,7 +292,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Slide 1 — AI story generation */}
+                  {/* Slide 1 , AI story generation */}
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 1 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
                     <div style={{ animation: demoSlide === 1 ? "ep-fade-up .4s ease both" : "none" }}>
                       <div style={{ fontSize: 11, color: "#C8813A", fontWeight: 500, marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
@@ -313,7 +313,7 @@ export default function Home() {
                             « Ce mois a été particulièrement magique. Ma première promenade dans les feuilles d'automne, le museau plongé dans chaque nouvelle odeur...
                           </p>
                           <p style={{ fontFamily: "Georgia, serif", fontSize: 10.5, color: "#3D2B1F", lineHeight: 1.75, fontStyle: "italic", margin: "8px 0 0", opacity: .75 }}>
-                            Et ce fameux bain dont je n'avais absolument pas besoin — selon moi. »
+                            Et ce fameux bain dont je n'avais absolument pas besoin , selon moi. »
                           </p>
                         </>
                       ) : (
@@ -322,14 +322,14 @@ export default function Home() {
                             "This month was particularly magical. My first walk through the autumn leaves, nose buried in every new scent...
                           </p>
                           <p style={{ fontFamily: "Georgia, serif", fontSize: 10.5, color: "#3D2B1F", lineHeight: 1.75, fontStyle: "italic", margin: "8px 0 0", opacity: .75 }}>
-                            And that infamous bath I absolutely didn't need — according to me."
+                            And that infamous bath I absolutely didn't need , according to me."
                           </p>
                         </>
                       )}
                     </div>
                   </div>
 
-                  {/* Slide 2 — Book preview */}
+                  {/* Slide 2 , Book preview */}
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 2 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
                     <div style={{
                       width: 120, height: 160,

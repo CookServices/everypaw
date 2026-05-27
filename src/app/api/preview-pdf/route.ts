@@ -47,7 +47,7 @@ const STRINGS = {
     dedication: "A message from your family",
     noStories: (name: string) => `No stories yet. Add journal entries and generate ${name}'s first story.`,
     backTitle: "Every moment remembered.",
-    backText: "This book was created with love using Everypaw — the AI journal that turns your pet's daily moments into stories worth keeping forever.",
+    backText: "This book was created with love using Everypaw , the AI journal that turns your pet's daily moments into stories worth keeping forever.",
     birthdate: (d: Date) => `Born ${d.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`,
   },
   fr: {
@@ -58,7 +58,7 @@ const STRINGS = {
     dedication: "Un message de votre famille",
     noStories: (name: string) => `Aucune histoire pour l'instant. Ajoutez des entrées et générez la première histoire de ${name}.`,
     backTitle: "Chaque moment, à jamais.",
-    backText: "Ce livre a été créé avec amour grâce à Everypaw — le journal IA qui transforme les moments du quotidien de votre animal en histoires à garder pour toujours.",
+    backText: "Ce livre a été créé avec amour grâce à Everypaw , le journal IA qui transforme les moments du quotidien de votre animal en histoires à garder pour toujours.",
     birthdate: (d: Date) => `Né(e) le ${d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`,
   },
 };
@@ -222,7 +222,7 @@ async function buildHtml(params: {
   <!-- Dedication page -->
   ${dedicationPage}
 
-  <!-- Stories as chapters — photos embedded per chapter -->
+  <!-- Stories as chapters , photos embedded per chapter -->
   ${stories.length > 0 ? stories.map((story, i) => {
     const photos = chapterPhotos[i] ?? [];
     const dateLocale = lang === "fr" ? "fr-FR" : "en-US";
@@ -293,7 +293,7 @@ async function buildHtml(params: {
   });
 }
 
-// GET — called by Gelato's servers; requires a short-lived signed token
+// GET , called by Gelato's servers; requires a short-lived signed token
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const petId = url.searchParams.get("petId");
@@ -350,7 +350,7 @@ export async function GET(req: Request) {
   });
 }
 
-// POST — called from the dashboard in-app preview; requires an authenticated session
+// POST , called from the dashboard in-app preview; requires an authenticated session
 export async function POST(req: Request) {
   const { createClient: createServerClient } = await import("@/lib/supabase/server");
   const supabaseAuth = await createServerClient();

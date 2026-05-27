@@ -4,8 +4,8 @@ import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 
 export const metadata: Metadata = {
-  title: "Everypaw — Your pet's life story, printed",
-  description: "Turn daily pet moments into AI-crafted stories and a hardcover book. Free pet journal — no credit card required.",
+  title: "Everypaw , Your pet's life story, printed",
+  description: "Turn daily pet moments into AI-crafted stories and a hardcover book. Free pet journal , no credit card required.",
   metadataBase: new URL("https://everypaw.app"),
   icons: { icon: "/favicon.png" },
   alternates: {
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Everypaw — Your pet's life story, printed",
+    title: "Everypaw , Your pet's life story, printed",
     description: "Turn your pet's daily moments into a beautiful AI-crafted book.",
     url: "https://everypaw.app",
     siteName: "Everypaw",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Everypaw — Your pet's life story, printed",
+    title: "Everypaw , Your pet's life story, printed",
     description: "Turn your pet's daily moments into a beautiful AI-crafted book.",
   },
 };

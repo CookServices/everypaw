@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Everypaw — La vie de votre animal, racontée et imprimée",
-  description: "Transformez les moments du quotidien de votre animal en histoires créées par l'IA et en un beau livre imprimé. Journal gratuit — aucune carte bancaire requise.",
+  title: "Everypaw , La vie de votre animal, racontée et imprimée",
+  description: "Transformez les moments du quotidien de votre animal en histoires créées par l'IA et en un beau livre imprimé. Journal gratuit , aucune carte bancaire requise.",
   alternates: {
     canonical: "https://everypaw.app/fr",
     languages: {
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Everypaw — La vie de votre animal, racontée et imprimée",
+    title: "Everypaw , La vie de votre animal, racontée et imprimée",
     description: "Chaque moment de la vie de votre animal devient une histoire magnifique, imprimée en livre chaque année.",
     url: "https://everypaw.app/fr",
     siteName: "Everypaw",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Everypaw — La vie de votre animal, racontée et imprimée",
+    title: "Everypaw , La vie de votre animal, racontée et imprimée",
     description: "Chaque moment de la vie de votre animal devient une histoire magnifique, imprimée en livre chaque année.",
   },
 };

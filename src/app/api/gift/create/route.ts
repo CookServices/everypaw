@@ -10,7 +10,7 @@ const copy = {
     subject: (_sender: string) => `🎁 Vous avez reçu un cadeau Everypaw !`,
     heading: "Vous avez reçu un cadeau !",
     body: (sender: string) =>
-      `<strong>${sender}</strong> vous offre 12 mois d'Everypaw Premium — le journal IA qui transforme les moments du quotidien de votre animal en un beau livre imprimé.`,
+      `<strong>${sender}</strong> vous offre 12 mois d'Everypaw Premium , le journal IA qui transforme les moments du quotidien de votre animal en un beau livre imprimé.`,
     codeLabel: "Votre code cadeau :",
     cta: "Activer mon cadeau →",
     footer: "Ce cadeau vous donne 12 mois d'Everypaw Premium gratuitement. Aucune carte bancaire requise pour l'activer.",
@@ -19,7 +19,7 @@ const copy = {
     subject: (_sender: string) => `🎁 You've received an Everypaw gift!`,
     heading: "You've received a gift!",
     body: (sender: string) =>
-      `<strong>${sender}</strong> gifted you 12 months of Everypaw Premium — the AI journal that turns your pet's daily moments into a beautiful printed book.`,
+      `<strong>${sender}</strong> gifted you 12 months of Everypaw Premium , the AI journal that turns your pet's daily moments into a beautiful printed book.`,
     codeLabel: "Your gift code:",
     cta: "Activate my gift →",
     footer: "This gift gives you 12 months of Everypaw Premium for free. No credit card required to redeem.",

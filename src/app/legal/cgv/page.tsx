@@ -3,7 +3,7 @@ import { LEGAL_LAST_UPDATE } from "@/lib/legal";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
-export const metadata = { title: "Conditions générales de vente — Everypaw" };
+export const metadata = { title: "Conditions générales de vente , Everypaw" };
 
 const bodyStyle: React.CSSProperties = {
   fontSize: ".95rem", color: "#7A5C44", lineHeight: 1.75, fontWeight: 300,
