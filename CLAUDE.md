@@ -37,7 +37,7 @@ Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suiv
 |---|---|---|
 | Framework | Next.js 14.2 (App Router) | Pas de `output: standalone` dans next.config.js |
 | Base de données | Supabase (PostgreSQL) | Auth + DB + Storage photos |
-| Auth | Supabase Auth | Google OAuth + email/password — Google OAuth en mode **Test** (à publier avant lancement) |
+| Auth | Supabase Auth | Google OAuth + email/password — Google OAuth **en production** ✅ |
 | Paiements | Stripe | Webhooks dans `/api/stripe/webhook` |
 | IA | Anthropic Claude API | Modèle : `claude-sonnet-4-6` pour la génération de stories |
 | Impression | Gelato | Print-on-demand livres |
@@ -88,7 +88,7 @@ STRIPE_WEBHOOK_SECRET
 STRIPE_GIFT_COUPON_ID          # coupon 100% off 12 mois
 
 RESEND_API_KEY
-WAITLIST_TO                    # email destinataire waitlist
+WAITLIST_TO_EMAIL              # email destinataire waitlist (optionnel — warn si absent)
 
 CRON_SECRET                    # protège les routes /api/cron/*
 ```
