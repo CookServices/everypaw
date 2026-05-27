@@ -21,23 +21,37 @@ export async function POST(req: Request) {
 
   const rawBody = await req.text();
 
+  // ── DEBUG: log all incoming headers to identify Supabase's exact signature format ──
+  const allHeaders: Record<string, string> = {};
+  req.headers.forEach((value, key) => {
+    // Redact Authorization value but keep the key visible
+    allHeaders[key] = key.toLowerCase() === "authorization" ? "[redacted]" : value;
+  });
+  console.log("[auth-hook] incoming headers:", JSON.stringify(allHeaders));
+
   const rawSignature = req.headers.get("x-supabase-signature");
   if (!rawSignature) {
+    console.error("[auth-hook] x-supabase-signature header is missing");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  console.log("[auth-hook] raw signature:", rawSignature.substring(0, 20) + "...");
 
-  // Supabase sends the signature as "v1,<hex_hmac_sha256>" — strip the version prefix.
-  const signatureHex = rawSignature.startsWith("v1,") ? rawSignature.slice(3) : rawSignature;
+  // Supabase may prefix the signature with "v1," or "v1=" — strip it.
+  const signatureHex = rawSignature.replace(/^v1[,=]/, "").trim();
+  console.log("[auth-hook] signatureHex (first 16):", signatureHex.substring(0, 16));
 
   const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
+  console.log("[auth-hook] expected (first 16):", expected.substring(0, 16));
   try {
     const sigBytes = Buffer.from(signatureHex, "hex");
     const expectedBytes = Buffer.from(expected, "hex");
+    console.log("[auth-hook] sigBytes.length:", sigBytes.length, "expectedBytes.length:", expectedBytes.length);
     if (sigBytes.length !== 32 || !timingSafeEqual(sigBytes, expectedBytes)) {
-      console.error("[auth-hook] Signature mismatch — check that SUPABASE_HOOK_SECRET matches the Supabase dashboard value.");
+      console.error("[auth-hook] Signature mismatch");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-  } catch {
+  } catch (err) {
+    console.error("[auth-hook] Signature verification threw:", err);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
