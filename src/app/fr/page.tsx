@@ -450,7 +450,7 @@ export default function FrHome() {
                 </li>
               ))}
             </ul>
-            <Link href="/auth/signup?plan=digital" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, background: "rgba(200,129,58,.12)", border: "1.5px solid rgba(200,129,58,.3)", color: "#C8813A", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+            <Link href={`/auth/signup?plan=${pricingCycle === "annual" ? "digital_annual" : "digital"}`} style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, background: "rgba(200,129,58,.12)", border: "1.5px solid rgba(200,129,58,.3)", color: "#C8813A", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
               {t.landing.premium_cta}
             </Link>
           </div>
@@ -476,7 +476,7 @@ export default function FrHome() {
                 </li>
               ))}
             </ul>
-            <Link href="/auth/signup?plan=print" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 600, background: "#C8813A", border: "1.5px solid #C8813A", color: "#FDFAF5", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+            <Link href={`/auth/signup?plan=${pricingCycle === "annual" ? "print_annual" : "print"}`} style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 600, background: "#C8813A", border: "1.5px solid #C8813A", color: "#FDFAF5", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
               {t.landing.print_cta}
             </Link>
           </div>

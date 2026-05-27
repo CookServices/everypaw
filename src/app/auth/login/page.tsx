@@ -51,6 +51,10 @@ export default function LoginPage() {
         setError(isFR
           ? "Votre email n'est pas encore confirmé. Renvoyez-vous le lien de confirmation."
           : "Your email is not confirmed yet. Resend the confirmation link.");
+      } else if (msg.includes("missing email or phone")) {
+        setError(isFR
+          ? "L'adresse email est requise."
+          : "Email is required.");
       } else if (msg.includes("invalid login credentials") || msg.includes("invalid credentials")) {
         setError(isFR
           ? "Email ou mot de passe incorrect. Veuillez réessayer."
@@ -64,7 +68,9 @@ export default function LoginPage() {
           ? "Trop de tentatives. Réessayez dans quelques minutes."
           : "Too many attempts. Please try again in a few minutes.");
       } else {
-        setError(error.message);
+        setError(isFR
+          ? "Une erreur est survenue. Veuillez réessayer."
+          : "An error occurred. Please try again.");
       }
       setStatus("error");
     } else {

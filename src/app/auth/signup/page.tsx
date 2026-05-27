@@ -21,8 +21,26 @@ export default function SignupPage() {
   });
 
   const PLAN_LABELS: Record<string, { name: string; price: string; perks: string }> = {
-    digital_annual: { name: "Premium Digital", price: "35,88 €/an", perks: "Histoires IA illimitées · Export PDF" },
-    print:          { name: "Premium Print",   price: "79 €/an",    perks: "Livre hardcover inclus · Livraison offerte" },
+    digital: {
+      name: "Premium Digital",
+      price: isFR ? "4,99 €/mois" : "$4.99/mo",
+      perks: isFR ? "Histoires IA illimitées · Export PDF" : "Unlimited AI stories · PDF export",
+    },
+    digital_annual: {
+      name: "Premium Digital",
+      price: isFR ? "35,88 €/an" : "$35.88/yr",
+      perks: isFR ? "Histoires IA illimitées · Export PDF" : "Unlimited AI stories · PDF export",
+    },
+    print: {
+      name: "Premium Print",
+      price: isFR ? "9,99 €/mois" : "$9.99/mo",
+      perks: isFR ? "Livre hardcover inclus · Livraison offerte" : "Hardcover book included · Free shipping",
+    },
+    print_annual: {
+      name: "Premium Print",
+      price: isFR ? "79 €/an" : "$79/yr",
+      perks: isFR ? "Livre hardcover inclus · Livraison offerte" : "Hardcover book included · Free shipping",
+    },
   };
 
   const planInfo = selectedPlan ? PLAN_LABELS[selectedPlan] ?? null : null;
