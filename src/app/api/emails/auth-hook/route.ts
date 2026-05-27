@@ -42,7 +42,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  console.log("[auth-hook] webhookId:", webhookId, "| webhookTimestamp:", webhookTimestamp);
+  console.log("[auth-hook] content-length header:", req.headers.get("content-length"), "| rawBody.length:", rawBody.length);
+  console.log("[auth-hook] rawBody first 80:", rawBody.substring(0, 80));
+
   const signedContent = `${webhookId}.${webhookTimestamp}.${rawBody}`;
+  console.log("[auth-hook] signedContent first 80:", signedContent.substring(0, 80));
 
   // DEBUG: try 3 secret decodings to find which one Supabase uses
   // Strip "v1," prefix from secret if present (some dashboards include it)
