@@ -789,10 +789,49 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 - `auth/login/page.tsx` : ajout du cas `"missing email or phone"` → `"L'adresse email est requise."`
 - Fallback générique : `error.message` brut → `"Une erreur est survenue. Veuillez réessayer."` / `"An error occurred. Please try again."`
 
+### ✅ Bug fixes et i18n (2026-05-27, session 20)
+
+**Localisation par pays (IP) sur la landing**
+- `/api/currency` : retourne désormais `isFrance: boolean` (`x-vercel-ip-country === "FR"`) en plus de `currency`
+- `app/page.tsx` + `app/fr/page.tsx` : témoignages et stats basculés sur `isFrance` (IP) au lieu de `isFR` (langue) — France = 20,3M + source FACCO/Kantar, reste du monde = 94M
+- Ajout de `stats_pets_us` dans les deux fichiers JSON (nécessaire pour la satisfaction du type union TypeScript)
+
+**Suppression des tirets longs**
+- Tous les `—` remplacés par `,` dans `messages/en.json` et `messages/fr.json`
+
+**Limites de caractères sur le formulaire d'édition animal**
+- `dashboard/pets/[id]/edit/page.tsx` : Nom/40, Race/50, Bio/300 — compteur `xx/xxx` sous chaque champ, rouge à 90%
+- Même règle appliquée rétrospectivement aux compteurs existants de `order/page.tsx` : customTitle rouge à ≥54/60, dedication rouge à ≥360/400
+
+**Numérotation des pages dans la preview PDF**
+- `api/preview-pdf/route.ts` : CSS counter sur `.chapter`, `.dedication`, `.photo-page` — numéro centré en bas de chaque page intérieure ; couverture et 4ème de couverture exclues
+
+**Propagation de la locale dans les liens de partage**
+- `dashboard/pets/[id]/page.tsx` : les 3 URLs de partage (story, profil, mémorial) incluent désormais `?lang=${locale}`
+- `pets/[id]/page.tsx` + `memorial/[id]/page.tsx` : détection locale par priorité `?lang` URL param → cookie → Accept-Language header
+
+**Entrées de journal antidatées**
+- `dashboard/pets/[id]/page.tsx` : sélecteur de date dans le formulaire d'entrée (max = aujourd'hui), surligné en amber si date ≠ aujourd'hui ; `entry_date` transmis à Supabase
+
+**Crédits livre — plan Print (Option 1 : 1 livre/an inclus, supplémentaires à $29)**
+- Migration SQL `fix_book_credits_print_plan_2026_05_27.sql` : `try_consume_book_credit` et `restore_book_credit` s'appliquent à tous les plans (suppression de l'exemption print/digital incorrecte de Round 3)
+- `plan.ts canOrderBook()` : require `bookCredits > 0` pour tous les plans non-free
+- `order/page.tsx` : fetch `plan` + `book_credits` au mount ; bloc upsell affiché quand `book_credits === 0` avec CTA Stripe book-checkout
+- i18n : `no_credits_title`, `no_credits_desc`, `no_credits_cta` EN + FR
+
+**FAQ a1 — réécriture moins anxiogène**
+- `messages/en.json` + `messages/fr.json` : nouvelle formulation centrée sur la facilité d'utilisation
+- JSON-LD `FAQPage` synchronisé dans `app/page.tsx` et `app/fr/page.tsx`
+
+**i18n milestones et journal — suppression des ternaires `isFR` hardcodés**
+- `messages/en.json` + `messages/fr.json` : ajout de `milestones.steps_completed`, `not_yet`, `unlocked`, `locked`, `auto_hint` + `journal.generating_1/2/3`
+- `dashboard/pets/[id]/page.tsx` : tous les `isFR ? "EN" : "FR"` remplacés par `t.milestones.xxx` / `t.journal.xxx`
+
 ### 🚧 Prochaine étape
 - ~~Exécuter les migrations SQL~~ ✅
 - ~~Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` / `STRIPE_PRICE_BOOK_ONCE_USD`~~ ✅
 - ~~Publier Google OAuth~~ ✅
+- ~~Migration `fix_book_credits_print_plan_2026_05_27.sql` exécutée~~ ✅
 - **Passer Stripe en mode Live** (voir checklist prod)
 
 ---
@@ -845,6 +884,7 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 - [ ] Vérifier que Gelato est configuré avec une carte de paiement valide
 - [x] Exécuter `round2_security_fixes_2026_05_23.sql` + `round3_security_fixes_2026_05_26.sql` dans Supabase ✅
 - [x] Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` + `STRIPE_PRICE_BOOK_ONCE_USD` dans Vercel ✅
+- [x] Exécuter `fix_book_credits_print_plan_2026_05_27.sql` dans Supabase ✅
 
 ---
 
@@ -858,4 +898,4 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 
 ---
 
-*Dernière mise à jour : 2026-05-27 (session 19 — bug fixes E2E : plan annuel print, PLAN_LABELS signup, erreurs login FR)*
+*Dernière mise à jour : 2026-05-27 (session 20 — localisation par pays, crédits livre print, i18n milestones, antidatage journal, numérotation PDF)*

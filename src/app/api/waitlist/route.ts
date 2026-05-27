@@ -32,18 +32,18 @@ export async function POST(req: Request) {
           <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>
           <h1 style="font-size: 24px; font-weight: 600; margin: 0 0 16px;">You're on the Everypaw waitlist.</h1>
           <p style="font-size: 16px; line-height: 1.6; color: #7A5C44; margin: 0 0 24px;">
-            We're building something special — an AI journal that turns your pet's daily moments into a beautiful printed book.
+            We're building something special , an AI journal that turns your pet's daily moments into a beautiful printed book.
           </p>
           <p style="font-size: 16px; line-height: 1.6; color: #7A5C44; margin: 0 0 24px;">
             As one of our first members, you'll get <strong style="color: #C8813A;">50% off</strong> when we launch.
             We'll be in touch soon.
           </p>
-          <p style="font-size: 14px; color: #7A5C44;">— The Everypaw team</p>
+          <p style="font-size: 14px; color: #7A5C44;">, The Everypaw team</p>
         </div>
       `,
     });
 
-    // 2. Internal notification (optional — only if env var is set)
+    // 2. Internal notification (optional , only if env var is set)
     const notifTo = process.env.WAITLIST_TO_EMAIL;
     if (notifTo) {
       await resend.emails.send({
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
         html: `<p>New signup: <strong>${escapeHtml(email)}</strong></p>`,
       });
     } else {
-      console.warn("[waitlist] WAITLIST_TO_EMAIL not set — skipping internal notification");
+      console.warn("[waitlist] WAITLIST_TO_EMAIL not set , skipping internal notification");
     }
 
     return NextResponse.json({ success: true });

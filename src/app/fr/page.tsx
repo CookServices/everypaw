@@ -7,17 +7,19 @@ import { formatPrice, type Currency } from "@/lib/currency";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
+const tEN = getTranslations("en");
+
 export const dynamic = "force-dynamic";
 
 const FAQ_JSONLD_FR = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   mainEntity: [
-    { "@type": "Question", name: "Comment fonctionne l'IA ?", acceptedAnswer: { "@type": "Answer", text: "Chaque mois, notre IA lit toutes vos entrées de journal et les tisse en un chapitre narratif chaleureux — rédigé à la première personne, comme si votre animal racontait sa propre vie. Plus vous ajoutez de moments, plus l'histoire devient riche et personnelle." } },
-    { "@type": "Question", name: "Que se passe-t-il si mon animal nous quitte ?", acceptedAnswer: { "@type": "Answer", text: "Tous vos souvenirs restent accessibles pour toujours. Vous pouvez créer une page mémorial dédiée, partager son profil avec vos proches, et commander un livre relié commémoratif qui rassemble chaque histoire et chaque moment de sa vie — un objet précieux à conserver." } },
-    { "@type": "Question", name: "Puis-je personnaliser le livre ?", acceptedAnswer: { "@type": "Answer", text: "Oui. Lors de la commande, vous choisissez le thème de couverture parmi 5 styles (Classic, Noir, Forest, Ocean, Rose), ajoutez un titre personnalisé, sélectionnez les chapitres à inclure, filtrez par année et ajoutez une page de dédicace. La photo de couverture est personnalisable également — choisissez une photo de votre journal ou téléchargez-en une." } },
+    { "@type": "Question", name: "Comment fonctionne l'IA ?", acceptedAnswer: { "@type": "Answer", text: "Notre IA transforme vos entrées de journal en un chapitre narratif chaleureux, rédigé à la première personne, comme si votre animal racontait lui-même sa vie. Quelques moments suffisent pour créer une histoire touchante, et vous générez quand vous êtes prêt." } },
+    { "@type": "Question", name: "Que se passe-t-il si mon animal nous quitte ?", acceptedAnswer: { "@type": "Answer", text: "Tous vos souvenirs restent accessibles pour toujours. Vous pouvez créer une page mémorial dédiée, partager son profil avec vos proches, et commander un livre relié commémoratif qui rassemble chaque histoire et chaque moment de sa vie , un objet précieux à conserver." } },
+    { "@type": "Question", name: "Puis-je personnaliser le livre ?", acceptedAnswer: { "@type": "Answer", text: "Oui. Lors de la commande, vous choisissez le thème de couverture parmi 5 styles (Classic, Noir, Forest, Ocean, Rose), ajoutez un titre personnalisé, sélectionnez les chapitres à inclure, filtrez par année et ajoutez une page de dédicace. La photo de couverture est personnalisable également , choisissez une photo de votre journal ou téléchargez-en une." } },
     { "@type": "Question", name: "Quelle est la qualité d'impression ?", acceptedAnswer: { "@type": "Answer", text: "Nos livres sont imprimés sur papier couché satiné 170 g/m² avec une couverture rigide et une plastification mate. Format 20×20 cm, reliure parfaite. Qualité professionnelle, comparable aux meilleurs livres photo des studios spécialisés." } },
-    { "@type": "Question", name: "Le plan gratuit est-il vraiment gratuit ?", acceptedAnswer: { "@type": "Answer", text: "Oui, complètement et sans conditions. Vous pouvez créer un profil d'animal, ajouter jusqu'à 10 entrées de journal et générer un chapitre d'histoire IA — entièrement gratuit. Aucune carte bancaire requise pour commencer." } },
+    { "@type": "Question", name: "Le plan gratuit est-il vraiment gratuit ?", acceptedAnswer: { "@type": "Answer", text: "Oui, complètement et sans conditions. Vous pouvez créer un profil d'animal, ajouter jusqu'à 10 entrées de journal et générer un chapitre d'histoire IA , entièrement gratuit. Aucune carte bancaire requise pour commencer." } },
     { "@type": "Question", name: "Comment annuler mon abonnement ?", acceptedAnswer: { "@type": "Answer", text: "Depuis les paramètres de votre compte, en un clic. Sans engagement, sans frais d'annulation. Vous conservez l'accès à toutes vos histoires, entrées et données même après l'annulation." } },
   ],
 };
@@ -62,18 +64,23 @@ export default function FrHome() {
     ["3", t.landing.s3_title, t.landing.s3_desc],
   ];
 
-  const reviews = [
-    [t.landing.r1_quote, t.landing.r1_author],
-    [t.landing.r2_quote, t.landing.r2_author],
-    [t.landing.r3_quote, t.landing.r3_author],
-  ];
-
   const [pricingCycle, setPricingCycle] = useState<"monthly" | "annual">("monthly");
   const [currency, setCurrency] = useState<Currency>("EUR");
+  const [isFrance, setIsFrance] = useState(true);
 
   useEffect(() => {
-    fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
+    fetch("/api/currency").then(r => r.json()).then(d => {
+      setCurrency(d.currency as Currency);
+      setIsFrance(d.isFrance ?? false);
+    }).catch(() => {});
   }, []);
+
+  const tReviews = isFrance ? t : tEN;
+  const reviews = [
+    [tReviews.landing.r1_quote, tReviews.landing.r1_author],
+    [tReviews.landing.r2_quote, tReviews.landing.r2_author],
+    [tReviews.landing.r3_quote, tReviews.landing.r3_author],
+  ];
 
   const freeFeatures    = [t.landing.free_f1, t.landing.free_f2, t.landing.free_f3];
   const digitalFeatures = [t.landing.premium_f1, t.landing.premium_f2, t.landing.premium_f3, t.landing.premium_f4];
@@ -122,7 +129,7 @@ export default function FrHome() {
       }}>
         <div className="ep-hero-inner" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4rem", maxWidth: 1100, width: "100%", flexWrap: "wrap" }}>
 
-          {/* LEFT — copy */}
+          {/* LEFT , copy */}
           <div className="ep-hero-text" style={{ flex: "1 1 380px", maxWidth: 540, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 0 }}>
             <span style={{
               display: "inline-flex", alignItems: "center", gap: ".5rem",
@@ -167,7 +174,7 @@ export default function FrHome() {
             </p>
           </div>
 
-          {/* RIGHT — product demo */}
+          {/* RIGHT , product demo */}
           <div className="ep-hero-demo" style={{ flex: "0 1 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
             {/* Phone frame */}
             <div style={{
@@ -204,10 +211,10 @@ export default function FrHome() {
                 {/* Slide area */}
                 <div style={{ flex: 1, position: "relative", overflow: "hidden", background: "#F7F2EA" }}>
 
-                  {/* Slide 0 — Journal */}
+                  {/* Slide 0 , Journal */}
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 0 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                     {[
-                      { icon: "🚶", text: "Promenade au parc — 2h de course !", when: "il y a 2 jours" },
+                      { icon: "🚶", text: "Promenade au parc , 2h de course !", when: "il y a 2 jours" },
                       { icon: "🍽️", text: "Refusé ses croquettes... encore.", when: "hier" },
                     ].map((e, i) => (
                       <div key={i} style={{ background: "#FDFAF5", borderRadius: 12, padding: "9px 11px", border: "1px solid rgba(61,43,31,.07)", animation: demoSlide === 0 ? `ep-fade-up .4s ease ${i * .12}s both` : "none" }}>
@@ -225,7 +232,7 @@ export default function FrHome() {
                         <div style={{ fontSize: 10, color: "#7A5C44", fontWeight: 300, marginBottom: 4 }}>{"Aujourd'hui"}</div>
                         <div style={{ display: "flex", alignItems: "center" }}>
                           <span style={{ fontSize: 10.5, color: "#3D2B1F", overflow: "hidden", whiteSpace: "nowrap", display: "inline-block", animation: "ep-typing 2.2s steps(30, end) .8s both" }}>
-                            {"Premier bain — pas content ! 🛁"}
+                            {"Premier bain , pas content ! 🛁"}
                           </span>
                           <span style={{ width: 1.5, height: 12, background: "#C8813A", display: "inline-block", animation: "ep-blink 1s step-end infinite", marginLeft: 1, flexShrink: 0 }} />
                         </div>
@@ -237,7 +244,7 @@ export default function FrHome() {
                     </div>
                   </div>
 
-                  {/* Slide 1 — AI story generation */}
+                  {/* Slide 1 , AI story generation */}
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 1 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
                     <div style={{ animation: demoSlide === 1 ? "ep-fade-up .4s ease both" : "none" }}>
                       <div style={{ fontSize: 11, color: "#C8813A", fontWeight: 500, marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
@@ -259,7 +266,7 @@ export default function FrHome() {
                     </div>
                   </div>
 
-                  {/* Slide 2 — Book preview */}
+                  {/* Slide 2 , Book preview */}
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 2 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
                     <div style={{
                       width: 120, height: 160,
@@ -310,16 +317,21 @@ export default function FrHome() {
       <section style={{ padding: "4rem 2rem", textAlign: "center", background: "#EDE5D4" }}>
         <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "1rem" }}>
           {[
-            ["94M", t.landing.stats_pets],
+            [isFrance ? "20,3M" : "94M", isFrance ? t.landing.stats_pets : t.landing.stats_pets_us],
             ["69%", t.landing.stats_millennials],
             ["12", t.landing.stats_memories],
           ].map(([num, lbl]) => (
-            <div key={num} style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", margin: "0 2rem" }}>
+            <div key={num} style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", margin: "0 2rem", minWidth: 0 }}>
               <span style={{ fontFamily: "Georgia, serif", fontSize: "3rem", fontWeight: 600, color: "#C8813A" }}>{num}</span>
-              <span style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginTop: ".25rem" }}>{lbl}</span>
+              <span style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginTop: ".25rem", textAlign: "center", maxWidth: 160, lineHeight: 1.4 }}>{lbl}</span>
             </div>
           ))}
         </div>
+        {isFrance && (
+          <p style={{ fontSize: ".7rem", color: "#9A8070", fontWeight: 300, marginTop: "1.5rem", margin: "1.5rem 0 0" }}>
+            Source : FACCO / Kantar, 2023
+          </p>
+        )}
       </section>
 
       {/* FEATURES */}

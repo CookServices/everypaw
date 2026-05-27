@@ -137,7 +137,7 @@ export async function GET(req: Request) {
       html: `
         <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
           <p style="font-size: 28px; margin: 0 0 8px;">✨</p>
-          <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 16px;">${escapeHtml(monthLabel)} — a new chapter</h1>
+          <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 16px;">${escapeHtml(monthLabel)} , a new chapter</h1>
           <p style="font-size: 16px; line-height: 1.6; color: #7A5C44; margin: 0 0 24px;">
             ${
               storiesGenerated.length === 1
@@ -148,7 +148,7 @@ export async function GET(req: Request) {
           <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 15px; font-weight: 500;">Read the stor${storiesGenerated.length === 1 ? "y" : "ies"} →</a>
           <p style="font-size: 13px; color: #7A5C44; margin-top: 32px; font-family: sans-serif; line-height: 1.5;">
             Every month, Everypaw turns your daily moments into a story worth keeping.<br />
-            Keep adding entries — the more you write, the richer the story.
+            Keep adding entries , the more you write, the richer the story.
           </p>
         </div>
       `,

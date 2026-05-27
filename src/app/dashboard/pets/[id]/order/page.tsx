@@ -32,6 +32,11 @@ interface Pet {
   created_at: string;
 }
 
+interface Profile {
+  plan: string;
+  book_credits: number;
+}
+
 const SHIPPING_BY_COUNTRY: Record<string, string> = {
   FR: "~5–10 €", DE: "~5–10 €", ES: "~5–10 €", IT: "~5–10 €",
   NL: "~5–10 €", BE: "~5–10 €", PT: "~5–10 €", AT: "~5–10 €",
@@ -76,6 +81,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [pet, setPet] = useState<Pet | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [step, setStep] = useState<Step>("preview");
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -103,14 +109,19 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     const supabase = createClient();
-    Promise.all([
-      supabase.from("pets").select("id, name, birthdate, created_at").eq("id", id).single(),
-      supabase.from("stories").select("id, title, content, period_start, period_end, created_at").eq("pet_id", id).order("created_at", { ascending: true }),
-      supabase.from("entries").select("id, photo_urls, entry_date").eq("pet_id", id).order("entry_date", { ascending: true }),
-    ]).then(([{ data: petData }, { data: storiesData }, { data: entriesData }]) => {
-      if (petData) setPet(petData);
-      if (storiesData) setStories(storiesData);
-      if (entriesData) setEntries(entriesData);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      Promise.all([
+        supabase.from("pets").select("id, name, birthdate, created_at").eq("id", id).single(),
+        supabase.from("stories").select("id, title, content, period_start, period_end, created_at").eq("pet_id", id).order("created_at", { ascending: true }),
+        supabase.from("entries").select("id, photo_urls, entry_date").eq("pet_id", id).order("entry_date", { ascending: true }),
+        supabase.from("profiles").select("plan, book_credits").eq("id", user.id).single(),
+      ]).then(([{ data: petData }, { data: storiesData }, { data: entriesData }, { data: profileData }]) => {
+        if (petData) setPet(petData);
+        if (storiesData) setStories(storiesData);
+        if (entriesData) setEntries(entriesData);
+        if (profileData) setProfile(profileData as Profile);
+      });
     });
   }, [id]);
 
@@ -458,6 +469,42 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           </div>
         )}
 
+        {/* No-credits upsell block — shown when profile loaded and credits = 0 */}
+        {profile !== null && profile.book_credits === 0 && profile.plan !== "free" && step === "preview" && (
+          <div style={{
+            background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
+            border: isMemorial ? "1px solid rgba(200,129,58,.25)" : "1px solid #F7C27A",
+            borderRadius: 16, padding: "1.5rem", marginBottom: "1.75rem",
+            textAlign: "center",
+          }}>
+            <div style={{ fontSize: "1.5rem", marginBottom: ".75rem" }}>📚</div>
+            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
+              {t.order.no_credits_title}
+            </h3>
+            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, marginBottom: "1.25rem", maxWidth: 380, margin: "0 auto .75rem" }}>
+              {t.order.no_credits_desc}
+            </p>
+            <button
+              onClick={async () => {
+                const res = await fetch("/api/stripe/book-checkout", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ petId: id }),
+                });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+              }}
+              style={{
+                background: accentColor, color: "#FDFAF5", border: "none",
+                padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
+                fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              {t.order.no_credits_cta}
+            </button>
+          </div>
+        )}
+
         {/* Memorial hero — preview step only */}
         {isMemorial && petName && step === "preview" && (
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
@@ -550,7 +597,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                     placeholder={defaultCoverTitle}
                     style={{ ...inputStyle, fontSize: ".85rem" }}
                   />
-                  <div style={{ fontSize: ".65rem", color: textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
+                  <div style={{ fontSize: ".65rem", color: customTitle.length >= 54 ? "#A32D2D" : textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
                     {customTitle.length}/60
                   </div>
                 </div>
@@ -968,7 +1015,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                   lineHeight: 1.6,
                 }}
               />
-              <div style={{ fontSize: ".7rem", color: textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
+              <div style={{ fontSize: ".7rem", color: dedicationText.length >= 360 ? "#A32D2D" : textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
                 {dedicationText.length}/400
               </div>
             </div>
