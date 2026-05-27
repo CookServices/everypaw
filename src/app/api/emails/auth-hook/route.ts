@@ -49,26 +49,24 @@ export async function POST(req: Request) {
   const signedContent = `${webhookId}.${webhookTimestamp}.${rawBody}`;
   console.log("[auth-hook] signedContent first 80:", signedContent.substring(0, 80));
 
-  // DEBUG: try all 4 combinations of secret decoding to find which one Supabase uses
-  // Strip "v1," prefix from secret if present (version indicator)
-  const secretStripped = secret.startsWith("v1,") ? secret.slice(3) : secret;
-  const expectedUtf8    = createHmac("sha256", Buffer.from(secret,         "utf8"  )).update(signedContent).digest("base64");
-  const expectedB64     = createHmac("sha256", Buffer.from(secret,         "base64")).update(signedContent).digest("base64");
-  const expectedStpB64  = createHmac("sha256", Buffer.from(secretStripped, "base64")).update(signedContent).digest("base64");
-  const expectedStpUtf8 = createHmac("sha256", Buffer.from(secretStripped, "utf8"  )).update(signedContent).digest("base64");
+  // Supabase secret format: "v1,whsec_<base64>" — strip the full prefix to get raw base64 key.
+  // See: https://supabase.com/docs/guides/auth/auth-hooks/send-email-hook
+  const secretB64 = secret.replace(/^v1,whsec_/, "").replace(/^v1,/, "").replace(/^whsec_/, "");
+  console.log("[auth-hook] secretB64 length:", secretB64.length, "| first 4:", JSON.stringify(secretB64.substring(0, 4)));
+  const secretBytes = Buffer.from(secretB64, "base64");
+  const expectedSig = createHmac("sha256", secretBytes).update(signedContent).digest("base64");
+
   const providedSigs = webhookSignature.split(" ").map(s => s.startsWith("v1,") ? s.slice(3) : s);
   const provided = providedSigs[0] ?? "";
-  console.log("[auth-hook] provided          :", provided.substring(0, 20));
-  console.log("[auth-hook] utf8 match        :", provided === expectedUtf8,    "| sig:", expectedUtf8.substring(0, 20));
-  console.log("[auth-hook] b64  match        :", provided === expectedB64,     "| sig:", expectedB64.substring(0, 20));
-  console.log("[auth-hook] stripped-b64 match:", provided === expectedStpB64,  "| sig:", expectedStpB64.substring(0, 20));
-  console.log("[auth-hook] stripped-utf8 match:", provided === expectedStpUtf8, "| sig:", expectedStpUtf8.substring(0, 20));
+  console.log("[auth-hook] provided  :", provided.substring(0, 20));
+  console.log("[auth-hook] expected  :", expectedSig.substring(0, 20));
+  console.log("[auth-hook] match     :", provided === expectedSig);
 
   const valid = providedSigs.some(sig => {
     try {
-      const sigBuf      = Buffer.from(sig, "base64");
-      const bufs = [expectedUtf8, expectedB64, expectedStpB64, expectedStpUtf8].map(e => Buffer.from(e, "base64"));
-      return bufs.some(b => b.length === sigBuf.length && timingSafeEqual(b, sigBuf));
+      const sigBuf = Buffer.from(sig, "base64");
+      const expBuf = Buffer.from(expectedSig, "base64");
+      return sigBuf.length === expBuf.length && timingSafeEqual(sigBuf, expBuf);
     } catch {
       return false;
     }
