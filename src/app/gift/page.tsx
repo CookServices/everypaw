@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
+import { createClient } from "@/lib/supabase/client";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
@@ -22,18 +23,39 @@ export default function GiftPage() {
     scheduledDate: "",
   });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [authError, setAuthError] = useState(false);
   const [code, setCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [currency, setCurrency] = useState<Currency>("USD");
 
   const todayStr = new Date().toISOString().split("T")[0];
+  const supabase = createClient();
 
   useEffect(() => {
     fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
   }, []);
 
-  // Step 1 : validate form then go to confirm screen
-  const handleGoToConfirm = () => {
+  // Restore form saved before login redirect
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("gift_form");
+      if (!saved) return;
+      const parsed = JSON.parse(saved);
+      setForm({
+        recipientEmail: parsed.recipientEmail ?? "",
+        recipientName:  parsed.recipientName  ?? "",
+        senderName:     parsed.senderName     ?? "",
+        message:        parsed.message        ?? "",
+        scheduledDate:  parsed.scheduledDate  ?? "",
+      });
+      if (parsed.selectedPlan) setSelectedPlan(parsed.selectedPlan as "digital" | "print");
+      if (parsed.billingCycle) setBillingCycle(parsed.billingCycle as "monthly" | "annual");
+      sessionStorage.removeItem("gift_form");
+    } catch {}
+  }, []);
+
+  // Step 1 : validate form, check auth, then go to confirm screen
+  const handleGoToConfirm = async () => {
     if (!form.recipientEmail || !form.recipientName || !form.senderName) {
       alert(t.gift.required_fields);
       return;
@@ -42,18 +64,35 @@ export default function GiftPage() {
       alert(t.gift.send_date_future_error);
       return;
     }
+    // Guard: must be logged in before reaching the confirm step
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      // Save form so it can be restored after login
+      try {
+        sessionStorage.setItem("gift_form", JSON.stringify({ ...form, selectedPlan, billingCycle }));
+      } catch {}
+      window.location.href = "/auth/login?redirect=/gift";
+      return;
+    }
     setStatus("idle");
+    setAuthError(false);
     setStep("confirm");
   };
 
   // Step 2 : actually call the API
   const handleConfirm = async () => {
     setStatus("loading");
+    setAuthError(false);
     const res = await fetch("/api/gift/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, locale, plan: planApiKey }),
     });
+    if (res.status === 401) {
+      setAuthError(true);
+      setStatus("error");
+      return;
+    }
     const data = await res.json();
     if (data.success) {
       setCode(data.code);
@@ -230,7 +269,18 @@ export default function GiftPage() {
               </div>
 
               {status === "error" && (
-                <p style={{ fontSize: ".8rem", color: "#A32D2D", marginTop: ".75rem", textAlign: "center" }}>{t.gift.error}</p>
+                <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 8, padding: "12px 16px", marginTop: ".75rem" }}>
+                  <p style={{ fontSize: ".8rem", color: "#991B1B", margin: 0 }}>
+                    {authError ? (
+                      <>
+                        {isFR ? "Vous devez être connecté pour offrir un cadeau." : "You must be signed in to send a gift."}{" "}
+                        <a href="/auth/login?redirect=/gift" style={{ color: "#991B1B", fontWeight: 600, textDecoration: "underline" }}>
+                          {isFR ? "Se connecter →" : "Sign in →"}
+                        </a>
+                      </>
+                    ) : t.gift.error}
+                  </p>
+                </div>
               )}
             </>
           ) : (
