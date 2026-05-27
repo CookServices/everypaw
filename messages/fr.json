@@ -270,7 +270,7 @@
   "faq": {
     "title": "Questions fréquentes",
     "q1": "Comment fonctionne l'IA ?",
-    "a1": "Chaque mois, notre IA lit toutes vos entrées de journal et les tisse en un chapitre narratif chaleureux , rédigé à la première personne, comme si votre animal racontait sa propre vie. Plus vous ajoutez de moments, plus l'histoire devient riche et personnelle.",
+    "a1": "Notre IA transforme vos entrées de journal en un chapitre narratif chaleureux, rédigé à la première personne, comme si votre animal racontait lui-même sa vie. Quelques moments suffisent pour créer une histoire touchante, et vous générez quand vous êtes prêt.",
     "q2": "Que se passe-t-il si mon animal nous quitte ?",
     "a2": "Tous vos souvenirs restent accessibles pour toujours. Vous pouvez créer une page mémorial dédiée, partager son profil avec vos proches, et commander un livre relié commémoratif qui rassemble chaque histoire et chaque moment de sa vie , un objet précieux à conserver.",
     "q3": "Puis-je personnaliser le livre ?",
@@ -401,7 +401,10 @@
     "estimated_shipping": "Livraison estimée",
     "price_book": "Livre",
     "price_total_est": "Total estimé",
-    "few_stories_warning": "Votre livre contiendra moins de 3 histoires. Nous recommandons d'en générer au moins 3 pour un résultat plus riche. Vous pouvez quand même commander."
+    "few_stories_warning": "Votre livre contiendra moins de 3 histoires. Nous recommandons d'en générer au moins 3 pour un résultat plus riche. Vous pouvez quand même commander.",
+    "no_credits_title": "Votre livre annuel a déjà été commandé",
+    "no_credits_desc": "Votre offre Print inclut 1 livre relié par an. Pour en commander un supplémentaire maintenant, vous pouvez en acheter un pour 29 €.",
+    "no_credits_cta": "Acheter un livre supplémentaire (29 €) →"
   },
   "memorial": {
     "mark_passed": "Enregistrer le décès…",

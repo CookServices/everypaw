@@ -270,7 +270,7 @@
   "faq": {
     "title": "Frequently asked questions",
     "q1": "How does the AI work?",
-    "a1": "Each month, our AI reads all your journal entries and weaves them into a warm, flowing narrative chapter , written in first person, as if your pet is narrating their own life. The more moments you add, the richer and more personal the story becomes.",
+    "a1": "Our AI transforms your journal entries into a warm, flowing narrative chapter, written in your pet's own voice. A handful of moments is all it takes to create something truly memorable, and you can generate whenever you're ready.",
     "q2": "What happens if my pet passes away?",
     "a2": "All your memories stay accessible forever. You can create a dedicated memorial page, share their profile with loved ones, and order a commemorative hardcover book that gathers every story and moment from their life , a keepsake to hold onto.",
     "q3": "Can I customise the book?",
@@ -401,7 +401,10 @@
     "estimated_shipping": "Estimated shipping",
     "price_book": "Book",
     "price_total_est": "Estimated total",
-    "few_stories_warning": "Your book will contain fewer than 3 stories. We recommend generating at least 3 for a richer result. You can still order."
+    "few_stories_warning": "Your book will contain fewer than 3 stories. We recommend generating at least 3 for a richer result. You can still order.",
+    "no_credits_title": "Your annual book has already been ordered",
+    "no_credits_desc": "Your Print plan includes 1 hardcover book per year. To order an additional book now, you can purchase one for $29.",
+    "no_credits_cta": "Buy an extra book ($29) →"
   },
   "memorial": {
     "mark_passed": "Record passing…",
