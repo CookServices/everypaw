@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import Link from "next/link";
 import { getTranslations } from "@/lib/i18n";
 import { getServiceSupabase } from "@/lib/plan";
@@ -19,7 +19,13 @@ const ALL_EMOJIS: Record<string, string> = {
 export default async function PublicPetPage({ params }: { params: { id: string } }) {
   const cookieStore = cookies();
   const localeCookie = cookieStore.get("locale")?.value;
-  const locale = (localeCookie === "fr" ? "fr" : "en") as "en" | "fr";
+  let locale: "en" | "fr";
+  if (localeCookie === "fr" || localeCookie === "en") {
+    locale = localeCookie;
+  } else {
+    const acceptLang = (await headers()).get("accept-language") ?? "";
+    locale = acceptLang.toLowerCase().startsWith("fr") ? "fr" : "en";
+  }
   const t = getTranslations(locale);
   const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
 
