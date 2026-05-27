@@ -734,6 +734,16 @@ currency: "USD"
 - **`WAITLIST_TO_EMAIL` crash** (I2) : rendu optionnel avec `console.warn` si absent (plus de crash).
 - **Redirect protocol-relative** (I3) : `!next.startsWith("//")` ajouté dans `/auth/callback`.
 
+### ✅ Bug fixes (2026-05-27, session 16)
+
+**Milestones orphelins — comptage ≠ liste affichée (`dashboard/pets/[id]/page.tsx`)**
+- Cause : la liste était construite depuis `milestone_definitions` ; les milestones dont le `type` n'existe pas dans cette table (ex. `in_memory` créé à la déclaration d'un décès, ou `first_entry` legacy avant la migration vers `first_memory`) étaient comptés dans le badge/barre de progression mais jamais affichés dans la section "Débloquées".
+- Fix : après le mapping des définitions, on détecte les milestones "orphelins" (`milestones` dont le `type` n'est pas dans `definedKeys`) et on les ajoute à `allItems` via `MILESTONE_TYPES` fallback pour l'icône/label. `achievedItems.length` coïncide désormais avec `milestones.length`.
+
+**Mockup hero page `/` — textes hardcodés en anglais (`app/page.tsx`)**
+- Cause : `isFR` était disponible dans le composant mais aucun string du mockup téléphone ne l'utilisait — même pour un utilisateur FR sur `/` (détection navigateur), tout le carrousel restait en EN. La route `/fr/page.tsx` (composant autonome) était correcte.
+- Fix : tous les strings du mockup passés en ternaires `isFR ? "FR" : "EN"` — nav bar (titre slide + sous-titre `"2 ans"/"2 yrs"`), slide 0 (entrées journal, label `"Aujourd'hui"`, typing, bouton `"+ Ajouter un moment"`), slide 1 (label génération, en-tête chapitre, texte histoire avec guillemets « »), slide 2 (titre aperçu, sous-titre, badge Premium).
+
 ### 🚧 Prochaine étape
 - ~~Exécuter les migrations SQL~~ ✅
 - ~~Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` / `STRIPE_PRICE_BOOK_ONCE_USD`~~ ✅
@@ -803,4 +813,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-26 (session 16 — security reviews Round 3 PR #26 + Round 4 PR #27 — 0 Critical, 0 High restant : prompt injection generate, UUID validation, Gelato/Anthropic info leak, CSP unsafe-eval, escapeXml partagé, getServiceSupabase cohérent, redirect callback, WAITLIST_TO_EMAIL optionnel)*
+*Dernière mise à jour : 2026-05-27 (session 17 — milestones orphelins, mockup hero i18n)*
