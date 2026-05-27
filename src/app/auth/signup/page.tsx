@@ -88,6 +88,12 @@ export default function SignupPage() {
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     if (signupError) {
+      // Log full error details for server-side debugging (visible in Vercel logs)
+      console.error("[signup] Supabase error:", {
+        message: signupError.message,
+        status: (signupError as { status?: number }).status,
+        name: signupError.name,
+      });
       setError(getSignupError(signupError.message, isFR));
       setStatus("error");
     } else {

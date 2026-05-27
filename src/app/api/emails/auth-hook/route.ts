@@ -21,17 +21,20 @@ export async function POST(req: Request) {
 
   const rawBody = await req.text();
 
-  const signature = req.headers.get("x-supabase-signature");
-  if (!signature) {
+  const rawSignature = req.headers.get("x-supabase-signature");
+  if (!rawSignature) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Supabase sends the signature as "v1,<hex_hmac_sha256>" — strip the version prefix.
+  const signatureHex = rawSignature.startsWith("v1,") ? rawSignature.slice(3) : rawSignature;
+
   const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
   try {
-    // Compare as decoded bytes so the comparison is over 32 bytes regardless of encoding
-    const sigBytes = Buffer.from(signature, "hex");
+    const sigBytes = Buffer.from(signatureHex, "hex");
     const expectedBytes = Buffer.from(expected, "hex");
     if (sigBytes.length !== 32 || !timingSafeEqual(sigBytes, expectedBytes)) {
+      console.error("[auth-hook] Signature mismatch — check that SUPABASE_HOOK_SECRET matches the Supabase dashboard value.");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   } catch {
