@@ -91,6 +91,10 @@ RESEND_API_KEY
 WAITLIST_TO_EMAIL              # email destinataire waitlist (optionnel — warn si absent)
 
 CRON_SECRET                    # protège les routes /api/cron/*
+
+# Auth Hook (Supabase → /api/emails/auth-hook)
+SUPABASE_HOOK_SECRET           # format "v1,whsec_<base64>" — copier depuis Supabase > Auth > Hooks > Send Email > Reveal
+                               # Si absent → hook retourne 401 → Supabase retourne 500 sur signup/reset
 ```
 
 ---
@@ -734,6 +738,32 @@ currency: "USD"
 - **`WAITLIST_TO_EMAIL` crash** (I2) : rendu optionnel avec `console.warn` si absent (plus de crash).
 - **Redirect protocol-relative** (I3) : `!next.startsWith("//")` ajouté dans `/auth/callback`.
 
+### ✅ Fix auth hook signup 500 + gift auth guard (2026-05-27, session 18)
+
+**Auth hook — signup retournait HTTP 500**
+- Cause racine : `SUPABASE_HOOK_SECRET` absente de Vercel → hook retournait 401 → Supabase propageit en 500 client.
+- Fix 1 : variable ajoutée à Vercel et documentée dans `.env.local.example` avec note sur le format.
+- Fix 2 : mauvais header — `x-supabase-signature` → `webhook-signature` (Supabase suit le spec **Standard Webhooks**).
+- Fix 3 : contenu signé incorrect — body seul → `{webhook-id}.{webhook-timestamp}.{body}` (Standard Webhooks).
+- Fix 4 : décodage du secret incorrect — on strippait `v1,` (3 chars) alors que le format Supabase est `v1,whsec_<base64>` (9 chars de préfixe). Après strip complet : `Buffer.from(secretB64, "base64")` comme clé HMAC.
+- `auth-errors.ts` : ajout des patterns `unexpected_failure`, `hook`, `send email`, rate-limit, email déjà enregistré.
+- `signup/page.tsx` : `console.error` du `signupError` complet (message + status) pour faciliter le debug futur.
+
+**Standard Webhooks — format de vérification définitif** (`/api/emails/auth-hook`)
+```
+header    : webhook-signature: v1,<base64_hmac>
+signed    : {webhook-id}.{webhook-timestamp}.{raw-body}
+secret    : Buffer.from(secret.replace(/^v1,whsec_/, "").replace(/^v1,/, ""), "base64")
+algo      : HMAC-SHA256, digest base64
+```
+Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espace-séparées (toutes testées).
+
+**Gift `/gift` — guard auth + UX 401**
+- `handleGoToConfirm` (maintenant async) : `supabase.auth.getUser()` avant d'afficher le récap — redirige vers `/auth/login?redirect=/gift` si non connecté.
+- Sauvegarde du formulaire dans `sessionStorage("gift_form")` avant redirect ; restauration automatique au mount (champs + plan sélectionné + cycle annuel/mensuel).
+- `handleConfirm` : `res.status === 401` → `authError = true` (filet de sécurité si session expirée entre les étapes).
+- Bannière d'erreur contextuelle : 401 = *"Vous devez être connecté… Se connecter →"* (lien `/auth/login?redirect=/gift`) ; autres erreurs = message générique. Style unifié `#FEF2F2 / #FCA5A5 / #991B1B`.
+
 ### ✅ Bug fixes (2026-05-27, session 16)
 
 **Milestones orphelins — comptage ≠ liste affichée (`dashboard/pets/[id]/page.tsx`)**
@@ -773,7 +803,7 @@ currency: "USD"
 - **Milestones** : utiliser `localTitle` directement dans l'affichage — ne pas découper par espaces pour retirer l'emoji (l'icône est rendue séparément via le champ `icon`)
 - **Auth sécurité** : tout changement de mot de passe doit vérifier le mot de passe actuel via `signInWithPassword` avant `updateUser`
 - **Devise** : utiliser `getCurrencyFromCountry` + `formatPrice` de `src/lib/currency.ts` pour tout affichage de prix. Ne jamais utiliser `isFR` comme proxy de devise — langue ≠ pays. Les routes Stripe lisent `x-vercel-ip-country` (checkout) ou `subscription.currency` (upgrade).
-- **Webhooks entrants** (Supabase auth hook) : toujours vérifier via HMAC-SHA256 sur le body brut (`req.text()` avant `JSON.parse`), comparer avec `timingSafeEqual`. Fail-closed : si la variable secrète est absente, retourner 401. Ne jamais utiliser une comparaison de chaîne simple ni un `if (secret)` qui laisse passer si la variable est vide.
+- **Webhooks entrants** (Supabase auth hook) : Supabase suit le spec **Standard Webhooks**. Headers à lire : `webhook-id`, `webhook-timestamp`, `webhook-signature`. Contenu signé : `{id}.{timestamp}.{body}`. Secret : strip le préfixe `v1,whsec_` (ou `v1,` ou `whsec_`) puis `Buffer.from(rest, "base64")` comme clé HMAC-SHA256. Signature = `v1,<base64_hmac>`. Fail-closed : si `SUPABASE_HOOK_SECRET` absent → 401 immédiat. Comparer avec `timingSafeEqual` sur les buffers. Voir `src/app/api/emails/auth-hook/route.ts` pour l'implémentation de référence.
 - **Routes email hooks** (`confirm-signup`, `change-email`, `reset-password`) : vérification `Bearer ${SUPABASE_HOOK_SECRET}` fail-closed — retourner 401 immédiatement si la variable est absente.
 - **`/api/generate`** : ne jamais faire confiance aux données du body client (petName, species, bio, entries). Re-fetcher depuis la DB après vérification de l'ownership du pet.
 - **`/api/gelato/order`** : toujours filtrer les updates de stories par `user_id` (même avec service role). Consommer les crédits via `try_consume_book_credit` **avant** l'appel Gelato, et restaurer via `restore_book_credit` en cas d'échec.
@@ -813,4 +843,4 @@ currency: "USD"
 
 ---
 
-*Dernière mise à jour : 2026-05-27 (session 17 — milestones orphelins, mockup hero i18n)*
+*Dernière mise à jour : 2026-05-27 (session 18 — auth hook Standard Webhooks fix, gift auth guard)*
