@@ -21,37 +21,44 @@ export async function POST(req: Request) {
 
   const rawBody = await req.text();
 
-  // ── DEBUG: log all incoming headers to identify Supabase's exact signature format ──
-  const allHeaders: Record<string, string> = {};
-  req.headers.forEach((value, key) => {
-    // Redact Authorization value but keep the key visible
-    allHeaders[key] = key.toLowerCase() === "authorization" ? "[redacted]" : value;
-  });
-  console.log("[auth-hook] incoming headers:", JSON.stringify(allHeaders));
+  // ── Standard Webhooks signature verification ──────────────────────────────
+  // Supabase Auth Hooks follow the Standard Webhooks spec:
+  //   - Headers: webhook-id, webhook-timestamp, webhook-signature
+  //   - Signed content: "<webhook-id>.<webhook-timestamp>.<raw-body>"
+  //   - Algorithm: HMAC-SHA256, secret is base64-decoded before use
+  //   - Signature format: "v1,<base64_hmac>" (space-separated for key rotation)
+  const webhookId        = req.headers.get("webhook-id");
+  const webhookTimestamp = req.headers.get("webhook-timestamp");
+  const webhookSignature = req.headers.get("webhook-signature");
 
-  const rawSignature = req.headers.get("x-supabase-signature");
-  if (!rawSignature) {
-    console.error("[auth-hook] x-supabase-signature header is missing");
+  if (!webhookId || !webhookTimestamp || !webhookSignature) {
+    console.error("[auth-hook] Missing Standard Webhooks headers", {
+      "webhook-id": !!webhookId,
+      "webhook-timestamp": !!webhookTimestamp,
+      "webhook-signature": !!webhookSignature,
+    });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  console.log("[auth-hook] raw signature:", rawSignature.substring(0, 20) + "...");
 
-  // Supabase may prefix the signature with "v1," or "v1=" — strip it.
-  const signatureHex = rawSignature.replace(/^v1[,=]/, "").trim();
-  console.log("[auth-hook] signatureHex (first 16):", signatureHex.substring(0, 16));
+  const signedContent = `${webhookId}.${webhookTimestamp}.${rawBody}`;
+  // The secret stored in Vercel is base64-encoded (Standard Webhooks spec)
+  const secretBytes = Buffer.from(secret, "base64");
+  const expectedSig = createHmac("sha256", secretBytes).update(signedContent).digest("base64");
 
-  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
-  console.log("[auth-hook] expected (first 16):", expected.substring(0, 16));
-  try {
-    const sigBytes = Buffer.from(signatureHex, "hex");
-    const expectedBytes = Buffer.from(expected, "hex");
-    console.log("[auth-hook] sigBytes.length:", sigBytes.length, "expectedBytes.length:", expectedBytes.length);
-    if (sigBytes.length !== 32 || !timingSafeEqual(sigBytes, expectedBytes)) {
-      console.error("[auth-hook] Signature mismatch");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Header may contain multiple space-separated signatures (key rotation support)
+  const providedSigs = webhookSignature.split(" ").map(s => s.startsWith("v1,") ? s.slice(3) : s);
+  const valid = providedSigs.some(sig => {
+    try {
+      const sigBuf = Buffer.from(sig, "base64");
+      const expBuf = Buffer.from(expectedSig, "base64");
+      return sigBuf.length === expBuf.length && timingSafeEqual(sigBuf, expBuf);
+    } catch {
+      return false;
     }
-  } catch (err) {
-    console.error("[auth-hook] Signature verification threw:", err);
+  });
+
+  if (!valid) {
+    console.error("[auth-hook] Signature mismatch — check SUPABASE_HOOK_SECRET in Vercel.");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
