@@ -148,6 +148,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [milestones, setMilestones] = useState<{ id: string; type: string; title: string; achieved_at: string }[]>([]);
   const [newEntry, setNewEntry] = useState("");
   const [mood, setMood] = useState<string | null>(null);
+  const [entryDate, setEntryDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [filterYear, setFilterYear] = useState<string | null>(null);
   const [filterMonth, setFilterMonth] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -298,6 +299,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
     const { data } = await supabase.from("entries").insert({
       pet_id: id, user_id: user!.id,
       content: newEntry.trim() || " ", mood, photo_urls: photoUrls,
+      entry_date: entryDate,
     }).select().single();
 
     if (data) {
@@ -335,6 +337,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
     setPendingPhotos([]);
     setUploadingPhotos(false);
     setSaving(false);
+    setEntryDate(new Date().toISOString().split("T")[0]);
   };
 
   const generateStory = async () => {
@@ -1118,9 +1121,18 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   )}
                   <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handlePhotoSelect} style={{ display: "none" }} />
                 </div>
-                <button onClick={addEntry} disabled={saving || (!newEntry.trim() && pendingPhotos.length === 0)} style={{ padding: ".5rem 1.25rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer", opacity: saving || (!newEntry.trim() && pendingPhotos.length === 0) ? .5 : 1 }}>
-                  {uploadingPhotos ? t.journal.uploading : saving ? t.journal.saving : t.journal.add_moment}
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                  <input
+                    type="date"
+                    value={entryDate}
+                    max={new Date().toISOString().split("T")[0]}
+                    onChange={e => setEntryDate(e.target.value)}
+                    style={{ height: 32, padding: "0 .5rem", borderRadius: 8, border: `1.5px solid ${entryDate !== new Date().toISOString().split("T")[0] ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: entryDate !== new Date().toISOString().split("T")[0] ? "rgba(200,129,58,.08)" : "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "#3D2B1F", outline: "none", cursor: "pointer" }}
+                  />
+                  <button onClick={addEntry} disabled={saving || (!newEntry.trim() && pendingPhotos.length === 0)} style={{ padding: ".5rem 1.25rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer", opacity: saving || (!newEntry.trim() && pendingPhotos.length === 0) ? .5 : 1 }}>
+                    {uploadingPhotos ? t.journal.uploading : saving ? t.journal.saving : t.journal.add_moment}
+                  </button>
+                </div>
               </div>
             </div>
 
