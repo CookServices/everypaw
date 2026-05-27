@@ -18,8 +18,6 @@ export async function POST(req: Request) {
     console.error("[auth-hook] SUPABASE_HOOK_SECRET is not configured");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  // DEBUG: log secret metadata (never log the full value)
-  console.log("[auth-hook] secret length:", secret.length, "| first 4 chars:", JSON.stringify(secret.substring(0, 4)));
 
   const rawBody = await req.text();
 
@@ -27,41 +25,27 @@ export async function POST(req: Request) {
   // Supabase Auth Hooks follow the Standard Webhooks spec:
   //   - Headers: webhook-id, webhook-timestamp, webhook-signature
   //   - Signed content: "<webhook-id>.<webhook-timestamp>.<raw-body>"
-  //   - Algorithm: HMAC-SHA256, secret is base64-decoded before use
-  //   - Signature format: "v1,<base64_hmac>" (space-separated for key rotation)
+  //   - Secret format: "v1,whsec_<base64>" — strip prefix, then base64-decode to get HMAC key
+  //   - Algorithm: HMAC-SHA256, output base64-encoded, prefixed with "v1,"
+  //   - Ref: https://supabase.com/docs/guides/auth/auth-hooks/send-email-hook
   const webhookId        = req.headers.get("webhook-id");
   const webhookTimestamp = req.headers.get("webhook-timestamp");
   const webhookSignature = req.headers.get("webhook-signature");
 
   if (!webhookId || !webhookTimestamp || !webhookSignature) {
-    console.error("[auth-hook] Missing Standard Webhooks headers", {
-      "webhook-id": !!webhookId,
-      "webhook-timestamp": !!webhookTimestamp,
-      "webhook-signature": !!webhookSignature,
-    });
+    console.error("[auth-hook] Missing Standard Webhooks headers");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  console.log("[auth-hook] webhookId:", webhookId, "| webhookTimestamp:", webhookTimestamp);
-  console.log("[auth-hook] content-length header:", req.headers.get("content-length"), "| rawBody.length:", rawBody.length);
-  console.log("[auth-hook] rawBody first 80:", rawBody.substring(0, 80));
-
   const signedContent = `${webhookId}.${webhookTimestamp}.${rawBody}`;
-  console.log("[auth-hook] signedContent first 80:", signedContent.substring(0, 80));
 
-  // Supabase secret format: "v1,whsec_<base64>" — strip the full prefix to get raw base64 key.
-  // See: https://supabase.com/docs/guides/auth/auth-hooks/send-email-hook
+  // Strip known Supabase prefixes ("v1,whsec_", "v1,", "whsec_") to get the raw base64 key
   const secretB64 = secret.replace(/^v1,whsec_/, "").replace(/^v1,/, "").replace(/^whsec_/, "");
-  console.log("[auth-hook] secretB64 length:", secretB64.length, "| first 4:", JSON.stringify(secretB64.substring(0, 4)));
   const secretBytes = Buffer.from(secretB64, "base64");
   const expectedSig = createHmac("sha256", secretBytes).update(signedContent).digest("base64");
 
+  // Header may contain multiple space-separated signatures (key rotation support)
   const providedSigs = webhookSignature.split(" ").map(s => s.startsWith("v1,") ? s.slice(3) : s);
-  const provided = providedSigs[0] ?? "";
-  console.log("[auth-hook] provided  :", provided.substring(0, 20));
-  console.log("[auth-hook] expected  :", expectedSig.substring(0, 20));
-  console.log("[auth-hook] match     :", provided === expectedSig);
-
   const valid = providedSigs.some(sig => {
     try {
       const sigBuf = Buffer.from(sig, "base64");
