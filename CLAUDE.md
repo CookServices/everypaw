@@ -747,8 +747,8 @@ currency: "USD"
 ### 🚧 Prochaine étape
 - ~~Exécuter les migrations SQL~~ ✅
 - ~~Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` / `STRIPE_PRICE_BOOK_ONCE_USD`~~ ✅
+- ~~Publier Google OAuth~~ ✅
 - **Passer Stripe en mode Live** (voir checklist prod)
-- **Publier Google OAuth** (voir checklist prod)
 
 ---
 
@@ -794,7 +794,7 @@ currency: "USD"
 
 - [ ] Passer `STRIPE_SECRET_KEY` de `sk_test_...` à `sk_live_...`
 - [ ] Mettre à jour `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET` en mode Live
-- [ ] Publier l'application Google OAuth (retirer le mode Test)
+- [x] Publier l'application Google OAuth (retirer le mode Test) ✅
 - [ ] Tester le webhook Stripe en mode Live avec un vrai paiement
 - [ ] Vérifier que le cron weekly-reminder envoie bien les emails
 - [ ] Vérifier que Gelato est configuré avec une carte de paiement valide
