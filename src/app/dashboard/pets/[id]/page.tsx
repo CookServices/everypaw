@@ -1138,10 +1138,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
             {(() => {
               const generatingMessages = pet ? [
-                isFR ? `✨ L'IA lit les aventures de ${pet.name}…` : `✨ AI is reading ${pet.name}'s adventures…`,
-                isFR ? "Votre histoire prend forme…" : "Your story is taking shape…",
-                isFR ? "Dernières retouches en cours…" : "Final touches in progress…",
-              ] : ["✨ Generating…", "Your story is taking shape…", "Final touches…"];
+                t.journal.generating_1.replace("{name}", pet.name),
+                t.journal.generating_2,
+                t.journal.generating_3,
+              ] : [t.journal.generating, t.journal.generating_2, t.journal.generating_3];
               return (
                 <button onClick={() => { if (entries.length >= 3) { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); } }} disabled={generating || entries.length < 3} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", marginBottom: "1.5rem", opacity: entries.length < 3 ? .5 : 1 }}>
                   {generating ? generatingMessages[generatingMsgIdx] : t.journal.generate_story.replace("{name}", pet.name)}
@@ -1297,9 +1297,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             <div style={{ background: "rgba(200,129,58,.06)", borderRadius: 14, padding: ".875rem 1rem", marginBottom: "1.25rem", border: "1px solid rgba(200,129,58,.2)", display: "flex", gap: ".625rem", alignItems: "flex-start" }}>
               <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: ".05rem" }}>💡</span>
               <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, lineHeight: 1.55 }}>
-                {isFR
-                  ? "Les étapes se débloquent automatiquement quand vous ajoutez des entrées dans le journal. Par exemple, mentionnez « bain » pour débloquer « Premier bain », « vétérinaire » pour « Première visite vétérinaire », etc."
-                  : "Steps unlock automatically when you add journal entries. For example, mention \"bath\" to unlock \"First bath\", \"vet\" to unlock \"First vet visit\", etc."}
+                {t.milestones.auto_hint}
               </p>
             </div>
 
@@ -1307,7 +1305,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: "1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: ".625rem" }}>
                 <span style={{ fontSize: ".85rem", fontWeight: 500, color: "#3D2B1F" }}>
-                  {milestones.length} / {milestoneDefinitions.length || MILESTONE_TYPES.length} {isFR ? "étapes complétées" : "steps completed"}
+                  {milestones.length} / {milestoneDefinitions.length || MILESTONE_TYPES.length} {t.milestones.steps_completed}
                 </span>
                 <span style={{ fontSize: ".8rem", color: "#C8813A", fontWeight: 600 }}>
                   {Math.round(milestones.length / (milestoneDefinitions.length || MILESTONE_TYPES.length) * 100)}%
@@ -1359,7 +1357,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                     <p style={{ fontSize: ".72rem", color: achieved ? "#7A5C44" : "#9A8070", margin: 0, fontWeight: 300 }}>
                       {achieved
                         ? new Date(achieved.achieved_at).toLocaleDateString(dateLocale, { month: "long", day: "numeric", year: "numeric" })
-                        : (isFR ? "Non encore atteinte" : "Not yet unlocked")}
+                        : t.milestones.not_yet}
                     </p>
                   </div>
                   {achieved && <span style={{ fontSize: ".9rem", flexShrink: 0 }}>✅</span>}
@@ -1371,7 +1369,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   {achievedItems.length > 0 && (
                     <>
                       <p style={{ fontSize: ".68rem", fontWeight: 600, color: "#C8813A", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .1rem", fontFamily: "sans-serif" }}>
-                        {isFR ? `Débloquées · ${achievedItems.length}` : `Unlocked · ${achievedItems.length}`}
+                        {t.milestones.unlocked.replace("{n}", String(achievedItems.length))}
                       </p>
                       {achievedItems.map(renderItem)}
                     </>
@@ -1379,7 +1377,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   {pendingItems.length > 0 && (
                     <>
                       <p style={{ fontSize: ".68rem", fontWeight: 600, color: "#9A8070", textTransform: "uppercase", letterSpacing: ".08em", margin: `${achievedItems.length > 0 ? ".5rem" : "0"} 0 .1rem`, fontFamily: "sans-serif" }}>
-                        {isFR ? `À débloquer · ${pendingItems.length}` : `Locked · ${pendingItems.length}`}
+                        {t.milestones.locked.replace("{n}", String(pendingItems.length))}
                       </p>
                       {pendingItems.map(renderItem)}
                     </>

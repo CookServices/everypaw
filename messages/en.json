@@ -81,6 +81,9 @@
     "uploading": "Uploading…",
     "generate_story": "✨ Generate {name}'s story",
     "generating": "✨ Generating story…",
+    "generating_1": "✨ AI is reading {name}'s adventures…",
+    "generating_2": "Your story is taking shape…",
+    "generating_3": "Final touches in progress…",
     "add_more": "Add {count} more {entries} to unlock",
     "entry": "entry",
     "entries": "entries",
@@ -106,7 +109,12 @@
     "no_milestones_hint": "Try mentioning a walk, bath, vet visit, or park!",
     "label": "milestones",
     "new_notification": "New milestone: {title}",
-    "tab": "milestones"
+    "tab": "milestones",
+    "steps_completed": "steps completed",
+    "not_yet": "Not yet unlocked",
+    "unlocked": "Unlocked · {n}",
+    "locked": "Locked · {n}",
+    "auto_hint": "Steps unlock automatically when you add journal entries. For example, mention \"bath\" to unlock \"First bath\", \"vet\" to unlock \"First vet visit\", etc."
   },
   "auth": {
     "welcome_back": "Welcome back",

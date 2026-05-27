@@ -81,6 +81,9 @@
     "uploading": "Téléchargement…",
     "generate_story": "✨ Générer l'histoire de {name}",
     "generating": "✨ Génération en cours…",
+    "generating_1": "✨ L'IA lit les aventures de {name}…",
+    "generating_2": "Votre histoire prend forme…",
+    "generating_3": "Dernières retouches en cours…",
     "add_more": "Ajoutez {count} {entries} de plus pour débloquer",
     "entry": "entrée",
     "entries": "entrées",
@@ -106,7 +109,12 @@
     "no_milestones_hint": "Mentionnez une promenade, un bain, une visite chez le vétérinaire ou le parc !",
     "label": "étapes",
     "new_notification": "Nouvelle étape : {title}",
-    "tab": "étapes"
+    "tab": "étapes",
+    "steps_completed": "étapes complétées",
+    "not_yet": "Non encore atteinte",
+    "unlocked": "Débloquées · {n}",
+    "locked": "À débloquer · {n}",
+    "auto_hint": "Les étapes se débloquent automatiquement quand vous ajoutez des entrées dans le journal. Par exemple, mentionnez « bain » pour débloquer « Premier bain », « vétérinaire » pour « Première visite vétérinaire », etc."
   },
   "auth": {
     "welcome_back": "Bon retour",
