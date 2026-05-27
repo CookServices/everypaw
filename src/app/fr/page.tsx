@@ -7,6 +7,8 @@ import { formatPrice, type Currency } from "@/lib/currency";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
+const tEN = getTranslations("en");
+
 export const dynamic = "force-dynamic";
 
 const FAQ_JSONLD_FR = {
@@ -62,18 +64,23 @@ export default function FrHome() {
     ["3", t.landing.s3_title, t.landing.s3_desc],
   ];
 
-  const reviews = [
-    [t.landing.r1_quote, t.landing.r1_author],
-    [t.landing.r2_quote, t.landing.r2_author],
-    [t.landing.r3_quote, t.landing.r3_author],
-  ];
-
   const [pricingCycle, setPricingCycle] = useState<"monthly" | "annual">("monthly");
   const [currency, setCurrency] = useState<Currency>("EUR");
+  const [isFrance, setIsFrance] = useState(true);
 
   useEffect(() => {
-    fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
+    fetch("/api/currency").then(r => r.json()).then(d => {
+      setCurrency(d.currency as Currency);
+      setIsFrance(d.isFrance ?? false);
+    }).catch(() => {});
   }, []);
+
+  const tReviews = isFrance ? t : tEN;
+  const reviews = [
+    [tReviews.landing.r1_quote, tReviews.landing.r1_author],
+    [tReviews.landing.r2_quote, tReviews.landing.r2_author],
+    [tReviews.landing.r3_quote, tReviews.landing.r3_author],
+  ];
 
   const freeFeatures    = [t.landing.free_f1, t.landing.free_f2, t.landing.free_f3];
   const digitalFeatures = [t.landing.premium_f1, t.landing.premium_f2, t.landing.premium_f3, t.landing.premium_f4];
@@ -310,16 +317,21 @@ export default function FrHome() {
       <section style={{ padding: "4rem 2rem", textAlign: "center", background: "#EDE5D4" }}>
         <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "1rem" }}>
           {[
-            ["94M", t.landing.stats_pets],
+            [isFrance ? "20,3M" : "94M", isFrance ? t.landing.stats_pets : t.landing.stats_pets_us],
             ["69%", t.landing.stats_millennials],
             ["12", t.landing.stats_memories],
           ].map(([num, lbl]) => (
-            <div key={num} style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", margin: "0 2rem" }}>
+            <div key={num} style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", margin: "0 2rem", minWidth: 0 }}>
               <span style={{ fontFamily: "Georgia, serif", fontSize: "3rem", fontWeight: 600, color: "#C8813A" }}>{num}</span>
-              <span style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginTop: ".25rem" }}>{lbl}</span>
+              <span style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginTop: ".25rem", textAlign: "center", maxWidth: 160, lineHeight: 1.4 }}>{lbl}</span>
             </div>
           ))}
         </div>
+        {isFrance && (
+          <p style={{ fontSize: ".7rem", color: "#9A8070", fontWeight: 300, marginTop: "1.5rem", margin: "1.5rem 0 0" }}>
+            Source : FACCO / Kantar, 2023
+          </p>
+        )}
       </section>
 
       {/* FEATURES */}

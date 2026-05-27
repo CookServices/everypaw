@@ -3,9 +3,13 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useLocale } from "@/hooks/useLocale";
+import { getTranslations } from "@/lib/i18n";
 import { formatPrice, type Currency } from "@/lib/currency";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
+
+const tEN = getTranslations("en");
+const tFR = getTranslations("fr");
 
 export const dynamic = "force-dynamic";
 
@@ -89,19 +93,24 @@ export default function Home() {
     ["3", t.landing.s3_title, t.landing.s3_desc],
   ];
 
-  const reviews = [
-    [t.landing.r1_quote, t.landing.r1_author],
-    [t.landing.r2_quote, t.landing.r2_author],
-    [t.landing.r3_quote, t.landing.r3_author],
-  ];
-
   const [pricingCycle, setPricingCycle] = useState<"monthly" | "annual">("monthly");
   const [currency, setCurrency] = useState<Currency>("USD");
+  const [isFrance, setIsFrance] = useState(false);
   const [digitalCtaHovered, setDigitalCtaHovered] = useState(false);
 
   useEffect(() => {
-    fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
+    fetch("/api/currency").then(r => r.json()).then(d => {
+      setCurrency(d.currency as Currency);
+      setIsFrance(d.isFrance ?? false);
+    }).catch(() => {});
   }, []);
+
+  const tReviews = isFrance ? tFR : tEN;
+  const reviews = [
+    [tReviews.landing.r1_quote, tReviews.landing.r1_author],
+    [tReviews.landing.r2_quote, tReviews.landing.r2_author],
+    [tReviews.landing.r3_quote, tReviews.landing.r3_author],
+  ];
 
   const freeFeatures    = [t.landing.free_f1, t.landing.free_f2, t.landing.free_f3];
   const digitalFeatures = [t.landing.premium_f1, t.landing.premium_f2, t.landing.premium_f3, t.landing.premium_f4];
@@ -381,7 +390,7 @@ export default function Home() {
       <section style={{ padding: "4rem 2rem", textAlign: "center", background: "#EDE5D4" }}>
         <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "1rem" }}>
           {[
-            [isFR ? "20,3M" : "94M", t.landing.stats_pets],
+            [isFrance ? "20,3M" : "94M", isFrance ? tFR.landing.stats_pets : tEN.landing.stats_pets],
             ["69%", t.landing.stats_millennials],
             ["12", t.landing.stats_memories],
           ].map(([num, lbl]) => (
@@ -391,7 +400,7 @@ export default function Home() {
             </div>
           ))}
         </div>
-        {isFR && (
+        {isFrance && (
           <p style={{ fontSize: ".7rem", color: "#9A8070", fontWeight: 300, marginTop: "1.5rem", margin: "1.5rem 0 0" }}>
             Source : FACCO / Kantar, 2023
           </p>
