@@ -260,20 +260,28 @@ export default function EditPetPage({ params }: { params: { id: string } }) {
 
           {/* Text fields */}
           {[
-            { label: t.pet.name, value: name, setter: setName, placeholder: "Luna, Biscuit, Mochi…", type: "text" },
-            { label: t.pet.breed, value: breed, setter: setBreed, placeholder: "Golden Retriever, Siamese…", type: "text" },
-            { label: t.pet.birthday, value: birthdate, setter: setBirthdate, placeholder: "", type: "date" },
+            { label: t.pet.name, value: name, setter: setName, placeholder: "Luna, Biscuit, Mochi…", type: "text", maxLength: 40 },
+            { label: t.pet.breed, value: breed, setter: setBreed, placeholder: "Golden Retriever, Siamese…", type: "text", maxLength: 50 },
+            { label: t.pet.birthday, value: birthdate, setter: setBirthdate, placeholder: "", type: "date", maxLength: undefined },
           ].map(field => (
             <div key={field.label} style={{ marginBottom: "1.25rem" }}>
               <label style={labelStyle}>{field.label}</label>
-              <input type={field.type} value={field.value} onChange={e => field.setter(e.target.value)} placeholder={field.placeholder} style={inputStyle} />
+              <input type={field.type} value={field.value} onChange={e => field.setter(e.target.value)} placeholder={field.placeholder} maxLength={field.maxLength} style={inputStyle} />
+              {field.maxLength !== undefined && (
+                <div style={{ fontSize: ".7rem", textAlign: "right", marginTop: ".3rem", color: field.value.length >= field.maxLength * 0.9 ? "#A32D2D" : "#9A8070" }}>
+                  {field.value.length}/{field.maxLength}
+                </div>
+              )}
             </div>
           ))}
 
           <div style={{ marginBottom: "1.5rem" }}>
             <label style={labelStyle}>{t.pet.bio}</label>
-            <textarea value={bio} onChange={e => setBio(e.target.value)} placeholder={t.pet.bio_placeholder} rows={3}
+            <textarea value={bio} onChange={e => setBio(e.target.value)} placeholder={t.pet.bio_placeholder} rows={3} maxLength={300}
               style={{ ...inputStyle, resize: "vertical" }} />
+            <div style={{ fontSize: ".7rem", textAlign: "right", marginTop: ".3rem", color: bio.length >= 270 ? "#A32D2D" : "#9A8070" }}>
+              {bio.length}/300
+            </div>
           </div>
 
           {error && <p style={{ fontSize: ".8rem", color: "#A32D2D", marginBottom: "1rem" }}>{error}</p>}
