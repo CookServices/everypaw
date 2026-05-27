@@ -774,6 +774,21 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 - Cause : `isFR` était disponible dans le composant mais aucun string du mockup téléphone ne l'utilisait — même pour un utilisateur FR sur `/` (détection navigateur), tout le carrousel restait en EN. La route `/fr/page.tsx` (composant autonome) était correcte.
 - Fix : tous les strings du mockup passés en ternaires `isFR ? "FR" : "EN"` — nav bar (titre slide + sous-titre `"2 ans"/"2 yrs"`), slide 0 (entrées journal, label `"Aujourd'hui"`, typing, bouton `"+ Ajouter un moment"`), slide 1 (label génération, en-tête chapitre, texte histoire avec guillemets « »), slide 2 (titre aperçu, sous-titre, badge Premium).
 
+### ✅ Bug fixes E2E landing / signup / login (2026-05-27, session 19)
+
+**P1 — Paramètre plan annuel incorrect pour "Commencer Print"**
+- `app/page.tsx` (landing EN) : bouton Print rendu dynamique → `?plan=print_annual` quand `pricingCycle === "annual"` (Digital était déjà correct)
+- `app/fr/page.tsx` (landing FR) : les deux boutons Digital + Print étaient statiques — rendus dynamiques avec le même pattern que la landing EN
+
+**P2 — Bannière plan signup incomplète et prix erronés**
+- `auth/signup/page.tsx` : `PLAN_LABELS` complété avec les 4 plans (`digital`, `digital_annual`, `print`, `print_annual`)
+- Correction du prix `print` mensuel : était `"79 €/an"` (annuel !) → `"9,99 €/mois"` / `"$9.99/mo"`
+- Perks bilingues FR/EN (étaient hardcodés en français uniquement)
+
+**P3 — Messages d'erreur login en anglais (Supabase brut)**
+- `auth/login/page.tsx` : ajout du cas `"missing email or phone"` → `"L'adresse email est requise."`
+- Fallback générique : `error.message` brut → `"Une erreur est survenue. Veuillez réessayer."` / `"An error occurred. Please try again."`
+
 ### 🚧 Prochaine étape
 - ~~Exécuter les migrations SQL~~ ✅
 - ~~Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` / `STRIPE_PRICE_BOOK_ONCE_USD`~~ ✅
@@ -843,4 +858,4 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 
 ---
 
-*Dernière mise à jour : 2026-05-27 (session 18 — auth hook Standard Webhooks fix, gift auth guard)*
+*Dernière mise à jour : 2026-05-27 (session 19 — bug fixes E2E : plan annuel print, PLAN_LABELS signup, erreurs login FR)*
