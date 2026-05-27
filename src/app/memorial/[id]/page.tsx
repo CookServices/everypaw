@@ -1,13 +1,24 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import Link from "next/link";
 import { getTranslations } from "@/lib/i18n";
 
-export default async function MemorialPage({ params }: { params: { id: string } }) {
-  const cookieStore = cookies();
-  const localeCookie = cookieStore.get("locale")?.value;
-  const locale = (localeCookie === "fr" ? "fr" : "en") as "en" | "fr";
+export default async function MemorialPage({ params, searchParams }: { params: { id: string }; searchParams: { lang?: string } }) {
+  const langParam = searchParams.lang;
+  let locale: "en" | "fr";
+  if (langParam === "fr" || langParam === "en") {
+    locale = langParam;
+  } else {
+    const cookieStore = cookies();
+    const localeCookie = cookieStore.get("locale")?.value;
+    if (localeCookie === "fr" || localeCookie === "en") {
+      locale = localeCookie;
+    } else {
+      const acceptLang = (await headers()).get("accept-language") ?? "";
+      locale = acceptLang.toLowerCase().startsWith("fr") ? "fr" : "en";
+    }
+  }
   const t = getTranslations(locale);
   const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
 

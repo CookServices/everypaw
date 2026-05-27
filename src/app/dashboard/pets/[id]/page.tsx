@@ -381,7 +381,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
     if (!pet) return;
     setSharingStoryId(story.id);
     try {
-      const url = `${window.location.origin}/pets/${id}#story-${story.id}`;
+      const url = `${window.location.origin}/pets/${id}?lang=${locale}#story-${story.id}`;
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(url);
       } else {
@@ -889,7 +889,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
       <div style={{ padding: "1rem 1.5rem .5rem", display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
         <button
           onClick={() => {
-            navigator.clipboard.writeText(`https://everypaw.app/pets/${id}`);
+            navigator.clipboard.writeText(`${window.location.origin}/pets/${id}?lang=${locale}`);
             alert(t.pet.link_copied);
           }}
           style={{ fontSize: ".75rem", color: "#7A5C44", background: "none", border: "1px solid rgba(61,43,31,.15)", borderRadius: 100, padding: ".375rem .875rem", cursor: "pointer", fontFamily: "inherit", minHeight: 36 }}
@@ -927,7 +927,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 </Link>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/memorial/${id}`);
+                    navigator.clipboard.writeText(`${window.location.origin}/memorial/${id}?lang=${locale}`);
                     alert(t.pet.link_copied);
                   }}
                   style={{ fontSize: ".75rem", color: "#8B6B4A", background: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".2rem .75rem", cursor: "pointer", fontFamily: "inherit" }}

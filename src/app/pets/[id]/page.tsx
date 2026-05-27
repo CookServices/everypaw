@@ -16,15 +16,20 @@ const ALL_EMOJIS: Record<string, string> = {
   sun: "☀️", rain: "🌧️", snow: "❄️", flower: "🌸", leaf: "🍂", moon: "🌙", star: "⭐", rainbow: "🌈",
 };
 
-export default async function PublicPetPage({ params }: { params: { id: string } }) {
-  const cookieStore = cookies();
-  const localeCookie = cookieStore.get("locale")?.value;
+export default async function PublicPetPage({ params, searchParams }: { params: { id: string }; searchParams: { lang?: string } }) {
+  const langParam = searchParams.lang;
   let locale: "en" | "fr";
-  if (localeCookie === "fr" || localeCookie === "en") {
-    locale = localeCookie;
+  if (langParam === "fr" || langParam === "en") {
+    locale = langParam;
   } else {
-    const acceptLang = (await headers()).get("accept-language") ?? "";
-    locale = acceptLang.toLowerCase().startsWith("fr") ? "fr" : "en";
+    const cookieStore = cookies();
+    const localeCookie = cookieStore.get("locale")?.value;
+    if (localeCookie === "fr" || localeCookie === "en") {
+      locale = localeCookie;
+    } else {
+      const acceptLang = (await headers()).get("accept-language") ?? "";
+      locale = acceptLang.toLowerCase().startsWith("fr") ? "fr" : "en";
+    }
   }
   const t = getTranslations(locale);
   const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
