@@ -31,16 +31,18 @@ export const MILESTONE_TYPES = [
 export function translateMilestone(
   type: string,
   isFR: boolean,
-  definitions?: MilestoneDefinition[]
+  definitions?: MilestoneDefinition[],
+  storedTitle?: string | null,
 ): string {
   if (definitions?.length) {
     const found = definitions.find(d => d.key === type);
-    if (found) return isFR ? found.name_fr : found.name_en;
+    if (found) return isFR ? (found.name_fr || found.name_en) : (found.name_en || found.name_fr);
   }
   // Fallback: covers old types like "first_entry" stored before DB migration
   const found = MILESTONE_TYPES.find(m => m.type === type);
-  if (!found) return type;
-  return isFR ? found.titleFR : found.title;
+  if (found) return isFR ? found.titleFR : found.title;
+  // Last resort: use the title stored on the milestone record itself
+  return storedTitle ?? type;
 }
 
 // ── Detect milestones triggered by a new journal entry ────────────────────────
