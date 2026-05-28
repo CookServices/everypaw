@@ -1125,6 +1125,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   <input
                     type="date"
                     value={entryDate}
+                    min={pet?.birthdate ?? undefined}
                     max={new Date().toISOString().split("T")[0]}
                     onChange={e => setEntryDate(e.target.value)}
                     style={{ height: 32, padding: "0 .5rem", borderRadius: 8, border: `1.5px solid ${entryDate !== new Date().toISOString().split("T")[0] ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: entryDate !== new Date().toISOString().split("T")[0] ? "rgba(200,129,58,.08)" : "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "#3D2B1F", outline: "none", cursor: "pointer" }}
