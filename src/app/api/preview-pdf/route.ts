@@ -181,8 +181,9 @@ async function buildHtml(params: {
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'DM Sans', sans-serif; background: #F7F2EA; color: #3D2B1F; counter-reset: page-num; }
-    .cover { width: 100%; min-height: 100vh; ${coverStyle} display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 3rem; page-break-after: always; }
+    body { font-family: 'DM Sans', sans-serif; background: #B8B0A8; color: #3D2B1F; counter-reset: page-num; padding: 2rem 0; }
+    .cover, .dedication, .chapter, .photo-page, .blank-page, .back-cover { max-width: 820px; margin: 0 auto 2rem; box-shadow: 0 4px 20px rgba(0,0,0,.22); }
+    .cover { min-height: 100vh; ${coverStyle} display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 3rem; }
     .cover-paw { font-size: 4rem; margin-bottom: 2rem; }
     .cover-title { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 600; color: ${colors.title}; line-height: 1.2; margin-bottom: 1rem; }
     .cover-subtitle { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.25rem; color: rgba(247,242,234,.6); margin-bottom: 3rem; }
@@ -205,7 +206,8 @@ async function buildHtml(params: {
     .photo-page { padding: 2rem 2rem 5rem; background: #F7F2EA; page-break-after: always; min-height: 100vh; position: relative; counter-increment: page-num; }
     .photo-page::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
     .photo-page .photo-grid img { height: 220px; border-radius: 12px; }
-    .blank-page { page-break-after: always; background: #F7F2EA; min-height: 100vh; }
+    .blank-page { background: #F7F2EA; min-height: 100vh; position: relative; counter-increment: page-num; }
+    .blank-page::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
     .back-cover { width: 100%; min-height: 100vh; background: ${colors.back}; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem; }
     .back-cover-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #FDFAF5; margin-bottom: 1rem; }
     .back-cover-text { font-size: .9rem; color: rgba(253,250,245,.7); max-width: 360px; line-height: 1.7; }
