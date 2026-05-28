@@ -218,7 +218,7 @@ async function buildHtml(params: {
     .photo-page { padding: 2rem 2rem 5rem; background: #F7F2EA; page-break-after: always; height: 100vh; overflow: hidden; position: relative; }
     .photo-page .photo-grid img { height: 220px; border-radius: 12px; }
     .blank-page { background: #F7F2EA; height: 100vh; page-break-after: always; position: relative; }
-    .pg-num { position: absolute; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; pointer-events: none; line-height: 1; }
+    .pg-num { position: absolute; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; pointer-events: none; line-height: 1; background: linear-gradient(to bottom, rgba(253,250,245,0), rgba(253,250,245,1) 45%); padding: 2rem 0 1.75rem; }
     .back-cover { width: 100%; height: 100vh; overflow: hidden; background: ${colors.back}; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem; }
     .back-cover-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #FDFAF5; margin-bottom: 1rem; }
     .back-cover-text { font-size: .9rem; color: rgba(253,250,245,.7); max-width: 360px; line-height: 1.7; }
@@ -347,19 +347,25 @@ async function buildHtml(params: {
       if (el.classList.contains('chapter')) {
         var h = el.getBoundingClientRect().height;
         var n = Math.max(1, Math.ceil(h / vh));
+        // PG_HEIGHT = padding-top(32) + text(~12) + padding-bottom(28) = 72px
+        // We want the element's BOTTOM edge at each page boundary so the
+        // gradient fades over the 32px above the number, covering any overflow text.
+        var PG_HEIGHT = 72;
         for (var i = 0; i < n; i++) {
+          var pageBottom = (i === n - 1) ? h : (i + 1) * vh;
           var numEl = document.createElement('div');
           numEl.className = 'pg-num';
           numEl.textContent = String(pageNum);
-          numEl.style.top = (i === n - 1 ? h - 28 : (i + 1) * vh - 28) + 'px';
+          numEl.style.top = (pageBottom - PG_HEIGHT) + 'px';
           el.appendChild(numEl);
           pageNum++;
         }
       } else {
+        // Fixed-height pages: bottom: 0 + padding-bottom keeps the number at 1.75rem from bottom
         var numEl2 = document.createElement('div');
         numEl2.className = 'pg-num';
         numEl2.textContent = String(pageNum);
-        numEl2.style.bottom = '1.75rem';
+        numEl2.style.bottom = '0';
         el.appendChild(numEl2);
         pageNum++;
       }
