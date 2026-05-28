@@ -238,7 +238,8 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/api/cron/weekly-reminder` | Rappels email via Resend |
 | `/api/gift/create`, `/api/gift/redeem` | Flow carte cadeau |
 | `/api/currency` | Retourne `{ currency: "EUR"\|"USD" }` via `x-vercel-ip-country` (le champ `country` a été supprimé — privacy) |
-| `/api/preview-pdf` | Preview PDF HTML — `GET` pour Gelato (token HMAC signé requis), `POST` pour l'aperçu in-app (session utilisateur requise, vérifie ownership du pet) |
+| `/api/book-pdf` | **Génération PDF réel** (200×200mm, `application/pdf`) — `GET` pour Gelato (token HMAC signé requis), `@react-pdf/renderer`, même params que `preview-pdf` |
+| `/api/preview-pdf` | Preview PDF HTML — `POST` pour l'aperçu in-app (session utilisateur requise, vérifie ownership du pet). `GET` (anciennement pour Gelato) remplacé par `book-pdf` |
 | `/api/locale` | Setter cookie i18n |
 
 ---
@@ -831,6 +832,26 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 - `messages/en.json` + `messages/fr.json` : ajout de `milestones.steps_completed`, `not_yet`, `unlocked`, `locked`, `auto_hint` + `journal.generating_1/2/3`
 - `dashboard/pets/[id]/page.tsx` : tous les `isFR ? "EN" : "FR"` remplacés par `t.milestones.xxx` / `t.journal.xxx`
 
+### ✅ Génération PDF réel pour Gelato (2026-05-28, session 22)
+
+**Problème** : Gelato retournait "File format isn't supported — Supported formats: PNG, TIF, SVG, JPG, PDF". `preview-pdf` retourne `text/html`, pas un vrai PDF.
+
+**Solution : `/api/book-pdf/route.tsx`** — nouvel endpoint utilisant `@react-pdf/renderer` :
+- Retourne `application/pdf` (200×200mm, police standard PDF Times-Roman / Helvetica)
+- Mêmes paramètres URL que `preview-pdf` GET (petId, token, expires, lang, year, dedication, theme, customTitle, storyIds, coverPhoto, layouts)
+- Même logique de données (entryToStoryIdx, chapterPhotos, orphanEntries, page count, blank pages)
+- 4 layouts par chapitre : `classic` (texte + grille photo bas), `photo_hero` (image pleine largeur en haut), `split` (2 colonnes texte/photos), `text_only`
+- Cover photo : `<Image>` absolu + overlay `rgba(0,0,0,0.55)` quand photo présente
+- `next.config.js` : `serverExternalPackages: ["@react-pdf/renderer"]` — évite les conflits de bundling
+- `gelato/order` : URL changée de `/api/preview-pdf` → `/api/book-pdf`
+- `preview-pdf` GET reste disponible mais n'est plus utilisé par Gelato — `preview-pdf` POST reste pour l'aperçu in-app dashboard
+
+**Dédup crédits Print — fix race condition (2026-05-28, session 22)** :
+- `checkout.session.completed` attribue 1 crédit pour plan Print (dedup par `stripe_subscription_id`, `event_type: "stripe_print_subscription_credit"`, `source: "checkout"`)
+- `invoice.payment_succeeded` avec `subscription_create` : vérifie la même clé de dedup avant d'attribuer (agit en fallback si checkout a déjà attribué)
+- `invoice.payment_succeeded` avec `subscription_cycle` : renouvellements annuels, dedup par `stripe_event_id`
+- Résout la race condition où `invoice.payment_succeeded` arrive avant que `stripe_customer_id` soit écrit par `checkout` → `book_credits = 0`
+
 ### ✅ Fix numérotation pages PDF preview (2026-05-28, session 21)
 
 **Bug : saut de numéro dans la numérotation (2 → 4 au lieu de 2 → 3)**
@@ -926,4 +947,4 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 
 ---
 
-*Dernière mise à jour : 2026-05-28 (session 21 — fix numérotation PDF preview + attribution crédits livre Print via invoice.payment_succeeded + upsell différencié Print/Digital)*
+*Dernière mise à jour : 2026-05-28 (session 22 — génération PDF réel via @react-pdf/renderer pour Gelato + fix race condition crédits Print dual-source dedup)*
