@@ -827,6 +827,13 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 - `messages/en.json` + `messages/fr.json` : ajout de `milestones.steps_completed`, `not_yet`, `unlocked`, `locked`, `auto_hint` + `journal.generating_1/2/3`
 - `dashboard/pets/[id]/page.tsx` : tous les `isFR ? "EN" : "FR"` remplacés par `t.milestones.xxx` / `t.journal.xxx`
 
+### ✅ Fix numérotation pages PDF preview (2026-05-28, session 21)
+
+**Bug : saut de numéro dans la numérotation (2 → 4 au lieu de 2 → 3)**
+- Cause : le dernier chip d'un chapitre multi-pages était volontairement masqué (évite l'effet "double chip" quand le dernier segment est court), mais le compteur `pageNum` était quand même incrémenté via `pageNum++; continue` — la page "invisible" consommait un numéro.
+- Fix : `if (i === n - 1 && n > 1) { pageNum++; continue; }` → `if (i === n - 1 && n > 1) { continue; }` dans le script JS de `api/preview-pdf/route.ts`.
+- Résultat : numéros consécutifs sans trous, quelle que soit la hauteur des chapitres.
+
 ### 🚧 Prochaine étape
 - ~~Exécuter les migrations SQL~~ ✅
 - ~~Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` / `STRIPE_PRICE_BOOK_ONCE_USD`~~ ✅
@@ -898,4 +905,4 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 
 ---
 
-*Dernière mise à jour : 2026-05-27 (session 20 — localisation par pays, crédits livre print, i18n milestones, antidatage journal, numérotation PDF)*
+*Dernière mise à jour : 2026-05-28 (session 21 — fix numérotation pages PDF preview : saut 2→4 corrigé en 2→3)*
