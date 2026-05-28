@@ -196,10 +196,11 @@ async function buildHtml(params: {
     .dedication::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
     .dedication-label { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: 1.5rem; }
     .dedication-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.15rem; line-height: 1.85; color: #3D2B1F; max-width: 480px; }
-    .chapter { padding: 4rem 3rem 5rem; page-break-after: always; background: #FDFAF5; min-height: 100vh; position: relative; counter-increment: page-num; }
+    .chapter { padding: 4rem 3rem 5rem; page-break-after: always; min-height: 100vh; position: relative; counter-increment: page-num;
+      background-color: #FDFAF5;
+      background-image: repeating-linear-gradient(to bottom, transparent 0, transparent calc(100vh - 1px), rgba(200,129,58,.25) calc(100vh - 1px), rgba(200,129,58,.25) 100vh);
+    }
     .chapter::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
-    .chapter-overflow { position: absolute; bottom: 3rem; right: 3rem; font-size: .65rem; color: rgba(61,43,31,.35); font-family: 'DM Sans', sans-serif; letter-spacing: .05em; display: none; }
-    .chapter.is-long .chapter-overflow { display: block; }
     .chapter-num { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: .4rem; }
     .chapter-period { font-size: .8rem; color: #7A5C44; margin-bottom: 1.25rem; font-family: 'DM Sans', sans-serif; }
     .chapter-title { font-family: 'Playfair Display', serif; font-size: 1.75rem; font-weight: 600; color: #3D2B1F; margin-bottom: 2rem; line-height: 1.3; }
@@ -227,7 +228,7 @@ async function buildHtml(params: {
     @media print {
       body { background: white !important; padding: 0 !important; }
       .cover, .dedication, .chapter, .photo-page, .blank-page, .back-cover { max-width: none !important; margin: 0 !important; box-shadow: none !important; width: 100% !important; height: auto !important; min-height: 100vh !important; overflow: visible !important; }
-      .chapter-overflow { display: none !important; }
+      .chapter { background-image: none !important; }
     }
   </style>
 </head>
