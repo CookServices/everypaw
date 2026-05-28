@@ -120,7 +120,7 @@ export async function POST(req: Request) {
   const pageCount = calcPageCount(storyCount, hasOrphanPhotos, hasDedication);
 
   // Build PDF URL with all params
-  const pdfUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/preview-pdf`);
+  const pdfUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/book-pdf`);
   pdfUrl.searchParams.set("petId", petId);
 
   const { token: pdfToken, expires: pdfExpires } = generatePdfToken(petId);
