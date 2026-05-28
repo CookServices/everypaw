@@ -346,10 +346,13 @@ async function buildHtml(params: {
       if (el.classList.contains('back-cover')) { return; }
       if (el.classList.contains('chapter')) {
         var h = el.getBoundingClientRect().height;
-        var n = Math.max(1, Math.ceil(h / vh));
-        // Chip height ~20px; center it on the amber line or near the chapter bottom.
-        // For intermediate pages: center on the 1px amber line at (i+1)*vh → top = (i+1)*vh - 10
-        // For the last page: place near the chapter bottom → top = h - 20
+        // Subtract padding-bottom (5rem = 80px) before computing page count.
+        // A chapter with content that just barely overflows due to bottom padding
+        // would otherwise create a spurious extra page with two chips close together.
+        var n = Math.max(1, Math.ceil((h - 80) / vh));
+        // If the overflow was suppressed (chapter barely taller than 1 page), also
+        // remove the orphan amber background line to avoid visual confusion.
+        if (n === 1 && h > vh) { el.style.backgroundImage = 'none'; }
         var CHIP_HALF = 10;
         for (var i = 0; i < n; i++) {
           var linePos = (i === n - 1) ? h - CHIP_HALF : (i + 1) * vh;
