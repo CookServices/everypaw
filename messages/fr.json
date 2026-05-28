@@ -415,7 +415,12 @@
     "no_credits_cta": "Acheter un livre supplémentaire (29 €) →",
     "print_extra_book_title": "Votre livre annuel a déjà été commandé cette année.",
     "print_extra_book_desc": "Vous pouvez commander un exemplaire supplémentaire pour 29 €.",
-    "print_extra_book_cta": "Commander un exemplaire supplémentaire (29 €) →"
+    "print_extra_book_cta": "Commander un exemplaire supplémentaire (29 €) →",
+    "layout_label": "Mise en page",
+    "layout_classic": "Classique",
+    "layout_photo_hero": "Photo vedette",
+    "layout_split": "Côte à côte",
+    "layout_text_only": "Texte seul"
   },
   "memorial": {
     "mark_passed": "Enregistrer le décès…",

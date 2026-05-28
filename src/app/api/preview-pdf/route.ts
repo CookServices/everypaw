@@ -23,6 +23,8 @@ type ThemeId = keyof typeof COVER_THEMES;
 const VALID_THEMES = Object.keys(COVER_THEMES) as ThemeId[];
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const VALID_LAYOUTS = ["classic", "photo_hero", "split", "text_only"] as const;
+type LayoutType = typeof VALID_LAYOUTS[number];
 
 function safeUrl(url: string): string {
   try {
@@ -72,8 +74,9 @@ async function buildHtml(params: {
   coverPhotoParam: string | null;
   theme: ThemeId;
   customTitle: string | null;
+  layouts: Record<string, LayoutType>;
 }): Promise<NextResponse> {
-  const { petId, lang, storyIdsParam, dedication, yearFilter, coverPhotoParam, theme, customTitle } = params;
+  const { petId, lang, storyIdsParam, dedication, yearFilter, coverPhotoParam, theme, customTitle, layouts } = params;
   const supabase = getServiceSupabase();
   const s = STRINGS[lang] ?? STRINGS.en;
   const colors = COVER_THEMES[theme] ?? COVER_THEMES.classic;
@@ -136,7 +139,7 @@ async function buildHtml(params: {
   const hasOrphanPhotos = orphanEntries.length > 0;
 
   // ── Page count & blank-page padding ───────────────────────────────────────
-  // Gelato requires: (a) minimum 20 pages, (b) even page count.
+  // Gelato requires: (a) minimum 28 pages, (b) multiples of 4 (hardcover signatures).
   // We compute the exact number of pages the HTML will generate and add blank
   // pages before the back cover so the PDF always matches the declared pageCount.
   const storyPageCount = stories.length > 0 ? stories.length : 1; // placeholder chapter counts
@@ -146,7 +149,7 @@ async function buildHtml(params: {
     storyPageCount +              // chapters (or 1 placeholder)
     (hasOrphanPhotos ? 1 : 0) +  // orphan photos page
     1;                            // back cover
-  const targetPages = Math.max(20, actualPages % 2 === 0 ? actualPages : actualPages + 1);
+  const targetPages = Math.max(28, Math.ceil(actualPages / 4) * 4);
   const blankPagesToAdd = targetPages - actualPages;
   const blankPagesHtml = blankPagesToAdd > 0
     ? Array(blankPagesToAdd).fill('<div class="blank-page"></div>').join("\n  ")
@@ -181,19 +184,21 @@ async function buildHtml(params: {
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'DM Sans', sans-serif; background: #F7F2EA; color: #3D2B1F; counter-reset: page-num; }
-    .cover { width: 100%; min-height: 100vh; ${coverStyle} display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 3rem; page-break-after: always; }
+    body { font-family: 'DM Sans', sans-serif; background: #B8B0A8; color: #3D2B1F; padding: 2rem 0; }
+    .cover, .dedication, .chapter, .photo-page, .blank-page, .back-cover { max-width: 820px; margin: 0 auto 2rem; box-shadow: 0 4px 20px rgba(0,0,0,.22); }
+    .cover { height: 100vh; overflow: hidden; page-break-after: always; ${coverStyle} display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 3rem; }
     .cover-paw { font-size: 4rem; margin-bottom: 2rem; }
     .cover-title { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 600; color: ${colors.title}; line-height: 1.2; margin-bottom: 1rem; }
     .cover-subtitle { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.25rem; color: rgba(247,242,234,.6); margin-bottom: 3rem; }
     .cover-line { width: 60px; height: 2px; background: ${colors.accent}; margin: 0 auto 3rem; }
     .cover-brand { font-size: .875rem; color: rgba(247,242,234,.4); letter-spacing: .1em; text-transform: uppercase; }
-    .dedication { padding: 4rem 3rem 5rem; page-break-after: always; background: #F7F2EA; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; position: relative; counter-increment: page-num; }
-    .dedication::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .7rem; color: rgba(61,43,31,.35); letter-spacing: .08em; }
+    .dedication { padding: 4rem 3rem 5rem; page-break-after: always; background: #F7F2EA; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; text-align: center; position: relative; }
     .dedication-label { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: 1.5rem; }
     .dedication-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.15rem; line-height: 1.85; color: #3D2B1F; max-width: 480px; }
-    .chapter { padding: 4rem 3rem 5rem; page-break-after: always; background: #FDFAF5; min-height: 100vh; position: relative; counter-increment: page-num; }
-    .chapter::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .7rem; color: rgba(61,43,31,.35); letter-spacing: .08em; }
+    .chapter { padding: 4rem 3rem 5rem; page-break-after: always; min-height: 100vh; position: relative;
+      background-color: #FDFAF5;
+      background-image: repeating-linear-gradient(to bottom, transparent 0, transparent calc(100vh - 1px), rgba(200,129,58,.25) calc(100vh - 1px), rgba(200,129,58,.25) 100vh);
+    }
     .chapter-num { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: .4rem; }
     .chapter-period { font-size: .8rem; color: #7A5C44; margin-bottom: 1.25rem; font-family: 'DM Sans', sans-serif; }
     .chapter-title { font-family: 'Playfair Display', serif; font-size: 1.75rem; font-weight: 600; color: #3D2B1F; margin-bottom: 2rem; line-height: 1.3; }
@@ -202,13 +207,27 @@ async function buildHtml(params: {
     .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .photo-grid img { width: 100%; height: 180px; object-fit: cover; border-radius: 10px; display: block; }
     .photo-caption { font-size: .75rem; color: #7A5C44; margin-top: .4rem; font-style: italic; text-align: center; }
-    .photo-page { padding: 2rem 2rem 5rem; background: #F7F2EA; page-break-after: always; min-height: 100vh; position: relative; counter-increment: page-num; }
-    .photo-page::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .7rem; color: rgba(61,43,31,.35); letter-spacing: .08em; }
+    /* Layout: photo_hero */
+    .hero-img { width: calc(100% + 6rem); margin: -4rem -3rem 1.75rem; height: 38vh; object-fit: cover; display: block; flex-shrink: 0; }
+    /* Layout: split */
+    .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; min-height: calc(100vh - 9rem); }
+    .split-text { display: flex; flex-direction: column; }
+    .split-text .chapter-text { flex: 1; }
+    .split-photo-col { display: flex; flex-direction: column; gap: .75rem; overflow: hidden; padding-top: .25rem; }
+    .split-photo-col img { width: 100%; height: auto; max-height: 42vh; object-fit: cover; border-radius: 10px; display: block; }
+    .photo-page { padding: 2rem 2rem 5rem; background: #F7F2EA; page-break-after: always; height: 100vh; overflow: hidden; position: relative; }
     .photo-page .photo-grid img { height: 220px; border-radius: 12px; }
-    .blank-page { page-break-after: always; background: #F7F2EA; min-height: 100vh; }
-    .back-cover { width: 100%; min-height: 100vh; background: ${colors.back}; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem; }
+    .blank-page { background: #F7F2EA; height: 100vh; page-break-after: always; position: relative; }
+    .pg-num { position: absolute; left: 50%; transform: translateX(-50%); background: rgba(247,242,234,.97); border: 1px solid rgba(200,129,58,.35); border-radius: 100px; padding: 2px 10px; font-family: 'DM Sans', sans-serif; font-size: .7rem; color: rgba(61,43,31,.45); letter-spacing: .08em; line-height: 1.4; pointer-events: none; white-space: nowrap; z-index: 2; }
+    .back-cover { width: 100%; height: 100vh; overflow: hidden; background: ${colors.back}; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem; }
     .back-cover-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #FDFAF5; margin-bottom: 1rem; }
     .back-cover-text { font-size: .9rem; color: rgba(253,250,245,.7); max-width: 360px; line-height: 1.7; }
+    @media print {
+      body { background: white !important; padding: 0 !important; }
+      .cover, .dedication, .chapter, .photo-page, .blank-page, .back-cover { max-width: none !important; margin: 0 !important; box-shadow: none !important; width: 100% !important; height: auto !important; min-height: 100vh !important; overflow: visible !important; }
+      .chapter { background-image: none !important; }
+      .pg-num { display: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -228,12 +247,42 @@ async function buildHtml(params: {
   <!-- Stories as chapters , photos embedded per chapter -->
   ${stories.length > 0 ? stories.map((story, i) => {
     const photos = chapterPhotos[i] ?? [];
+    const layout: LayoutType = (VALID_LAYOUTS as readonly string[]).includes(layouts[story.id]) ? layouts[story.id] as LayoutType : "classic";
     const dateLocale = lang === "fr" ? "fr-FR" : "en-US";
     const fmt = (d: string) => new Date(d).toLocaleDateString(dateLocale, { month: "long", year: "numeric" });
     const periodStart = fmt(story.period_start ?? story.created_at);
     const periodEnd = story.period_end ? fmt(story.period_end) : null;
     const periodLabel = periodEnd && periodEnd !== periodStart ? `${periodStart} – ${periodEnd}` : periodStart;
-    const photosHtml = photos.length > 0 ? `
+    const chapterHeader = `
+    <div class="chapter-num">${escapeHtml(s.chapter)} ${i + 1}</div>
+    <div class="chapter-period">${escapeHtml(periodLabel)}</div>
+    <div class="chapter-title">${escapeHtml(story.title || `${pet.name}'s Story`)}</div>`;
+    const chapterText = `<div class="chapter-text">${escapeHtml(story.content).replace(/\n/g, "<br>")}</div>`;
+    const allPhotoUrls = photos.flatMap(e =>
+      (e.photo_urls as string[]).slice(0, Math.ceil(4 / Math.max(photos.length, 1)))
+    ).filter(u => safeUrl(u));
+
+    let innerHtml = "";
+    if (layout === "photo_hero") {
+      const heroUrl = allPhotoUrls[0] ?? "";
+      innerHtml = `
+    ${heroUrl ? `<img class="hero-img" src="${heroUrl}" alt="" />` : ""}
+    ${chapterHeader}
+    ${chapterText}`;
+    } else if (layout === "split") {
+      const splitPhotos = allPhotoUrls.slice(0, 2);
+      innerHtml = `
+    <div class="split-grid">
+      <div class="split-text">${chapterHeader}${chapterText}</div>
+      <div class="split-photo-col">
+        ${splitPhotos.map(url => `<img src="${url}" alt="" />`).join("")}
+      </div>
+    </div>`;
+    } else if (layout === "text_only") {
+      innerHtml = `${chapterHeader}${chapterText}`;
+    } else {
+      // classic — photos at bottom
+      const classicPhotos = photos.length > 0 ? `
     <div class="chapter-photos">
       <div class="photo-grid">
         ${photos.flatMap(e =>
@@ -245,13 +294,12 @@ async function buildHtml(params: {
         )).join("")}
       </div>
     </div>` : "";
+      innerHtml = `${chapterHeader}${chapterText}${classicPhotos}`;
+    }
+
     return `
   <div class="chapter">
-    <div class="chapter-num">${escapeHtml(s.chapter)} ${i + 1}</div>
-    <div class="chapter-period">${escapeHtml(periodLabel)}</div>
-    <div class="chapter-title">${escapeHtml(story.title || `${pet.name}'s Story`)}</div>
-    <div class="chapter-text">${escapeHtml(story.content).replace(/\n/g, "<br>")}</div>
-    ${photosHtml}
+    ${innerHtml}
   </div>`;
   }).join("") : `
   <div class="chapter">
@@ -286,6 +334,62 @@ async function buildHtml(params: {
     <div class="back-cover-text">${escapeHtml(s.backText)}</div>
     <div style="margin-top: 2rem; font-size: .8rem; color: rgba(253,250,245,.5); letter-spacing: .1em; text-transform: uppercase;">everypaw.app</div>
   </div>
+
+<script>
+(function() {
+  function init() {
+    var vh = window.innerHeight;
+    var pageNum = 1;
+    var pages = document.querySelectorAll('.cover, .dedication, .chapter, .photo-page, .blank-page, .back-cover');
+    pages.forEach(function(el) {
+      if (el.classList.contains('cover')) { pageNum++; return; }
+      if (el.classList.contains('back-cover')) { return; }
+      if (el.classList.contains('chapter')) {
+        var h = el.getBoundingClientRect().height;
+        // Subtract padding-bottom (5rem = 80px) before computing page count.
+        // A chapter with content that just barely overflows due to bottom padding
+        // would otherwise create a spurious extra page with two chips close together.
+        var n = Math.max(1, Math.ceil((h - 80) / vh));
+        // If the overflow was suppressed (chapter barely taller than 1 page), also
+        // remove the orphan amber background line to avoid visual confusion.
+        if (n === 1 && h > vh) { el.style.backgroundImage = 'none'; }
+        var CHIP_HALF = 10;
+        for (var i = 0; i < n; i++) {
+          // For multi-page chapters, don't show a chip on the last page —
+          // it would appear far from any content with lots of blank space above,
+          // creating a confusing double-chip when the last segment is short.
+          // Single-page chapters still get one chip at the bottom.
+          if (i === n - 1 && n > 1) { continue; }
+          var linePos = (i === n - 1) ? h - CHIP_HALF : (i + 1) * vh;
+          var numEl = document.createElement('div');
+          numEl.className = 'pg-num';
+          numEl.textContent = String(pageNum);
+          numEl.style.top = (linePos - CHIP_HALF) + 'px';
+          el.appendChild(numEl);
+          pageNum++;
+        }
+      } else {
+        // Fixed-height pages: chip near the bottom
+        var numEl2 = document.createElement('div');
+        numEl2.className = 'pg-num';
+        numEl2.textContent = String(pageNum);
+        numEl2.style.bottom = '1rem';
+        el.appendChild(numEl2);
+        pageNum++;
+      }
+    });
+  }
+  function run() {
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function() { setTimeout(init, 50); });
+    } else {
+      setTimeout(init, 200);
+    }
+  }
+  if (document.readyState === 'complete') { run(); }
+  else { window.addEventListener('load', run); }
+})();
+</script>
 
 </body>
 </html>
@@ -339,6 +443,22 @@ export async function GET(req: Request) {
     ? decodeURIComponent(customTitleRaw).slice(0, MAX_CUSTOM_TITLE_LENGTH)
     : null;
 
+  // Parse layouts: JSON map { storyId: layoutType }
+  const layoutsParam = url.searchParams.get("layouts");
+  const layouts: Record<string, LayoutType> = {};
+  if (layoutsParam) {
+    try {
+      const parsed = JSON.parse(layoutsParam);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        for (const [k, v] of Object.entries(parsed)) {
+          if (UUID_REGEX.test(k) && (VALID_LAYOUTS as readonly string[]).includes(v as string)) {
+            layouts[k] = v as LayoutType;
+          }
+        }
+      }
+    } catch { /* ignore malformed layouts */ }
+  }
+
   return buildHtml({
     petId,
     lang,
@@ -350,6 +470,7 @@ export async function GET(req: Request) {
       : null,
     theme,
     customTitle,
+    layouts,
   });
 }
 
@@ -360,14 +481,14 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: { petId?: string; lang?: string; storyIds?: string; dedication?: string; year?: number; coverPhoto?: string; theme?: string; customTitle?: string };
+  let body: { petId?: string; lang?: string; storyIds?: string; dedication?: string; year?: number; coverPhoto?: string; theme?: string; customTitle?: string; layouts?: Record<string, string> };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const { petId, lang, storyIds, dedication, year, coverPhoto, theme, customTitle } = body;
+  const { petId, lang, storyIds, dedication, year, coverPhoto, theme, customTitle, layouts: rawLayouts } = body;
   if (!petId) return NextResponse.json({ error: "petId required" }, { status: 400 });
   if (!UUID_REGEX.test(petId)) return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
 
@@ -418,6 +539,16 @@ export async function POST(req: Request) {
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  // Validate and sanitize layouts map
+  const layouts: Record<string, LayoutType> = {};
+  if (rawLayouts && typeof rawLayouts === "object" && !Array.isArray(rawLayouts)) {
+    for (const [k, v] of Object.entries(rawLayouts)) {
+      if (UUID_REGEX.test(k) && (VALID_LAYOUTS as readonly string[]).includes(v)) {
+        layouts[k] = v as LayoutType;
+      }
+    }
+  }
+
   return buildHtml({
     petId,
     lang: validLang,
@@ -427,5 +558,6 @@ export async function POST(req: Request) {
     coverPhotoParam: coverPhoto ?? null,
     theme: validTheme,
     customTitle: validCustomTitle,
+    layouts,
   });
 }

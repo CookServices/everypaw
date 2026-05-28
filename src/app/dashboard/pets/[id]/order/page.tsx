@@ -9,6 +9,14 @@ import { useLocale } from "@/hooks/useLocale";
 export const dynamic = "force-dynamic";
 
 type Step = "preview" | "address" | "confirm" | "success";
+type LayoutType = "classic" | "photo_hero" | "split" | "text_only";
+
+const PAGE_LAYOUTS: { id: LayoutType; labelKey: "layout_classic" | "layout_photo_hero" | "layout_split" | "layout_text_only"; icon: string }[] = [
+  { id: "classic",    labelKey: "layout_classic",    icon: "≡" },
+  { id: "photo_hero", labelKey: "layout_photo_hero",  icon: "▣" },
+  { id: "split",      labelKey: "layout_split",       icon: "▥" },
+  { id: "text_only",  labelKey: "layout_text_only",   icon: "☰" },
+];
 
 interface Story {
   id: string;
@@ -94,6 +102,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [coverTheme, setCoverTheme] = useState<ThemeId>("classic");
   const [customTitle, setCustomTitle] = useState("");
+  const [storyLayouts, setStoryLayouts] = useState<Record<string, LayoutType>>({});
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
@@ -186,6 +195,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           coverPhoto: coverPhotoUrl ?? undefined,
           theme: coverTheme,
           customTitle: customTitle.trim() || undefined,
+          layouts: storyLayouts,
         }),
       });
       const html = await res.text();
@@ -305,6 +315,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           lang: locale,
           coverTheme,
           customTitle: customTitle.trim() || null,
+          storyLayouts,
         }),
       });
       const data = await res.json();
@@ -853,9 +864,45 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                           <div style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem", lineHeight: 1.3 }}>
                             {story.title || `${petName}'s Story`}
                           </div>
-                          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: ".84rem", color: textMuted, lineHeight: 1.75 }}>
+                          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: ".84rem", color: textMuted, lineHeight: 1.75, marginBottom: ".875rem" }}>
                             {story.content.slice(0, 160).trim()}
                             {story.content.length > 160 ? "…" : ""}
+                          </div>
+                          {/* Layout selector — stop click propagation so it doesn't toggle selection */}
+                          <div
+                            onClick={e => e.stopPropagation()}
+                            style={{ borderTop: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.06)"}`, paddingTop: ".75rem" }}
+                          >
+                            <div style={{ fontSize: ".65rem", color: textMuted, fontFamily: "sans-serif", marginBottom: ".4rem", textTransform: "uppercase", letterSpacing: ".08em" }}>
+                              {t.order.layout_label}
+                            </div>
+                            <div style={{ display: "flex", gap: ".4rem" }}>
+                              {PAGE_LAYOUTS.map(layout => {
+                                const isActive = (storyLayouts[story.id] ?? "classic") === layout.id;
+                                return (
+                                  <button
+                                    key={layout.id}
+                                    onClick={() => setStoryLayouts(prev => ({ ...prev, [story.id]: layout.id }))}
+                                    title={t.order[layout.labelKey]}
+                                    style={{
+                                      padding: ".3rem .6rem",
+                                      borderRadius: 6,
+                                      border: `1.5px solid ${isActive ? accentColor : isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`,
+                                      background: isActive ? `${accentColor}18` : "transparent",
+                                      color: isActive ? accentColor : textMuted,
+                                      cursor: "pointer",
+                                      fontSize: ".7rem",
+                                      fontFamily: "sans-serif",
+                                      display: "flex", alignItems: "center", gap: ".3rem",
+                                      transition: "all .12s",
+                                    }}
+                                  >
+                                    <span style={{ fontSize: ".85rem", lineHeight: 1 }}>{layout.icon}</span>
+                                    <span>{t.order[layout.labelKey]}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
                       </div>

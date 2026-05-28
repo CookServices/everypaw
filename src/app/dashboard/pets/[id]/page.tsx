@@ -512,6 +512,11 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const groupedEntries = groupEntriesByMonth(filteredEntries, locale);
   const isFR = locale === "fr";
 
+  // Total milestone count = defined (from DB or fallback) + orphans not in definitions
+  const definedMilestoneKeys = new Set(milestoneDefinitions.map(d => d.key));
+  const orphanMilestoneCount = milestones.filter(m => !definedMilestoneKeys.has(m.type)).length;
+  const totalMilestoneCount = (milestoneDefinitions.length || MILESTONE_TYPES.length) + orphanMilestoneCount;
+
   const tabs = [
     { key: "journal" as const, label: t.pet.tab_journal },
     { key: "stories" as const, label: isFR ? "Histoires IA" : "AI Stories" },
@@ -1008,10 +1013,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
           {milestones.length > 0 && (
             <div style={{ background: "rgba(200,129,58,.1)", borderRadius: 12, padding: ".5rem .875rem", textAlign: "center", minWidth: 70 }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length} / {milestoneDefinitions.length || MILESTONE_TYPES.length}</div>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length} / {totalMilestoneCount}</div>
               <div style={{ fontSize: ".65rem", color: "#7A5C44", lineHeight: 1.3 }}>{t.milestones.label}</div>
               {milestones[0] && (() => {
-                const localTitle = translateMilestone(milestones[0].type, isFR, milestoneDefinitions);
+                const localTitle = translateMilestone(milestones[0].type, isFR, milestoneDefinitions, milestones[0].title);
                 return (
                   <div style={{ fontSize: ".62rem", color: "#C8813A", marginTop: ".2rem", opacity: .8, lineHeight: 1.2 }}>
                     🏆 {localTitle.slice(0, 22)}{localTitle.length > 22 ? "…" : ""}
@@ -1125,6 +1130,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   <input
                     type="date"
                     value={entryDate}
+                    min={pet?.birthdate ?? undefined}
                     max={new Date().toISOString().split("T")[0]}
                     onChange={e => setEntryDate(e.target.value)}
                     style={{ height: 32, padding: "0 .5rem", borderRadius: 8, border: `1.5px solid ${entryDate !== new Date().toISOString().split("T")[0] ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: entryDate !== new Date().toISOString().split("T")[0] ? "rgba(200,129,58,.08)" : "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "#3D2B1F", outline: "none", cursor: "pointer" }}
@@ -1305,14 +1311,14 @@ export default function PetPage({ params }: { params: { id: string } }) {
             <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: "1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: ".625rem" }}>
                 <span style={{ fontSize: ".85rem", fontWeight: 500, color: "#3D2B1F" }}>
-                  {milestones.length} / {milestoneDefinitions.length || MILESTONE_TYPES.length} {t.milestones.steps_completed}
+                  {milestones.length} / {totalMilestoneCount} {t.milestones.steps_completed}
                 </span>
                 <span style={{ fontSize: ".8rem", color: "#C8813A", fontWeight: 600 }}>
-                  {Math.round(milestones.length / (milestoneDefinitions.length || MILESTONE_TYPES.length) * 100)}%
+                  {Math.round(milestones.length / (totalMilestoneCount) * 100)}%
                 </span>
               </div>
               <div style={{ height: 6, borderRadius: 100, background: "rgba(61,43,31,.1)", overflow: "hidden" }}>
-                <div style={{ height: "100%", borderRadius: 100, background: "#C8813A", width: `${milestones.length / (milestoneDefinitions.length || MILESTONE_TYPES.length) * 100}%`, transition: "width .5s ease" }} />
+                <div style={{ height: "100%", borderRadius: 100, background: "#C8813A", width: `${milestones.length / (totalMilestoneCount) * 100}%`, transition: "width .5s ease" }} />
               </div>
             </div>
 
