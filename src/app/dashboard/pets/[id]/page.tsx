@@ -1011,7 +1011,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
               <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length} / {milestoneDefinitions.length || MILESTONE_TYPES.length}</div>
               <div style={{ fontSize: ".65rem", color: "#7A5C44", lineHeight: 1.3 }}>{t.milestones.label}</div>
               {milestones[0] && (() => {
-                const localTitle = translateMilestone(milestones[0].type, isFR, milestoneDefinitions);
+                const localTitle = translateMilestone(milestones[0].type, isFR, milestoneDefinitions, milestones[0].title);
                 return (
                   <div style={{ fontSize: ".62rem", color: "#C8813A", marginTop: ".2rem", opacity: .8, lineHeight: 1.2 }}>
                     🏆 {localTitle.slice(0, 22)}{localTitle.length > 22 ? "…" : ""}
