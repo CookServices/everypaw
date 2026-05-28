@@ -355,6 +355,11 @@ async function buildHtml(params: {
         if (n === 1 && h > vh) { el.style.backgroundImage = 'none'; }
         var CHIP_HALF = 10;
         for (var i = 0; i < n; i++) {
+          // For multi-page chapters, don't show a chip on the last page —
+          // it would appear far from any content with lots of blank space above,
+          // creating a confusing double-chip when the last segment is short.
+          // Single-page chapters still get one chip at the bottom.
+          if (i === n - 1 && n > 1) { pageNum++; continue; }
           var linePos = (i === n - 1) ? h - CHIP_HALF : (i + 1) * vh;
           var numEl = document.createElement('div');
           numEl.className = 'pg-num';
