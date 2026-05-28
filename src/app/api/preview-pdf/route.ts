@@ -359,7 +359,7 @@ async function buildHtml(params: {
           // it would appear far from any content with lots of blank space above,
           // creating a confusing double-chip when the last segment is short.
           // Single-page chapters still get one chip at the bottom.
-          if (i === n - 1 && n > 1) { pageNum++; continue; }
+          if (i === n - 1 && n > 1) { continue; }
           var linePos = (i === n - 1) ? h - CHIP_HALF : (i + 1) * vh;
           var numEl = document.createElement('div');
           numEl.className = 'pg-num';
