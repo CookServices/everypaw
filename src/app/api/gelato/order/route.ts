@@ -24,6 +24,7 @@ export async function POST(req: Request) {
     lang,
     coverTheme,
     customTitle,
+    storyLayouts,
   } = await req.json();
 
   // Validate selectedStoryIds format to prevent injection into URL params
@@ -147,6 +148,19 @@ export async function POST(req: Request) {
   }
   if (typeof customTitle === "string" && customTitle.trim().length > 0) {
     pdfUrl.searchParams.set("customTitle", encodeURIComponent(customTitle.trim().slice(0, 60)));
+  }
+  const VALID_LAYOUT_VALUES = ["classic", "photo_hero", "split", "text_only"];
+  const UUID_REGEX_LOCAL = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (storyLayouts && typeof storyLayouts === "object" && !Array.isArray(storyLayouts)) {
+    const safeLayouts: Record<string, string> = {};
+    for (const [k, v] of Object.entries(storyLayouts)) {
+      if (UUID_REGEX_LOCAL.test(k) && VALID_LAYOUT_VALUES.includes(v as string)) {
+        safeLayouts[k] = v as string;
+      }
+    }
+    if (Object.keys(safeLayouts).length > 0) {
+      pdfUrl.searchParams.set("layouts", JSON.stringify(safeLayouts));
+    }
   }
 
   const orderPayload = {
