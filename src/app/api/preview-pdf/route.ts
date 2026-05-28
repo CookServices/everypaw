@@ -184,7 +184,7 @@ async function buildHtml(params: {
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'DM Sans', sans-serif; background: #B8B0A8; color: #3D2B1F; counter-reset: page-num; padding: 2rem 0; }
+    body { font-family: 'DM Sans', sans-serif; background: #B8B0A8; color: #3D2B1F; padding: 2rem 0; }
     .cover, .dedication, .chapter, .photo-page, .blank-page, .back-cover { max-width: 820px; margin: 0 auto 2rem; box-shadow: 0 4px 20px rgba(0,0,0,.22); }
     .cover { height: 100vh; overflow: hidden; page-break-after: always; ${coverStyle} display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 3rem; }
     .cover-paw { font-size: 4rem; margin-bottom: 2rem; }
@@ -192,15 +192,13 @@ async function buildHtml(params: {
     .cover-subtitle { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.25rem; color: rgba(247,242,234,.6); margin-bottom: 3rem; }
     .cover-line { width: 60px; height: 2px; background: ${colors.accent}; margin: 0 auto 3rem; }
     .cover-brand { font-size: .875rem; color: rgba(247,242,234,.4); letter-spacing: .1em; text-transform: uppercase; }
-    .dedication { padding: 4rem 3rem 5rem; page-break-after: always; background: #F7F2EA; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; text-align: center; position: relative; counter-increment: page-num; }
-    .dedication::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
+    .dedication { padding: 4rem 3rem 5rem; page-break-after: always; background: #F7F2EA; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; text-align: center; position: relative; }
     .dedication-label { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: 1.5rem; }
     .dedication-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.15rem; line-height: 1.85; color: #3D2B1F; max-width: 480px; }
-    .chapter { padding: 4rem 3rem 5rem; page-break-after: always; min-height: 100vh; position: relative; counter-increment: page-num;
+    .chapter { padding: 4rem 3rem 5rem; page-break-after: always; min-height: 100vh; position: relative;
       background-color: #FDFAF5;
       background-image: repeating-linear-gradient(to bottom, transparent 0, transparent calc(100vh - 1px), rgba(200,129,58,.25) calc(100vh - 1px), rgba(200,129,58,.25) 100vh);
     }
-    .chapter::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
     .chapter-num { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: .4rem; }
     .chapter-period { font-size: .8rem; color: #7A5C44; margin-bottom: 1.25rem; font-family: 'DM Sans', sans-serif; }
     .chapter-title { font-family: 'Playfair Display', serif; font-size: 1.75rem; font-weight: 600; color: #3D2B1F; margin-bottom: 2rem; line-height: 1.3; }
@@ -217,11 +215,10 @@ async function buildHtml(params: {
     .split-text .chapter-text { flex: 1; }
     .split-photo-col { display: flex; flex-direction: column; gap: .75rem; overflow: hidden; padding-top: .25rem; }
     .split-photo-col img { width: 100%; height: auto; max-height: 42vh; object-fit: cover; border-radius: 10px; display: block; }
-    .photo-page { padding: 2rem 2rem 5rem; background: #F7F2EA; page-break-after: always; height: 100vh; overflow: hidden; position: relative; counter-increment: page-num; }
-    .photo-page::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
+    .photo-page { padding: 2rem 2rem 5rem; background: #F7F2EA; page-break-after: always; height: 100vh; overflow: hidden; position: relative; }
     .photo-page .photo-grid img { height: 220px; border-radius: 12px; }
-    .blank-page { background: #F7F2EA; height: 100vh; page-break-after: always; position: relative; counter-increment: page-num; }
-    .blank-page::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
+    .blank-page { background: #F7F2EA; height: 100vh; page-break-after: always; position: relative; }
+    .pg-num { position: absolute; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; pointer-events: none; line-height: 1; }
     .back-cover { width: 100%; height: 100vh; overflow: hidden; background: ${colors.back}; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem; }
     .back-cover-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #FDFAF5; margin-bottom: 1rem; }
     .back-cover-text { font-size: .9rem; color: rgba(253,250,245,.7); max-width: 360px; line-height: 1.7; }
@@ -229,6 +226,7 @@ async function buildHtml(params: {
       body { background: white !important; padding: 0 !important; }
       .cover, .dedication, .chapter, .photo-page, .blank-page, .back-cover { max-width: none !important; margin: 0 !important; box-shadow: none !important; width: 100% !important; height: auto !important; min-height: 100vh !important; overflow: visible !important; }
       .chapter { background-image: none !important; }
+      .pg-num { display: none !important; }
     }
   </style>
 </head>
@@ -336,6 +334,48 @@ async function buildHtml(params: {
     <div class="back-cover-text">${escapeHtml(s.backText)}</div>
     <div style="margin-top: 2rem; font-size: .8rem; color: rgba(253,250,245,.5); letter-spacing: .1em; text-transform: uppercase;">everypaw.app</div>
   </div>
+
+<script>
+(function() {
+  function init() {
+    var vh = window.innerHeight;
+    var pageNum = 1;
+    var pages = document.querySelectorAll('.cover, .dedication, .chapter, .photo-page, .blank-page, .back-cover');
+    pages.forEach(function(el) {
+      if (el.classList.contains('cover')) { pageNum++; return; }
+      if (el.classList.contains('back-cover')) { return; }
+      if (el.classList.contains('chapter')) {
+        var h = el.getBoundingClientRect().height;
+        var n = Math.max(1, Math.ceil(h / vh));
+        for (var i = 0; i < n; i++) {
+          var numEl = document.createElement('div');
+          numEl.className = 'pg-num';
+          numEl.textContent = String(pageNum);
+          numEl.style.top = (i === n - 1 ? h - 28 : (i + 1) * vh - 28) + 'px';
+          el.appendChild(numEl);
+          pageNum++;
+        }
+      } else {
+        var numEl2 = document.createElement('div');
+        numEl2.className = 'pg-num';
+        numEl2.textContent = String(pageNum);
+        numEl2.style.bottom = '1.75rem';
+        el.appendChild(numEl2);
+        pageNum++;
+      }
+    });
+  }
+  function run() {
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function() { setTimeout(init, 50); });
+    } else {
+      setTimeout(init, 200);
+    }
+  }
+  if (document.readyState === 'complete') { run(); }
+  else { window.addEventListener('load', run); }
+})();
+</script>
 
 </body>
 </html>
