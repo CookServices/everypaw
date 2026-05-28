@@ -101,6 +101,32 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Database update failed" }, { status: 500 });
       }
 
+      // Award 1 book credit for Print subscriptions — primary source, deduped by subscription ID.
+      // invoice.payment_succeeded acts as fallback and handles renewals.
+      if (plan === "print" && session.subscription) {
+        const { data: existingSubCredit } = await supabase
+          .from("events_log")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("event_type", "stripe_print_subscription_credit")
+          .contains("metadata", { stripe_subscription_id: session.subscription })
+          .maybeSingle();
+
+        if (!existingSubCredit) {
+          const { error: creditErr } = await supabase.rpc("increment_book_credits", { p_user_id: userId });
+          if (!creditErr) {
+            await supabase.from("events_log").insert({
+              user_id: userId,
+              event_type: "stripe_print_subscription_credit",
+              metadata: { stripe_event_id: event.id, stripe_subscription_id: session.subscription, source: "checkout" },
+            });
+            console.log("[webhook] book credit awarded via checkout for user:", userId, "event:", event.id);
+          } else {
+            console.error("[webhook] book credit error (checkout):", creditErr);
+          }
+        }
+      }
+
       console.log(`[webhook] user ${userId} upgraded to plan: ${plan}, event: ${event.id}`);
     }
   }
@@ -222,17 +248,34 @@ export async function POST(req: Request) {
       }
 
       const userId = invoiceProfile.id;
+      const invoiceSubscriptionId = typeof invoice.subscription === "string" ? invoice.subscription : null;
 
-      // Idempotence: skip if this Stripe event was already processed
-      const { data: existingInvoice } = await supabase
-        .from("events_log")
-        .select("id")
-        .eq("user_id", userId)
-        .contains("metadata", { stripe_event_id: event.id })
-        .maybeSingle();
+      // Idempotence strategy differs by billing reason:
+      // - subscription_create: dedup by subscription ID (checkout.session.completed may have already awarded the credit)
+      // - subscription_cycle: dedup by stripe_event_id (unique per renewal)
+      let alreadyProcessed = false;
 
-      if (existingInvoice) {
-        console.log("[webhook] duplicate invoice.payment_succeeded, skipping:", event.id);
+      if (billingReason === "subscription_create" && invoiceSubscriptionId) {
+        const { data: existingSubCredit } = await supabase
+          .from("events_log")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("event_type", "stripe_print_subscription_credit")
+          .contains("metadata", { stripe_subscription_id: invoiceSubscriptionId })
+          .maybeSingle();
+        alreadyProcessed = !!existingSubCredit;
+      } else {
+        const { data: existingInvoice } = await supabase
+          .from("events_log")
+          .select("id")
+          .eq("user_id", userId)
+          .contains("metadata", { stripe_event_id: event.id })
+          .maybeSingle();
+        alreadyProcessed = !!existingInvoice;
+      }
+
+      if (alreadyProcessed) {
+        console.log("[webhook] duplicate invoice.payment_succeeded, skipping:", event.id, "billing_reason:", billingReason);
         return NextResponse.json({ received: true });
       }
 
@@ -245,8 +288,14 @@ export async function POST(req: Request) {
 
       await supabase.from("events_log").insert({
         user_id: userId,
-        event_type: "stripe_invoice_book_credit",
-        metadata: { stripe_event_id: event.id, billing_reason: billingReason, customer_id: customerId },
+        event_type: billingReason === "subscription_create" ? "stripe_print_subscription_credit" : "stripe_invoice_book_credit",
+        metadata: {
+          stripe_event_id: event.id,
+          billing_reason: billingReason,
+          customer_id: customerId,
+          ...(invoiceSubscriptionId ? { stripe_subscription_id: invoiceSubscriptionId } : {}),
+          source: "invoice",
+        },
       });
 
       console.log("[webhook] book credit added via invoice for user:", userId, "billing_reason:", billingReason, "event:", event.id);
