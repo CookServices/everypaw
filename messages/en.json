@@ -412,7 +412,10 @@
     "few_stories_warning": "Your book will contain fewer than 3 stories. We recommend generating at least 3 for a richer result. You can still order.",
     "no_credits_title": "Your annual book has already been ordered",
     "no_credits_desc": "Your Print plan includes 1 hardcover book per year. To order an additional book now, you can purchase one for $29.",
-    "no_credits_cta": "Buy an extra book ($29) →"
+    "no_credits_cta": "Buy an extra book ($29) →",
+    "print_extra_book_title": "Your annual book has already been ordered this year.",
+    "print_extra_book_desc": "You can order an additional copy for $29.",
+    "print_extra_book_cta": "Order an extra copy ($29) →"
   },
   "memorial": {
     "mark_passed": "Record passing…",

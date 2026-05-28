@@ -93,8 +93,6 @@ export async function POST(req: Request) {
           is_premium: true,
           stripe_customer_id: session.customer as string,
           stripe_subscription_id: session.subscription as string,
-          // Award 1 book credit immediately for Print annual (value delivered upfront)
-          ...(plan === "print" ? { book_credits: 1 } : {}),
         })
         .eq("id", userId);
 
@@ -187,6 +185,71 @@ export async function POST(req: Request) {
         "event:", event.id,
       );
       // is_premium stays true — customer.subscription.deleted handles the actual downgrade
+    }
+  }
+
+  // ── invoice.payment_succeeded ─────────────────────────────────────────────
+  // Awards 1 book credit to Print subscribers on first payment and renewals.
+  // Single source of truth for Print book credits — checkout.session.completed no longer awards them.
+  if (event.type === "invoice.payment_succeeded") {
+    const invoice = event.data.object as Stripe.Invoice;
+    const billingReason = invoice.billing_reason;
+
+    if (billingReason === "subscription_cycle" || billingReason === "subscription_create") {
+      const priceId = invoice.lines?.data?.[0]?.price?.id;
+      const printPriceIds = [
+        process.env.STRIPE_PRICE_ID_PRINT_EUR,
+        process.env.STRIPE_PRICE_ID_PRINT_USD,
+        process.env.STRIPE_PRICE_PRINT_ANNUAL_EUR,
+        process.env.STRIPE_PRICE_PRINT_ANNUAL_USD,
+        process.env.STRIPE_PRICE_PRINT_ANNUAL,
+      ].filter(Boolean);
+
+      if (!priceId || !printPriceIds.includes(priceId)) {
+        return NextResponse.json({ received: true });
+      }
+
+      const customerId = invoice.customer as string;
+      const { data: invoiceProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("stripe_customer_id", customerId)
+        .single();
+
+      if (!invoiceProfile?.id) {
+        console.error("[webhook] invoice.payment_succeeded: no profile for customer:", customerId, "event:", event.id);
+        return NextResponse.json({ received: true });
+      }
+
+      const userId = invoiceProfile.id;
+
+      // Idempotence: skip if this Stripe event was already processed
+      const { data: existingInvoice } = await supabase
+        .from("events_log")
+        .select("id")
+        .eq("user_id", userId)
+        .contains("metadata", { stripe_event_id: event.id })
+        .maybeSingle();
+
+      if (existingInvoice) {
+        console.log("[webhook] duplicate invoice.payment_succeeded, skipping:", event.id);
+        return NextResponse.json({ received: true });
+      }
+
+      const { error: creditError } = await supabase.rpc("increment_book_credits", { p_user_id: userId });
+
+      if (creditError) {
+        console.error("[webhook] increment_book_credits error:", creditError, "event:", event.id);
+        return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+      }
+
+      await supabase.from("events_log").insert({
+        user_id: userId,
+        event_type: "stripe_invoice_book_credit",
+        metadata: { stripe_event_id: event.id, billing_reason: billingReason, customer_id: customerId },
+      });
+
+      console.log("[webhook] book credit added via invoice for user:", userId, "billing_reason:", billingReason, "event:", event.id);
     }
   }
 

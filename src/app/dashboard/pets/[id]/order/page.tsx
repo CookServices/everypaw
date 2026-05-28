@@ -469,8 +469,44 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           </div>
         )}
 
-        {/* No-credits upsell block — shown when profile loaded and credits = 0 */}
-        {profile !== null && profile.book_credits === 0 && profile.plan !== "free" && step === "preview" && (
+        {/* No-credits upsell — Print plan: extra copy */}
+        {profile !== null && profile.book_credits === 0 && profile.plan === "print" && step === "preview" && (
+          <div style={{
+            background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
+            border: isMemorial ? "1px solid rgba(200,129,58,.25)" : "1px solid #F7C27A",
+            borderRadius: 16, padding: "1.5rem", marginBottom: "1.75rem",
+            textAlign: "center",
+          }}>
+            <div style={{ fontSize: "1.5rem", marginBottom: ".75rem" }}>📚</div>
+            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
+              {t.order.print_extra_book_title}
+            </h3>
+            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, marginBottom: "1.25rem", maxWidth: 380, margin: "0 auto .75rem" }}>
+              {t.order.print_extra_book_desc}
+            </p>
+            <button
+              onClick={async () => {
+                const res = await fetch("/api/stripe/book-checkout", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ petId: id }),
+                });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+              }}
+              style={{
+                background: accentColor, color: "#FDFAF5", border: "none",
+                padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
+                fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              {t.order.print_extra_book_cta}
+            </button>
+          </div>
+        )}
+
+        {/* No-credits upsell — non-Print plans (digital, book_only): existing message */}
+        {profile !== null && profile.book_credits === 0 && profile.plan !== "free" && profile.plan !== "print" && step === "preview" && (
           <div style={{
             background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
             border: isMemorial ? "1px solid rgba(200,129,58,.25)" : "1px solid #F7C27A",

@@ -166,12 +166,16 @@ Le webhook (`/api/stripe/webhook`) gère :
 - `checkout.session.completed`
 - `customer.subscription.deleted`
 - `customer.subscription.updated`
+- `invoice.payment_succeeded` — source unique pour les book credits Print (ajouté 2026-05-28)
 
 **Idempotence webhook (2026-05-22)** : protection contre les retries Stripe.
 - Abonnement : compare `stripe_subscription_id` en DB avant d'agir — skip si déjà activé.
 - Achat livre : vérifie `events_log` via `metadata @> { stripe_event_id }` avant d'incrémenter les crédits ; insère une trace après succès.
 - `subscription.updated` : loggé dans `events_log` (plan change + cancellation) depuis Round 2.
+- `invoice.payment_succeeded` : idem — vérifie `events_log` par `stripe_event_id` avant `increment_book_credits`.
 - Tous les événements loggent le Stripe event ID dès réception (`[webhook] event: evt_xxx …`).
+
+**Book credits Print — source unique (2026-05-28)** : `invoice.payment_succeeded` est la seule source d'attribution des crédits livre pour les abonnés Print. `checkout.session.completed` n'attribue plus de crédit. Conditions : `billing_reason === "subscription_create"` (1ère souscription) OU `"subscription_cycle"` (renouvellement) + price ID correspondant à un plan Print (mensuel ou annuel EUR/USD). Note : `invoice.payment_succeeded` doit être activé dans la config webhook Stripe.
 
 ---
 
@@ -827,6 +831,23 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 - `messages/en.json` + `messages/fr.json` : ajout de `milestones.steps_completed`, `not_yet`, `unlocked`, `locked`, `auto_hint` + `journal.generating_1/2/3`
 - `dashboard/pets/[id]/page.tsx` : tous les `isFR ? "EN" : "FR"` remplacés par `t.milestones.xxx` / `t.journal.xxx`
 
+### ✅ Crédits livre Print — attribution automatique (2026-05-28, session 21)
+
+**Webhook `invoice.payment_succeeded`** :
+- Nouveau handler : attribue 1 crédit livre aux abonnés Print sur `billing_reason === "subscription_create"` (première souscription) et `"subscription_cycle"` (renouvellement)
+- Vérifie que le price ID de la facture est un Print price ID (mensuel ou annuel EUR/USD — 5 variables d'env)
+- Idempotence : `events_log.metadata.stripe_event_id` avant tout incrément, trace insérée après succès (`event_type: "stripe_invoice_book_credit"`)
+- `checkout.session.completed` ne pose plus de credit directement — source unique évite la double attribution
+
+**Page `/dashboard/pets/[id]/order`** — bloc upsell différencié :
+- `plan === "print"` + `book_credits === 0` → bloc `print_extra_book_*` : "Votre livre annuel a déjà été commandé cette année. / Commander un exemplaire supplémentaire (29 €/29$)"
+- `plan !== "print"` (digital, book_only) + `book_credits === 0` → bloc `no_credits_*` existant inchangé
+- 3 nouvelles clés i18n EN + FR : `order.print_extra_book_title`, `order.print_extra_book_desc`, `order.print_extra_book_cta`
+
+**`canOrderBook()`** (`src/lib/plan.ts`) : confirmé correct — autorise si `bookCredits > 0` pour tous les plans non-free (aucun changement).
+
+> **Action Stripe requise** : activer `invoice.payment_succeeded` dans la config webhook Stripe si pas déjà fait.
+
 ### 🚧 Prochaine étape
 - ~~Exécuter les migrations SQL~~ ✅
 - ~~Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` / `STRIPE_PRICE_BOOK_ONCE_USD`~~ ✅
@@ -898,4 +919,4 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 
 ---
 
-*Dernière mise à jour : 2026-05-27 (session 20 — localisation par pays, crédits livre print, i18n milestones, antidatage journal, numérotation PDF)*
+*Dernière mise à jour : 2026-05-28 (session 21 — attribution crédits livre Print via invoice.payment_succeeded, upsell différencié Print/Digital)*
