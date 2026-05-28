@@ -181,19 +181,23 @@ async function buildHtml(params: {
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'DM Sans', sans-serif; background: #F7F2EA; color: #3D2B1F; counter-reset: page-num; }
-    .cover { width: 100%; min-height: 100vh; ${coverStyle} display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 3rem; page-break-after: always; }
+    body { font-family: 'DM Sans', sans-serif; background: #B8B0A8; color: #3D2B1F; counter-reset: page-num; padding: 2rem 0; }
+    /* Each page floats as a card on the grey background */
+    .cover, .dedication, .chapter, .photo-page, .blank-page, .back-cover {
+      max-width: 820px; margin: 0 auto 2rem; box-shadow: 0 4px 20px rgba(0,0,0,.22);
+    }
+    .cover { min-height: 100vh; ${coverStyle} display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 3rem; }
     .cover-paw { font-size: 4rem; margin-bottom: 2rem; }
     .cover-title { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 600; color: ${colors.title}; line-height: 1.2; margin-bottom: 1rem; }
     .cover-subtitle { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.25rem; color: rgba(247,242,234,.6); margin-bottom: 3rem; }
     .cover-line { width: 60px; height: 2px; background: ${colors.accent}; margin: 0 auto 3rem; }
     .cover-brand { font-size: .875rem; color: rgba(247,242,234,.4); letter-spacing: .1em; text-transform: uppercase; }
-    .dedication { padding: 4rem 3rem 5rem; page-break-after: always; background: #F7F2EA; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; position: relative; counter-increment: page-num; }
-    .dedication::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .7rem; color: rgba(61,43,31,.35); letter-spacing: .08em; }
+    .dedication { padding: 4rem 3rem 5rem; background: #F7F2EA; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; position: relative; counter-increment: page-num; }
+    .dedication::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
     .dedication-label { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: 1.5rem; }
     .dedication-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.15rem; line-height: 1.85; color: #3D2B1F; max-width: 480px; }
-    .chapter { padding: 4rem 3rem 5rem; page-break-after: always; background: #FDFAF5; min-height: 100vh; position: relative; counter-increment: page-num; }
-    .chapter::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .7rem; color: rgba(61,43,31,.35); letter-spacing: .08em; }
+    .chapter { padding: 4rem 3rem 5rem; background: #FDFAF5; min-height: 100vh; position: relative; counter-increment: page-num; }
+    .chapter::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
     .chapter-num { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: .4rem; }
     .chapter-period { font-size: .8rem; color: #7A5C44; margin-bottom: 1.25rem; font-family: 'DM Sans', sans-serif; }
     .chapter-title { font-family: 'Playfair Display', serif; font-size: 1.75rem; font-weight: 600; color: #3D2B1F; margin-bottom: 2rem; line-height: 1.3; }
@@ -202,10 +206,11 @@ async function buildHtml(params: {
     .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .photo-grid img { width: 100%; height: 180px; object-fit: cover; border-radius: 10px; display: block; }
     .photo-caption { font-size: .75rem; color: #7A5C44; margin-top: .4rem; font-style: italic; text-align: center; }
-    .photo-page { padding: 2rem 2rem 5rem; background: #F7F2EA; page-break-after: always; min-height: 100vh; position: relative; counter-increment: page-num; }
-    .photo-page::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .7rem; color: rgba(61,43,31,.35); letter-spacing: .08em; }
+    .photo-page { padding: 2rem 2rem 5rem; background: #F7F2EA; min-height: 100vh; position: relative; counter-increment: page-num; }
+    .photo-page::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
     .photo-page .photo-grid img { height: 220px; border-radius: 12px; }
-    .blank-page { page-break-after: always; background: #F7F2EA; min-height: 100vh; }
+    .blank-page { background: #F7F2EA; min-height: 100vh; position: relative; counter-increment: page-num; }
+    .blank-page::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
     .back-cover { width: 100%; min-height: 100vh; background: ${colors.back}; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem; }
     .back-cover-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #FDFAF5; margin-bottom: 1rem; }
     .back-cover-text { font-size: .9rem; color: rgba(253,250,245,.7); max-width: 360px; line-height: 1.7; }
