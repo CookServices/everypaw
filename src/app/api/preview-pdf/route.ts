@@ -136,7 +136,7 @@ async function buildHtml(params: {
   const hasOrphanPhotos = orphanEntries.length > 0;
 
   // ── Page count & blank-page padding ───────────────────────────────────────
-  // Gelato requires: (a) minimum 20 pages, (b) even page count.
+  // Gelato requires: (a) minimum 28 pages, (b) multiples of 4 (hardcover signatures).
   // We compute the exact number of pages the HTML will generate and add blank
   // pages before the back cover so the PDF always matches the declared pageCount.
   const storyPageCount = stories.length > 0 ? stories.length : 1; // placeholder chapter counts
@@ -146,7 +146,7 @@ async function buildHtml(params: {
     storyPageCount +              // chapters (or 1 placeholder)
     (hasOrphanPhotos ? 1 : 0) +  // orphan photos page
     1;                            // back cover
-  const targetPages = Math.max(20, actualPages % 2 === 0 ? actualPages : actualPages + 1);
+  const targetPages = Math.max(28, Math.ceil(actualPages / 4) * 4);
   const blankPagesToAdd = targetPages - actualPages;
   const blankPagesHtml = blankPagesToAdd > 0
     ? Array(blankPagesToAdd).fill('<div class="blank-page"></div>').join("\n  ")
@@ -183,7 +183,7 @@ async function buildHtml(params: {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'DM Sans', sans-serif; background: #B8B0A8; color: #3D2B1F; counter-reset: page-num; padding: 2rem 0; }
     .cover, .dedication, .chapter, .photo-page, .blank-page, .back-cover { max-width: 820px; margin: 0 auto 2rem; box-shadow: 0 4px 20px rgba(0,0,0,.22); }
-    .cover { min-height: 100vh; ${coverStyle} display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 3rem; }
+    .cover { min-height: 100vh; page-break-after: always; ${coverStyle} display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 3rem; }
     .cover-paw { font-size: 4rem; margin-bottom: 2rem; }
     .cover-title { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 600; color: ${colors.title}; line-height: 1.2; margin-bottom: 1rem; }
     .cover-subtitle { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.25rem; color: rgba(247,242,234,.6); margin-bottom: 3rem; }
@@ -206,11 +206,15 @@ async function buildHtml(params: {
     .photo-page { padding: 2rem 2rem 5rem; background: #F7F2EA; page-break-after: always; min-height: 100vh; position: relative; counter-increment: page-num; }
     .photo-page::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
     .photo-page .photo-grid img { height: 220px; border-radius: 12px; }
-    .blank-page { background: #F7F2EA; min-height: 100vh; position: relative; counter-increment: page-num; }
+    .blank-page { background: #F7F2EA; min-height: 100vh; page-break-after: always; position: relative; counter-increment: page-num; }
     .blank-page::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
     .back-cover { width: 100%; min-height: 100vh; background: ${colors.back}; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem; }
     .back-cover-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #FDFAF5; margin-bottom: 1rem; }
     .back-cover-text { font-size: .9rem; color: rgba(253,250,245,.7); max-width: 360px; line-height: 1.7; }
+    @media print {
+      body { background: white !important; padding: 0 !important; }
+      .cover, .dedication, .chapter, .photo-page, .blank-page, .back-cover { max-width: none !important; margin: 0 !important; box-shadow: none !important; width: 100% !important; }
+    }
   </style>
 </head>
 <body>

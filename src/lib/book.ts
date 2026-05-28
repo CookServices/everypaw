@@ -12,10 +12,14 @@
  *
  * NOTE: use hasOrphanPhotos (not hasPhotos) — the HTML only generates a separate
  * photo page for entries whose date falls outside all story periods.
+ *
+ * Gelato constraints for this product:
+ *   - minimum 28 pages (original hardcoded value that was working)
+ *   - must be a multiple of 4 (hardcover signatures fold in groups of 4)
  */
 export function calcPageCount(storiesCount: number, hasOrphanPhotos: boolean, hasDedication: boolean): number {
   const storyPages = Math.max(storiesCount, 1); // min 1 placeholder chapter
   const total = 2 + (hasDedication ? 1 : 0) + storyPages + (hasOrphanPhotos ? 1 : 0);
-  const rounded = total % 2 === 0 ? total : total + 1; // Gelato requires even page count
-  return Math.max(20, rounded); // Gelato minimum 20 pages
+  const rounded = Math.ceil(total / 4) * 4; // Gelato requires multiples of 4
+  return Math.max(28, rounded); // Gelato minimum 28 for this product
 }
