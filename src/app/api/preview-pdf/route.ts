@@ -196,8 +196,10 @@ async function buildHtml(params: {
     .dedication::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
     .dedication-label { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: 1.5rem; }
     .dedication-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.15rem; line-height: 1.85; color: #3D2B1F; max-width: 480px; }
-    .chapter { padding: 4rem 3rem 5rem; page-break-after: always; background: #FDFAF5; height: 100vh; overflow: hidden; position: relative; counter-increment: page-num; }
+    .chapter { padding: 4rem 3rem 5rem; page-break-after: always; background: #FDFAF5; min-height: 100vh; position: relative; counter-increment: page-num; }
     .chapter::after { content: counter(page-num); position: absolute; bottom: 1.75rem; left: 0; width: 100%; text-align: center; font-family: 'DM Sans', sans-serif; font-size: .75rem; color: rgba(61,43,31,.55); letter-spacing: .1em; }
+    .chapter-overflow { position: absolute; bottom: 3rem; right: 3rem; font-size: .65rem; color: rgba(61,43,31,.35); font-family: 'DM Sans', sans-serif; letter-spacing: .05em; display: none; }
+    .chapter.is-long .chapter-overflow { display: block; }
     .chapter-num { font-size: .75rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: ${colors.accent}; margin-bottom: .4rem; }
     .chapter-period { font-size: .8rem; color: #7A5C44; margin-bottom: 1.25rem; font-family: 'DM Sans', sans-serif; }
     .chapter-title { font-family: 'Playfair Display', serif; font-size: 1.75rem; font-weight: 600; color: #3D2B1F; margin-bottom: 2rem; line-height: 1.3; }
@@ -209,9 +211,9 @@ async function buildHtml(params: {
     /* Layout: photo_hero */
     .hero-img { width: calc(100% + 6rem); margin: -4rem -3rem 1.75rem; height: 38vh; object-fit: cover; display: block; flex-shrink: 0; }
     /* Layout: split */
-    .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; height: 100%; overflow: hidden; }
-    .split-text { overflow: hidden; display: flex; flex-direction: column; }
-    .split-text .chapter-text { flex: 1; overflow: hidden; }
+    .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; min-height: calc(100vh - 9rem); }
+    .split-text { display: flex; flex-direction: column; }
+    .split-text .chapter-text { flex: 1; }
     .split-photo-col { display: flex; flex-direction: column; gap: .75rem; overflow: hidden; padding-top: .25rem; }
     .split-photo-col img { width: 100%; height: auto; max-height: 42vh; object-fit: cover; border-radius: 10px; display: block; }
     .photo-page { padding: 2rem 2rem 5rem; background: #F7F2EA; page-break-after: always; height: 100vh; overflow: hidden; position: relative; counter-increment: page-num; }
@@ -225,6 +227,7 @@ async function buildHtml(params: {
     @media print {
       body { background: white !important; padding: 0 !important; }
       .cover, .dedication, .chapter, .photo-page, .blank-page, .back-cover { max-width: none !important; margin: 0 !important; box-shadow: none !important; width: 100% !important; height: auto !important; min-height: 100vh !important; overflow: visible !important; }
+      .chapter-overflow { display: none !important; }
     }
   </style>
 </head>
