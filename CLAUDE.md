@@ -827,6 +827,13 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 - `messages/en.json` + `messages/fr.json` : ajout de `milestones.steps_completed`, `not_yet`, `unlocked`, `locked`, `auto_hint` + `journal.generating_1/2/3`
 - `dashboard/pets/[id]/page.tsx` : tous les `isFR ? "EN" : "FR"` remplacés par `t.milestones.xxx` / `t.journal.xxx`
 
+### ✅ Fix numérotation de pages dans la preview PDF (2026-05-28, session 21)
+
+- **Problème** : `.chapter::after { position: absolute; bottom: 1.75rem }` ne rendait qu'un seul numéro de page par chapitre (en bas du div entier). Pour un chapitre multi-pages, seule la dernière "page visuelle" avait un numéro.
+- **Fix** : remplacement complet du système CSS counter (`counter-reset/counter-increment/::after`) par un script JavaScript dans le HTML généré.
+- **Fonctionnement** : à `window.load` + `document.fonts.ready`, le script mesure la hauteur de chaque `.chapter` via `getBoundingClientRect()`, calcule le nombre de segments `100vh` (`Math.ceil(h / vh)`), et injecte un `.pg-num` absolu en bas de chaque segment. Pour les pages de hauteur fixe (dédicace, pages blanches, photo-page), un seul `.pg-num` est ajouté via `bottom: 1.75rem`. Le compteur global s'incrémente en traversant tous les éléments dans l'ordre DOM, garantissant la séquence correcte.
+- `.pg-num { display: none !important }` en `@media print` — les numéros ne polluent pas si quelqu'un imprime la preview depuis son navigateur.
+
 ### 🚧 Prochaine étape
 - ~~Exécuter les migrations SQL~~ ✅
 - ~~Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` / `STRIPE_PRICE_BOOK_ONCE_USD`~~ ✅
@@ -898,4 +905,4 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 
 ---
 
-*Dernière mise à jour : 2026-05-27 (session 20 — localisation par pays, crédits livre print, i18n milestones, antidatage journal, numérotation PDF)*
+*Dernière mise à jour : 2026-05-28 (session 21 — numérotation de pages par segment `100vh` dans la preview PDF)*
