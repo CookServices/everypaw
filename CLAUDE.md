@@ -833,6 +833,7 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 - **Fix** : remplacement complet du système CSS counter (`counter-reset/counter-increment/::after`) par un script JavaScript dans le HTML généré.
 - **Fonctionnement** : à `window.load` + `document.fonts.ready`, le script mesure la hauteur de chaque `.chapter` via `getBoundingClientRect()`, calcule le nombre de segments `100vh` (`Math.ceil(h / vh)`), et injecte un `.pg-num` absolu en bas de chaque segment. Pour les pages de hauteur fixe (dédicace, pages blanches, photo-page), un seul `.pg-num` est ajouté via `bottom: 1.75rem`. Le compteur global s'incrémente en traversant tous les éléments dans l'ordre DOM, garantissant la séquence correcte.
 - `.pg-num { display: none !important }` en `@media print` — les numéros ne polluent pas si quelqu'un imprime la preview depuis son navigateur.
+- **Fix overlap texte/numéro (PR #41)** : `.pg-num` a désormais `background: linear-gradient(transparent → #FDFAF5)` + `padding: 2rem 0 1.75rem`. Le positionnement JS place le BAS de l'élément au niveau de la limite de page (`top = pageBottom - 72px`), le dégradé couvre les 32px au-dessus du chiffre et efface visuellement tout texte qui déborde.
 
 ### 🚧 Prochaine étape
 - ~~Exécuter les migrations SQL~~ ✅
@@ -905,4 +906,4 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 
 ---
 
-*Dernière mise à jour : 2026-05-28 (session 21 — numérotation de pages par segment `100vh` dans la preview PDF)*
+*Dernière mise à jour : 2026-05-28 (session 21 — numérotation de pages par segment `100vh` + dégradé anti-overlap dans la preview PDF)*
