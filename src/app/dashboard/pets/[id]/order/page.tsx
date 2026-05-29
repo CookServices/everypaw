@@ -1066,30 +1066,48 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               ))}
               <div>
                 <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{t.order.country}</label>
-                <input
-                  type="text"
-                  autoComplete="country-name"
-                  placeholder={locale === "fr" ? "Rechercher un pays…" : "Search country…"}
-                  value={countrySearch}
-                  onChange={e => setCountrySearch(e.target.value)}
-                  style={{ ...inputStyle, marginBottom: ".4rem" }}
-                />
-                <select
-                  value={address.country}
-                  onChange={e => { setAddress({ ...address, country: e.target.value }); setCountrySearch(""); }}
-                  size={4}
-                  style={{ ...inputStyle, height: "auto", overflowY: "auto" }}
-                >
-                  <option value="" disabled>—</option>
-                  {COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase())).map(c => (
-                    <option key={c.code} value={c.code}>{c.name}</option>
-                  ))}
-                </select>
-                {address.country && (
-                  <div style={{ fontSize: ".75rem", color: accentColor, marginTop: ".3rem", fontFamily: "sans-serif" }}>
-                    ✓ {COUNTRIES.find(c => c.code === address.country)?.name}
-                  </div>
-                )}
+                <div style={{ position: "relative" }}>
+                  <input
+                    type="text"
+                    autoComplete="off"
+                    placeholder={locale === "fr" ? "Rechercher un pays…" : "Search country…"}
+                    value={countrySearch || (address.country ? (COUNTRIES.find(c => c.code === address.country)?.name ?? "") : "")}
+                    onFocus={() => setCountrySearch("")}
+                    onChange={e => { setCountrySearch(e.target.value); setAddress({ ...address, country: "" }); }}
+                    style={inputStyle}
+                  />
+                  {countrySearch.trim().length > 0 && (
+                    <div style={{
+                      position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
+                      background: isMemorial ? "#1C1410" : "#FDFAF5",
+                      border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`,
+                      borderRadius: 12, overflow: "hidden",
+                      boxShadow: "0 8px 24px rgba(0,0,0,.12)",
+                      maxHeight: 200, overflowY: "auto",
+                    }}>
+                      {COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase())).length === 0 ? (
+                        <div style={{ padding: ".75rem 1rem", fontSize: ".85rem", color: textMuted, fontFamily: "sans-serif" }}>
+                          {locale === "fr" ? "Aucun résultat" : "No results"}
+                        </div>
+                      ) : COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase())).map(c => (
+                        <div
+                          key={c.code}
+                          onMouseDown={() => { setAddress({ ...address, country: c.code }); setCountrySearch(""); }}
+                          style={{
+                            padding: ".625rem 1rem", fontSize: ".875rem", cursor: "pointer",
+                            color: textPrimary, fontFamily: "sans-serif",
+                            background: address.country === c.code ? `${accentColor}18` : "transparent",
+                            borderBottom: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.05)"}`,
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = `${accentColor}12`)}
+                          onMouseLeave={e => (e.currentTarget.style.background = address.country === c.code ? `${accentColor}18` : "transparent")}
+                        >
+                          {c.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
