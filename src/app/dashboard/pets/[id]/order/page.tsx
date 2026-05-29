@@ -943,11 +943,23 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             )}
             <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
               <button
-                onClick={() => setStep("address")}
+                onClick={async () => {
+                  if (profile?.plan === "print" && profile.book_credits === 0) {
+                    const res = await fetch("/api/stripe/book-checkout", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ petId: id }),
+                    });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                    return;
+                  }
+                  setStep("address");
+                }}
                 disabled={visibleStories.length > 0 && selectedStoryIds.length === 0}
                 style={{ width: "100%", padding: ".875rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: visibleStories.length > 0 && selectedStoryIds.length === 0 ? "not-allowed" : "pointer", opacity: visibleStories.length > 0 && selectedStoryIds.length === 0 ? .5 : 1 }}
               >
-                {t.order.preview_cta}
+                {profile?.plan === "print" && profile.book_credits === 0 ? t.order.print_extra_book_cta : t.order.preview_cta}
               </button>
               <button
                 onClick={handleFullPreview}
