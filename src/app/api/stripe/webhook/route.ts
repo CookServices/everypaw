@@ -101,31 +101,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Database update failed" }, { status: 500 });
       }
 
-      // Award 1 book credit for Print subscriptions — primary source, deduped by subscription ID.
-      // invoice.payment_succeeded acts as fallback and handles renewals.
-      if (plan === "print" && session.subscription) {
-        const { data: existingSubCredit } = await supabase
-          .from("events_log")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("event_type", "stripe_print_subscription_credit")
-          .contains("metadata", { stripe_subscription_id: session.subscription })
-          .maybeSingle();
-
-        if (!existingSubCredit) {
-          const { error: creditErr } = await supabase.rpc("increment_book_credits", { p_user_id: userId });
-          if (!creditErr) {
-            await supabase.from("events_log").insert({
-              user_id: userId,
-              event_type: "stripe_print_subscription_credit",
-              metadata: { stripe_event_id: event.id, stripe_subscription_id: session.subscription, source: "checkout" },
-            });
-            console.log("[webhook] book credit awarded via checkout for user:", userId, "event:", event.id);
-          } else {
-            console.error("[webhook] book credit error (checkout):", creditErr);
-          }
-        }
-      }
+      // Book credits are awarded exclusively via invoice.payment_succeeded to avoid race conditions
 
       console.log(`[webhook] user ${userId} upgraded to plan: ${plan}, event: ${event.id}`);
     }
