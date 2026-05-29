@@ -105,6 +105,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [storyLayouts, setStoryLayouts] = useState<Record<string, LayoutType>>({});
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewStale, setPreviewStale] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
 
   const [address, setAddress] = useState(() => ({
     firstName: "",
@@ -207,7 +209,18 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     }
   };
 
-  const closePreview = () => setPreviewHtml(null);
+  const closePreview = () => { setPreviewHtml(null); setPreviewStale(false); };
+
+  // Mark preview stale when config changes (if preview is open, auto-refresh after 1.5s)
+  useEffect(() => {
+    if (!previewHtml) return;
+    setPreviewStale(true);
+    const timer = setTimeout(() => {
+      handleFullPreview().then(() => setPreviewStale(false));
+    }, 1500);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStoryIds, coverTheme, customTitle, coverPhotoUrl, yearFilter, dedicationText]);
 
   // Derived: available years (Point 9)
   const availableYears = Array.from(
@@ -332,12 +345,12 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   };
 
   const fields = [
-    { key: "firstName", label: t.order.first_name, placeholder: "" },
-    { key: "lastName", label: t.order.last_name, placeholder: "" },
-    { key: "addressLine1", label: t.order.address, placeholder: "" },
-    { key: "addressLine2", label: t.order.apt, placeholder: "" },
-    { key: "city", label: t.order.city, placeholder: "" },
-    { key: "postCode", label: t.order.postal_code, placeholder: "" },
+    { key: "firstName", label: t.order.first_name, placeholder: "", autocomplete: "given-name" },
+    { key: "lastName", label: t.order.last_name, placeholder: "", autocomplete: "family-name" },
+    { key: "addressLine1", label: t.order.address, placeholder: "", autocomplete: "address-line1" },
+    { key: "addressLine2", label: t.order.apt, placeholder: "", autocomplete: "address-line2" },
+    { key: "city", label: t.order.city, placeholder: "", autocomplete: "address-level2" },
+    { key: "postCode", label: t.order.postal_code, placeholder: "", autocomplete: "postal-code" },
   ];
 
   const selectedTheme = COVER_THEMES.find(t => t.id === coverTheme) ?? COVER_THEMES[0];
@@ -394,6 +407,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
   return (
     <>
+    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     {/* Full-book preview modal */}
     {previewHtml && (
       <div
@@ -411,7 +425,10 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         >
           {/* Modal header */}
           <div style={{ background: "#3D2B1F", padding: ".75rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-            <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", color: "#F7C27A" }}>{previewLabel}</span>
+            <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", color: "#F7C27A", display: "flex", alignItems: "center", gap: ".5rem" }}>
+              {previewLabel}
+              {previewStale && <span style={{ fontSize: ".7rem", background: "rgba(200,129,58,.25)", color: "#F7C27A", padding: ".15rem .5rem", borderRadius: 4 }}>↻ mise à jour…</span>}
+            </span>
             <button
               onClick={closePreview}
               style={{ background: "rgba(247,242,234,.12)", border: "none", color: "#F7F2EA", borderRadius: 8, padding: ".35rem .75rem", cursor: "pointer", fontFamily: "inherit", fontSize: ".8rem" }}
@@ -431,7 +448,14 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
     <div style={{ minHeight: "100vh", background: bg, fontFamily: "'DM Sans', sans-serif", transition: "background .3s" }}>
       <nav style={{ background: isMemorial ? "rgba(28,20,16,.9)" : "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.08)"}`, padding: "1rem 2rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-        <Link href={`/dashboard/pets/${id}`} style={{ fontSize: ".85rem", color: textMuted, textDecoration: "none" }}>{t.order.back}</Link>
+        {step !== "preview" && step !== "success" ? (
+          <button
+            onClick={() => setStep("preview")}
+            style={{ fontSize: ".85rem", color: textMuted, textDecoration: "none", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}
+          >{t.order.back}</button>
+        ) : (
+          <Link href={`/dashboard/pets/${id}`} style={{ fontSize: ".85rem", color: textMuted, textDecoration: "none" }}>{t.order.back}</Link>
+        )}
         <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary }}>
           {isMemorial && petName
             ? t.memorial.order_tribute.replace("{name}", petName)
@@ -492,27 +516,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
               {t.order.print_extra_book_title}
             </h3>
-            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, marginBottom: "1.25rem", maxWidth: 380, margin: "0 auto .75rem" }}>
+            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto" }}>
               {t.order.print_extra_book_desc}
             </p>
-            <button
-              onClick={async () => {
-                const res = await fetch("/api/stripe/book-checkout", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ petId: id }),
-                });
-                const data = await res.json();
-                if (data.url) window.location.href = data.url;
-              }}
-              style={{
-                background: accentColor, color: "#FDFAF5", border: "none",
-                padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
-                fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-              }}
-            >
-              {t.order.print_extra_book_cta}
-            </button>
           </div>
         )}
 
@@ -692,7 +698,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 <button
                   onClick={() => setCoverPhotoUrl(null)}
                   style={{
-                    width: 60, height: 60, borderRadius: 8,
+                    width: 72, height: 72, borderRadius: 8,
                     background: "#3D2B1F",
                     border: coverPhotoUrl === null ? "2px solid #C8813A" : "2px solid transparent",
                     cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
@@ -708,7 +714,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                     key={i}
                     onClick={() => setCoverPhotoUrl(photoUrl)}
                     style={{
-                      width: 60, height: 60, borderRadius: 8,
+                      width: 72, height: 72, borderRadius: 8,
                       border: coverPhotoUrl === photoUrl ? "2px solid #C8813A" : "2px solid transparent",
                       padding: 0, cursor: "pointer", overflow: "hidden", background: "transparent",
                     }}
@@ -723,7 +729,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 ))}
                 {/* Upload custom cover photo */}
                 <label style={{
-                  width: 60, height: 60, borderRadius: 8, flexShrink: 0,
+                  width: 72, height: 72, borderRadius: 8, flexShrink: 0,
                   border: `2px dashed ${isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
                   cursor: uploadingCover ? "wait" : "pointer",
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -749,12 +755,12 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 </label>
                 {/* Preview of custom uploaded photo (if not from journal) */}
                 {coverPhotoUrl && !availablePhotos.includes(coverPhotoUrl) && (
-                  <div style={{ position: "relative", width: 60, height: 60 }}>
+                  <div style={{ position: "relative", width: 72, height: 72 }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={coverPhotoUrl}
                       alt=""
-                      style={{ width: 60, height: 60, borderRadius: 8, objectFit: "cover", display: "block", border: "2px solid #C8813A" }}
+                      style={{ width: 72, height: 72, borderRadius: 8, objectFit: "cover", display: "block", border: "2px solid #C8813A" }}
                     />
                     <button
                       onClick={() => setCoverPhotoUrl(null)}
@@ -930,10 +936,16 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             )}
 
             {/* CTA buttons */}
+            {visibleStories.length > 0 && selectedStoryIds.length === 0 && (
+              <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 12, padding: ".75rem 1rem", marginBottom: ".25rem", fontSize: ".8rem", color: "#C8813A", fontFamily: "sans-serif" }}>
+                {locale === "fr" ? "Sélectionnez au moins un chapitre pour continuer." : "Select at least one chapter to continue."}
+              </div>
+            )}
             <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
               <button
                 onClick={() => setStep("address")}
-                style={{ width: "100%", padding: ".875rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer" }}
+                disabled={visibleStories.length > 0 && selectedStoryIds.length === 0}
+                style={{ width: "100%", padding: ".875rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: visibleStories.length > 0 && selectedStoryIds.length === 0 ? "not-allowed" : "pointer", opacity: visibleStories.length > 0 && selectedStoryIds.length === 0 ? .5 : 1 }}
               >
                 {t.order.preview_cta}
               </button>
@@ -1009,15 +1021,14 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 {t.order.few_stories_warning}
               </div>
             )}
-            <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 12, padding: ".875rem 1rem", marginBottom: "1rem", fontSize: ".8rem", color: textMuted, lineHeight: 1.5, fontFamily: "sans-serif" }}>
-              {warningText}
-            </div>
+
 
             <div style={{ display: "flex", gap: ".75rem" }}>
               <button onClick={() => setStep("address")} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`, background: "transparent", fontFamily: "inherit", fontSize: ".875rem", color: textMuted, cursor: "pointer" }}>
                 {t.order.edit_address}
               </button>
-              <button onClick={handleOrder} disabled={loading} style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: loading ? .7 : 1 }}>
+              <button onClick={handleOrder} disabled={loading} style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: loading ? "wait" : "pointer", opacity: loading ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}>
+                {loading && <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .7s linear infinite" }} />}
                 {loading ? t.order.placing : t.order.place_order}
               </button>
             </div>
@@ -1043,24 +1054,42 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 {fields.slice(0, 2).map(field => (
                   <div key={field.key}>
                     <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
-                    <input type="text" placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => setAddress({ ...address, [field.key]: e.target.value })} style={inputStyle} />
+                    <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => setAddress({ ...address, [field.key]: e.target.value })} style={inputStyle} />
                   </div>
                 ))}
               </div>
               {fields.slice(2).map(field => (
                 <div key={field.key}>
                   <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
-                  <input type="text" placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => setAddress({ ...address, [field.key]: e.target.value })} style={inputStyle} />
+                  <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => setAddress({ ...address, [field.key]: e.target.value })} style={inputStyle} />
                 </div>
               ))}
               <div>
                 <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{t.order.country}</label>
-                <select value={address.country} onChange={e => setAddress({ ...address, country: e.target.value })} style={inputStyle}>
+                <input
+                  type="text"
+                  autoComplete="country-name"
+                  placeholder={locale === "fr" ? "Rechercher un pays…" : "Search country…"}
+                  value={countrySearch}
+                  onChange={e => setCountrySearch(e.target.value)}
+                  style={{ ...inputStyle, marginBottom: ".4rem" }}
+                />
+                <select
+                  value={address.country}
+                  onChange={e => { setAddress({ ...address, country: e.target.value }); setCountrySearch(""); }}
+                  size={4}
+                  style={{ ...inputStyle, height: "auto", overflowY: "auto" }}
+                >
                   <option value="" disabled>—</option>
-                  {COUNTRIES.map(c => (
+                  {COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase())).map(c => (
                     <option key={c.code} value={c.code}>{c.name}</option>
                   ))}
                 </select>
+                {address.country && (
+                  <div style={{ fontSize: ".75rem", color: accentColor, marginTop: ".3rem", fontFamily: "sans-serif" }}>
+                    ✓ {COUNTRIES.find(c => c.code === address.country)?.name}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1111,7 +1140,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 }
                 setStep("confirm");
               }}
-              style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer" }}
+              style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: 1 }}
             >
               {t.order.continue_to_payment}
             </button>

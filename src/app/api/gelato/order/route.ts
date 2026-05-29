@@ -104,16 +104,24 @@ export async function POST(req: Request) {
     activeStories = activeStories.filter(s => selectedStoryIds.includes(s.id));
   }
 
-  // hasOrphanPhotos: entries with photos that don't fall in any active story's period
-  const hasOrphanPhotos = filteredEntries.some(e => {
-    if (!e.photo_urls?.length) return false;
-    const d = new Date(e.entry_date);
-    return !activeStories.some(story => {
+  // hasOrphanPhotos: same best-match logic as book-pdf to guarantee identical page counts
+  const entryToStorySet = new Set<string>();
+  for (const entry of filteredEntries) {
+    if (!entry.photo_urls?.length) continue;
+    const d = new Date(entry.entry_date);
+    let bestIdx = -1;
+    let bestStart: Date | null = null;
+    for (let i = 0; i < activeStories.length; i++) {
+      const story = activeStories[i];
       const start = story.period_start ? new Date(story.period_start) : null;
       const end = story.period_end ? new Date(story.period_end) : null;
-      return !!start && d >= start && (!end || d <= end);
-    });
-  });
+      if (!start || d < start) continue;
+      if (end && d > end) continue;
+      if (bestStart === null || start > bestStart) { bestIdx = i; bestStart = start; }
+    }
+    if (bestIdx >= 0) entryToStorySet.add(entry.id);
+  }
+  const hasOrphanPhotos = filteredEntries.some(e => e.photo_urls?.length > 0 && !entryToStorySet.has(e.id));
 
   const hasDedication = !!(dedicationText && dedicationText.trim().length > 0);
   const storyCount = activeStories.length;
