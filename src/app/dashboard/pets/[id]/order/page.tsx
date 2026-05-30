@@ -988,7 +988,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 style={{ width: "100%", padding: ".875rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: visibleStories.length > 0 && selectedStoryIds.length === 0 ? "not-allowed" : "pointer", opacity: visibleStories.length > 0 && selectedStoryIds.length === 0 ? .5 : 1 }}
               >
                 {profile?.plan === "print" && profile.book_credits === 0
-                  ? `${t.order.print_extra_book_cta} (${extraBookPriceLabel})`
+                  ? t.order.print_extra_book_cta
                   : t.order.preview_cta}
               </button>
               <button
