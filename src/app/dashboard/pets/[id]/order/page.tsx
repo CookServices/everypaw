@@ -108,6 +108,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [previewStale, setPreviewStale] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
+  const [renewalDate, setRenewalDate] = useState<string | null>(null);
 
   const [address, setAddress] = useState(() => ({
     firstName: "",
@@ -132,10 +133,24 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         if (petData) setPet(petData);
         if (storiesData) setStories(storiesData);
         if (entriesData) setEntries(entriesData);
-        if (profileData) setProfile(profileData as Profile);
+        if (profileData) {
+          setProfile(profileData as Profile);
+          if ((profileData as Profile).plan === "print" && (profileData as Profile).book_credits === 0) {
+            fetch("/api/stripe/subscription")
+              .then(r => r.json())
+              .then(data => {
+                if (data.subscription?.current_period_end) {
+                  const d = new Date(data.subscription.current_period_end * 1000);
+                  const fmt = d.toLocaleDateString(locale === "fr" ? "fr-FR" : "en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+                  setRenewalDate(fmt);
+                }
+              })
+              .catch(() => {});
+          }
+        }
       });
     });
-  }, [id]);
+  }, [id, locale]);
 
   // Initialize: select all stories across all years (null = toutes les années)
   useEffect(() => {
@@ -520,7 +535,14 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               {t.order.print_extra_book_title}
             </h3>
             <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto" }}>
-              {t.order.print_extra_book_desc}
+              {renewalDate
+                ? locale === "fr"
+                  ? `Vous pourrez de nouveau commander un livre gratuitement à partir du ${renewalDate}, date du renouvellement de votre abonnement Premium Print.`
+                  : `You can order a free book again from ${renewalDate}, when your Premium Print subscription renews.`
+                : locale === "fr"
+                  ? "Vous pourrez de nouveau commander un livre gratuitement à la date de renouvellement de votre abonnement Premium Print."
+                  : "You can order a free book again when your Premium Print subscription renews."
+              }
             </p>
             <p style={{ fontSize: ".9rem", fontWeight: 600, color: accentColor, marginTop: ".75rem" }}>
               {extraBookPriceLabel} {locale === "fr" ? "+ livraison" : "+ shipping"}
