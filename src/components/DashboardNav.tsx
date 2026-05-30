@@ -193,6 +193,17 @@ function IconBookCover() {
   );
 }
 
+function IconBooks() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+      <path d="M9 2v17" />
+      <path d="M16 6h2M16 10h2" />
+    </svg>
+  );
+}
+
 function IconSettings() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -458,15 +469,17 @@ export default function DashboardNav() {
     router.push("/dashboard");
   };
 
-  const isPetPage    = pathname.includes("/dashboard/pets/") && !pathname.includes("/order") && !pathname.includes("/new") && !pathname.includes("/edit");
+  const isPetPage    = pathname.includes("/dashboard/pets/") && !pathname.includes("/order") && !pathname.includes("/books") && !pathname.includes("/new") && !pathname.includes("/edit");
   const isOrderPage  = pathname.includes("/order");
+  const isBooksPage  = pathname.includes("/books");
   const isSettingsPage = pathname.startsWith("/dashboard/settings");
-  const isDashboard  = !isPetPage && !isOrderPage && !isSettingsPage;
+  const isDashboard  = !isPetPage && !isOrderPage && !isBooksPage && !isSettingsPage;
 
   const petLink        = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal`    : "/dashboard";
   const storiesLink    = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=stories`    : "/dashboard";
   const milestonesLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=milestones` : "/dashboard";
   const orderLink      = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/order`           : "/dashboard";
+  const booksLink      = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/books`           : "/dashboard";
   const addMomentLink  = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal`    : "/dashboard/pets/new";
 
   const isFR = locale === "fr";
@@ -476,6 +489,7 @@ export default function DashboardNav() {
     { href: petLink,        label: "Journal",                              shortLabel: "Journal",                      icon: <IconBook />,      active: isPetPage && currentTab !== "stories" && currentTab !== "milestones" },
     { href: storiesLink,    label: isFR ? "Histoires IA" : "AI Stories",  shortLabel: isFR ? "Histoires" : "Stories", icon: <IconSparkles />, active: isPetPage && currentTab === "stories" },
     { href: orderLink,      label: isFR ? "Livre"        : "Book",        shortLabel: isFR ? "Livre"     : "Book",    icon: <IconBookCover />, active: isOrderPage },
+    { href: booksLink,      label: isFR ? "Mes livres"   : "My books",    shortLabel: isFR ? "Livres"    : "Books",   icon: <IconBooks />,     active: isBooksPage },
     { href: milestonesLink, label: isFR ? "Étapes"       : "Milestones",  shortLabel: isFR ? "Étapes"    : "Steps",   icon: <IconTrophy />,   active: isPetPage && currentTab === "milestones" },
   ];
 
