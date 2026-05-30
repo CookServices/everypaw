@@ -86,6 +86,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const searchParams = useSearchParams();
   const isMemorial = searchParams.get("memorial") === "true";
+  const configIdParam = searchParams.get("configId");
 
   const [pet, setPet] = useState<Pet | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
@@ -109,6 +110,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [previewStale, setPreviewStale] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
   const [renewalDate, setRenewalDate] = useState<string | null>(null);
+  const [currentConfigId, setCurrentConfigId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const [address, setAddress] = useState(() => ({
     firstName: "",
@@ -151,6 +155,27 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       });
     });
   }, [id, locale]);
+
+  // Load config from URL param (coming from /books page)
+  useEffect(() => {
+    if (!configIdParam) return;
+    fetch(`/api/book-configs?petId=${id}`)
+      .then(r => r.json())
+      .then(({ configs }) => {
+        const cfg = (configs ?? []).find((c: Record<string, unknown>) => c.id === configIdParam);
+        if (!cfg) return;
+        setCurrentConfigId(cfg.id);
+        if (cfg.theme) setCoverTheme(cfg.theme as ThemeId);
+        if (cfg.custom_title !== undefined) setCustomTitle(cfg.custom_title ?? "");
+        if (cfg.year_filter !== undefined) setYearFilter(cfg.year_filter ?? null);
+        if (cfg.selected_story_ids) setSelectedStoryIds(cfg.selected_story_ids as string[]);
+        if (cfg.cover_photo_url !== undefined) setCoverPhotoUrl(cfg.cover_photo_url ?? null);
+        if (cfg.story_layouts) setStoryLayouts(cfg.story_layouts as Record<string, LayoutType>);
+        if (cfg.dedication_text !== undefined) setDedicationText(cfg.dedication_text ?? "");
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [configIdParam]);
 
   // Initialize: select all stories across all years (null = toutes les années)
   useEffect(() => {
@@ -327,6 +352,40 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     return Math.max(1, Math.round((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1);
   })();
 
+  const handleSave = async (name?: string) => {
+    setSaving(true);
+    setSaveSuccess(false);
+    const configName = name ?? (locale === "fr" ? `Brouillon ${new Date().toLocaleDateString("fr-FR")}` : `Draft ${new Date().toLocaleDateString("en-GB")}`);
+    const payload = {
+      id: currentConfigId ?? undefined,
+      pet_id: id,
+      name: configName,
+      status: "draft",
+      theme: coverTheme,
+      custom_title: customTitle || null,
+      year_filter: yearFilter,
+      selected_story_ids: selectedStoryIds,
+      cover_photo_url: coverPhotoUrl,
+      story_layouts: storyLayouts,
+      dedication_text: dedicationText || null,
+      page_count: estimatedPages,
+    };
+    try {
+      const res = await fetch("/api/book-configs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.config?.id) {
+        setCurrentConfigId(data.config.id);
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      }
+    } catch { /* silent */ }
+    setSaving(false);
+  };
+
   const handleOrder = async () => {
     setLoading(true);
     try {
@@ -345,6 +404,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           coverTheme,
           customTitle: customTitle.trim() || null,
           storyLayouts,
+          bookConfigId: currentConfigId ?? undefined,
         }),
       });
       const data = await res.json();
@@ -1003,6 +1063,22 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 }}
               >
                 {previewLoading ? "…" : "📖"} {previewLabel}
+              </button>
+              <button
+                onClick={() => handleSave()}
+                disabled={saving}
+                style={{
+                  width: "100%", padding: ".75rem", borderRadius: 100,
+                  border: `1.5px solid ${saveSuccess ? "#6A9E78" : isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
+                  background: saveSuccess ? "rgba(106,158,120,.1)" : "transparent",
+                  fontFamily: "inherit", fontSize: ".875rem",
+                  color: saveSuccess ? "#6A9E78" : textMuted,
+                  cursor: saving ? "wait" : "pointer",
+                  opacity: saving ? .6 : 1,
+                  transition: "all .2s",
+                }}
+              >
+                {saving ? "…" : saveSuccess ? (locale === "fr" ? "✓ Sauvegardé" : "✓ Saved") : (locale === "fr" ? "💾 Sauvegarder cette config" : "💾 Save this config")}
               </button>
               <Link
                 href={`/dashboard/pets/${id}`}
