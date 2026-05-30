@@ -544,9 +544,6 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                   : "You can order a free book again when your Premium Print subscription renews."
               }
             </p>
-            <p style={{ fontSize: ".9rem", fontWeight: 600, color: accentColor, marginTop: ".75rem" }}>
-              {extraBookPriceLabel} {locale === "fr" ? "+ livraison" : "+ shipping"}
-            </p>
           </div>
         )}
 
