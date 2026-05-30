@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrencyFromCountry } from "@/lib/currency";
+import { calcGelatoBookPrice } from "@/lib/gelato-pricing";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -13,26 +14,38 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { petId } = await req.json().catch(() => ({}));
+  const { petId, pageCount } = await req.json().catch(() => ({}));
+
+  if (!pageCount || typeof pageCount !== "number" || pageCount < 28) {
+    return NextResponse.json({ error: "Invalid pageCount" }, { status: 400 });
+  }
 
   const country = req.headers.get("x-vercel-ip-country");
   const currency = getCurrencyFromCountry(country);
 
-  const priceId =
-    currency === "EUR"
-      ? (process.env.STRIPE_PRICE_BOOK_ONCE_EUR ?? process.env.STRIPE_PRICE_BOOK_ONCE)
-      : (process.env.STRIPE_PRICE_BOOK_ONCE_USD ?? process.env.STRIPE_PRICE_BOOK_ONCE);
+  const priceInMajor = calcGelatoBookPrice(pageCount);
+  const unitAmount = Math.round(priceInMajor * 100); // cents
 
-  if (!priceId) {
-    return NextResponse.json({ error: "Book price not configured" }, { status: 500 });
-  }
+  const productName =
+    currency === "EUR"
+      ? `Livre Everypaw — ${pageCount} pages`
+      : `Everypaw Book — ${pageCount} pages`;
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
-    line_items: [{ price: priceId, quantity: 1 }],
+    line_items: [
+      {
+        price_data: {
+          currency: currency.toLowerCase(),
+          unit_amount: unitAmount,
+          product_data: { name: productName },
+        },
+        quantity: 1,
+      },
+    ],
     mode: "payment",
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?book_ordered=true`,
-    cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/upgrade`,
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/pets/${petId ?? ""}/order?book_paid=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/pets/${petId ?? ""}/order`,
     customer_email: user.email,
     metadata: {
       user_id: user.id,

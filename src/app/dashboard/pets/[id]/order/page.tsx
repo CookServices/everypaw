@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
+import { calcGelatoBookPrice } from "@/lib/gelato-pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -370,6 +371,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const labelColor = isMemorial ? "rgba(247,242,234,.4)" : "#7A5C44";
   const accentColor = isMemorial ? "#8B6B4A" : "#C8813A";
   const price = isMemorial ? t.memorial.order_price : t.order.product_price;
+  const extraBookPrice = calcGelatoBookPrice(estimatedPages);
+  const extraBookPriceLabel = `${extraBookPrice.toFixed(2).replace(".", ",")} €`;
   const productName = isMemorial
     ? (petName ? t.memorial.order_tribute.replace("{name}", petName) : "…")
     : t.order.product_detail;
@@ -519,6 +522,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto" }}>
               {t.order.print_extra_book_desc}
             </p>
+            <p style={{ fontSize: ".9rem", fontWeight: 600, color: accentColor, marginTop: ".75rem" }}>
+              {extraBookPriceLabel} {locale === "fr" ? "+ livraison" : "+ shipping"}
+            </p>
           </div>
         )}
 
@@ -534,15 +540,18 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
               {t.order.no_credits_title}
             </h3>
-            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, marginBottom: "1.25rem", maxWidth: 380, margin: "0 auto .75rem" }}>
+            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto .5rem" }}>
               {t.order.no_credits_desc}
+            </p>
+            <p style={{ fontSize: ".9rem", fontWeight: 600, color: accentColor, margin: "0 auto .75rem" }}>
+              {extraBookPriceLabel} {locale === "fr" ? "+ livraison" : "+ shipping"}
             </p>
             <button
               onClick={async () => {
                 const res = await fetch("/api/stripe/book-checkout", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ petId: id }),
+                  body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
                 });
                 const data = await res.json();
                 if (data.url) window.location.href = data.url;
@@ -948,7 +957,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                     const res = await fetch("/api/stripe/book-checkout", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ petId: id }),
+                      body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
                     });
                     const data = await res.json();
                     if (data.url) window.location.href = data.url;
@@ -959,7 +968,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 disabled={visibleStories.length > 0 && selectedStoryIds.length === 0}
                 style={{ width: "100%", padding: ".875rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: visibleStories.length > 0 && selectedStoryIds.length === 0 ? "not-allowed" : "pointer", opacity: visibleStories.length > 0 && selectedStoryIds.length === 0 ? .5 : 1 }}
               >
-                {profile?.plan === "print" && profile.book_credits === 0 ? t.order.print_extra_book_cta : t.order.preview_cta}
+                {profile?.plan === "print" && profile.book_credits === 0
+                  ? `${t.order.print_extra_book_cta} (${extraBookPriceLabel})`
+                  : t.order.preview_cta}
               </button>
               <button
                 onClick={handleFullPreview}
