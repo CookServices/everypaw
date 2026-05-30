@@ -13,6 +13,7 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const body = await req.json();
   const {
     petId,
     shippingAddress,
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
     coverTheme,
     customTitle,
     storyLayouts,
-  } = await req.json();
+  } = body;
 
   // Validate selectedStoryIds format to prevent injection into URL params
   if (Array.isArray(selectedStoryIds)) {
@@ -232,6 +233,33 @@ export async function POST(req: Request) {
         .update({ status: "ordered" })
         .eq("pet_id", petId)
         .eq("user_id", user.id);
+    }
+
+    // Save or update book_config as ordered
+    const configPayload = {
+      user_id: user.id,
+      pet_id: petId,
+      name: "",
+      status: "ordered",
+      theme: typeof coverTheme === "string" ? coverTheme : "classic",
+      custom_title: typeof customTitle === "string" ? customTitle : null,
+      year_filter: yearFilter ?? null,
+      selected_story_ids: Array.isArray(selectedStoryIds) ? selectedStoryIds : [],
+      cover_photo_url: coverPhotoUrl ?? null,
+      story_layouts: storyLayouts ?? {},
+      dedication_text: dedicationText ?? null,
+      gelato_order_id: data.id,
+      ordered_at: new Date().toISOString(),
+      page_count: pageCount,
+    };
+    const bookConfigId = body.bookConfigId;
+    if (bookConfigId && /^[0-9a-f-]{36}$/i.test(bookConfigId)) {
+      await supabase.from("book_configs")
+        .update(configPayload)
+        .eq("id", bookConfigId)
+        .eq("user_id", user.id);
+    } else {
+      await supabase.from("book_configs").insert(configPayload);
     }
 
     return NextResponse.json({ orderId: data.id, status: data.orderStatus });
