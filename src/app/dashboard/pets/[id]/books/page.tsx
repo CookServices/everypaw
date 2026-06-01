@@ -216,16 +216,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: bg, fontFamily: "'DM Sans', sans-serif" }}>
-      <nav style={{ background: "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(61,43,31,.08)", padding: "1rem 2rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-        <Link href={`/dashboard/pets/${petId}`} style={{ fontSize: ".85rem", color: textMuted, textDecoration: "none" }}>
-          ← {isFR ? "Retour au profil" : "Back to profile"}
-        </Link>
-        <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary }}>
-          {isFR ? "Mes livres" : "My books"}
-        </span>
-      </nav>
-
+    <div style={{ minHeight: "100dvh", background: bg, fontFamily: "'DM Sans', sans-serif" }}>
       <main style={{ maxWidth: 600, margin: "0 auto", padding: "2rem 1.5rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.75rem" }}>
           <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.4rem", color: textPrimary, margin: 0 }}>
