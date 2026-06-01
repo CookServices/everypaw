@@ -134,8 +134,8 @@ export default function Home() {
           50% { opacity: 0 }
         }
         @keyframes ep-progress {
-          from { width: 0% }
-          to { width: 100% }
+          from { transform: scaleX(0) }
+          to   { transform: scaleX(1) }
         }
         @keyframes ep-fade-up {
           from { opacity: 0; transform: translateY(10px) }
@@ -150,11 +150,20 @@ export default function Home() {
           .ep-hero-text { align-items: center !important; text-align: center !important; }
           .ep-hero-demo { margin-top: 3rem; }
         }
+        @media (prefers-reduced-motion: reduce) {
+          .ep-hero-demo * {
+            animation: none !important;
+            transition: none !important;
+          }
+          .ep-hero-demo [style*="opacity: 0"] {
+            opacity: 1 !important;
+          }
+        }
       `}</style>
       <section style={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         display: "flex", alignItems: "flex-start", justifyContent: "center",
-        padding: "7rem 2rem 4rem",
+        padding: "7rem 1.25rem 4rem",
         background: "radial-gradient(ellipse 80% 60% at 50% 30%, rgba(200,129,58,.12) 0%, transparent 70%)",
       }}>
         <div className="ep-hero-inner" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4rem", maxWidth: 1100, width: "100%", flexWrap: "wrap" }}>
@@ -299,7 +308,7 @@ export default function Home() {
                         <span>✨</span> {isFR ? "Génération en cours..." : "Generating story..."}
                       </div>
                       <div style={{ background: "rgba(200,129,58,.15)", borderRadius: 100, height: 4, overflow: "hidden" }}>
-                        <div style={{ height: "100%", background: "linear-gradient(90deg,#C8813A,#F7C27A)", borderRadius: 100, animation: demoSlide === 1 ? "ep-progress 2.8s ease .3s both" : "none" }} />
+                        <div style={{ height: "100%", background: "linear-gradient(90deg,#C8813A,#F7C27A)", borderRadius: 100, transformOrigin: "left", animation: demoSlide === 1 ? "ep-progress 2.8s ease .3s both" : "none", transform: demoSlide === 1 ? undefined : "scaleX(0)" }} />
                       </div>
                     </div>
 
@@ -646,14 +655,16 @@ export default function Home() {
               role="region"
               aria-labelledby={FAQ_IDS[i]}
               style={{
-                overflow: "hidden",
-                maxHeight: openFaq === i ? 400 : 0,
-                transition: "max-height .3s ease",
+                display: "grid",
+                gridTemplateRows: openFaq === i ? "1fr" : "0fr",
+                transition: "grid-template-rows .28s ease",
               }}
             >
-              <p style={{ fontSize: ".95rem", color: "#7A5C44", lineHeight: 1.75, paddingBottom: "1.25rem", margin: 0, fontWeight: 300 }}>
-                {a}
-              </p>
+              <div style={{ overflow: "hidden" }}>
+                <p style={{ fontSize: ".95rem", color: "#7A5C44", lineHeight: 1.75, paddingBottom: "1.25rem", margin: 0, fontWeight: 300 }}>
+                  {a}
+                </p>
+              </div>
             </div>
           </div>
         ))}

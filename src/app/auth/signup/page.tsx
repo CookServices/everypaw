@@ -137,7 +137,7 @@ export default function SignupPage() {
         ? new URLSearchParams(window.location.search).get("code")
         : null;
     return (
-      <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", fontFamily: "'DM Sans', sans-serif" }}>
+      <div className="ep-page-centered">
         <div style={{ textAlign: "center", maxWidth: 420 }}>
           <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🐾</div>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.75rem", color: "#3D2B1F", marginBottom: ".75rem" }}>
@@ -165,7 +165,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="ep-page-centered">
       <div style={{ width: "100%", maxWidth: 420 }}>
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
           <Link href="/" style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", fontWeight: 600, color: "#3D2B1F", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: ".4rem" }}>

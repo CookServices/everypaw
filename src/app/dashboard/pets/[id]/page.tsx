@@ -495,9 +495,26 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", color: "#7A5C44" }}>{t.dashboard.loading}</div>
+    <div style={{ minHeight: "100dvh", background: "#F7F2EA", padding: "2rem 1.5rem", maxWidth: 860, margin: "0 auto" }}>
+      {/* Pet header skeleton */}
+      <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+        <div className="ep-skeleton" style={{ width: 56, height: 56, borderRadius: "50%" }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
+          <div className="ep-skeleton" style={{ width: 140, height: 22 }} />
+          <div className="ep-skeleton" style={{ width: 90, height: 14 }} />
+        </div>
+      </div>
+      {/* Tabs skeleton */}
+      <div style={{ display: "flex", gap: ".5rem", marginBottom: "1.5rem" }}>
+        {[80, 100, 90].map(w => <div key={w} className="ep-skeleton" style={{ width: w, height: 32, borderRadius: 100 }} />)}
+      </div>
+      {/* Entry cards skeleton */}
+      <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+        {[1, 2, 3, 4].map(i => <div key={i} className="ep-skeleton" style={{ height: 72, borderRadius: 14 }} />)}
+      </div>
+    </div>
   );
-  if (!pet) return <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>{t.pet.not_found}</div>;
+  if (!pet) return <div className="ep-page-centered">{t.pet.not_found}</div>;
 
   const availableYears = Array.from(new Set(entries.map(e => e.entry_date.slice(0, 4)))).sort().reverse();
   const MONTHS = Array.from({ length: 12 }, (_, i) => ({
@@ -528,14 +545,14 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
       {/* Milestone notification */}
       {newMilestone && (
-        <div style={{ position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)", background: "#3D2B1F", color: "#FDFAF5", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
+        <div className="ep-toast" style={{ background: "#3D2B1F", color: "#FDFAF5", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
           🏆 {t.milestones.new_notification.replace("{title}", translateMilestone(newMilestone.type, isFR, milestoneDefinitions))}
         </div>
       )}
 
       {/* Share link copied notification */}
       {shareLinkCopied && (
-        <div style={{ position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)", background: "#2E5E1E", color: "#FDFAF5", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
+        <div className="ep-toast" style={{ background: "#2E5E1E", color: "#FDFAF5", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
           🔗 {isFR ? "Lien copié !" : "Link copied!"}
         </div>
       )}

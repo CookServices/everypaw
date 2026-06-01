@@ -128,8 +128,24 @@ export default function DashboardPage() {
   };
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#7A5C44" }}>{t.dashboard.loading}</div>
+    <div style={{ minHeight: "100dvh", background: "#F7F2EA", padding: "2.5rem 1.5rem", maxWidth: 900, margin: "0 auto" }}>
+      {/* Header skeleton */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+        <div className="ep-skeleton" style={{ width: 160, height: 28 }} />
+        <div className="ep-skeleton" style={{ width: 110, height: 32, borderRadius: 100 }} />
+      </div>
+      {/* Chips skeleton */}
+      <div style={{ display: "flex", gap: ".5rem", marginBottom: "2rem" }}>
+        {[80, 100, 90].map(w => <div key={w} className="ep-skeleton" style={{ width: w, height: 28, borderRadius: 100 }} />)}
+      </div>
+      {/* KPI cards skeleton */}
+      <div className="ep-grid-kpi" style={{ marginBottom: "1.5rem" }}>
+        {[1, 2].map(i => <div key={i} className="ep-skeleton" style={{ height: 90, borderRadius: 16 }} />)}
+      </div>
+      {/* Entries skeleton */}
+      <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+        {[1, 2, 3].map(i => <div key={i} className="ep-skeleton" style={{ height: 60, borderRadius: 14 }} />)}
+      </div>
     </div>
   );
 
@@ -172,7 +188,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: "100dvh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
 
         {showOnboarding && (
@@ -247,7 +263,7 @@ export default function DashboardPage() {
           <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
             {t.dashboard.month_title}
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: isPremium ? "repeat(3, 1fr)" : "repeat(2, 1fr)", gap: ".75rem" }}>
+          <div className="ep-grid-kpi" style={{ gridTemplateColumns: isPremium ? undefined : "repeat(2, 1fr)" }}>
 
             {/* Entries card */}
             <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.1rem", border: "1px solid rgba(61,43,31,.07)" }}>
@@ -330,7 +346,7 @@ export default function DashboardPage() {
             <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
               {isFR ? "Passer à Premium" : "Upgrade to Premium"}
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem" }}>
+            <div className="ep-grid-2">
 
               {/* Digital */}
               <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1.1rem", border: "1.5px solid rgba(200,129,58,.2)", display: "flex", flexDirection: "column", gap: ".5rem" }}>

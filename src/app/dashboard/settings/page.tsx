@@ -292,7 +292,7 @@ export default function SettingsPage() {
 
       {/* Toast */}
       {saveResult && (
-        <div style={{ position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)", background: saveResult === "success" ? "#2E5E1E" : "#A32D2D", color: "#FDFAF5", padding: ".875rem 1.5rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", whiteSpace: "nowrap" }}>
+        <div className="ep-toast" style={{ background: saveResult === "success" ? "#2E5E1E" : "#A32D2D", color: "#FDFAF5", padding: ".875rem 1.5rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", whiteSpace: "nowrap" }}>
           {toastMsg || (saveResult === "success" ? t.settings.save_success : t.settings.save_error)}
         </div>
       )}

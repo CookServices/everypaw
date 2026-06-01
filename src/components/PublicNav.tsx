@@ -55,11 +55,11 @@ export default function PublicNav({ variant = "simple", fixed = false }: PublicN
       </Link>
 
       {variant === "full" && (
-        <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
-          <Link href="/gift" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+          <Link href="/gift" className="ep-nav-secondary" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400, padding: ".4rem .5rem" }}>
             {t.nav.give_gift}
           </Link>
-          <Link href="/auth/login" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400 }}>
+          <Link href="/auth/login" className="ep-nav-secondary" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400, padding: ".4rem .75rem" }}>
             {t.nav.sign_in}
           </Link>
           <Link
@@ -72,6 +72,7 @@ export default function PublicNav({ variant = "simple", fixed = false }: PublicN
               fontSize: ".875rem",
               fontWeight: 500,
               textDecoration: "none",
+              whiteSpace: "nowrap",
             }}
           >
             {t.nav.get_started}

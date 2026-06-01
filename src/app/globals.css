@@ -1,3 +1,26 @@
+/* ── Google Fonts (must be first) ────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap');
+
+/* ── Design tokens ───────────────────────────────────────────────────────── */
+:root {
+  --ep-bg:          #F7F2EA;
+  --ep-bg-card:     #FDFAF5;
+  --ep-brand:       #C8813A;
+  --ep-brand-dark:  #B5712E;
+  --ep-text:        #3D2B1F;
+  --ep-text-muted:  #7A5C44;
+  --ep-text-faint:  #9A8070;
+  --ep-border:      rgba(61,43,31,.1);
+  --ep-radius-sm:   8px;
+  --ep-radius-md:   14px;
+  --ep-radius-lg:   20px;
+  --ep-radius-pill: 100px;
+  --ep-shadow-sm:   0 2px 8px rgba(61,43,31,.08);
+  --ep-shadow-md:   0 8px 24px rgba(61,43,31,.12);
+  --ep-shadow-lg:   0 16px 48px rgba(61,43,31,.16);
+  --ep-transition:  150ms ease;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -7,17 +30,16 @@
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
-  scroll-padding-top: 70px; /* compense la navbar fixed (~60px) pour les ancres */
+  scroll-padding-top: 70px;
 }
 
-/* ── Focus ring visible au clavier (WCAG 2.4.7) ─────────────────────────── */
+/* ── Focus ring (WCAG 2.4.7) ─────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid #C8813A;
+  outline: 2px solid var(--ep-brand);
   outline-offset: 3px;
   border-radius: 4px;
 }
 
-/* Supprime l'outline par défaut uniquement si :focus-visible est supporté */
 @supports selector(:focus-visible) {
   :focus:not(:focus-visible) {
     outline: none;
@@ -26,13 +48,40 @@ html {
 
 body {
   font-family: 'DM Sans', -apple-system, sans-serif;
-  background: #F7F2EA;
-  color: #3D2B1F;
+  background: var(--ep-bg);
+  color: var(--ep-text);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap');
+/* ── Global cursor for interactive elements ──────────────────────────────── */
+button,
+[role="button"],
+[type="submit"],
+[type="button"],
+[type="reset"],
+select {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"],
+[disabled] {
+  cursor: not-allowed;
+}
+
+/* ── Touch active feedback ───────────────────────────────────────────────── */
+@media (hover: none) {
+  button:active,
+  [role="button"]:active,
+  a:active {
+    opacity: 0.75;
+    transform: scale(0.98);
+    transition: opacity 80ms, transform 80ms;
+  }
+}
 
 /* ── Images ─────────────────────────────────────────────────────────────── */
 img {
@@ -40,7 +89,7 @@ img {
   height: auto;
 }
 
-/* ── Mobile: prevent iOS auto-zoom on inputs (font-size must be ≥16px) ─── */
+/* ── Mobile: prevent iOS auto-zoom on inputs (≥16px) ───────────────────── */
 @media (max-width: 767px) {
   input:not([type="hidden"]),
   input:not([type="range"]),
@@ -50,10 +99,41 @@ img {
   }
 }
 
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Skeleton shimmer ────────────────────────────────────────────────────── */
+@keyframes ep-shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position:  200% 0; }
+}
+
+.ep-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(61,43,31,.06) 25%,
+    rgba(61,43,31,.12) 50%,
+    rgba(61,43,31,.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: ep-shimmer 1.5s ease infinite;
+  border-radius: var(--ep-radius-sm);
+}
+
 /* ── Dashboard layout ────────────────────────────────────────────────────── */
 .ep-dashboard-root {
   display: flex;
-  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100vh; /* fallback for browsers without dvh */
 }
 
 /* Sidebar hidden on mobile, shown on desktop */
@@ -81,11 +161,11 @@ img {
 
 .ep-dashboard-main {
   flex: 1;
-  min-width: 0; /* prevent flex child overflow */
-  padding-bottom: 56px; /* clear fixed bottom nav on mobile */
+  min-width: 0;
+  padding-bottom: 56px;
 }
 
-/* ── Tap targets: all interactive elements ≥44px ───────────────────────── */
+/* ── Tap targets: interactive elements ≥44px on touch ───────────────────── */
 @media (max-width: 767px) {
   button,
   [role="button"],
@@ -95,7 +175,6 @@ img {
     align-items: center;
   }
 
-  /* Override for inline text links that shouldn't be block */
   nav a,
   p a,
   span a {
@@ -138,5 +217,114 @@ img {
   }
   .ep-dashboard-main {
     padding-bottom: calc(56px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ── Public nav — hide secondary links on small mobile ──────────────────── */
+@media (max-width: 480px) {
+  .ep-nav-secondary {
+    display: none !important;
+  }
+}
+
+/* ── Utility hover/active classes ───────────────────────────────────────── */
+.ep-btn-primary {
+  background: var(--ep-brand);
+  color: #FDFAF5;
+  border: none;
+  border-radius: var(--ep-radius-pill);
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--ep-transition), box-shadow var(--ep-transition);
+}
+.ep-btn-primary:hover {
+  background: var(--ep-brand-dark);
+}
+.ep-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.ep-btn-outline {
+  background: transparent;
+  border: 1.5px solid rgba(61,43,31,.2);
+  border-radius: var(--ep-radius-pill);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--ep-transition), color var(--ep-transition);
+}
+.ep-btn-outline:hover {
+  border-color: var(--ep-brand);
+  color: var(--ep-brand);
+}
+
+.ep-nav-item:hover {
+  background: rgba(61,43,31,.04);
+  color: #3D2B1F;
+}
+
+/* ── Page root utility (100dvh) ─────────────────────────────────────────── */
+.ep-page {
+  min-height: 100dvh;
+  min-height: 100vh; /* fallback */
+  background: var(--ep-bg);
+  font-family: 'DM Sans', sans-serif;
+}
+
+.ep-page-centered {
+  min-height: 100dvh;
+  min-height: 100vh;
+  background: var(--ep-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Toast — clear bottom nav on mobile ─────────────────────────────────── */
+.ep-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .ep-toast {
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px) + .75rem);
+  }
+}
+
+/* ── Responsive grids ────────────────────────────────────────────────────── */
+.ep-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .75rem;
+}
+
+@media (max-width: 400px) {
+  .ep-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ep-grid-kpi {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .75rem;
+}
+
+@media (min-width: 600px) {
+  .ep-grid-kpi-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 360px) {
+  .ep-grid-kpi {
+    grid-template-columns: 1fr;
   }
 }

@@ -485,13 +485,15 @@ export default function DashboardNav() {
   const isFR = locale === "fr";
 
   const mainItems = [
-    { href: "/dashboard",   label: isFR ? "Accueil"      : "Home",       shortLabel: isFR ? "Accueil"   : "Home",    icon: <IconHome />,      active: isDashboard },
-    { href: petLink,        label: "Journal",                              shortLabel: "Journal",                      icon: <IconBook />,      active: isPetPage && currentTab !== "stories" && currentTab !== "milestones" },
-    { href: storiesLink,    label: isFR ? "Histoires IA" : "AI Stories",  shortLabel: isFR ? "Histoires" : "Stories", icon: <IconSparkles />, active: isPetPage && currentTab === "stories" },
-    { href: orderLink,      label: isFR ? "Livre"        : "Book",        shortLabel: isFR ? "Livre"     : "Book",    icon: <IconBookCover />, active: isOrderPage },
-    { href: booksLink,      label: isFR ? "Mes livres"   : "My books",    shortLabel: isFR ? "Livres"    : "Books",   icon: <IconBooks />,     active: isBooksPage },
-    { href: milestonesLink, label: isFR ? "Étapes"       : "Milestones",  shortLabel: isFR ? "Étapes"    : "Steps",   icon: <IconTrophy />,   active: isPetPage && currentTab === "milestones" },
+    { href: "/dashboard",   label: isFR ? "Accueil"      : "Home",       shortLabel: isFR ? "Accueil"   : "Home",    icon: <IconHome />,      active: isDashboard,    mobileOnly: false },
+    { href: petLink,        label: "Journal",                              shortLabel: "Journal",                      icon: <IconBook />,      active: isPetPage && currentTab !== "stories" && currentTab !== "milestones", mobileOnly: false },
+    { href: storiesLink,    label: isFR ? "Histoires IA" : "AI Stories",  shortLabel: isFR ? "Histoires" : "Stories", icon: <IconSparkles />, active: isPetPage && currentTab === "stories",      mobileOnly: false },
+    { href: orderLink,      label: isFR ? "Livre"        : "Book",        shortLabel: isFR ? "Livre"     : "Book",    icon: <IconBookCover />, active: isOrderPage,     mobileOnly: false },
+    { href: milestonesLink, label: isFR ? "Étapes"       : "Milestones",  shortLabel: isFR ? "Étapes"    : "Steps",   icon: <IconTrophy />,   active: isPetPage && currentTab === "milestones", mobileOnly: false },
+    { href: booksLink,      label: isFR ? "Mes livres"   : "My books",    shortLabel: isFR ? "Livres"    : "Books",   icon: <IconBooks />,     active: isBooksPage,     mobileOnly: true  },
   ];
+
+  const mobileNavItems = mainItems.filter(item => !item.mobileOnly);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -666,7 +668,7 @@ export default function DashboardNav() {
         background: "#F7F2EA", borderTop: "0.5px solid rgba(61,43,31,.12)",
         zIndex: 40, display: "flex", alignItems: "stretch",
       }}>
-        {mainItems.map(item => (
+        {mobileNavItems.map(item => (
           <Link
             key={item.label}
             href={item.href}
