@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import Link from "next/link";
 import { getTranslations } from "@/lib/i18n";
+import PublicFooter from "@/components/PublicFooter";
 import { getServiceSupabase } from "@/lib/plan";
 
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
@@ -175,6 +176,7 @@ export default async function PublicPetPage({ params, searchParams }: { params: 
           </Link>
         </div>
       </main>
+      <PublicFooter />
     </div>
   );
 }

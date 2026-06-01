@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { cookies, headers } from "next/headers";
 import Link from "next/link";
 import { getTranslations } from "@/lib/i18n";
+import PublicFooter from "@/components/PublicFooter";
 
 export default async function MemorialPage({ params, searchParams }: { params: { id: string }; searchParams: { lang?: string } }) {
   const langParam = searchParams.lang;
@@ -157,6 +158,7 @@ export default async function MemorialPage({ params, searchParams }: { params: {
           </Link>
         </div>
       </main>
+      <PublicFooter />
     </div>
   );
 }

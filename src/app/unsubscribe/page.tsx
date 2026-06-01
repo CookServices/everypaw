@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
+import PublicFooter from "@/components/PublicFooter";
 
 export default function UnsubscribePage() {
   const { t } = useLocale();
@@ -28,7 +29,8 @@ export default function UnsubscribePage() {
   };
 
   return (
-    <div className="ep-page-centered">
+    <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1rem" }}>
       <div style={{ maxWidth: 480, width: "100%", textAlign: "center" }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "2rem", display: "flex", alignItems: "center", justifyContent: "center", gap: ".4rem" }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
@@ -75,6 +77,8 @@ export default function UnsubscribePage() {
           )}
         </div>
       </div>
+      </div>
+      <PublicFooter />
     </div>
   );
 }

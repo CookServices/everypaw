@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
+import PublicFooter from "@/components/PublicFooter";
 
 export default function RedeemPage() {
   const { t, locale } = useLocale();
@@ -49,7 +50,8 @@ export default function RedeemPage() {
   const signupUrl = `/auth/signup?redirect=/redeem${code ? `&code=${code}` : ""}`;
 
   return (
-    <div className="ep-page-centered">
+    <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1rem" }}>
       <div style={{ maxWidth: 440, width: "100%" }}>
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <Link href="/" style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", fontWeight: 600, color: "#3D2B1F", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: ".4rem" }}>
@@ -117,6 +119,8 @@ export default function RedeemPage() {
           )}
         </div>
       </div>
+      </div>
+      <PublicFooter />
     </div>
   );
 }

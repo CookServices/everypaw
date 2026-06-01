@@ -642,6 +642,7 @@ function BookDocument({
         coverPhotoUrl={coverPhotoUrl}
         customTitle={customTitle}
       />
+      <BlankPage />
       {hasDedication && (
         <DedicationPage colors={colors} strings={strings} dedication={dedication} />
       )}
@@ -797,11 +798,12 @@ export async function GET(req: Request) {
     .slice(0, 6);
   const hasOrphanPhotos = orphanEntries.length > 0;
 
-  // Page count must match preview-pdf exactly (Gelato uses the declared pageCount)
+  // pageCount declared to Gelato = content pages only (cover + endpaper + back cover are structural).
+  // Total PDF pages = contentPages + blankPagesCount + 3 structural = targetContentPages + 3.
   const storyPageCount = stories.length > 0 ? stories.length : 1;
-  const actualPages = 1 + (hasDedication ? 1 : 0) + storyPageCount + (hasOrphanPhotos ? 1 : 0) + 1;
-  const targetPages = Math.max(28, Math.ceil(actualPages / 4) * 4);
-  const blankPagesCount = targetPages - actualPages;
+  const contentPages = (hasDedication ? 1 : 0) + storyPageCount + (hasOrphanPhotos ? 1 : 0);
+  const targetContentPages = Math.max(28, Math.ceil(contentPages / 4) * 4);
+  const blankPagesCount = targetContentPages - contentPages;
 
   try {
     const buffer = await renderToBuffer(

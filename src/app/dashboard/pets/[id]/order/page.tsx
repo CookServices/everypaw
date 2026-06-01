@@ -286,9 +286,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const photoEntries = filteredEntries.filter(e => e.photo_urls?.length > 0);
   const photoCount = Math.min(photoEntries.flatMap(e => e.photo_urls).length, 6);
 
-  // Estimated page count (without dedication — filled later at address step)
-  // Structure: 1 cover + N chapters (min 1) + 1 orphan-photos page (if any) + 1 back cover
-  // Gelato: must be even, minimum 20
+  // Estimated content page count (no dedication — filled at address step).
+  // Matches calcPageCount: content only, multiple of 4, min 28.
+  // Total PDF pages = estimatedPages + 3 structural (cover, endpaper, back cover).
   const estimatedPages = (() => {
     const selected = visibleStories.filter(s => selectedStoryIds.includes(s.id));
     const hasOrphanPhotos = filteredEntries.some(e => {
@@ -300,9 +300,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         return !!start && d >= start && (!end || d <= end);
       });
     });
-    const raw = 1 + Math.max(selected.length, 1) + (hasOrphanPhotos ? 1 : 0) + 1;
-    const rounded = raw % 4 === 0 ? raw : raw + (4 - raw % 4); // Gelato: multiple of 4
-    return Math.max(28, rounded); // Gelato: minimum 28 pages
+    const contentPages = Math.max(selected.length, 1) + (hasOrphanPhotos ? 1 : 0);
+    const rounded = Math.ceil(contentPages / 4) * 4;
+    return Math.max(28, rounded);
   })();
 
   // Cover photo picker uses the same year filter as the rest of the preview

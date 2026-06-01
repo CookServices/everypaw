@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
+import PublicFooter from "@/components/PublicFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,8 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="ep-page-centered">
+    <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1rem" }}>
       <div style={{ width: "100%", maxWidth: 420 }}>
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
           <Link href="/" style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", fontWeight: 600, color: "#3D2B1F", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: ".4rem" }}>
@@ -103,6 +105,8 @@ export default function ForgotPasswordPage() {
         </div>
 
       </div>
+      </div>
+      <PublicFooter />
     </div>
   );
 }

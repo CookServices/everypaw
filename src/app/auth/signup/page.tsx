@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 import { getSignupError } from "@/lib/auth-errors";
+import PublicFooter from "@/components/PublicFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -137,35 +138,39 @@ export default function SignupPage() {
         ? new URLSearchParams(window.location.search).get("code")
         : null;
     return (
-      <div className="ep-page-centered">
-        <div style={{ textAlign: "center", maxWidth: 420 }}>
-          <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🐾</div>
-          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.75rem", color: "#3D2B1F", marginBottom: ".75rem" }}>
-            {isFR ? "Vérifiez votre boîte mail" : "Check your inbox"}
-          </h2>
-          <p style={{ color: "#7A5C44", fontWeight: 300, lineHeight: 1.6 }}>
-            {isFR ? (
-              <>Nous avons envoyé un lien de confirmation à <strong>{email}</strong>. Cliquez dessus pour activer votre compte.</>
-            ) : (
-              <>We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.</>
-            )}
-          </p>
-          {giftCode && (
-            <p style={{ marginTop: "1rem", fontSize: ".875rem", color: "#C8813A", fontWeight: 500 }}>
+      <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1rem" }}>
+          <div style={{ textAlign: "center", maxWidth: 420 }}>
+            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🐾</div>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.75rem", color: "#3D2B1F", marginBottom: ".75rem" }}>
+              {isFR ? "Vérifiez votre boîte mail" : "Check your inbox"}
+            </h2>
+            <p style={{ color: "#7A5C44", fontWeight: 300, lineHeight: 1.6 }}>
               {isFR ? (
-                <>Votre code cadeau <strong>{giftCode}</strong> sera disponible dès votre connexion.</>
+                <>Nous avons envoyé un lien de confirmation à <strong>{email}</strong>. Cliquez dessus pour activer votre compte.</>
               ) : (
-                <>Your gift code <strong>{giftCode}</strong> will be ready once you sign in.</>
+                <>We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.</>
               )}
             </p>
-          )}
+            {giftCode && (
+              <p style={{ marginTop: "1rem", fontSize: ".875rem", color: "#C8813A", fontWeight: 500 }}>
+                {isFR ? (
+                  <>Votre code cadeau <strong>{giftCode}</strong> sera disponible dès votre connexion.</>
+                ) : (
+                  <>Your gift code <strong>{giftCode}</strong> will be ready once you sign in.</>
+                )}
+              </p>
+            )}
+          </div>
         </div>
+        <PublicFooter />
       </div>
     );
   }
 
   return (
-    <div className="ep-page-centered">
+    <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1rem" }}>
       <div style={{ width: "100%", maxWidth: 420 }}>
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
           <Link href="/" style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", fontWeight: 600, color: "#3D2B1F", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: ".4rem" }}>
@@ -304,6 +309,8 @@ export default function SignupPage() {
           </Link>
         </p>
       </div>
+      </div>
+      <PublicFooter />
     </div>
   );
 }
