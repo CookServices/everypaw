@@ -85,7 +85,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
   }, [configs]);
 
   const handleDelete = async (config: BookConfig) => {
-    if (!confirm(isFR ? `Supprimer "${config.name || "ce brouillon"}" ?` : `Delete "${config.name || "this draft"}"?`)) return;
+    if (!confirm(isFR ? `Supprimer "${config.custom_title || config.name || "ce brouillon"}" ?` : `Delete "${config.custom_title || config.name || "this draft"}"?`)) return;
     setDeletingId(config.id);
     await fetch(`/api/book-configs/${config.id}`, { method: "DELETE" });
     setConfigs(prev => prev.filter(c => c.id !== config.id));
@@ -135,7 +135,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
               )}
             </div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: textPrimary, marginTop: ".35rem" }}>
-              {config.name || (isFR ? "Sans titre" : "Untitled")}
+              {config.custom_title || config.name || (isFR ? "Sans titre" : "Untitled")}
             </div>
           </div>
           {config.cover_photo_url && (
