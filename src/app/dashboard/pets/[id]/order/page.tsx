@@ -113,6 +113,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [currentConfigId, setCurrentConfigId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [checkoutError, setCheckoutError] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const [address, setAddress] = useState(() => ({
     firstName: "",
@@ -299,8 +301,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       });
     });
     const raw = 1 + Math.max(selected.length, 1) + (hasOrphanPhotos ? 1 : 0) + 1;
-    const rounded = raw % 2 === 0 ? raw : raw + 1;
-    return Math.max(20, rounded);
+    const rounded = raw % 4 === 0 ? raw : raw + (4 - raw % 4); // Gelato: multiple of 4
+    return Math.max(28, rounded); // Gelato: minimum 28 pages
   })();
 
   // Cover photo picker uses the same year filter as the rest of the preview
@@ -1033,24 +1035,45 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               <button
                 onClick={async () => {
                   if (profile?.plan === "print" && profile.book_credits === 0) {
-                    const res = await fetch("/api/stripe/book-checkout", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
-                    });
-                    const data = await res.json();
-                    if (data.url) window.location.href = data.url;
+                    setCheckoutError(false);
+                    setCheckoutLoading(true);
+                    try {
+                      const res = await fetch("/api/stripe/book-checkout", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
+                      });
+                      const data = await res.json();
+                      if (data.url) {
+                        window.location.href = data.url;
+                      } else {
+                        setCheckoutError(true);
+                      }
+                    } catch {
+                      setCheckoutError(true);
+                    } finally {
+                      setCheckoutLoading(false);
+                    }
                     return;
                   }
                   setStep("address");
                 }}
-                disabled={visibleStories.length > 0 && selectedStoryIds.length === 0}
-                style={{ width: "100%", padding: ".875rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: visibleStories.length > 0 && selectedStoryIds.length === 0 ? "not-allowed" : "pointer", opacity: visibleStories.length > 0 && selectedStoryIds.length === 0 ? .5 : 1 }}
+                disabled={(visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading}
+                style={{ width: "100%", padding: ".875rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading ? "not-allowed" : "pointer", opacity: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading ? .5 : 1 }}
               >
-                {profile?.plan === "print" && profile.book_credits === 0
-                  ? t.order.print_extra_book_cta
-                  : t.order.preview_cta}
+                {checkoutLoading
+                  ? (locale === "fr" ? "Chargement…" : "Loading…")
+                  : profile?.plan === "print" && profile.book_credits === 0
+                    ? t.order.print_extra_book_cta
+                    : t.order.preview_cta}
               </button>
+              {checkoutError && (
+                <p style={{ fontSize: ".8rem", color: "#A32D2D", textAlign: "center", margin: "-.25rem 0 0" }}>
+                  {locale === "fr"
+                    ? "Une erreur est survenue. Vérifie ta connexion et réessaie."
+                    : "Something went wrong. Check your connection and try again."}
+                </p>
+              )}
               <button
                 onClick={handleFullPreview}
                 disabled={previewLoading}
