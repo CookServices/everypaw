@@ -151,7 +151,6 @@ export default function BooksPage({ params }: { params: { id: string } }) {
             <span>📖 {config.selected_story_ids.length} {isFR ? "chapitre(s)" : "chapter(s)"}</span>
           )}
           {config.year_filter && <span>📅 {config.year_filter}</span>}
-          {config.theme && <span>🎨 {config.theme}</span>}
           {isOrdered && config.ordered_at && (
             <span>{isFR ? "Commandé le" : "Ordered"} {formatDate(config.ordered_at)}</span>
           )}
