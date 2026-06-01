@@ -130,6 +130,16 @@ stories: id, pet_id, user_id, title, content, cover_url,
 -- milestones
 milestones: id, pet_id, user_id, type, title, achieved_at, entry_id, created_at
 
+-- book_configs (brouillons et commandes de livres)
+book_configs: id, user_id, pet_id, name, status ('draft'|'ordered'),
+              theme, custom_title, year_filter, selected_story_ids (jsonb),
+              cover_photo_url, story_layouts (jsonb), dedication_text,
+              gelato_order_id, ordered_at, page_count,
+              created_at, updated_at
+-- RLS : owner uniquement (select/insert/update/delete)
+-- Max 15 drafts par utilisateur (enforced API)
+-- updated_at auto via trigger book_configs_updated_at
+
 -- milestone_definitions (extensibilité sans déploiement)
 milestone_definitions: id, key (unique), name_fr, name_en, keywords text[], icon, order_index
 -- RLS : SELECT public, pas d'écriture client
@@ -152,7 +162,7 @@ SQL migrations dans `supabase/migrations/`. Toujours utiliser `IF NOT EXISTS` et
 
 ### Guards d'accès (`src/lib/plan.ts`)
 
-```typescript
+```ts
 getUserPlan(userId)          // retourne le plan actuel
 canGenerateStory(userId)     // Free: max 1 | autres: illimité
 canAddEntry(userId)          // Free: max 10 | autres: illimité
@@ -175,7 +185,9 @@ Le webhook (`/api/stripe/webhook`) gère :
 - `invoice.payment_succeeded` : idem — vérifie `events_log` par `stripe_event_id` avant `increment_book_credits`.
 - Tous les événements loggent le Stripe event ID dès réception (`[webhook] event: evt_xxx …`).
 
-**Book credits Print — source unique (2026-05-28)** : `invoice.payment_succeeded` est la seule source d'attribution des crédits livre pour les abonnés Print. `checkout.session.completed` n'attribue plus de crédit. Conditions : `billing_reason === "subscription_create"` (1ère souscription) OU `"subscription_cycle"` (renouvellement) + price ID correspondant à un plan Print (mensuel ou annuel EUR/USD). Note : `invoice.payment_succeeded` doit être activé dans la config webhook Stripe.
+**Book credits Print — source unique (2026-05-28)** : `invoice.payment_succeeded` est la seule source d'attribution des crédits livre pour les abonnés Print. `checkout.session.completed` n'attribue plus de crédit Print (race condition corrigée 2026-06-01). Conditions : `billing_reason === "subscription_create"` (1ère souscription) OU `"subscription_cycle"` (renouvellement) + price ID correspondant à un plan Print (mensuel ou annuel EUR/USD). Note : `invoice.payment_succeeded` doit être activé dans la config webhook Stripe.
+
+**Prix livre dynamique (2026-06-01)** : `src/lib/gelato-pricing.ts` — `calcGelatoBookPrice(pageCount)` : `15.46 + max(0, (pages-30)/2) × 0.395 + 12€ marge fixe`. Même valeur EUR/USD. Utilisé par `/api/stripe/book-checkout` (achat one-time avec `price_data` Stripe) et affiché dans les encarts upsell de la page order.
 
 ---
 
@@ -208,7 +220,7 @@ Messages dans `messages/en.json` et `messages/fr.json`. `src/lib/i18n.ts` charge
 - `showAll` state : `true` quand on est sur `/dashboard` (vue globale)
 - Navigation tab-aware : les liens sidebar utilisent `?tab=journal|stories|milestones`
 - Le switch de pet préserve l'onglet actif
-- **Sidebar desktop** (3 zones) : sélecteur animal proéminent → nav principale 5 items → CTA "Ajouter un moment" → section secondaire (Paramètres, langue, déconnexion)
+- **Sidebar desktop** (3 zones) : sélecteur animal proéminent → nav principale 6 items → CTA "Ajouter un moment" → section secondaire (Paramètres, langue, déconnexion)
 - **Mobile** : bottom nav 5 items + FAB orange flottant
 
 ### Labels de navigation (nommage définitif)
@@ -231,9 +243,12 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 |---|---|
 | `/api/generate` | Génération histoire IA — gate plan server-side via `getUserPlan()` + rate limit 10/jour/user (UTC) |
 | `/api/stripe/checkout` | Checkout abonnement (accepte `{ plan: "digital" \| "print_monthly" \| "print_annual" }`) |
-| `/api/stripe/book-checkout` | Achat livre one-time |
+| `/api/stripe/book-checkout` | Achat livre one-time — prix dynamique via `calcGelatoBookPrice(pageCount)` + `price_data` Stripe, accepte `{ petId, pageCount }` |
 | `/api/stripe/webhook` | Webhook Stripe (doit utiliser le client Supabase service role) |
-| `/api/gelato/order` | Envoi commande à Gelato |
+| `/api/gelato/order` | Envoi commande à Gelato — sauvegarde/met à jour `book_configs` (status→ordered) après succès, accepte `bookConfigId` optionnel |
+| `/api/gelato/status/[orderId]` | Proxy statut commande Gelato — ownership vérifié via `book_configs.gelato_order_id` |
+| `/api/book-configs` | GET (liste par petId) + POST (create/update, max 15 drafts) |
+| `/api/book-configs/[id]` | DELETE (owner-only) |
 | `/api/cron/monthly-story` | Auto-génération histoires mensuelles |
 | `/api/cron/weekly-reminder` | Rappels email via Resend |
 | `/api/gift/create`, `/api/gift/redeem` | Flow carte cadeau |
@@ -252,7 +267,8 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/auth/signup` | Inscription |
 | `/dashboard` | Dashboard principal |
 | `/dashboard/pets/[id]` | Profil animal + journal (tabs: journal / histoires IA / étapes) |
-| `/dashboard/pets/[id]/order` | Commande livre |
+| `/dashboard/pets/[id]/order` | Commande livre — bouton "Sauvegarder cette config" (brouillon), chargement config via `?configId=`, CTA redirige vers Stripe si `plan=print && book_credits=0` |
+| `/dashboard/pets/[id]/books` | Historique livres & brouillons — liste `book_configs`, statut Gelato temps réel, tracking, reprendre/recommander/supprimer |
 | `/dashboard/settings` | Préférences utilisateur |
 | `/pets/[id]` | Profil public animal |
 | `/memorial/[id]` | Page mémorial (à implémenter) |
@@ -278,13 +294,15 @@ Toutes les routes cron protégées par `Authorization: Bearer CRON_SECRET`.
 
 ## Gelato — Configuration livre
 
-```typescript
+```ts
 productUid: "photobooks-hardcover_pf_200x200-mm-8x8-inch_pt_170-gsm-65lb-coated-silk_cl_4-4_ccl_4-4_bt_glued-left_ct_matt-lamination_prt_1-0_cpt_130-gsm-65-lb-cover-coated-silk_ver"
 pageCount: 28   // OBLIGATOIRE — sans ça Gelato retourne BAD_REQUEST
 currency: "USD"
 ```
 
-**COGS livre : $15-25 (impression + shipping)** — raison pour laquelle le livre est séparé du plan Digital.
+**Pricing livre dynamique** : `calcGelatoBookPrice(pageCount)` dans `src/lib/gelato-pricing.ts`. COGS Gelato : `15.46 + max(0,(n-30)/2)×0.395`. Marge fixe : +12€/USD. Prix minimum (28 pages) : ~27,46€.
+
+**pageCount** : calculé par `calcPageCount(storiesCount, hasOrphanPhotos, hasDedication)` dans `src/lib/book.ts`. Doit correspondre exactement entre `gelato/order` et `book-pdf` (même algo best-match pour `hasOrphanPhotos`). Format Gelato : multiple de 4, minimum 28.
 
 ---
 
