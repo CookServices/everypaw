@@ -7,11 +7,11 @@ const CONSENT_KEY = "cookie_consent";
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
+  const [isFR, setIsFR] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && localStorage.getItem(CONSENT_KEY) !== "accepted") {
-      setVisible(true);
-    }
+    setIsFR(navigator.language.toLowerCase().startsWith("fr"));
+    if (localStorage.getItem(CONSENT_KEY) !== "accepted") setVisible(true);
   }, []);
 
   const accept = () => {
@@ -24,50 +24,37 @@ export default function CookieBanner() {
   return (
     <div
       role="dialog"
-      aria-label="Consentement aux cookies"
+      aria-label={isFR ? "Consentement aux cookies" : "Cookie consent"}
       style={{
         position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
+        bottom: 0, left: 0, right: 0,
         zIndex: 9999,
         background: "#3D2B1F",
         borderTop: "1px solid rgba(247,194,122,0.2)",
-        padding: "16px 24px",
+        padding: "12px 20px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 16,
+        gap: 12,
         flexWrap: "wrap",
       }}
     >
-      <p style={{ margin: 0, fontSize: "0.85rem", color: "#FDFAF5", lineHeight: 1.55, flex: 1, minWidth: 240 }}>
-        Ce site utilise uniquement des cookies fonctionnels essentiels à son bon fonctionnement
-        (mémorisation de votre langue). Aucun cookie publicitaire ou de tracking n&apos;est utilisé.{" "}
-        <Link
-          href="/legal/confidentialite"
-          style={{ color: "#F7C27A", textDecoration: "underline", whiteSpace: "nowrap" }}
-        >
-          Politique de confidentialité
-        </Link>
+      <p style={{ margin: 0, fontSize: "0.82rem", color: "#FDFAF5", lineHeight: 1.5, flex: 1, minWidth: 200 }}>
+        {isFR
+          ? <>Ce site utilise uniquement des cookies fonctionnels essentiels. Aucun cookie publicitaire ou de tracking n&apos;est utilisé.{" "}<Link href="/legal/confidentialite" style={{ color: "#F7C27A", textDecoration: "underline", whiteSpace: "nowrap" }}>Politique de confidentialité</Link></>
+          : <>This site uses only essential functional cookies. No advertising or tracking cookies are used.{" "}<Link href="/legal/confidentialite" style={{ color: "#F7C27A", textDecoration: "underline", whiteSpace: "nowrap" }}>Privacy policy</Link></>
+        }
       </p>
-
       <button
         onClick={accept}
         style={{
-          background: "#C8813A",
-          color: "#FDFAF5",
-          border: "none",
-          borderRadius: 100,
-          padding: "10px 24px",
-          fontSize: "0.875rem",
-          fontWeight: 600,
-          cursor: "pointer",
-          whiteSpace: "nowrap",
-          flexShrink: 0,
+          background: "#C8813A", color: "#FDFAF5", border: "none",
+          borderRadius: 100, padding: "8px 20px",
+          fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
+          whiteSpace: "nowrap", flexShrink: 0,
         }}
       >
-        Accepter
+        {isFR ? "Accepter" : "Accept"}
       </button>
     </div>
   );

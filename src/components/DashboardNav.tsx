@@ -5,7 +5,6 @@ import { usePathname, useParams, useRouter, useSearchParams } from "next/navigat
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 function SuggestionModal({ isFR, onClose }: { isFR: boolean; onClose: () => void }) {
   const [message, setMessage] = useState("");
@@ -610,9 +609,6 @@ export default function DashboardNav() {
           <IconSettings />
           {isFR ? "Paramètres" : "Settings"}
         </Link>
-        <div style={{ padding: ".2rem .25rem" }}>
-          <LanguageSwitcher />
-        </div>
         <button
           onClick={handleLogout}
           style={{
