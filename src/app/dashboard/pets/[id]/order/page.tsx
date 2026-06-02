@@ -134,21 +134,26 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         supabase.from("pets").select("id, name, birthdate, created_at").eq("id", id).single(),
         supabase.from("stories").select("id, title, content, period_start, period_end, created_at").eq("pet_id", id).order("created_at", { ascending: true }),
         supabase.from("entries").select("id, photo_urls, entry_date").eq("pet_id", id).order("entry_date", { ascending: true }),
-        supabase.from("profiles").select("plan, book_credits").eq("id", user.id).single(),
+        supabase.from("profiles").select("plan, book_credits, subscription_renewal_date").eq("id", user.id).single(),
       ]).then(([{ data: petData }, { data: storiesData }, { data: entriesData }, { data: profileData }]) => {
         if (petData) setPet(petData);
         if (storiesData) setStories(storiesData);
         if (entriesData) setEntries(entriesData);
         if (profileData) {
           setProfile(profileData as Profile);
-          if ((profileData as Profile).plan === "print" && (profileData as Profile).book_credits === 0) {
+          // Renewal date from profile (stored by webhook on each billing cycle)
+          const ts = (profileData as Profile & { subscription_renewal_date?: number | null }).subscription_renewal_date;
+          if (ts) {
+            const d = new Date(ts * 1000);
+            setRenewalDate(d.toLocaleDateString(locale === "fr" ? "fr-FR" : "en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }));
+          } else if ((profileData as Profile).plan === "print" && (profileData as Profile).book_credits === 0) {
+            // Fallback: fetch from Stripe API for users without stored renewal date
             fetch("/api/stripe/subscription")
               .then(r => r.json())
               .then(data => {
                 if (data.subscription?.current_period_end) {
                   const d = new Date(data.subscription.current_period_end * 1000);
-                  const fmt = d.toLocaleDateString(locale === "fr" ? "fr-FR" : "en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-                  setRenewalDate(fmt);
+                  setRenewalDate(d.toLocaleDateString(locale === "fr" ? "fr-FR" : "en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }));
                 }
               })
               .catch(() => {});

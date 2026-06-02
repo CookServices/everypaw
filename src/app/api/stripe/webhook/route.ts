@@ -162,7 +162,7 @@ export async function POST(req: Request) {
     if (plan && !subscription.cancel_at_period_end) {
       const { data: updatedProfile } = await supabase
         .from("profiles")
-        .update({ plan, is_premium: true })
+        .update({ plan, is_premium: true, subscription_renewal_date: subscription.current_period_end })
         .eq("stripe_customer_id", customerId)
         .select("id")
         .single();
@@ -260,6 +260,12 @@ export async function POST(req: Request) {
       if (creditError) {
         console.error("[webhook] increment_book_credits error:", creditError, "event:", event.id);
         return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+      }
+
+      // Store renewal date from invoice period end
+      const renewalTs = invoice.lines?.data?.[0]?.period?.end ?? null;
+      if (renewalTs) {
+        await supabase.from("profiles").update({ subscription_renewal_date: renewalTs }).eq("id", userId);
       }
 
       await supabase.from("events_log").insert({
