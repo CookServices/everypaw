@@ -1238,6 +1238,24 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "stories" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {/* Generate button — mirrors journal tab CTA */}
+            {(() => {
+              const generatingMessages = pet ? [
+                t.journal.generating_1.replace("{name}", pet.name),
+                t.journal.generating_2,
+                t.journal.generating_3,
+              ] : [t.journal.generating, t.journal.generating_2, t.journal.generating_3];
+              return (
+                <button
+                  onClick={() => { if (entries.length >= 3) { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); } }}
+                  disabled={generating || entries.length < 3}
+                  style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", opacity: entries.length < 3 ? .5 : 1 }}
+                >
+                  {generating ? generatingMessages[generatingMsgIdx] : t.journal.generate_story.replace("{name}", pet.name)}
+                  {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>{t.journal.add_more.replace("{count}", String(3 - entries.length)).replace("{entries}", 3 - entries.length === 1 ? t.journal.entry : t.journal.entries)}</span>}
+                </button>
+              );
+            })()}
             {stories.length === 0 ? (
               <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
                 <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>✨</div>

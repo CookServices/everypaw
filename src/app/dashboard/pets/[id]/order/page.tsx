@@ -881,7 +881,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               gap: ".75rem", flexWrap: "wrap",
             }}>
               {[
-                t.order.summary_chapters.replace("{n}", String(selectedStoryIds.length || visibleStories.length)),
+                (() => { const n = selectedStoryIds.length || visibleStories.length; return n === 1 ? (locale === "fr" ? "1 chapitre" : "1 chapter") : t.order.summary_chapters.replace("{n}", String(n)); })(),
                 t.order.summary_photos.replace("{n}", String(photoCount)),
                 t.order.summary_months.replace("{n}", String(monthsCount)),
                 t.order.summary_pages.replace("{n}", String(estimatedPages)),

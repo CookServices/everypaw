@@ -329,7 +329,7 @@ export default function DashboardPage() {
                 <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: "0 0 .625rem", fontWeight: 300 }}>
                   {monthlyEntryCount > 0
                     ? `${monthlyEntryCount} ${monthlyEntryCount === 1 ? (isFR ? "entrée ajoutée" : "entry added") : (isFR ? "entrées ajoutées" : "entries added")}`
-                    : (isFR ? "Ajoutez votre premier moment ✨" : "Add your first moment ✨")}
+                    : (isFR ? "Aucune entrée ce mois — ajoutez des moments ✨" : "No entries this month — add some moments ✨")}
                 </p>
                 <Link
                   href={orderLink}

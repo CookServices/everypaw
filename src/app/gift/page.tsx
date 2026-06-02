@@ -378,9 +378,9 @@ export default function GiftPage() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {([
-                  { key: "recipientName", label: t.gift.recipient_name, placeholder: "Jane" },
+                  { key: "recipientName", label: t.gift.recipient_name, placeholder: isFR ? "Marie" : "Jane" },
                   { key: "recipientEmail", label: t.gift.recipient_email, placeholder: "jane@example.com", type: "email" },
-                  { key: "senderName", label: t.gift.sender_name, placeholder: "John" },
+                  { key: "senderName", label: t.gift.sender_name, placeholder: isFR ? "Jean" : "John" },
                 ] as { key: string; label: string; placeholder: string; type?: string }[]).map(field => (
                   <div key={field.key}>
                     <label style={labelStyle}>{field.label}</label>

@@ -564,13 +564,14 @@ export default function DashboardNav() {
           onClick={() => setSuggestionOpen(true)}
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem",
-            width: "100%", padding: ".75rem", borderRadius: 10,
-            background: "#C8813A", color: "#FDFAF5", border: "none",
-            fontSize: ".875rem", fontWeight: 500, cursor: "pointer",
-            transition: "opacity .15s",
+            width: "100%", padding: ".5rem .75rem", borderRadius: 8,
+            background: "transparent", color: "#9A8070",
+            border: "1px solid rgba(61,43,31,.12)",
+            fontSize: ".8rem", fontWeight: 400, cursor: "pointer",
+            transition: "background .12s, color .12s, border-color .12s",
           }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = ".85"}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.04)"; (e.currentTarget as HTMLElement).style.color = "#7A5C44"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.2)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#9A8070"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.12)"; }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
