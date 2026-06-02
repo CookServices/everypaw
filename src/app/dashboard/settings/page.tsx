@@ -49,6 +49,7 @@ export default function SettingsPage() {
   const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null); // plan being upgraded to
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelledAt, setCancelledAt] = useState<number | null>(null);
+  const [profileRenewalDate, setProfileRenewalDate] = useState<number | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
   // ── Currency ─────────────────────────────────────────────────────────────────
@@ -65,10 +66,13 @@ export default function SettingsPage() {
     const load = async () => {
       const supabase = createClient();
       const [{ data: profileData }, { data: { user } }] = await Promise.all([
-        supabase.from("profiles").select("email_reminders").single(),
+        supabase.from("profiles").select("email_reminders, subscription_renewal_date").single(),
         supabase.auth.getUser(),
       ]);
-      if (profileData) setEmailReminders(profileData.email_reminders ?? true);
+      if (profileData) {
+        setEmailReminders(profileData.email_reminders ?? true);
+        if (profileData.subscription_renewal_date) setProfileRenewalDate(profileData.subscription_renewal_date);
+      }
       if (user?.email) setCurrentEmail(user.email);
       if (user?.app_metadata?.provider === "google") setIsGoogleAccount(true);
       setLoading(false);
@@ -372,11 +376,11 @@ export default function SettingsPage() {
               </div>
 
               {/* Renewal date */}
-              {plan !== "free" && !cancelledAt && subscription?.current_period_end && (
+              {plan !== "free" && !cancelledAt && (subscription?.current_period_end || profileRenewalDate) && (
                 <p style={{ fontSize: ".8rem", color: "#9A8070", margin: "-0.5rem 0 1.25rem", fontWeight: 300 }}>
                   {isFR
-                    ? `Prochain renouvellement : ${formatDate(subscription.current_period_end)}`
-                    : `Next renewal: ${formatDate(subscription.current_period_end)}`}
+                    ? `Prochain renouvellement : ${formatDate((subscription?.current_period_end ?? profileRenewalDate)!)}`
+                    : `Next renewal: ${formatDate((subscription?.current_period_end ?? profileRenewalDate)!)}`}
                 </p>
               )}
 
