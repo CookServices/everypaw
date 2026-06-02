@@ -3,8 +3,6 @@ import { Resend } from "resend";
 import { escapeHtml } from "@/lib/html";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const SUBJECT_ROUTING: Record<string, string> = {
   "Question générale":           "hello@everypaw.app",
   "Problème technique":          "hello@everypaw.app",
@@ -41,6 +39,7 @@ export async function POST(req: Request) {
   }
 
   const to = SUBJECT_ROUTING[subject];
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
     await resend.emails.send({
