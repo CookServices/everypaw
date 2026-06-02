@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Pet, Entry } from "@/types";
 import Link from "next/link";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
+import GettingStartedChecklist from "@/components/onboarding/GettingStartedChecklist";
 import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
 
@@ -197,6 +198,15 @@ export default function DashboardPage() {
             hasEntries={entries.length > 0}
             hasStories={hasStories}
             onComplete={() => setShowOnboarding(false)}
+          />
+        )}
+
+        {!showOnboarding && (
+          <GettingStartedChecklist
+            hasPets={pets.length > 0}
+            hasEntries={entries.length > 0}
+            hasStories={hasStories}
+            firstPetId={resolvedPetId}
           />
         )}
 
