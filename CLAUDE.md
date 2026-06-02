@@ -261,6 +261,7 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/api/book-pdf` | **Génération PDF réel** (200×200mm, `application/pdf`) — `GET` pour Gelato (token HMAC signé requis), `@react-pdf/renderer`, même params que `preview-pdf` |
 | `/api/preview-pdf` | Preview PDF HTML — `POST` pour l'aperçu in-app (session utilisateur requise, vérifie ownership du pet). `GET` (anciennement pour Gelato) remplacé par `book-pdf` |
 | `/api/locale` | Setter cookie i18n |
+| `/api/export-data` | Export RGPD — `GET` (session requise) retourne JSON avec toutes les données utilisateur : profil, pets, entrées, histoires, milestones, book_configs |
 
 ---
 
@@ -1000,38 +1001,69 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 
 ## Sujets UX/UI restants (audit 2026-06-02)
 
-### 🟠 MAJEUR
-| ID | Description | Effort |
-|---|---|---|
-| M6 | Lien CGV dans les flows Stripe : `custom_text` Stripe checkout + mention "En continuant, vous acceptez les [CGV]" sous boutons upgrade dans dashboard, upgrade page, gift confirm step | 20 min |
-| M5-bis | Vérifier que le Stripe checkout lui-même affiche CGV (Stripe a une option native `consent_collection`) | 10 min |
+### ✅ Tous les items traités en session 24 (2026-06-02)
 
-### 🟡 MOYEN
-| ID | Description | Effort |
-|---|---|---|
-| Mo1 | Plan Gratuit landing : ajouter footnote `"Au-delà de 10 entrées, un message d'upgrade s'affiche"` sous la carte Free | 10 min |
-| Mo2 | Plan Digital landing : ajouter ligne `"+ Livre imprimé disponible à la commande"` dans les features | 10 min |
-| Mo5 | Forgot-password : ajouter sous-titre sous le logo (même pattern que login "Bon retour") | 5 min |
-| Mo6 | Lien `← Retour à l'accueil` sur pages auth signup/login/forgot-password | 10 min |
-| Mo7 | Page Gift : ajouter `"L'email est envoyé instantanément."` sous l'étape 2 du how-it-works | 10 min |
-| Mo8 | Milestones "À débloquer" : afficher le keyword déclencheur sur chaque milestone bloqué. Ex : `"Mentionnez 'vétérinaire' pour débloquer"` | 1h |
-| Mo10 | Crédits livre sur dashboard (card VOTRE LIVRE 2026) + settings (section Mon abonnement) : `"1 crédit utilisé · Prochain : 02/07/2026"` | 1h |
-| Mo11 | Settings rappels : préciser le jour d'envoi. Ex : `"Envoyé chaque lundi matin."` | 5 min |
-| Mo12 | Export données RGPD : bouton `"Télécharger mes données (JSON)"` dans section Sécurité des settings | 3h |
-| Mo13 | Bouton "Supprimer mon compte" → passer de lien texte à `<button>` avec bordure rouge (modale de confirmation déjà en place) | 10 min |
-| Mo14 | Aperçu pages intérieures livre : bouton `"Voir un aperçu PDF"` depuis la page order → POST `/api/preview-pdf` (déjà en place, juste un bouton) | 30 min |
-| Mo15 | `"0 photos"` dans order page cliquable → link vers journal avec tooltip explicatif | 30 min |
-| Mo16 | Testimonials landing : ajouter prénom + ville + type animal sous chaque témoignage (social proof) | 30 min |
-| Mo17 | Pet page : compteur de progression vers prochain chapitre visible : `"3 moments ce mois · Prochain chapitre dans 29j"` | 1h |
-| Mo18 | Landing pricing : footnote sous carte Gratuit expliquant le paywall IA — `"Après votre 1ère histoire, passez Premium pour continuer"` | 10 min |
+| ID | Description | PR | Statut |
+|---|---|---|---|
+| M6 | CGV dans flows Stripe (`custom_text` + `consent_collection` + mentions sous boutons) | #46 | ✅ |
+| M5-bis | `consent_collection: { terms_of_service: "required" }` dans checkout Stripe | #46 | ✅ |
+| Mo1 | Footnote "Au-delà de 10 entrées…" sous carte Free landing | #48 | ✅ |
+| Mo2 | "+ Livre imprimé disponible à la commande" dans features Digital | #48 | ✅ |
+| Mo5 | Sous-titre forgot-password | #46 | ✅ |
+| Mo6 | Lien "← Retour à l'accueil" sur signup/login/forgot-password | #46 | ✅ |
+| Mo7 | "Envoyé instantanément." sur Gift how-it-works étape 2 | #48 | ✅ |
+| Mo8 | Hint keyword sur milestones bloqués (`unlock_hint` i18n) | #47 | ✅ |
+| Mo10 | Crédits livre sur dashboard + settings | #47 | ✅ |
+| Mo11 | "Envoyé chaque lundi matin." dans settings rappels | #46 | ✅ |
+| Mo12 | Export RGPD JSON — `GET /api/export-data` + bouton settings | #50 | ✅ |
+| Mo13 | Bouton "Supprimer mon compte" avec bordure rouge | #46 | ✅ |
+| Mo14 | Bouton aperçu PDF dans order page | déjà fait | ✅ |
+| Mo15 | "0 photos" cliquable → journal avec tooltip | #49 | ✅ |
+| Mo16 | Testimonials : prénom + ville + type animal en deux lignes | #49 | ✅ |
+| Mo17 | Pill "X moments ce mois · Prochain chapitre dans Xj" sur journal tab | #48 | ✅ |
+| Mo18 | Footnote paywall IA sous carte Free landing | #46 | ✅ |
+| LT3 | 3 routes cron manquantes : `streak-alert`, `birthday-check`, `daily-prompts` | #51 | ✅ |
 
-### Long terme (Impact élevé, Effort élevé)
+### Long terme (non traité — faible urgence)
 | ID | Description | Effort |
 |---|---|---|
 | LT1 | Exit-intent capture email : popup avant départ → `"Recevez un exemple de livre Everypaw par email"` | 2h |
 | LT2 | Partage social natif sur profil public avec Open Graph preview | 2h |
-| LT3 | Créer les 3 routes cron manquantes : `streak-alert`, `birthday-check`, `daily-prompts` | 3h |
 
 ---
 
-*Dernière mise à jour : 2026-06-02 (session 23 — audit UX/UI complet, 25+ fixes, auto-détection langue navigateur, cron on-this-day)*
+### ✅ Session 24 — UX/UI restants (2026-06-02)
+
+**PR #46** — M6, Mo5, Mo6, Mo11, Mo13, Mo18 :
+- CGV dans checkout Stripe (`custom_text` + `consent_collection`) + mentions sous boutons upgrade/gift
+- Sous-titre forgot-password + lien "← Retour à l'accueil" sur 3 pages auth
+- "Envoyé chaque lundi matin." dans settings
+- Bouton "Supprimer mon compte" avec bordure rouge (plus lien texte)
+- Footnote paywall IA sous Free card landing
+
+**PR #47** — Mo8, Mo10 :
+- Milestones bloqués : hint "Mentionnez '{keyword}' pour débloquer" — clé `milestones.unlock_hint` EN+FR, keywords depuis `MILESTONE_TYPES` (EN = `keywords[0]`, FR = `keywords[1] ?? keywords[0]`)
+- Crédits livre : badge orange sur dashboard book card + affichage dans settings section abonnement (plan Print)
+
+**PR #48** — Mo1, Mo2, Mo7, Mo17 :
+- Footnote Free card landing (10 entrées + paywall IA)
+- Feature "+ Livre imprimé disponible à la commande" dans Digital card
+- "Sent instantly." / "Envoyé instantanément." sur Gift step 2
+- Pill progression mensuelle sur journal tab : `thisMonthCount` entrées ce mois + `daysUntil` jours avant génération auto, vert si chapitre déjà généré ce mois
+
+**PR #49** — Mo15, Mo16 :
+- "0 photos" dans stats pill order page → Link dotted vers `?tab=journal` avec `title` tooltip
+- Testimonials : `authorStr.split(" , ")` → `name` (bold) + `meta` (animal + ville, muted) — landing EN + FR
+
+**PR #50** — Mo12 :
+- `GET /api/export-data` : auth requise, retourne JSON avec profile/pets/entries/stories/milestones/book_configs
+- Settings : section "Mes données / My data" avec bouton download client-side (blob URL)
+
+**PR #51** — LT3 :
+- `streak-alert` (17:00/jour) : alerte si dernière entrée 4–7 jours — fenêtre de réengagement optimale
+- `birthday-check` (8:00/jour) : `.like("birthdate", "%-MM-DD")` pour matcher toutes les années ; âge calculé ; email branded FR/EN
+- `daily-prompts` (7:00/jour) : 10 prompts par espèce (dog/cat/default) EN+FR, rotation déterministe `dayOfYear % len` ; skip si entrée déjà ajoutée aujourd'hui ou user sans historique
+
+---
+
+*Dernière mise à jour : 2026-06-02 (session 24 — tous les sujets UX/UI restants traités, 6 PRs, export RGPD, 3 crons manquants)*
