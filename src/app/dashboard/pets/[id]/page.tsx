@@ -1382,8 +1382,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
               // Build full list with achieved flag, then sort:
               // 1. achieved first, 2. alphabetical within each group
               const definedItems = (milestoneDefinitions.length
-                ? milestoneDefinitions.map(def => ({ key: def.key, icon: def.icon ?? "🏆", localTitle: isFR ? def.name_fr : def.name_en }))
-                : MILESTONE_TYPES.map(mt => ({ key: mt.type, icon: mt.icon, localTitle: isFR ? mt.titleFR : mt.title }))
+                ? milestoneDefinitions.map(def => ({ key: def.key, icon: def.icon ?? "🏆", localTitle: isFR ? def.name_fr : def.name_en, keywords: def.keywords ?? [] }))
+                : MILESTONE_TYPES.map(mt => ({ key: mt.type, icon: mt.icon, localTitle: isFR ? mt.titleFR : mt.title, keywords: mt.keywords }))
               ).map(item => ({ ...item, achieved: milestones.find(m => m.type === item.key) ?? null }));
 
               // Orphan milestones: recorded in DB but not present in milestone_definitions
@@ -1397,6 +1397,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                     key: m.type,
                     icon: fallback?.icon ?? "🏆",
                     localTitle: fallback ? (isFR ? fallback.titleFR : fallback.title) : (m.title ?? m.type),
+                    keywords: fallback?.keywords ?? [],
                     achieved: m,
                   };
                 });
@@ -1409,22 +1410,27 @@ export default function PetPage({ params }: { params: { id: string } }) {
               const achievedItems = allItems.filter(i => i.achieved);
               const pendingItems = allItems.filter(i => !i.achieved);
 
-              const renderItem = ({ key, icon, localTitle, achieved }: typeof allItems[number]) => (
-                <div key={key} style={{ background: "#FDFAF5", borderRadius: 14, padding: ".875rem 1.125rem", border: `1px solid ${achieved ? "rgba(200,129,58,.2)" : "rgba(61,43,31,.06)"}`, display: "flex", alignItems: "center", gap: ".875rem", opacity: achieved ? 1 : 0.6 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: achieved ? "rgba(200,129,58,.12)" : "rgba(61,43,31,.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.15rem", flexShrink: 0 }}>
-                    {achieved ? icon : "🔒"}
+              const renderItem = ({ key, icon, localTitle, achieved, keywords }: typeof allItems[number]) => {
+                const lockHint = !achieved && keywords.length > 0
+                  ? t.milestones.unlock_hint.replace("{keyword}", isFR ? (keywords[1] ?? keywords[0]) : keywords[0])
+                  : null;
+                return (
+                  <div key={key} style={{ background: "#FDFAF5", borderRadius: 14, padding: ".875rem 1.125rem", border: `1px solid ${achieved ? "rgba(200,129,58,.2)" : "rgba(61,43,31,.06)"}`, display: "flex", alignItems: "center", gap: ".875rem", opacity: achieved ? 1 : 0.6 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: achieved ? "rgba(200,129,58,.12)" : "rgba(61,43,31,.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.15rem", flexShrink: 0 }}>
+                      {achieved ? icon : "🔒"}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: ".875rem", fontWeight: 500, color: achieved ? "#3D2B1F" : "#7A5C44", margin: "0 0 .15rem" }}>{localTitle}</p>
+                      <p style={{ fontSize: ".72rem", color: achieved ? "#7A5C44" : "#9A8070", margin: 0, fontWeight: 300 }}>
+                        {achieved
+                          ? new Date(achieved.achieved_at).toLocaleDateString(dateLocale, { month: "long", day: "numeric", year: "numeric" })
+                          : (lockHint ?? t.milestones.not_yet)}
+                      </p>
+                    </div>
+                    {achieved && <span style={{ fontSize: ".9rem", flexShrink: 0 }}>✅</span>}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: ".875rem", fontWeight: 500, color: achieved ? "#3D2B1F" : "#7A5C44", margin: "0 0 .15rem" }}>{localTitle}</p>
-                    <p style={{ fontSize: ".72rem", color: achieved ? "#7A5C44" : "#9A8070", margin: 0, fontWeight: 300 }}>
-                      {achieved
-                        ? new Date(achieved.achieved_at).toLocaleDateString(dateLocale, { month: "long", day: "numeric", year: "numeric" })
-                        : t.milestones.not_yet}
-                    </p>
-                  </div>
-                  {achieved && <span style={{ fontSize: ".9rem", flexShrink: 0 }}>✅</span>}
-                </div>
-              );
+                );
+              };
 
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>

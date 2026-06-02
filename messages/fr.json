@@ -41,6 +41,8 @@
     "month_chapter_soon": "génération imminente",
     "month_book_label": "Votre livre {year}",
     "month_book_value": "En cours de création ✦",
+    "month_book_credit_available": "{n} crédit disponible",
+    "month_book_credit_used": "Crédit utilisé · Prochain : {date}",
     "upsell_title": "Limite du plan gratuit atteinte",
     "upsell_desc": "Vous avez atteint la limite de votre plan gratuit (10 entrées). Passez à Premium pour continuer à documenter la vie de {name} sans limite.",
     "upsell_cta": "Passer à Premium →",
@@ -114,7 +116,8 @@
     "not_yet": "Non encore atteinte",
     "unlocked": "Débloquées · {n}",
     "locked": "À débloquer · {n}",
-    "auto_hint": "Les étapes se débloquent automatiquement quand vous ajoutez des entrées dans le journal. Par exemple, mentionnez « bain » pour débloquer « Premier bain », « vétérinaire » pour « Première visite vétérinaire », etc."
+    "auto_hint": "Les étapes se débloquent automatiquement quand vous ajoutez des entrées dans le journal. Par exemple, mentionnez « bain » pour débloquer « Premier bain », « vétérinaire » pour « Première visite vétérinaire », etc.",
+    "unlock_hint": "Mentionnez \"{keyword}\" pour débloquer"
   },
   "auth": {
     "welcome_back": "Bon retour",
