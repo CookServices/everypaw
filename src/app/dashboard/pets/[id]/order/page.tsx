@@ -887,13 +887,23 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 t.order.summary_pages.replace("{n}", String(estimatedPages)),
               ].map((item, i, arr) => (
                 <span key={i} style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
-                  <span style={{
-                    fontSize: ".875rem",
-                    fontWeight: i === 3 ? 600 : i === 1 ? 400 : 500,
-                    color: i === 3 ? accentColor : i === 1 ? accentColor : textPrimary,
-                  }}>
-                    {item}
-                  </span>
+                  {i === 1 && photoCount === 0 ? (
+                    <Link
+                      href={`/dashboard/pets/${id}?tab=journal`}
+                      title={locale === "fr" ? "Ajoutez des photos dans vos entrées du journal pour les inclure dans votre livre" : "Add photos to your journal entries to include them in your book"}
+                      style={{ fontSize: ".875rem", fontWeight: 400, color: "#C8813A", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "3px" }}
+                    >
+                      {item}
+                    </Link>
+                  ) : (
+                    <span style={{
+                      fontSize: ".875rem",
+                      fontWeight: i === 3 ? 600 : i === 1 ? 400 : 500,
+                      color: i === 3 ? accentColor : i === 1 ? accentColor : textPrimary,
+                    }}>
+                      {item}
+                    </span>
+                  )}
                   {i < arr.length - 1 && <span style={{ color: isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)", fontSize: ".75rem" }}>·</span>}
                 </span>
               ))}
