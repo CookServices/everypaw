@@ -371,6 +371,15 @@ export default function SettingsPage() {
                 )}
               </div>
 
+              {/* Renewal date */}
+              {plan !== "free" && !cancelledAt && subscription?.current_period_end && (
+                <p style={{ fontSize: ".8rem", color: "#9A8070", margin: "-0.5rem 0 1.25rem", fontWeight: 300 }}>
+                  {isFR
+                    ? `Prochain renouvellement : ${formatDate(subscription.current_period_end)}`
+                    : `Next renewal: ${formatDate(subscription.current_period_end)}`}
+                </p>
+              )}
+
               {/* Cancellation notice */}
               {cancelledAt && (
                 <div style={{ background: "rgba(163,45,45,.05)", border: "1px solid rgba(163,45,45,.2)", borderRadius: 10, padding: ".75rem 1rem", marginBottom: "1.25rem" }}>
