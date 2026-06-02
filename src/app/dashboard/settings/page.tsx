@@ -62,6 +62,9 @@ export default function SettingsPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
+  // ── RGPD export state ────────────────────────────────────────────────────────
+  const [exportLoading, setExportLoading] = useState(false);
+
   // ── Load ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
@@ -268,6 +271,27 @@ export default function SettingsPage() {
     } catch {
       setDeleteError(isFR ? "Erreur réseau." : "Network error.");
       setDeleteLoading(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    setExportLoading(true);
+    try {
+      const res = await fetch("/api/export-data");
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `everypaw-data-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert(isFR ? "Erreur lors de l'export. Réessayez." : "Export failed. Please try again.");
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -592,6 +616,29 @@ export default function SettingsPage() {
                 {isFR ? "Votre compte est connecté via Google. La gestion du mot de passe se fait depuis votre compte Google." : "Your account is linked via Google. Manage your password from your Google account."}
               </p>
             )}
+          </div>
+        )}
+
+        {/* ── RGPD — data export ───────────────────────────────────────────── */}
+        {!loading && (
+          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".5rem" }}>
+              {isFR ? "Mes données" : "My data"}
+            </h2>
+            <p style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, margin: "0 0 1.25rem", lineHeight: 1.6 }}>
+              {isFR
+                ? "Téléchargez une copie complète de vos données : profil, animaux, entrées du journal, histoires IA, étapes et configurations de livres."
+                : "Download a full copy of your data: profile, pets, journal entries, AI stories, milestones and book configurations."}
+            </p>
+            <button
+              onClick={handleExportData}
+              disabled={exportLoading}
+              style={{ background: "none", border: "1.5px solid rgba(61,43,31,.2)", borderRadius: 100, cursor: exportLoading ? "wait" : "pointer", color: "#3D2B1F", fontSize: ".875rem", fontFamily: "inherit", padding: ".6rem 1.25rem", fontWeight: 500, opacity: exportLoading ? .6 : 1 }}
+            >
+              {exportLoading
+                ? (isFR ? "Préparation…" : "Preparing…")
+                : (isFR ? "⬇ Télécharger mes données (JSON)" : "⬇ Download my data (JSON)")}
+            </button>
           </div>
         )}
 
