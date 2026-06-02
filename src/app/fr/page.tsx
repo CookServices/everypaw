@@ -379,13 +379,22 @@ export default function FrHome() {
             {t.landing.reviews_title}
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.25rem" }}>
-            {reviews.map(([quote, author]) => (
-              <div key={author as string} style={{ background: "#F7F2EA", borderRadius: 18, padding: "1.5rem", display: "flex", flexDirection: "column", gap: ".75rem" }}>
-                <div style={{ color: "#C8813A", fontSize: "1rem", letterSpacing: ".1em" }}>★★★★★</div>
-                <p style={{ fontSize: ".875rem", fontStyle: "italic", lineHeight: 1.65, color: "#3D2B1F", fontFamily: "Georgia, serif", flex: 1 }}>&ldquo;{quote}&rdquo;</p>
-                <p style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 500 }}>{author}</p>
-              </div>
-            ))}
+            {reviews.map(([quote, author]) => {
+              const authorStr = author as string;
+              const parts = authorStr.split(" , ");
+              const name = parts[0];
+              const meta = parts.slice(1).join(", ");
+              return (
+                <div key={authorStr} style={{ background: "#F7F2EA", borderRadius: 18, padding: "1.5rem", display: "flex", flexDirection: "column", gap: ".75rem" }}>
+                  <div style={{ color: "#C8813A", fontSize: "1rem", letterSpacing: ".1em" }}>★★★★★</div>
+                  <p style={{ fontSize: ".875rem", fontStyle: "italic", lineHeight: 1.65, color: "#3D2B1F", fontFamily: "Georgia, serif", flex: 1 }}>&ldquo;{quote}&rdquo;</p>
+                  <div>
+                    <p style={{ fontSize: ".8rem", color: "#3D2B1F", fontWeight: 600, margin: 0 }}>{name}</p>
+                    {meta && <p style={{ fontSize: ".72rem", color: "#7A5C44", fontWeight: 400, margin: ".2rem 0 0", lineHeight: 1.4 }}>{meta}</p>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
