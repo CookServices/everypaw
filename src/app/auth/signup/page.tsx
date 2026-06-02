@@ -59,6 +59,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [termsError, setTermsError] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -95,6 +97,11 @@ export default function SignupPage() {
 
     if (firstErrorRef) {
       firstErrorRef.current?.focus();
+      return;
+    }
+
+    if (!agreeToTerms) {
+      setTermsError(true);
       return;
     }
 
@@ -282,6 +289,36 @@ export default function SignupPage() {
                 <p style={{ fontSize: ".78rem", color: "#991B1B", margin: "0 0 0 .25rem" }}>{passwordError}</p>
               )}
             </div>
+
+            {/* CGU checkbox */}
+            <label style={{ display: "flex", alignItems: "flex-start", gap: ".625rem", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={agreeToTerms}
+                onChange={e => { setAgreeToTerms(e.target.checked); if (e.target.checked) setTermsError(false); }}
+                style={{ marginTop: "3px", flexShrink: 0, accentColor: "#C8813A", width: 15, height: 15, cursor: "pointer" }}
+              />
+              <span style={{ fontSize: ".78rem", color: "#7A5C44", lineHeight: 1.55, fontWeight: 300 }}>
+                {isFR ? (
+                  <>En créant un compte, j'accepte les{" "}
+                    <Link href="/legal/cgv" target="_blank" style={{ color: "#C8813A", textDecoration: "underline" }}>Conditions générales de vente</Link>
+                    {" "}et la{" "}
+                    <Link href="/legal/confidentialite" target="_blank" style={{ color: "#C8813A", textDecoration: "underline" }}>Politique de confidentialité</Link>.
+                  </>
+                ) : (
+                  <>By creating an account, I agree to the{" "}
+                    <Link href="/legal/cgv" target="_blank" style={{ color: "#C8813A", textDecoration: "underline" }}>Terms of sale</Link>
+                    {" "}and{" "}
+                    <Link href="/legal/confidentialite" target="_blank" style={{ color: "#C8813A", textDecoration: "underline" }}>Privacy policy</Link>.
+                  </>
+                )}
+              </span>
+            </label>
+            {termsError && (
+              <p style={{ fontSize: ".78rem", color: "#991B1B", margin: "-.25rem 0 0 1.625rem" }}>
+                {isFR ? "Veuillez accepter les conditions pour continuer." : "Please accept the terms to continue."}
+              </p>
+            )}
 
             {/* General Supabase error */}
             {error && (

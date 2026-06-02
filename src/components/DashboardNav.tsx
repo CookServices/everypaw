@@ -284,6 +284,7 @@ function PetSelector({
       <button
         onClick={() => setOpen(v => !v)}
         aria-label={isFR ? "Choisir un animal" : "Select a pet"}
+        title={petName}
         style={{
           width: "100%", display: "flex", alignItems: "center", gap: ".75rem",
           background: open ? "rgba(61,43,31,.05)" : "rgba(61,43,31,.025)",
