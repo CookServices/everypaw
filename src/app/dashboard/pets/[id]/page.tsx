@@ -1048,6 +1048,33 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "journal" && (
           <>
+            {/* Mo17 — monthly progress pill */}
+            {(() => {
+              const now = new Date();
+              const monthPrefix = now.toISOString().slice(0, 7);
+              const thisMonthCount = entries.filter(e => e.entry_date?.slice(0, 7) === monthPrefix).length;
+              const firstOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+              const daysUntil = Math.ceil((firstOfNextMonth.getTime() - now.getTime()) / 864e5);
+              const hasThisMonthStory = stories.some(s => s.created_at?.slice(0, 7) === monthPrefix);
+              let progressLabel: string;
+              if (hasThisMonthStory) {
+                progressLabel = t.journal.month_progress_done.replace("{count}", String(thisMonthCount));
+              } else if (daysUntil <= 0) {
+                progressLabel = t.journal.month_progress_soon.replace("{count}", String(thisMonthCount));
+              } else if (daysUntil === 1) {
+                progressLabel = t.journal.month_progress_tomorrow.replace("{count}", String(thisMonthCount));
+              } else {
+                progressLabel = t.journal.month_progress_days.replace("{count}", String(thisMonthCount)).replace("{days}", String(daysUntil));
+              }
+              return (
+                <div style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", background: hasThisMonthStory ? "rgba(107,123,94,.1)" : "rgba(200,129,58,.08)", borderRadius: 100, padding: ".3rem .75rem", marginBottom: "1rem", border: `1px solid ${hasThisMonthStory ? "rgba(107,123,94,.25)" : "rgba(200,129,58,.2)"}` }}>
+                  <span style={{ fontSize: ".75rem", color: hasThisMonthStory ? "#6B7B5E" : "#C8813A", fontWeight: 500 }}>
+                    {progressLabel}
+                  </span>
+                </div>
+              );
+            })()}
+
             {/* Date filter dropdowns */}
             {availableYears.length >= 1 && (
               <div style={{ display: "flex", gap: ".5rem", marginBottom: "1.25rem" }}>
