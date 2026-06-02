@@ -49,7 +49,7 @@ export async function GET(req: Request) {
   if (!profiles) return NextResponse.json({ sent: 0 });
 
   // Fetch pet names once
-  const petIds = [...new Set(entries.map(e => e.pet_id))];
+  const petIds = Array.from(new Set(entries.map(e => e.pet_id)));
   const { data: pets } = await supabase
     .from("pets")
     .select("id, name")

@@ -55,6 +55,14 @@ export async function POST(req: Request) {
     cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
     customer_email: user.email,
     metadata: { user_id: user.id, plan },
+    custom_text: {
+      terms_of_service_acceptance: {
+        message: currency === "EUR"
+          ? "En finalisant votre commande, vous acceptez les [Conditions générales de vente](https://everypaw.app/legal/cgv)."
+          : "By completing your order, you agree to our [Terms of Service](https://everypaw.app/legal/cgv).",
+      },
+    },
+    consent_collection: { terms_of_service: "required" },
   });
 
   return NextResponse.json({ url: session.url });
