@@ -31,6 +31,8 @@ export default function DashboardPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
+  const [bookCredits, setBookCredits] = useState(0);
+  const [subscriptionRenewalDate, setSubscriptionRenewalDate] = useState<number | null>(null);
   const [subscribing, setSubscribing] = useState(false);
   const [subscribeError, setSubscribeError] = useState(false);
   const [currency, setCurrency] = useState<Currency>("USD");
@@ -67,7 +69,7 @@ export default function DashboardPage() {
       ] = await Promise.all([
         supabase.from("pets").select("*").order("created_at", { ascending: false }),
         supabase.from("entries").select("*").order("entry_date", { ascending: false }).limit(5),
-        supabase.from("profiles").select("is_premium, onboarding_completed").single(),
+        supabase.from("profiles").select("is_premium, onboarding_completed, book_credits, subscription_renewal_date").single(),
         supabase.from("stories").select("id").limit(1),
         supabase.from("entries").select("*", { count: "exact", head: true }).gte("entry_date", monthStart).lte("entry_date", monthEnd),
         supabase.from("entries").select("pet_id, entry_date").order("entry_date", { ascending: false }),
@@ -77,6 +79,8 @@ export default function DashboardPage() {
       setPets(petsData || []);
       setEntries(entriesData || []);
       setIsPremium(profile?.is_premium || false);
+      setBookCredits(profile?.book_credits ?? 0);
+      if (profile?.subscription_renewal_date) setSubscriptionRenewalDate(profile.subscription_renewal_date);
       setShowOnboarding(!profile?.onboarding_completed);
       setHasStories((storiesData?.length || 0) > 0);
       setMonthlyEntryCount(monthlyCount ?? 0);
@@ -326,10 +330,17 @@ export default function DashboardPage() {
                 <p style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem", lineHeight: 1.2 }}>
                   {t.dashboard.month_book_value}
                 </p>
-                <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: "0 0 .625rem", fontWeight: 300 }}>
+                <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: "0 0 .25rem", fontWeight: 300 }}>
                   {monthlyEntryCount > 0
                     ? `${monthlyEntryCount} ${monthlyEntryCount === 1 ? (isFR ? "entrée ajoutée" : "entry added") : (isFR ? "entrées ajoutées" : "entries added")}`
                     : (isFR ? "Aucune entrée ce mois — ajoutez des moments ✨" : "No entries this month — add some moments ✨")}
+                </p>
+                <p style={{ fontSize: ".72rem", color: bookCredits > 0 ? "#C8813A" : "#9A8070", margin: "0 0 .625rem", fontWeight: 300 }}>
+                  {bookCredits > 0
+                    ? t.dashboard.month_book_credit_available.replace("{n}", String(bookCredits))
+                    : subscriptionRenewalDate
+                      ? t.dashboard.month_book_credit_used.replace("{date}", new Date(subscriptionRenewalDate * 1000).toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "numeric" }))
+                      : (isFR ? "Crédit utilisé cette année" : "Credit used this year")}
                 </p>
                 <Link
                   href={orderLink}

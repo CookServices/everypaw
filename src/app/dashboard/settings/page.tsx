@@ -50,6 +50,7 @@ export default function SettingsPage() {
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelledAt, setCancelledAt] = useState<number | null>(null);
   const [profileRenewalDate, setProfileRenewalDate] = useState<number | null>(null);
+  const [bookCredits, setBookCredits] = useState(0);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
   // ── Currency ─────────────────────────────────────────────────────────────────
@@ -66,12 +67,13 @@ export default function SettingsPage() {
     const load = async () => {
       const supabase = createClient();
       const [{ data: profileData }, { data: { user } }] = await Promise.all([
-        supabase.from("profiles").select("email_reminders, subscription_renewal_date").single(),
+        supabase.from("profiles").select("email_reminders, subscription_renewal_date, book_credits").single(),
         supabase.auth.getUser(),
       ]);
       if (profileData) {
         setEmailReminders(profileData.email_reminders ?? true);
         if (profileData.subscription_renewal_date) setProfileRenewalDate(profileData.subscription_renewal_date);
+        setBookCredits(profileData.book_credits ?? 0);
       }
       if (user?.email) setCurrentEmail(user.email);
       if (user?.app_metadata?.provider === "google") setIsGoogleAccount(true);
@@ -377,10 +379,25 @@ export default function SettingsPage() {
 
               {/* Renewal date */}
               {plan !== "free" && !cancelledAt && (subscription?.current_period_end || profileRenewalDate) && (
-                <p style={{ fontSize: ".8rem", color: "#9A8070", margin: "-0.5rem 0 1.25rem", fontWeight: 300 }}>
+                <p style={{ fontSize: ".8rem", color: "#9A8070", margin: "-0.5rem 0 .5rem", fontWeight: 300 }}>
                   {isFR
                     ? `Prochain renouvellement : ${formatDate((subscription?.current_period_end ?? profileRenewalDate)!)}`
                     : `Next renewal: ${formatDate((subscription?.current_period_end ?? profileRenewalDate)!)}`}
+                </p>
+              )}
+
+              {/* Book credits — Print plan */}
+              {plan === "print" && !cancelledAt && (
+                <p style={{ fontSize: ".8rem", margin: "0 0 1.25rem", fontWeight: 400, color: bookCredits > 0 ? "#C8813A" : "#9A8070" }}>
+                  {bookCredits > 0
+                    ? (isFR ? `📖 ${bookCredits} crédit livre disponible` : `📖 ${bookCredits} book credit available`)
+                    : (() => {
+                        const renewalTs = subscription?.current_period_end ?? profileRenewalDate;
+                        const renewalStr = renewalTs ? formatDate(renewalTs) : null;
+                        return isFR
+                          ? (renewalStr ? `📖 Crédit utilisé · Prochain : ${renewalStr}` : "📖 Crédit annuel utilisé")
+                          : (renewalStr ? `📖 Credit used · Next: ${renewalStr}` : "📖 Annual credit used");
+                      })()}
                 </p>
               )}
 

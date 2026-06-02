@@ -41,6 +41,8 @@
     "month_chapter_soon": "generating soon",
     "month_book_label": "Your {year} book",
     "month_book_value": "In progress ✦",
+    "month_book_credit_available": "{n} credit available",
+    "month_book_credit_used": "Credit used · Next: {date}",
     "upsell_title": "You've reached the free plan limit",
     "upsell_desc": "You've used all 10 free entries. Upgrade to Premium to keep documenting {name}'s life without limits.",
     "upsell_cta": "Upgrade to Premium →",
@@ -114,7 +116,8 @@
     "not_yet": "Not yet unlocked",
     "unlocked": "Unlocked · {n}",
     "locked": "Locked · {n}",
-    "auto_hint": "Steps unlock automatically when you add journal entries. For example, mention \"bath\" to unlock \"First bath\", \"vet\" to unlock \"First vet visit\", etc."
+    "auto_hint": "Steps unlock automatically when you add journal entries. For example, mention \"bath\" to unlock \"First bath\", \"vet\" to unlock \"First vet visit\", etc.",
+    "unlock_hint": "Mention \"{keyword}\" to unlock"
   },
   "auth": {
     "welcome_back": "Welcome back",
