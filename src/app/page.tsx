@@ -113,7 +113,7 @@ export default function Home() {
   ];
 
   const freeFeatures    = [t.landing.free_f1, t.landing.free_f2, t.landing.free_f3];
-  const digitalFeatures = [t.landing.premium_f1, t.landing.premium_f2, t.landing.premium_f3, t.landing.premium_f4];
+  const digitalFeatures = [t.landing.premium_f1, t.landing.premium_f2, t.landing.premium_f3, t.landing.premium_f4, t.landing.premium_f5];
   const printFeatures   = [t.landing.print_f1, t.landing.print_f2, t.landing.print_f3, t.landing.print_f4];
 
   return (
@@ -587,10 +587,10 @@ export default function Home() {
             <Link href="/auth/signup" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, border: "1.5px solid rgba(61,43,31,.55)", background: "transparent", color: "#3D2B1F", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
               {t.landing.free_cta}
             </Link>
-            <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".75rem 0 0", lineHeight: 1.5, fontWeight: 300 }}>
+            <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".75rem 0 0", lineHeight: 1.6, fontWeight: 300 }}>
               {isFR
-                ? "Après votre 1ère histoire IA, un upgrade est nécessaire pour continuer."
-                : "After your 1st AI story, an upgrade is needed to generate more."}
+                ? "Au-delà de 10 entrées, un message d'upgrade s'affiche. Après votre 1ère histoire IA, un upgrade est nécessaire pour continuer."
+                : "Beyond 10 entries, an upgrade prompt appears. After your 1st AI story, an upgrade is needed to generate more."}
             </p>
           </div>
 

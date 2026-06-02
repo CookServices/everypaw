@@ -92,7 +92,11 @@
     "no_entries": "No entries yet , write your first moment above ✨",
     "min_entries_alert": "Add at least 3 journal entries before generating a story.",
     "generation_failed": "Generation failed. Please try again.",
-    "entry_required": "Write something to continue"
+    "entry_required": "Write something to continue",
+    "month_progress_days": "{count} moments this month · Next chapter in {days}d",
+    "month_progress_tomorrow": "{count} moments this month · Next chapter tomorrow",
+    "month_progress_soon": "{count} moments this month · Generating soon",
+    "month_progress_done": "{count} moments this month · Chapter generated ✓"
   },
   "stories": {
     "preview_book": "📖 Preview my book",
@@ -255,6 +259,7 @@
     "premium_f2": "Unlimited AI stories",
     "premium_f3": "Unlimited pet profiles",
     "premium_f4": "PDF export",
+    "premium_f5": "+ Printed book available to order",
     "premium_cta": "Get Digital →",
     "print_label": "Premium Print",
     "print_badge": "Best value",
@@ -318,7 +323,7 @@
     "step1_desc": "Fill in the form , done in seconds.",
     "step2_icon": "✉️",
     "step2_title": "The recipient gets an email",
-    "step2_desc": "A personalised email with your message lands in their inbox.",
+    "step2_desc": "A personalised email with your message lands in their inbox. Sent instantly.",
     "step3_icon": "🐾",
     "step3_title": "12 months of Premium activated",
     "step3_desc": "They click the link, create their account, and their Premium is immediately active.",
