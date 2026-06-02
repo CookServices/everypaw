@@ -301,6 +301,13 @@ export default function UpgradePage() {
         <p style={{ textAlign: "center", fontSize: ".78rem", color: "#7A5C44", fontWeight: 300, marginTop: "1.5rem", opacity: .7 }}>
           {t.cancel}
         </p>
+        <p style={{ textAlign: "center", fontSize: ".72rem", color: "#9A8070", fontWeight: 300, marginTop: ".5rem", lineHeight: 1.5 }}>
+          {isFR ? (
+            <>En continuant, vous acceptez les <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Conditions générales de vente</a>.</>
+          ) : (
+            <>By continuing, you agree to our <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Terms of Service</a>.</>
+          )}
+        </p>
 
       </main>
     </div>

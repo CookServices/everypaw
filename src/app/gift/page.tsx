@@ -427,6 +427,13 @@ export default function GiftPage() {
               >
                 {t.gift.send}
               </button>
+              <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".625rem 0 0", lineHeight: 1.5, fontWeight: 300, textAlign: "center" }}>
+                {isFR ? (
+                  <>En continuant, vous acceptez les <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>CGV</a>.</>
+                ) : (
+                  <>By continuing, you agree to our <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Terms of Service</a>.</>
+                )}
+              </p>
             </>
           )}
         </div>

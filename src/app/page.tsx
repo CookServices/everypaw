@@ -587,6 +587,11 @@ export default function Home() {
             <Link href="/auth/signup" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, border: "1.5px solid rgba(61,43,31,.55)", background: "transparent", color: "#3D2B1F", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
               {t.landing.free_cta}
             </Link>
+            <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".75rem 0 0", lineHeight: 1.5, fontWeight: 300 }}>
+              {isFR
+                ? "Après votre 1ère histoire IA, un upgrade est nécessaire pour continuer."
+                : "After your 1st AI story, an upgrade is needed to generate more."}
+            </p>
           </div>
 
           {/* Digital */}

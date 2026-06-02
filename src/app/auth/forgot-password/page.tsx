@@ -43,6 +43,9 @@ export default function ForgotPasswordPage() {
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
             Everypaw
           </Link>
+          <p style={{ marginTop: ".5rem", fontSize: ".9rem", color: "#7A5C44", fontWeight: 300 }}>
+            {isFR ? "Réinitialisez votre mot de passe" : "Reset your password"}
+          </p>
         </div>
 
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", boxShadow: "0 4px 40px rgba(61,43,31,.06)" }}>
@@ -98,6 +101,11 @@ export default function ForgotPasswordPage() {
               <p style={{ textAlign: "center", marginTop: ".75rem", marginBottom: 0 }}>
                 <Link href="/auth/login" style={{ fontSize: ".85rem", color: "#C8813A", fontWeight: 500, textDecoration: "none" }}>
                   {isFR ? "← Retour à la connexion" : "← Back to sign in"}
+                </Link>
+              </p>
+              <p style={{ textAlign: "center", marginTop: ".5rem", marginBottom: 0 }}>
+                <Link href="/" style={{ fontSize: ".8rem", color: "#9A8070", fontWeight: 400, textDecoration: "none" }}>
+                  {isFR ? "← Retour à l'accueil" : "← Back to home"}
                 </Link>
               </p>
             </>

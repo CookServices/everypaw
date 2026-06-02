@@ -419,6 +419,13 @@ export default function SettingsPage() {
                       ? "…"
                       : (isFR ? `Passer à Premium Print — ${formatPrice(currency, "print")}/mois →` : `Upgrade to Premium Print — ${formatPrice(currency, "print")}/mo →`)}
                   </button>
+                  <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".25rem 0 0", lineHeight: 1.5, fontWeight: 300, textAlign: "center" as const }}>
+                    {isFR ? (
+                      <>En continuant, vous acceptez les <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>CGV</a>.</>
+                    ) : (
+                      <>By continuing, you agree to our <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Terms of Service</a>.</>
+                    )}
+                  </p>
                 </div>
               )}
 
@@ -584,7 +591,7 @@ export default function SettingsPage() {
             </p>
             <button
               onClick={() => setShowDeleteModal(true)}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#A32D2D", fontSize: ".875rem", fontFamily: "inherit", padding: 0, textDecoration: "underline" }}
+              style={{ background: "none", border: "1.5px solid #A32D2D", borderRadius: 100, cursor: "pointer", color: "#A32D2D", fontSize: ".875rem", fontFamily: "inherit", padding: ".6rem 1.25rem", fontWeight: 500 }}
             >
               {isFR ? "Supprimer mon compte et toutes mes données" : "Delete my account and all my data"}
             </button>
