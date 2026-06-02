@@ -207,7 +207,12 @@ Auth enforced dans `src/middleware.ts` : les requêtes non authentifiées vers `
 
 ### i18n
 
-Messages dans `messages/en.json` et `messages/fr.json`. `src/lib/i18n.ts` charge les deux au build. `src/hooks/useLocale.ts` lit le cookie `locale` côté client et expose `{ t, locale, setLocale }`.
+Messages dans `messages/en.json` et `messages/fr.json`. `src/lib/i18n.ts` charge les deux au build. `src/hooks/useLocale.ts` détecte `navigator.language` côté client et expose `{ t, locale }` — **plus de cookie locale, plus de `setLocale`**.
+
+- FR si `navigator.language.startsWith("fr")`, EN sinon — détection automatique, pas de switcher manuel.
+- `LanguageSwitcher.tsx` existe encore dans le repo mais n'est plus importé nulle part (safe to delete).
+- `CookieBanner` suit la même logique pour afficher FR ou EN automatiquement.
+- `/api/locale` existe encore mais n'est plus appelé côté client.
 
 **Règle** : toujours ajouter les nouvelles clés dans les **deux** fichiers JSON.
 
@@ -283,12 +288,19 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 {
   "crons": [
     { "path": "/api/cron/weekly-reminder", "schedule": "0 8 * * 1" },
-    { "path": "/api/cron/monthly-story",   "schedule": "0 8 1 * *"  }
+    { "path": "/api/cron/monthly-story",   "schedule": "0 8 1 * *" },
+    { "path": "/api/cron/on-this-day",     "schedule": "0 9 * * *" },
+    { "path": "/api/cron/streak-alert",    "schedule": "0 17 * * *" },
+    { "path": "/api/cron/birthday-check",  "schedule": "0 8 * * *" },
+    { "path": "/api/cron/daily-prompts",   "schedule": "0 7 * * *" }
   ]
 }
 ```
 
 Toutes les routes cron protégées par `Authorization: Bearer CRON_SECRET`.
+
+**Routes existantes** : `weekly-reminder` ✅, `monthly-story` ✅, `on-this-day` ✅  
+**Routes manquantes** (dans vercel.json mais pas de fichier route) : `streak-alert`, `birthday-check`, `daily-prompts`
 
 ---
 
@@ -894,12 +906,31 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 
 > **Action Stripe requise** : activer `invoice.payment_succeeded` dans la config webhook Stripe si pas déjà fait.
 
+### ✅ Audit UX/UI complet (2026-06-02, session 23)
+
+Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
+
+**Commits de la session** :
+- `76ab349` — 11 quick wins (copyright, redirect /en, virgule hero, bouton génération stories, etc.)
+- `ba333f8` — CGU checkbox signup + tooltip PetSelector
+- `04f3180` — Détection langue auto par navigateur, suppression switcher
+- `f584b91` — M4-M11 batch (cookie banner, confirm mdp, indicateur next chapter, section livre landing, cron on-this-day)
+
+**Changements majeurs** :
+- `useLocale` : plus de cookie locale, pur `navigator.language` — `{ locale, t }` uniquement
+- `DashboardNav` : `LanguageSwitcher` retiré
+- Signup : champ confirmation mdp + checkbox CGU avec liens légaux
+- Stories tab : bouton génération + bandeau "prochain chapitre dans Xj"
+- Landing : section "Un livre relié, pas juste un PDF" entre testimonials et pricing (mockup 3D CSS + 4 specs)
+- Cron `on-this-day` : email quotidien FR/EN "Il y a X an, [animal]…" pour users avec entrées ce jour
+
 ### 🚧 Prochaine étape
 - ~~Exécuter les migrations SQL~~ ✅
 - ~~Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` / `STRIPE_PRICE_BOOK_ONCE_USD`~~ ✅
 - ~~Publier Google OAuth~~ ✅
 - ~~Migration `fix_book_credits_print_plan_2026_05_27.sql` exécutée~~ ✅
 - **Passer Stripe en mode Live** (voir checklist prod)
+- Traiter les sujets UX restants (voir ci-dessous)
 
 ---
 
@@ -965,4 +996,42 @@ Rotation de clés : `webhook-signature` peut contenir plusieurs signatures espac
 
 ---
 
-*Dernière mise à jour : 2026-05-28 (session 22 — génération PDF réel via @react-pdf/renderer pour Gelato + fix race condition crédits Print dual-source dedup)*
+---
+
+## Sujets UX/UI restants (audit 2026-06-02)
+
+### 🟠 MAJEUR
+| ID | Description | Effort |
+|---|---|---|
+| M6 | Lien CGV dans les flows Stripe : `custom_text` Stripe checkout + mention "En continuant, vous acceptez les [CGV]" sous boutons upgrade dans dashboard, upgrade page, gift confirm step | 20 min |
+| M5-bis | Vérifier que le Stripe checkout lui-même affiche CGV (Stripe a une option native `consent_collection`) | 10 min |
+
+### 🟡 MOYEN
+| ID | Description | Effort |
+|---|---|---|
+| Mo1 | Plan Gratuit landing : ajouter footnote `"Au-delà de 10 entrées, un message d'upgrade s'affiche"` sous la carte Free | 10 min |
+| Mo2 | Plan Digital landing : ajouter ligne `"+ Livre imprimé disponible à la commande"` dans les features | 10 min |
+| Mo5 | Forgot-password : ajouter sous-titre sous le logo (même pattern que login "Bon retour") | 5 min |
+| Mo6 | Lien `← Retour à l'accueil` sur pages auth signup/login/forgot-password | 10 min |
+| Mo7 | Page Gift : ajouter `"L'email est envoyé instantanément."` sous l'étape 2 du how-it-works | 10 min |
+| Mo8 | Milestones "À débloquer" : afficher le keyword déclencheur sur chaque milestone bloqué. Ex : `"Mentionnez 'vétérinaire' pour débloquer"` | 1h |
+| Mo10 | Crédits livre sur dashboard (card VOTRE LIVRE 2026) + settings (section Mon abonnement) : `"1 crédit utilisé · Prochain : 02/07/2026"` | 1h |
+| Mo11 | Settings rappels : préciser le jour d'envoi. Ex : `"Envoyé chaque lundi matin."` | 5 min |
+| Mo12 | Export données RGPD : bouton `"Télécharger mes données (JSON)"` dans section Sécurité des settings | 3h |
+| Mo13 | Bouton "Supprimer mon compte" → passer de lien texte à `<button>` avec bordure rouge (modale de confirmation déjà en place) | 10 min |
+| Mo14 | Aperçu pages intérieures livre : bouton `"Voir un aperçu PDF"` depuis la page order → POST `/api/preview-pdf` (déjà en place, juste un bouton) | 30 min |
+| Mo15 | `"0 photos"` dans order page cliquable → link vers journal avec tooltip explicatif | 30 min |
+| Mo16 | Testimonials landing : ajouter prénom + ville + type animal sous chaque témoignage (social proof) | 30 min |
+| Mo17 | Pet page : compteur de progression vers prochain chapitre visible : `"3 moments ce mois · Prochain chapitre dans 29j"` | 1h |
+| Mo18 | Landing pricing : footnote sous carte Gratuit expliquant le paywall IA — `"Après votre 1ère histoire, passez Premium pour continuer"` | 10 min |
+
+### Long terme (Impact élevé, Effort élevé)
+| ID | Description | Effort |
+|---|---|---|
+| LT1 | Exit-intent capture email : popup avant départ → `"Recevez un exemple de livre Everypaw par email"` | 2h |
+| LT2 | Partage social natif sur profil public avec Open Graph preview | 2h |
+| LT3 | Créer les 3 routes cron manquantes : `streak-alert`, `birthday-check`, `daily-prompts` | 3h |
+
+---
+
+*Dernière mise à jour : 2026-06-02 (session 23 — audit UX/UI complet, 25+ fixes, auto-détection langue navigateur, cron on-this-day)*
