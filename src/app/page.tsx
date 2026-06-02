@@ -472,6 +472,69 @@ export default function Home() {
         </div>
       </section>
 
+      {/* BOOK VISUAL */}
+      <section style={{ padding: "5rem 2rem", background: "#EDE5D4" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "3rem", alignItems: "center" }}>
+
+          {/* Left: specs */}
+          <div>
+            <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".12em", textTransform: "uppercase", color: "#C8813A", marginBottom: "1rem" }}>
+              {isFR ? "Un vrai objet" : "A real object"}
+            </div>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)", fontWeight: 600, lineHeight: 1.2, color: "#3D2B1F", marginBottom: "1.5rem" }}>
+              {isFR ? <>Un livre relié,<br />pas juste un PDF</> : <>A hardcover book,<br />not just a PDF</>}
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
+              {(isFR ? [
+                ["📄", "Papier 170 g/m²", "Couché satiné, couleurs éclatantes"],
+                ["📖", "Couverture rigide", "Dos carré collé, mat plastifié"],
+                ["📐", "Format 20 × 20 cm", "Carré, adapté aux photos"],
+                ["🎨", "5 thèmes de couverture", "Classique, Noir, Forêt, Océan, Rose"],
+              ] : [
+                ["📄", "170 gsm silk paper", "Coated, vivid print quality"],
+                ["📖", "Rigid hardcover", "Perfect-bound, matt laminated"],
+                ["📐", "20 × 20 cm format", "Square, photo-friendly"],
+                ["🎨", "5 cover themes", "Classic, Noir, Forest, Ocean, Rose"],
+              ]).map(([icon, title, sub]) => (
+                <div key={title} style={{ background: "rgba(255,255,255,.5)", borderRadius: 14, padding: ".875rem 1rem" }}>
+                  <div style={{ fontSize: "1.2rem", marginBottom: ".35rem" }}>{icon}</div>
+                  <div style={{ fontSize: ".8rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".15rem" }}>{title}</div>
+                  <div style={{ fontSize: ".72rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.4 }}>{sub}</div>
+                </div>
+              ))}
+            </div>
+            <Link
+              href={isFR ? "/fr/auth/signup?plan=print" : "/auth/signup?plan=print"}
+              style={{ display: "inline-flex", alignItems: "center", gap: ".5rem", background: "#3D2B1F", color: "#F7F2EA", padding: ".75rem 1.75rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}
+            >
+              {isFR ? "Commander mon livre →" : "Get my book →"}
+            </Link>
+          </div>
+
+          {/* Right: 3D book mockup */}
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "2rem 0" }}>
+            <div style={{ perspective: 800, perspectiveOrigin: "50% 50%" }}>
+              <div style={{ position: "relative", width: 180, height: 240, transformStyle: "preserve-3d", transform: "rotateY(-20deg) rotateX(4deg)", filter: "drop-shadow(16px 24px 40px rgba(61,43,31,.35))" }}>
+                {/* Front cover */}
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, #5C3A1E 0%, #3D2B1F 100%)", borderRadius: "3px 12px 12px 3px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "1.5rem 1rem", gap: ".75rem" }}>
+                  <div style={{ fontSize: "2.5rem" }}>🐾</div>
+                  <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "0.95rem", color: "#F7C27A", textAlign: "center", lineHeight: 1.4 }}>
+                    {isFR ? "La vie de Biscuit" : "Biscuit's Life"}
+                    <div style={{ fontSize: ".65rem", color: "rgba(247,194,122,.6)", marginTop: ".35rem", letterSpacing: ".08em", fontStyle: "normal", textTransform: "uppercase" }}>2023 — 2026</div>
+                  </div>
+                  <div style={{ fontSize: ".55rem", color: "rgba(247,242,234,.3)", letterSpacing: ".1em", textTransform: "uppercase", marginTop: ".5rem" }}>Everypaw</div>
+                </div>
+                {/* Spine */}
+                <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 18, background: "linear-gradient(to right, rgba(0,0,0,.45), rgba(0,0,0,.2))", borderRadius: "3px 0 0 3px", transform: "rotateY(90deg) translateZ(-9px) translateX(-9px)" }} />
+                {/* Pages */}
+                <div style={{ position: "absolute", top: 2, right: -10, bottom: 2, width: 12, background: "repeating-linear-gradient(to bottom, #F0EBE3, #F0EBE3 1px, #E8E0D5 1px, #E8E0D5 2px)", borderRadius: "0 2px 2px 0", transform: "rotateY(-90deg) translateZ(169px)" }} />
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* PRICING */}
       <section style={{ padding: "6rem 2rem", background: "#F7F2EA", textAlign: "center" }}>
         <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".12em", textTransform: "uppercase", color: "#C8813A", marginBottom: "1rem" }}>{t.landing.pricing_tag}</div>

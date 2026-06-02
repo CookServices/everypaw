@@ -59,6 +59,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [termsError, setTermsError] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -91,6 +92,12 @@ export default function SignupPage() {
 
     setEmailError(newEmailError);
     setPasswordError(newPasswordError);
+
+    if (password && confirmPassword && password !== confirmPassword) {
+      setPasswordError(isFR ? "Les mots de passe ne correspondent pas." : "Passwords don't match.");
+      passwordRef.current?.focus();
+      return;
+    }
 
     if (newEmailError) firstErrorRef = emailRef;
     else if (newPasswordError) firstErrorRef = passwordRef;
@@ -288,6 +295,23 @@ export default function SignupPage() {
               {passwordError && (
                 <p style={{ fontSize: ".78rem", color: "#991B1B", margin: "0 0 0 .25rem" }}>{passwordError}</p>
               )}
+            </div>
+
+            {/* Confirm password */}
+            <div style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
+              <input
+                type="password"
+                placeholder={isFR ? "Confirmer le mot de passe" : "Confirm password"}
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleSignup()}
+                style={{
+                  width: "100%", boxSizing: "border-box",
+                  padding: ".75rem 1rem", borderRadius: 12,
+                  border: "1.5px solid rgba(61,43,31,.15)",
+                  background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none",
+                }}
+              />
             </div>
 
             {/* CGU checkbox */}
