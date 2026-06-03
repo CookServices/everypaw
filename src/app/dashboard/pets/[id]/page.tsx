@@ -738,13 +738,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
               <div ref={editEmojiPickerRef} style={{ position: "relative", display: "inline-block" }}>
                 <div style={{ position: "relative", display: "inline-block" }}>
                   <button onClick={() => setShowEditEmojiPicker(v => !v)}
-                    style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${editMood ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: editMood ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${editMood ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: editMood ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset" }}
                     title={isFR ? "Ajouter une émoticône" : "Add an emoji"}>
                     {editMood ? (ALL_EMOJIS.find(e => e.value === editMood)?.emoji ?? "😊") : "😊"}
                   </button>
                   {editMood && (
                     <button onClick={e => { e.stopPropagation(); setEditMood(null); }}
-                      style={{ position: "absolute", top: -5, right: -5, width: 15, height: 15, borderRadius: "50%", background: "rgba(61,43,31,.25)", color: "#3D2B1F", border: "none", cursor: "pointer", fontSize: "8px", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, padding: 0, fontWeight: 700 }}>
+                      style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: "50%", background: "rgba(61,43,31,.25)", color: "#3D2B1F", border: "none", cursor: "pointer", fontSize: "9px", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, padding: 0, fontWeight: 700, minHeight: "unset" }}>
                       ✕
                     </button>
                   )}
@@ -778,7 +778,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   {editPhotos.map((url, i) => (
                     <div key={i} style={{ position: "relative", width: 64, height: 64 }}>
                       <img src={url} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8 }} />
-                      <button onClick={() => setEditPhotos(prev => prev.filter((_, idx) => idx !== i))} style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: "#A32D2D", color: "#fff", border: "none", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                      <button onClick={() => setEditPhotos(prev => prev.filter((_, idx) => idx !== i))} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "#A32D2D", color: "#fff", border: "none", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset", padding: 0 }}>×</button>
                     </div>
                   ))}
                 </div>
@@ -1128,7 +1128,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   {pendingPhotos.map((photo, i) => (
                     <div key={i} style={{ position: "relative", width: 72, height: 72 }}>
                       <img src={photo.preview} alt="" style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 10 }} />
-                      <button onClick={() => removePhoto(i)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "#3D2B1F", color: "#FDFAF5", border: "none", cursor: "pointer", fontSize: "11px", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                      <button onClick={() => removePhoto(i)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "#3D2B1F", color: "#FDFAF5", border: "none", cursor: "pointer", fontSize: "11px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset", padding: 0 }}>×</button>
                     </div>
                   ))}
                 </div>
@@ -1138,13 +1138,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   <div ref={emojiPickerRef} style={{ position: "relative" }}>
                     <div style={{ position: "relative", display: "inline-block" }}>
                       <button onClick={() => setShowEmojiPicker(v => !v)}
-                        style={{ width: 32, height: 32, borderRadius: "50%", border: `1.5px solid ${mood ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: mood ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${mood ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: mood ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset" }}
                         title={isFR ? "Ajouter une émoticône" : "Add an emoji"}>
                         {mood ? (ALL_EMOJIS.find(e => e.value === mood)?.emoji ?? "😊") : "😊"}
                       </button>
                       {mood && (
                         <button onClick={e => { e.stopPropagation(); setMood(null); }}
-                          style={{ position: "absolute", top: -5, right: -5, width: 15, height: 15, borderRadius: "50%", background: "rgba(61,43,31,.25)", color: "#3D2B1F", border: "none", cursor: "pointer", fontSize: "8px", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, padding: 0, fontWeight: 700 }}>
+                          style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: "50%", background: "rgba(61,43,31,.25)", color: "#3D2B1F", border: "none", cursor: "pointer", fontSize: "9px", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, padding: 0, fontWeight: 700, minHeight: "unset" }}>
                           ✕
                         </button>
                       )}
