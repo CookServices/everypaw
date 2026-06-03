@@ -181,7 +181,7 @@ export default function NewPetPage() {
                 Annuler
               </button>
               <button onClick={handleCropConfirm} style={{ flex: 2, padding: ".6rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer" }}>
-                Confirmer →
+                Confirmer
               </button>
             </div>
           </div>
@@ -235,20 +235,28 @@ export default function NewPetPage() {
 
           {/* Text fields */}
           {[
-            { label: t.pet.name, value: name, setter: setName, placeholder: "Luna, Biscuit, Mochi…", type: "text", max: undefined },
-            { label: t.pet.breed, value: breed, setter: setBreed, placeholder: "Golden Retriever, Siamese…", type: "text", max: undefined },
-            { label: t.pet.birthday, value: birthdate, setter: setBirthdate, placeholder: "", type: "date", max: new Date().toISOString().split("T")[0] },
+            { label: t.pet.name, value: name, setter: setName, placeholder: "Luna, Biscuit, Mochi…", type: "text", max: undefined, maxLength: 40 },
+            { label: t.pet.breed, value: breed, setter: setBreed, placeholder: "Golden Retriever, Siamese…", type: "text", max: undefined, maxLength: 50 },
+            { label: t.pet.birthday, value: birthdate, setter: setBirthdate, placeholder: "", type: "date", max: new Date().toISOString().split("T")[0], maxLength: undefined },
           ].map(field => (
             <div key={field.label} style={{ marginBottom: "1.25rem" }}>
               <label style={labelStyle}>{field.label}</label>
-              <input type={field.type} value={field.value} onChange={e => field.setter(e.target.value)} placeholder={field.placeholder} max={field.max} style={inputStyle} />
+              <input type={field.type} value={field.value} onChange={e => field.setter(e.target.value)} placeholder={field.placeholder} max={field.max} maxLength={field.maxLength} style={inputStyle} />
+              {field.maxLength !== undefined && (
+                <div style={{ fontSize: ".7rem", textAlign: "right", marginTop: ".3rem", color: field.value.length >= field.maxLength * 0.9 ? "#A32D2D" : "#9A8070" }}>
+                  {field.value.length}/{field.maxLength}
+                </div>
+              )}
             </div>
           ))}
 
           <div style={{ marginBottom: "1.5rem" }}>
             <label style={labelStyle}>{t.pet.bio}</label>
-            <textarea value={bio} onChange={e => setBio(e.target.value)} placeholder={t.pet.bio_placeholder} rows={3}
+            <textarea value={bio} onChange={e => setBio(e.target.value)} placeholder={t.pet.bio_placeholder} rows={3} maxLength={300}
               style={{ ...inputStyle, resize: "vertical" }} />
+            <div style={{ fontSize: ".7rem", textAlign: "right", marginTop: ".3rem", color: bio.length >= 270 ? "#A32D2D" : "#9A8070" }}>
+              {bio.length}/300
+            </div>
           </div>
 
           {error && <p style={{ fontSize: ".8rem", color: "#A32D2D", marginBottom: "1rem" }}>{error}</p>}
