@@ -913,19 +913,25 @@ export default function PetPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      <div style={{ padding: "1rem 1.5rem .5rem", display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(`${window.location.origin}/pets/${id}?lang=${locale}`);
-            alert(t.pet.link_copied);
-          }}
-          style={{ fontSize: ".75rem", color: "#7A5C44", background: "none", border: "1px solid rgba(61,43,31,.15)", borderRadius: 100, padding: ".375rem .875rem", cursor: "pointer", fontFamily: "inherit", minHeight: 36 }}
-        >
-          {t.nav.share_profile}
-        </button>
-      </div>
-
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1.5rem" }}>
+
+        {/* Page header row: pet name + share button */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.25rem, 3vw, 1.75rem)", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>
+            {pet?.name ?? ""}
+          </h1>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/pets/${id}?lang=${locale}`);
+              alert(t.pet.link_copied);
+            }}
+            style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#7A5C44", fontSize: ".8rem", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flexShrink: 0, transition: "border-color .12s, color .12s" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#C8813A"; (e.currentTarget as HTMLElement).style.color = "#C8813A"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.2)"; (e.currentTarget as HTMLElement).style.color = "#7A5C44"; }}
+          >
+            {t.nav.share_profile}
+          </button>
+        </div>
 
         {/* Pet header */}
         <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.25rem 1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)", position: "relative" }}>
