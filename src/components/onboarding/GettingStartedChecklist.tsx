@@ -151,7 +151,7 @@ export default function GettingStartedChecklist({ hasPets, hasEntries, hasStorie
                 {task.label}
               </span>
               {!task.done && task.href && (
-                <span style={{ marginLeft: "auto", fontSize: ".75rem", color: "#C8813A", flexShrink: 0 }}>→</span>
+                
               )}
             </div>
           );

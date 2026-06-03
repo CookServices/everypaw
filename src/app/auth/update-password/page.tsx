@@ -108,7 +108,7 @@ export default function UpdatePasswordPage() {
                 >
                   {status === "loading"
                     ? (isFR ? "Mise à jour…" : "Updating…")
-                    : (isFR ? "Mettre à jour →" : "Update password →")}
+                    : (isFR ? "Mettre à jour" : "Update password")}
                 </button>
               </div>
             </>

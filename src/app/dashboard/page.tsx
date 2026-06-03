@@ -322,7 +322,7 @@ export default function DashboardPage() {
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.textDecoration = "underline"}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.textDecoration = "none"}
                 >
-                  {isFR ? "Voir les chapitres précédents →" : "See past chapters →"}
+                  {isFR ? "Voir les chapitres précédents" : "See past chapters"}
                 </Link>
               )}
             </div>
@@ -360,7 +360,7 @@ export default function DashboardPage() {
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(200,129,58,.12)"}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
                 >
-                  {isFR ? "Commander →" : "Order book →"}
+                  {isFR ? "Commander" : "Order book"}
                 </Link>
               </div>
             )}
@@ -391,7 +391,7 @@ export default function DashboardPage() {
                   disabled={subscribing}
                   style={{ marginTop: "auto", padding: ".5rem .875rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: subscribing ? "wait" : "pointer", opacity: subscribing ? .7 : 1 }}
                 >
-                  {isFR ? "Choisir Digital →" : "Choose Digital →"}
+                  {isFR ? "Choisir Digital" : "Choose Digital"}
                 </button>
               </div>
 
@@ -414,7 +414,7 @@ export default function DashboardPage() {
                   disabled={subscribing}
                   style={{ marginTop: "auto", padding: ".5rem .875rem", borderRadius: 100, border: "1.5px solid #C8813A", background: "transparent", color: "#C8813A", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: subscribing ? "wait" : "pointer", opacity: subscribing ? .7 : 1 }}
                 >
-                  {isFR ? "Choisir Print →" : "Choose Print →"}
+                  {isFR ? "Choisir Print" : "Choose Print"}
                 </button>
               </div>
             </div>
@@ -454,7 +454,7 @@ export default function DashboardPage() {
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.textDecoration = "underline"}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.textDecoration = "none"}
                 >
-                  {isFR ? "Voir tout le journal →" : "See full journal →"}
+                  {isFR ? "Voir tout le journal" : "See full journal"}
                 </Link>
               )}
             </div>
@@ -518,7 +518,7 @@ export default function DashboardPage() {
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#C8813A"; (e.currentTarget as HTMLElement).style.color = "#C8813A"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.15)"; (e.currentTarget as HTMLElement).style.color = "#7A5C44"; }}
                 >
-                  {isFR ? "Voir tout le journal →" : "See full journal →"}
+                  {isFR ? "Voir tout le journal" : "See full journal"}
                 </Link>
               </div>
             )}

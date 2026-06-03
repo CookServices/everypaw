@@ -145,7 +145,7 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#C8813A"; (e.currentTarget as HTMLElement).style.color = "#C8813A"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.18)"; (e.currentTarget as HTMLElement).style.color = "#7A5C44"; }}
             >
-              ←
+              ‹
             </button>
           )}
           <p style={{
@@ -231,7 +231,7 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
                 textDecoration: "none",
               }}
             >
-              {current.primaryLabel} →
+              {current.primaryLabel}
             </Link>
           ) : (
             <button

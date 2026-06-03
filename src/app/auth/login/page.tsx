@@ -184,12 +184,12 @@ export default function LoginPage() {
         <p style={{ textAlign: "center", marginTop: ".5rem", fontSize: ".85rem", color: "#7A5C44" }}>
           {isFR ? "Pas de compte ?" : "No account?"}{" "}
           <Link href="/auth/signup" style={{ color: "#C8813A", fontWeight: 500, textDecoration: "none" }}>
-            {isFR ? "En créer un →" : "Create one →"}
+            {isFR ? "En créer un" : "Create one"}
           </Link>
         </p>
         <p style={{ textAlign: "center", marginTop: ".5rem", fontSize: ".8rem" }}>
           <Link href="/" style={{ color: "#9A8070", fontWeight: 400, textDecoration: "none" }}>
-            {isFR ? "← Retour à l'accueil" : "← Back to home"}
+            {isFR ? "Retour à l'accueil" "Back to home"}
           </Link>
         </p>
       </div>

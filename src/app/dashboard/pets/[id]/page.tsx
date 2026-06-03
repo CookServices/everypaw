@@ -1329,7 +1329,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: ".875rem", alignItems: "center" }}>
                     {story.period_start && story.period_end && (
                       <span style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", background: "rgba(200,129,58,.07)", borderRadius: 100, padding: ".25rem .75rem", fontSize: ".72rem", color: "#C8813A", fontWeight: 500 }}>
-                        {fmtDateOrdinal(new Date(story.period_start + "T12:00:00"), isFR, { month: "short" })} → {fmtDateOrdinal(new Date(story.period_end + "T12:00:00"), isFR, { month: "short", year: "numeric" })}
+                        {fmtDateOrdinal(new Date(story.period_start + "T12:00:00"), isFR, { month: "short" })} – {fmtDateOrdinal(new Date(story.period_end + "T12:00:00"), isFR, { month: "short", year: "numeric" })}
                       </span>
                     )}
                     {story.style && (() => {

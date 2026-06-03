@@ -435,7 +435,7 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              {/* Plan = free → upgrade CTAs */}
+              {/* Plan = free upgrade CTAs */}
               {plan === "free" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
                   <p style={{ fontSize: ".875rem", color: "#7A5C44", margin: "0 0 .5rem", fontWeight: 300 }}>
@@ -448,7 +448,7 @@ export default function SettingsPage() {
                   >
                     {checkoutLoading === "digital"
                       ? "…"
-                      : (isFR ? `Passer à Premium Digital — ${formatPrice(currency, "digital")}/mois →` : `Upgrade to Premium Digital — ${formatPrice(currency, "digital")}/mo →`)}
+                      : (isFR ? `Passer à Premium Digital — ${formatPrice(currency, "digital")}/mois` : `Upgrade to Premium Digital — ${formatPrice(currency, "digital")}/mo`)}
                   </button>
                   <button
                     onClick={() => handleCheckout("print")}
@@ -457,7 +457,7 @@ export default function SettingsPage() {
                   >
                     {checkoutLoading === "print"
                       ? "…"
-                      : (isFR ? `Passer à Premium Print — ${formatPrice(currency, "print")}/mois →` : `Upgrade to Premium Print — ${formatPrice(currency, "print")}/mo →`)}
+                      : (isFR ? `Passer à Premium Print — ${formatPrice(currency, "print")}/mois` : `Upgrade to Premium Print — ${formatPrice(currency, "print")}/mo`)}
                   </button>
                   <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".25rem 0 0", lineHeight: 1.5, fontWeight: 300, textAlign: "center" as const }}>
                     {isFR ? (
@@ -479,7 +479,7 @@ export default function SettingsPage() {
                   >
                     {upgradeLoading
                       ? (isFR ? "Mise à jour…" : "Updating…")
-                      : (isFR ? `Passer à Premium Print — ${formatPrice(currency, "print")}/mois →` : `Upgrade to Premium Print — ${formatPrice(currency, "print")}/mo →`)}
+                      : (isFR ? `Passer à Premium Print — ${formatPrice(currency, "print")}/mois` : `Upgrade to Premium Print — ${formatPrice(currency, "print")}/mo`)}
                   </button>
                   <button
                     onClick={handleCancel}
@@ -503,7 +503,7 @@ export default function SettingsPage() {
                   >
                     {upgradeLoading
                       ? (isFR ? "Mise à jour…" : "Updating…")
-                      : (isFR ? `Passer à Premium Digital — ${formatPrice(currency, "digital")}/mois →` : `Switch to Premium Digital — ${formatPrice(currency, "digital")}/mo →`)}
+                      : (isFR ? `Passer à Premium Digital — ${formatPrice(currency, "digital")}/mois` : `Switch to Premium Digital — ${formatPrice(currency, "digital")}/mo`)}
                   </button>
                   <button
                     onClick={handleCancel}
@@ -587,7 +587,7 @@ export default function SettingsPage() {
                 />
                 {emailError && <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>{emailError}</p>}
                 <button onClick={handleEmailChange} disabled={emailStatus === "saving"} style={{ ...btnOutline, opacity: emailStatus === "saving" ? .7 : 1 }}>
-                  {emailStatus === "saving" ? (isFR ? "Mise à jour…" : "Updating…") : (isFR ? "Mettre à jour l'email →" : "Update email →")}
+                  {emailStatus === "saving" ? (isFR ? "Mise à jour…" : "Updating…") : (isFR ? "Mettre à jour l'email" : "Update email")}
                 </button>
               </div>
             </div>
@@ -604,7 +604,7 @@ export default function SettingsPage() {
                   <input type="password" placeholder={isFR ? "Confirmer le mot de passe" : "Confirm password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={inputStyle} />
                   {passwordError && <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>{passwordError}</p>}
                   <button onClick={handlePasswordChange} disabled={passwordStatus === "saving"} style={{ ...btnOutline, opacity: passwordStatus === "saving" ? .7 : 1 }}>
-                    {passwordStatus === "saving" ? (isFR ? "Mise à jour…" : "Updating…") : (isFR ? "Mettre à jour le mot de passe →" : "Update password →")}
+                    {passwordStatus === "saving" ? (isFR ? "Mise à jour…" : "Updating…") : (isFR ? "Mettre à jour le mot de passe" : "Update password")}
                   </button>
                 </div>
               </div>

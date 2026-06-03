@@ -29,7 +29,7 @@ export default function NotFound() {
               fontSize: ".9rem", fontWeight: 500, textDecoration: "none",
             }}
           >
-            ← Retour à l&apos;accueil
+            Retour à l&apos;accueil
           </Link>
         </div>
       </div>

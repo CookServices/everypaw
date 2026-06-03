@@ -257,14 +257,14 @@ export default function GiftPage() {
                   onClick={() => setStep("form")}
                   style={{ flex: "0 0 auto", padding: ".75rem 1.25rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#3D2B1F", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer" }}
                 >
-                  {isFR ? "← Modifier" : "← Edit"}
+                  {isFR ? "Modifier" "Edit"}
                 </button>
                 <button
                   onClick={handleConfirm}
                   disabled={status === "loading"}
                   style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "loading" ? .7 : 1 }}
                 >
-                  {status === "loading" ? t.gift.sending : (isFR ? "Confirmer et payer →" : "Confirm & pay →")}
+                  {status === "loading" ? t.gift.sending : (isFR ? "Confirmer et payer" : "Confirm & pay")}
                 </button>
               </div>
 
@@ -275,7 +275,7 @@ export default function GiftPage() {
                       <>
                         {isFR ? "Vous devez être connecté pour offrir un cadeau." : "You must be signed in to send a gift."}{" "}
                         <a href="/auth/login?redirect=/gift" style={{ color: "#991B1B", fontWeight: 600, textDecoration: "underline" }}>
-                          {isFR ? "Se connecter →" : "Sign in →"}
+                          {isFR ? "Se connecter" : "Sign in"}
                         </a>
                       </>
                     ) : t.gift.error}

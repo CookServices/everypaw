@@ -11,7 +11,7 @@ export default function Contact() {
       <PublicNav variant="simple" />
 
       <main style={{ maxWidth: 560, margin: "0 auto", padding: "4rem 2rem 6rem" }}>
-        <Link href="/" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>← Retour</Link>
+        <Link href="/" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>Retour</Link>
 
         <div style={{ textAlign: "center", margin: "3rem 0 3.5rem" }}>
           <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🐾</div>

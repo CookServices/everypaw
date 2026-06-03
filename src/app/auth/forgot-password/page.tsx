@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
                   : <>A reset link was sent to <strong>{email}</strong>. Check your inbox.</>}
               </p>
               <Link href="/auth/login" style={{ color: "#C8813A", fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
-                {isFR ? "← Retour à la connexion" : "← Back to sign in"}
+                {isFR ? "Retour à la connexion" "Back to sign in"}
               </Link>
             </div>
           ) : (
@@ -95,17 +95,17 @@ export default function ForgotPasswordPage() {
                 >
                   {status === "loading"
                     ? (isFR ? "Envoi…" : "Sending…")
-                    : (isFR ? "Envoyer le lien →" : "Send reset link →")}
+                    : (isFR ? "Envoyer le lien" : "Send reset link")}
                 </button>
               </div>
               <p style={{ textAlign: "center", marginTop: ".75rem", marginBottom: 0 }}>
                 <Link href="/auth/login" style={{ fontSize: ".85rem", color: "#C8813A", fontWeight: 500, textDecoration: "none" }}>
-                  {isFR ? "← Retour à la connexion" : "← Back to sign in"}
+                  {isFR ? "Retour à la connexion" "Back to sign in"}
                 </Link>
               </p>
               <p style={{ textAlign: "center", marginTop: ".5rem", marginBottom: 0 }}>
                 <Link href="/" style={{ fontSize: ".8rem", color: "#9A8070", fontWeight: 400, textDecoration: "none" }}>
-                  {isFR ? "← Retour à l'accueil" : "← Back to home"}
+                  {isFR ? "Retour à l'accueil" "Back to home"}
                 </Link>
               </p>
             </>

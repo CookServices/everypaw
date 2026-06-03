@@ -11,7 +11,7 @@ export default function Confidentialite() {
       <PublicNav variant="simple" />
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "4rem 2rem 6rem" }}>
-        <Link href="/" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>← Retour</Link>
+        <Link href="/" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>Retour</Link>
 
         <h1 style={{ fontFamily: "Georgia, serif", fontSize: "2rem", fontWeight: 600, color: "#3D2B1F", margin: "2rem 0 .75rem" }}>
           Politique de confidentialité

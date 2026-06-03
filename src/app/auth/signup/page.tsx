@@ -366,12 +366,12 @@ export default function SignupPage() {
         <p style={{ textAlign: "center", marginTop: "1.25rem", fontSize: ".85rem", color: "#7A5C44" }}>
           {isFR ? "Vous avez déjà un compte ?" : "Already have an account?"}{" "}
           <Link href="/auth/login" style={{ color: "#C8813A", fontWeight: 500, textDecoration: "none" }}>
-            {isFR ? "Se connecter →" : "Sign in →"}
+            {isFR ? "Se connecter" : "Sign in"}
           </Link>
         </p>
         <p style={{ textAlign: "center", marginTop: ".5rem", fontSize: ".8rem" }}>
           <Link href="/" style={{ color: "#9A8070", fontWeight: 400, textDecoration: "none" }}>
-            {isFR ? "← Retour à l'accueil" : "← Back to home"}
+            {isFR ? "Retour à l'accueil" "Back to home"}
           </Link>
         </p>
       </div>

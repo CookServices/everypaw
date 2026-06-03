@@ -211,7 +211,7 @@ export default function EditPetPage({ params }: { params: { id: string } }) {
                 {isFR ? "Annuler" : "Cancel"}
               </button>
               <button onClick={handleCropConfirm} style={{ flex: 2, padding: ".6rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer" }}>
-                {isFR ? "Confirmer →" : "Confirm →"}
+                {isFR ? "Confirmer" : "Confirm"}
               </button>
             </div>
           </div>

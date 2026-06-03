@@ -82,7 +82,7 @@ export default function UpgradePage() {
       feats: isFR
         ? ["Entrées illimitées", "Histoires IA illimitées", "Profils animaux illimités", "Export PDF"]
         : ["Unlimited entries", "Unlimited AI stories", "Unlimited pet profiles", "PDF export"],
-      cta: isFR ? "Commencer Digital →" : "Get Digital →",
+      cta: isFR ? "Commencer Digital" : "Get Digital",
     },
 
     print: {
@@ -94,7 +94,7 @@ export default function UpgradePage() {
       feats: isFR
         ? ["Tout le plan Digital", "1 livre hardcover / an inclus", "Impression & livraison incluses", "Support prioritaire"]
         : ["Everything in Digital", "1 hardcover book/year included", "Printing & shipping included", "Priority support"],
-      cta: isFR ? "Commencer Print →" : "Get Print →",
+      cta: isFR ? "Commencer Print" : "Get Print",
       badge: isFR ? "Meilleure valeur" : "Best value",
     },
 
@@ -105,7 +105,7 @@ export default function UpgradePage() {
       feats: isFR
         ? ["1 livre hardcover imprimé", "Livraison incluse", "Aucun abonnement requis"]
         : ["1 printed hardcover book", "Shipping included", "No subscription required"],
-      cta: isFR ? "Commander un livre →" : "Order a book →",
+      cta: isFR ? "Commander un livre" : "Order a book",
     },
   };
 
