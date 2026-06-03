@@ -223,9 +223,11 @@ export default function BooksPage({ params }: { params: { id: string } }) {
           </h1>
           <Link
             href={`/dashboard/pets/${petId}/order`}
-            style={{ background: accentColor, color: "#FDFAF5", padding: ".6rem 1.25rem", borderRadius: 100, fontSize: ".85rem", fontWeight: 500, textDecoration: "none", display: "inline-flex", alignItems: "center", whiteSpace: "nowrap", flexShrink: 0 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#7A5C44", fontSize: ".8rem", textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0, transition: "border-color .12s, color .12s" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#C8813A"; (e.currentTarget as HTMLElement).style.color = "#C8813A"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.2)"; (e.currentTarget as HTMLElement).style.color = "#7A5C44"; }}
           >
-            + {isFR ? "Nouveau livre" : "New book"}
+            {isFR ? "Nouveau livre" : "New book"}
           </Link>
         </div>
 
