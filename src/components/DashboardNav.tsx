@@ -517,9 +517,9 @@ export default function DashboardNav() {
     { href: "/dashboard",   label: isFR ? "Accueil"      : "Home",       icon: <IconHome />,      active: isDashboard },
     { href: petLink,        label: "Journal",                              icon: <IconBook />,      active: isPetPage && currentTab !== "stories" && currentTab !== "milestones" },
     { href: storiesLink,    label: isFR ? "Histoires IA" : "AI Stories",  icon: <IconSparkles />,  active: isPetPage && currentTab === "stories" },
-    { href: orderLink,      label: isFR ? "Livre"        : "Book",        icon: <IconBookCover />, active: isOrderPage },
     { href: milestonesLink, label: isFR ? "Étapes"       : "Milestones",  icon: <IconTrophy />,    active: isPetPage && currentTab === "milestones" },
-    { href: booksLink,      label: isFR ? "Mes livres"   : "My books",    icon: <IconBooks />,     active: isBooksPage },
+    { href: orderLink,      label: isFR ? "Livre"        : "Book",        icon: <IconBookCover />, active: isOrderPage },
+    { href: booksLink,      label: isFR ? "Bibliothèque" : "Library",     icon: <IconBooks />,     active: isBooksPage },
   ];
 
   const handleLogout = async () => {
@@ -669,7 +669,7 @@ export default function DashboardNav() {
     { href: storiesLink,    label: isFR ? "Histoires IA" : "AI Stories",  icon: <IconSparkles />,  active: isPetPage && currentTab === "stories" },
     { href: milestonesLink, label: isFR ? "Étapes"       : "Milestones",  icon: <IconTrophy />,    active: isPetPage && currentTab === "milestones" },
     { href: orderLink,      label: isFR ? "Livre"        : "Book",        icon: <IconBookCover />, active: isOrderPage },
-    { href: booksLink,      label: isFR ? "Mes livres"   : "My books",    icon: <IconBooks />,     active: isBooksPage },
+    { href: booksLink,      label: isFR ? "Bibliothèque" : "Library",     icon: <IconBooks />,     active: isBooksPage },
   ];
 
   const BottomNav = (
