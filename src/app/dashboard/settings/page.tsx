@@ -372,7 +372,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+      <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
 
         {/* ── Subscription section ─────────────────────────────────────────── */}
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>

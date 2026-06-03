@@ -540,7 +540,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         </span>
       </nav>
 
-      <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+      <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
 
         {/* Stepper — hidden on success */}
         {step !== "success" && (

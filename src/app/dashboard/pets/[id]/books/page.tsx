@@ -216,7 +216,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
 
   return (
     <div style={{ minHeight: "100dvh", background: bg, fontFamily: "'DM Sans', sans-serif" }}>
-      <main style={{ maxWidth: 600, margin: "0 auto", padding: "2rem 1.5rem" }}>
+      <main style={{ maxWidth: 900, margin: "0 auto", padding: "2rem 1.5rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.75rem" }}>
           <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.4rem", color: textPrimary, margin: 0 }}>
             {isFR ? "Livres & brouillons" : "Books & drafts"}

@@ -190,7 +190,7 @@ export default function UpgradePage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <main style={{ maxWidth: 960, margin: "0 auto", padding: "3rem 1.5rem 4rem" }}>
+      <main style={{ maxWidth: 900, margin: "0 auto", padding: "3rem 1.5rem 4rem" }}>
 
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>

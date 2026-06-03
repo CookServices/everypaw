@@ -507,7 +507,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
 
   if (loading) return (
-    <div style={{ minHeight: "100dvh", background: "#F7F2EA", padding: "2rem 1.5rem", maxWidth: 860, margin: "0 auto" }}>
+    <div style={{ minHeight: "100dvh", background: "#F7F2EA", padding: "2rem 1.5rem", maxWidth: 900, margin: "0 auto" }}>
       {/* Pet header skeleton */}
       <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
         <div className="ep-skeleton" style={{ width: 56, height: 56, borderRadius: "50%" }} />
@@ -936,7 +936,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      <main style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1.5rem" }}>
+      <main style={{ maxWidth: 900, margin: "0 auto", padding: "2rem 1.5rem" }}>
 
         {/* Page header row: pet name + share button */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
