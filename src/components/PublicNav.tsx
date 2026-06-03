@@ -40,7 +40,7 @@ export default function PublicNav({ variant = "simple", fixed = false }: PublicN
   const dotSize = fixed ? 8 : 7;
 
   return (
-    <nav style={navStyle}>
+    <nav className="ep-public-nav" style={navStyle}>
       <Link href="/" style={logoStyle}>
         <span
           style={{
@@ -56,10 +56,10 @@ export default function PublicNav({ variant = "simple", fixed = false }: PublicN
 
       {variant === "full" && (
         <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
-          <Link href="/gift" className="ep-nav-secondary" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400, padding: ".4rem .5rem" }}>
+          <Link href="/gift" className="ep-nav-secondary" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400, padding: ".4rem .5rem", whiteSpace: "nowrap" }}>
             {t.nav.give_gift}
           </Link>
-          <Link href="/auth/login" className="ep-nav-secondary" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400, padding: ".4rem .75rem" }}>
+          <Link href="/auth/login" className="ep-nav-secondary" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400, padding: ".4rem .75rem", whiteSpace: "nowrap" }}>
             {t.nav.sign_in}
           </Link>
           <Link

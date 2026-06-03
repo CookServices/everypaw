@@ -209,10 +209,13 @@ img {
   }
 }
 
-/* ── Public nav — hide secondary links on small mobile ──────────────────── */
-@media (max-width: 480px) {
+/* ── Public nav — hide secondary links on mobile ────────────────────────── */
+@media (max-width: 640px) {
   .ep-nav-secondary {
     display: none !important;
+  }
+  .ep-public-nav {
+    padding: 1rem 1.25rem !important;
   }
 }
 
