@@ -59,9 +59,6 @@ export default function PublicNav({ variant = "simple", fixed = false }: PublicN
           <Link href="/gift" className="ep-nav-secondary" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400, padding: ".4rem .5rem", whiteSpace: "nowrap" }}>
             {t.nav.give_gift}
           </Link>
-          <Link href="/auth/login" className="ep-nav-secondary" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400, padding: ".4rem .75rem", whiteSpace: "nowrap" }}>
-            {t.nav.sign_in}
-          </Link>
           <Link
             href="/auth/login"
             style={{
