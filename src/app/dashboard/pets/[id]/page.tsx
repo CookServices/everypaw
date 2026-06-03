@@ -145,6 +145,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
   const [pet, setPet] = useState<Pet | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [allEntryDates, setAllEntryDates] = useState<string[]>([]);
+  const [entriesPage, setEntriesPage] = useState(0);
+  const [hasMoreEntries, setHasMoreEntries] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [stories, setStories] = useState<Story[]>([]);
   const [milestones, setMilestones] = useState<{ id: string; type: string; title: string; achieved_at: string }[]>([]);
   const [newEntry, setNewEntry] = useState("");
@@ -230,9 +234,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
-      const [{ data: petData }, { data: entriesData }, { data: storiesData }, { data: milestonesData }, { data: profile }, { data: definitionsData }] = await Promise.all([
+      const [{ data: petData }, { data: entriesData, count: entriesCount }, { data: datesData }, { data: storiesData }, { data: milestonesData }, { data: profile }, { data: definitionsData }] = await Promise.all([
         supabase.from("pets").select("*").eq("id", id).single(),
-        supabase.from("entries").select("*").eq("pet_id", id).order("entry_date", { ascending: false }),
+        supabase.from("entries").select("*", { count: "exact" }).eq("pet_id", id).order("entry_date", { ascending: false }).range(0, 19),
+        supabase.from("entries").select("entry_date").eq("pet_id", id),
         supabase.from("stories").select("*").eq("pet_id", id).order("created_at", { ascending: false }),
         supabase.from("milestones").select("*").eq("pet_id", id).order("achieved_at", { ascending: false }),
         supabase.from("profiles").select("is_premium, plan").single(),
@@ -240,6 +245,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
       ]);
       setPet(petData);
       setEntries(entriesData || []);
+      setAllEntryDates((datesData || []).map((e: { entry_date: string }) => e.entry_date));
+      setHasMoreEntries((entriesCount ?? 0) > 20);
       setStories(storiesData || []);
       setMilestones(milestonesData || []);
       setIsPremium(profile?.is_premium ?? false);
@@ -345,9 +352,12 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const generateStory = async () => {
     setShowGenerateModal(false);
     const today = new Date().toISOString().split("T")[0];
-    let filteredEntries = entries;
-    if (genPeriodStart) filteredEntries = filteredEntries.filter(e => e.entry_date >= genPeriodStart);
-    if (genPeriodEnd) filteredEntries = filteredEntries.filter(e => e.entry_date <= genPeriodEnd);
+    const supabase = createClient();
+    let q = supabase.from("entries").select("*").eq("pet_id", id).order("entry_date", { ascending: false });
+    if (genPeriodStart) q = q.gte("entry_date", genPeriodStart);
+    if (genPeriodEnd) q = q.lte("entry_date", genPeriodEnd);
+    const { data: fetchedEntries } = await q;
+    let filteredEntries = fetchedEntries || [];
     if (filteredEntries.length < 3) { alert(t.journal.min_entries_alert); return; }
     const lastEntryDate = filteredEntries[0]?.entry_date ?? today;
     const effectivePeriodEnd = genPeriodEnd
@@ -518,7 +528,20 @@ export default function PetPage({ params }: { params: { id: string } }) {
   );
   if (!pet) return <div className="ep-page-centered">{t.pet.not_found}</div>;
 
-  const availableYears = Array.from(new Set(entries.map(e => e.entry_date.slice(0, 4)))).sort().reverse();
+  const loadMoreEntries = async () => {
+    setLoadingMore(true);
+    const supabase = createClient();
+    const nextPage = entriesPage + 1;
+    const { data } = await supabase.from("entries").select("*").eq("pet_id", id).order("entry_date", { ascending: false }).range(nextPage * 20, nextPage * 20 + 19);
+    if (data) {
+      setEntries(prev => [...prev, ...data]);
+      setHasMoreEntries(data.length === 20);
+      setEntriesPage(nextPage);
+    }
+    setLoadingMore(false);
+  };
+
+  const availableYears = Array.from(new Set(allEntryDates.map(d => d.slice(0, 4)))).sort().reverse();
   const MONTHS = Array.from({ length: 12 }, (_, i) => ({
     value: String(i + 1).padStart(2, "0"),
     label: new Date(2000, i, 1).toLocaleDateString(dateLocale, { month: "long" }).replace(/^./, s => s.toUpperCase()),
@@ -1393,6 +1416,18 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 </div>
               </div>
             ))}
+
+            {hasMoreEntries && !filterYear && !filterMonth && (
+              <div style={{ textAlign: "center", marginTop: "1rem" }}>
+                <button
+                  onClick={loadMoreEntries}
+                  disabled={loadingMore}
+                  style={{ display: "inline-flex", alignItems: "center", gap: ".5rem", padding: ".5rem 1.25rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#7A5C44", fontSize: ".8rem", fontFamily: "inherit", cursor: loadingMore ? "wait" : "pointer", opacity: loadingMore ? .6 : 1 }}
+                >
+                  {loadingMore ? (isFR ? "Chargement…" : "Loading…") : (isFR ? "Charger plus" : "Load more")}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
