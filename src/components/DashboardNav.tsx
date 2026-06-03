@@ -434,6 +434,15 @@ export default function DashboardNav() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [drawerOpen]);
+
+  useEffect(() => {
     const supabase = createClient();
     supabase
       .from("pets")
@@ -505,12 +514,12 @@ export default function DashboardNav() {
   const isFR = locale === "fr";
 
   const mainItems = [
-    { href: "/dashboard",   label: isFR ? "Accueil"      : "Home",       shortLabel: isFR ? "Accueil"   : "Home",    icon: <IconHome />,      active: isDashboard,    mobileOnly: false },
-    { href: petLink,        label: "Journal",                              shortLabel: "Journal",                      icon: <IconBook />,      active: isPetPage && currentTab !== "stories" && currentTab !== "milestones", mobileOnly: false },
-    { href: storiesLink,    label: isFR ? "Histoires IA" : "AI Stories",  shortLabel: isFR ? "Histoires" : "Stories", icon: <IconSparkles />, active: isPetPage && currentTab === "stories",      mobileOnly: false },
-    { href: orderLink,      label: isFR ? "Livre"        : "Book",        shortLabel: isFR ? "Livre"     : "Book",    icon: <IconBookCover />, active: isOrderPage,     mobileOnly: false },
-    { href: milestonesLink, label: isFR ? "Étapes"       : "Milestones",  shortLabel: isFR ? "Étapes"    : "Steps",   icon: <IconTrophy />,   active: isPetPage && currentTab === "milestones", mobileOnly: false },
-    { href: booksLink,      label: isFR ? "Mes livres"   : "My books",    shortLabel: isFR ? "Livres"    : "Books",   icon: <IconBooks />,     active: isBooksPage,     mobileOnly: true  },
+    { href: "/dashboard",   label: isFR ? "Accueil"      : "Home",       icon: <IconHome />,      active: isDashboard },
+    { href: petLink,        label: "Journal",                              icon: <IconBook />,      active: isPetPage && currentTab !== "stories" && currentTab !== "milestones" },
+    { href: storiesLink,    label: isFR ? "Histoires IA" : "AI Stories",  icon: <IconSparkles />,  active: isPetPage && currentTab === "stories" },
+    { href: orderLink,      label: isFR ? "Livre"        : "Book",        icon: <IconBookCover />, active: isOrderPage },
+    { href: milestonesLink, label: isFR ? "Étapes"       : "Milestones",  icon: <IconTrophy />,    active: isPetPage && currentTab === "milestones" },
+    { href: booksLink,      label: isFR ? "Mes livres"   : "My books",    icon: <IconBooks />,     active: isBooksPage },
   ];
 
   const handleLogout = async () => {
@@ -677,16 +686,21 @@ export default function DashboardNav() {
       )}
 
       {/* Left drawer */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, bottom: 0,
-        width: 272, zIndex: 50,
-        background: "#FDFAF5", borderRight: "1px solid rgba(61,43,31,.1)",
-        boxShadow: drawerOpen ? "8px 0 32px rgba(61,43,31,.15)" : "none",
-        display: "flex", flexDirection: "column",
-        transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
-        transition: "transform .25s cubic-bezier(.4,0,.2,1)",
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
-      }}>
+      <div
+        aria-hidden={!drawerOpen}
+        // @ts-expect-error inert is a valid HTML attribute not yet in React types
+        inert={!drawerOpen ? "" : undefined}
+        style={{
+          position: "fixed", top: 0, left: 0, bottom: 0,
+          width: 272, zIndex: 50,
+          background: "#FDFAF5", borderRight: "1px solid rgba(61,43,31,.1)",
+          boxShadow: drawerOpen ? "8px 0 32px rgba(61,43,31,.15)" : "none",
+          display: "flex", flexDirection: "column",
+          transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform .25s cubic-bezier(.4,0,.2,1)",
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}>
         {/* Drawer header */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -705,9 +719,9 @@ export default function DashboardNav() {
             onClick={() => setDrawerOpen(false)}
             style={{
               background: "none", border: "none", cursor: "pointer",
-              color: "#7A5C44", padding: 4, borderRadius: 8,
+              color: "#7A5C44", borderRadius: 8,
               display: "flex", alignItems: "center", justifyContent: "center",
-              minHeight: "unset",
+              width: 44, height: 44, flexShrink: 0,
             }}
           >
             <IconX />
@@ -753,7 +767,7 @@ export default function DashboardNav() {
               width: "100%", padding: ".75rem .875rem", borderRadius: 10,
               background: "transparent", color: "#7A5C44",
               border: "none", fontFamily: "inherit", fontSize: ".875rem",
-              fontWeight: 400, cursor: "pointer", textAlign: "left", minHeight: "unset",
+              fontWeight: 400, cursor: "pointer", textAlign: "left",
             }}
           >
             <span style={{ opacity: 0.6, flexShrink: 0 }}>
@@ -792,7 +806,6 @@ export default function DashboardNav() {
               background: "none", border: "none", cursor: "pointer",
               fontSize: ".875rem", color: "#7A5C44", padding: ".625rem .875rem",
               fontFamily: "inherit", textAlign: "left", borderRadius: 10, width: "100%",
-              minHeight: "unset",
             }}
           >
             <IconLogout />
@@ -814,9 +827,9 @@ export default function DashboardNav() {
           aria-label={isFR ? "Menu" : "Menu"}
           style={{
             background: "none", border: "none", cursor: "pointer",
-            color: "#3D2B1F", padding: 4, borderRadius: 8,
+            color: "#3D2B1F", borderRadius: 8,
             display: "flex", alignItems: "center", justifyContent: "center",
-            minHeight: "unset",
+            width: 44, height: 44, flexShrink: 0,
           }}
         >
           <IconBurger />
