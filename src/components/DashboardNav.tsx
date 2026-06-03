@@ -220,6 +220,25 @@ function IconLogout() {
   );
 }
 
+function IconBurger() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
+}
+
+function IconX() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
 function IconChevron({ open }: { open: boolean }) {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -412,6 +431,7 @@ export default function DashboardNav() {
   const [resolvedPetId, setResolvedPetId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [suggestionOpen, setSuggestionOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -492,8 +512,6 @@ export default function DashboardNav() {
     { href: milestonesLink, label: isFR ? "Étapes"       : "Milestones",  shortLabel: isFR ? "Étapes"    : "Steps",   icon: <IconTrophy />,   active: isPetPage && currentTab === "milestones", mobileOnly: false },
     { href: booksLink,      label: isFR ? "Mes livres"   : "My books",    shortLabel: isFR ? "Livres"    : "Books",   icon: <IconBooks />,     active: isBooksPage,     mobileOnly: true  },
   ];
-
-  const mobileNavItems = mainItems.filter(item => !item.mobileOnly);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -634,31 +652,148 @@ export default function DashboardNav() {
     </aside>
   );
 
-  // ── Mobile: FAB + bottom nav (5 items, no Settings) ──────────────────────
+  // ── Mobile: bottom nav (4 items + burger) + drawer ───────────────────────
+
+  const bottomNavItems = [
+    { href: "/dashboard",   label: isFR ? "Accueil"    : "Home",      icon: <IconHome />,      active: isDashboard },
+    { href: petLink,        label: "Journal",                           icon: <IconBook />,      active: isPetPage && currentTab !== "stories" && currentTab !== "milestones" },
+    { href: storiesLink,    label: isFR ? "Histoires"  : "Stories",   icon: <IconSparkles />,  active: isPetPage && currentTab === "stories" },
+    { href: milestonesLink, label: isFR ? "Étapes"     : "Steps",     icon: <IconTrophy />,    active: isPetPage && currentTab === "milestones" },
+  ];
+
+  const drawerNavItems = [
+    { href: orderLink,  label: isFR ? "Livre"      : "Book",      icon: <IconBookCover />, active: isOrderPage },
+    { href: booksLink,  label: isFR ? "Mes livres" : "My books",  icon: <IconBooks />,     active: isBooksPage },
+  ];
+
+  const isDrawerActive = isOrderPage || isBooksPage;
 
   const BottomNav = (
     <>
-      {/* Floating Action Button — Suggestion */}
-      <button
-        onClick={() => setSuggestionOpen(true)}
-        className="ep-fab"
-        aria-label={isFR ? "Suggestion" : "Suggestion"}
-        style={{
-          position: "fixed",
-          bottom: "calc(56px + env(safe-area-inset-bottom, 0px) + 12px)",
-          left: "50%", transform: "translateX(-50%)",
-          width: 50, height: 50, borderRadius: "50%",
-          background: "#C8813A", color: "#FDFAF5", border: "none",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 4px 20px rgba(200,129,58,.5)",
-          zIndex: 50, cursor: "pointer",
-          minHeight: "unset",
-        }}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-        </svg>
-      </button>
+      {/* Drawer overlay */}
+      {drawerOpen && (
+        <div
+          onClick={() => setDrawerOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 45,
+            background: "rgba(61,43,31,.35)", backdropFilter: "blur(2px)",
+          }}
+        />
+      )}
+
+      {/* Drawer panel */}
+      <div style={{
+        position: "fixed", top: 0, right: 0, bottom: 0,
+        width: 260, zIndex: 50,
+        background: "#FDFAF5", borderLeft: "1px solid rgba(61,43,31,.1)",
+        boxShadow: drawerOpen ? "-8px 0 32px rgba(61,43,31,.15)" : "none",
+        display: "flex", flexDirection: "column",
+        transform: drawerOpen ? "translateX(0)" : "translateX(100%)",
+        transition: "transform .25s cubic-bezier(.4,0,.2,1)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}>
+        {/* Drawer header */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "1rem 1rem .75rem",
+          borderBottom: "1px solid rgba(61,43,31,.08)",
+        }}>
+          <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#3D2B1F" }}>
+            {isFR ? "Menu" : "Menu"}
+          </span>
+          <button
+            onClick={() => setDrawerOpen(false)}
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: "#7A5C44", padding: 4, borderRadius: 8,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <IconX />
+          </button>
+        </div>
+
+        {/* Drawer nav items */}
+        <nav style={{ padding: ".625rem .625rem 0", display: "flex", flexDirection: "column", gap: ".15rem" }}>
+          {drawerNavItems.map(item => (
+            <Link
+              key={item.label}
+              href={item.href}
+              onClick={() => setDrawerOpen(false)}
+              style={{
+                display: "flex", alignItems: "center", gap: ".75rem",
+                padding: ".75rem .875rem", borderRadius: 10, textDecoration: "none",
+                background: item.active ? "rgba(200,129,58,.1)" : "transparent",
+                color: item.active ? "#C8813A" : "#3D2B1F",
+                fontWeight: item.active ? 500 : 400,
+                fontSize: ".9rem",
+              }}
+            >
+              <span style={{ opacity: item.active ? 1 : 0.6 }}>{item.icon}</span>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Separator */}
+        <div style={{ height: 1, background: "rgba(61,43,31,.08)", margin: ".75rem .625rem" }} />
+
+        {/* Suggestion */}
+        <div style={{ padding: "0 .625rem" }}>
+          <button
+            onClick={() => { setDrawerOpen(false); setSuggestionOpen(true); }}
+            style={{
+              display: "flex", alignItems: "center", gap: ".75rem",
+              width: "100%", padding: ".75rem .875rem", borderRadius: 10,
+              background: "transparent", color: "#3D2B1F",
+              border: "none", fontFamily: "inherit", fontSize: ".9rem",
+              fontWeight: 400, cursor: "pointer", textAlign: "left",
+            }}
+          >
+            <span style={{ opacity: 0.6 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+              </svg>
+            </span>
+            {isFR ? "Suggestion" : "Suggestion"}
+          </button>
+        </div>
+
+        {/* Footer: Settings + Logout */}
+        <div style={{
+          marginTop: "auto",
+          borderTop: "1px solid rgba(61,43,31,.08)",
+          padding: ".625rem .625rem .875rem",
+          display: "flex", flexDirection: "column", gap: ".15rem",
+        }}>
+          <Link
+            href="/dashboard/settings"
+            onClick={() => setDrawerOpen(false)}
+            style={{
+              display: "flex", alignItems: "center", gap: ".75rem",
+              padding: ".625rem .875rem", borderRadius: 10, textDecoration: "none",
+              color: isSettingsPage ? "#C8813A" : "#7A5C44",
+              fontSize: ".875rem", fontWeight: isSettingsPage ? 500 : 400,
+              background: isSettingsPage ? "rgba(200,129,58,.08)" : "transparent",
+            }}
+          >
+            <IconSettings />
+            {isFR ? "Paramètres" : "Settings"}
+          </Link>
+          <button
+            onClick={async () => { setDrawerOpen(false); await handleLogout(); }}
+            style={{
+              display: "flex", alignItems: "center", gap: ".75rem",
+              background: "none", border: "none", cursor: "pointer",
+              fontSize: ".875rem", color: "#7A5C44", padding: ".625rem .875rem",
+              fontFamily: "inherit", textAlign: "left", borderRadius: 10, width: "100%",
+            }}
+          >
+            <IconLogout />
+            {isFR ? "Déconnexion" : "Sign out"}
+          </button>
+        </div>
+      </div>
 
       {/* Bottom nav */}
       <nav className="ep-bottom-nav" style={{
@@ -666,7 +801,7 @@ export default function DashboardNav() {
         background: "#F7F2EA", borderTop: "0.5px solid rgba(61,43,31,.12)",
         zIndex: 40, display: "flex", alignItems: "stretch",
       }}>
-        {mobileNavItems.map(item => (
+        {bottomNavItems.map(item => (
           <Link
             key={item.label}
             href={item.href}
@@ -679,10 +814,27 @@ export default function DashboardNav() {
           >
             <span style={{ opacity: item.active ? 1 : 0.6, lineHeight: 1 }}>{item.icon}</span>
             <span style={{ fontSize: ".575rem", fontWeight: item.active ? 600 : 400, letterSpacing: ".01em", lineHeight: 1 }}>
-              {item.shortLabel}
+              {item.label}
             </span>
           </Link>
         ))}
+        {/* Burger button */}
+        <button
+          onClick={() => setDrawerOpen(v => !v)}
+          aria-label={isFR ? "Menu" : "Menu"}
+          style={{
+            flex: 1, display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: "2px",
+            background: "none", border: "none", cursor: "pointer",
+            minHeight: 44, color: isDrawerActive ? "#C8813A" : "#7A5C44",
+            fontFamily: "inherit",
+          }}
+        >
+          <span style={{ opacity: isDrawerActive ? 1 : 0.6, lineHeight: 1 }}><IconBurger /></span>
+          <span style={{ fontSize: ".575rem", fontWeight: isDrawerActive ? 600 : 400, letterSpacing: ".01em", lineHeight: 1 }}>
+            {isFR ? "Plus" : "More"}
+          </span>
+        </button>
       </nav>
     </>
   );
