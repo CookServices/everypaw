@@ -257,7 +257,7 @@ export default function GiftPage() {
                   onClick={() => setStep("form")}
                   style={{ flex: "0 0 auto", padding: ".75rem 1.25rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#3D2B1F", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer" }}
                 >
-                  {isFR ? "Modifier" "Edit"}
+                  {isFR ? "Modifier" : "Edit"}
                 </button>
                 <button
                   onClick={handleConfirm}

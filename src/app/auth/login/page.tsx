@@ -189,7 +189,7 @@ export default function LoginPage() {
         </p>
         <p style={{ textAlign: "center", marginTop: ".5rem", fontSize: ".8rem" }}>
           <Link href="/" style={{ color: "#9A8070", fontWeight: 400, textDecoration: "none" }}>
-            {isFR ? "Retour à l'accueil" "Back to home"}
+            {isFR ? "Retour à l'accueil" : "Back to home"}
           </Link>
         </p>
       </div>
