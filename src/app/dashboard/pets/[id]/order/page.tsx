@@ -532,15 +532,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     )}
 
     <div style={{ minHeight: "100vh", background: bg, fontFamily: "'DM Sans', sans-serif", transition: "background .3s" }}>
-      <nav style={{ background: isMemorial ? "rgba(28,20,16,.9)" : "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.08)"}`, padding: "1rem 2rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-        {step !== "preview" && step !== "success" ? (
-          <button
-            onClick={() => setStep("preview")}
-            style={{ fontSize: ".85rem", color: textMuted, textDecoration: "none", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}
-          >{t.order.back}</button>
-        ) : (
-          <Link href={`/dashboard/pets/${id}`} style={{ fontSize: ".85rem", color: textMuted, textDecoration: "none" }}>{t.order.back}</Link>
-        )}
+      <nav style={{ background: isMemorial ? "rgba(28,20,16,.9)" : "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.08)"}`, padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary }}>
           {isMemorial && petName
             ? t.memorial.order_tribute.replace("{name}", petName)
@@ -553,8 +545,13 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         {/* Stepper — hidden on success */}
         {step !== "success" && (
           <div style={{ display: "flex", alignItems: "flex-start", marginBottom: "2.5rem" }}>
-            {stepLabels.map((label, i) => (
-              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+            {stepLabels.map((label, i) => {
+              const steps: Step[] = ["preview", "address", "confirm"];
+              const clickable = i < currentIdx;
+              return (
+              <div key={i}
+                onClick={() => clickable && setStep(steps[i])}
+                style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", cursor: clickable ? "pointer" : "default" }}>
                 {/* Connector line left */}
                 {i > 0 && (
                   <div style={{
@@ -572,6 +569,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                   color: i <= currentIdx ? "#FDFAF5" : textMuted,
                   fontSize: i < currentIdx ? ".85rem" : ".8rem",
                   fontWeight: 600, transition: "all .3s",
+                  boxShadow: clickable ? `0 0 0 3px ${accentColor}22` : "none",
                 }}>
                   {i < currentIdx ? "✓" : i + 1}
                 </div>
@@ -585,7 +583,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                   {label}
                 </span>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
