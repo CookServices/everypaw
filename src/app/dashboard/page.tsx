@@ -472,8 +472,8 @@ export default function DashboardPage() {
                           <p style={{ fontSize: ".68rem", color: "#C8813A", fontWeight: 500, margin: "0 0 .2rem" }}>{entryPet.name}</p>
                         )}
                         {entry.content.trim() && (
-                          <p style={{ fontSize: ".875rem", color: "#3D2B1F", lineHeight: 1.55, margin: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-                            {entry.content.slice(0, 80)}{entry.content.length > 80 ? "…" : ""}
+                          <p style={{ fontSize: ".875rem", color: "#3D2B1F", lineHeight: 1.55, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
+                            {entry.content}
                           </p>
                         )}
                         {!entry.content.trim() && entry.photo_urls && entry.photo_urls.length > 0 && (
