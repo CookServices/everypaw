@@ -934,7 +934,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
           <div ref={kebabRef} style={{ position: "absolute", top: "1rem", right: "1rem", zIndex: 10 }}>
             <button
               onClick={() => { setShowKebabMenu(v => !v); setShowDeleteConfirm(false); }}
-              style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", color: "#7A5C44", fontFamily: "inherit", minHeight: "unset" }}
+              style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", color: "#7A5C44", fontFamily: "inherit", minHeight: "unset", flexShrink: 0 }}
               aria-label="Options"
             >
               ···
@@ -1228,7 +1228,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                           </div>
                           <div ref={entryMenuId === entry.id ? entryMenuRef : null} style={{ position: "relative" }}>
                             <button onClick={() => setEntryMenuId(entryMenuId === entry.id ? null : entry.id)}
-                              style={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "#7A5C44", fontFamily: "inherit", lineHeight: 1 }}>···</button>
+                              style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "#7A5C44", fontFamily: "inherit", lineHeight: 1, minHeight: "unset", flexShrink: 0 }}>···</button>
                             {entryMenuId === entry.id && !deletingEntryId && (
                               <div style={{ position: "absolute", top: "calc(100% + .3rem)", right: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 10, boxShadow: "0 4px 16px rgba(61,43,31,.12)", minWidth: 140, zIndex: 30 }}>
                                 <button onClick={() => { setEditingEntry(entry); setEditContent(entry.content.trim()); setEditMood(entry.mood ?? null); setEditPhotos(entry.photo_urls ?? []); setEditPendingPhotos([]); setEntryMenuId(null); }}
