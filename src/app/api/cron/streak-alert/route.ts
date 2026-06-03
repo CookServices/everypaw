@@ -18,9 +18,10 @@ export async function GET(req: Request) {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const now = new Date();
-  // Users who last wrote between 4 and 7 days ago — streak is at risk
   const fourDaysAgo = new Date(now); fourDaysAgo.setDate(now.getDate() - 4);
   const sevenDaysAgo = new Date(now); sevenDaysAgo.setDate(now.getDate() - 7);
+  const fourDaysAgoStr = fourDaysAgo.toISOString().slice(0, 10);
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().slice(0, 10);
 
   const { data: profiles } = await supabase
     .from("profiles")
@@ -29,37 +30,61 @@ export async function GET(req: Request) {
 
   if (!profiles || profiles.length === 0) return NextResponse.json({ sent: 0 });
 
+  const profileIds = profiles.map(p => p.id);
+
+  // Batch: last entry per user (entries within the streak window + a bit before)
+  const { data: recentEntries } = await supabase
+    .from("entries")
+    .select("user_id, entry_date")
+    .in("user_id", profileIds)
+    .gte("entry_date", sevenDaysAgoStr)
+    .lte("entry_date", fourDaysAgoStr)
+    .order("entry_date", { ascending: false });
+
+  // Batch: first live pet per user
+  const { data: allPets } = await supabase
+    .from("pets")
+    .select("user_id, id, name")
+    .in("user_id", profileIds)
+    .is("deceased_at", null);
+
+  // Build maps
+  const lastEntryByUser: Record<string, string> = {};
+  for (const e of recentEntries ?? []) {
+    if (!lastEntryByUser[e.user_id]) lastEntryByUser[e.user_id] = e.entry_date;
+  }
+
+  const petByUser: Record<string, { id: string; name: string }> = {};
+  for (const p of allPets ?? []) {
+    if (!petByUser[p.user_id]) petByUser[p.user_id] = { id: p.id, name: p.name };
+  }
+
+  // Also need to exclude users whose last entry is more recent than 4 days ago
+  // Fetch users with entries after fourDaysAgo to exclude them
+  const { data: recentExclusions } = await supabase
+    .from("entries")
+    .select("user_id")
+    .in("user_id", profileIds)
+    .gt("entry_date", fourDaysAgoStr);
+
+  const excludedUsers = new Set((recentExclusions ?? []).map(e => e.user_id));
+
   let sent = 0;
 
   for (const profile of profiles) {
     if (!profile.email) continue;
+    if (excludedUsers.has(profile.id)) continue;
 
-    // Check last entry date for this user
-    const { data: lastEntries } = await supabase
-      .from("entries")
-      .select("entry_date")
-      .eq("user_id", profile.id)
-      .order("entry_date", { ascending: false })
-      .limit(1);
+    const lastEntryDate = lastEntryByUser[profile.id];
+    if (!lastEntryDate) continue;
 
-    if (!lastEntries || lastEntries.length === 0) continue;
+    const pet = petByUser[profile.id];
+    if (!pet) continue;
 
-    const lastEntryDate = new Date(lastEntries[0].entry_date + "T12:00:00");
-    // Only alert if last entry was between 4 and 7 days ago
-    if (lastEntryDate > fourDaysAgo || lastEntryDate < sevenDaysAgo) continue;
+    const lastDate = new Date(lastEntryDate + "T12:00:00");
+    const daysSince = Math.floor((now.getTime() - lastDate.getTime()) / 864e5);
 
-    const daysSince = Math.floor((now.getTime() - lastEntryDate.getTime()) / 864e5);
-
-    const { data: pets } = await supabase
-      .from("pets")
-      .select("id, name")
-      .eq("user_id", profile.id)
-      .is("deceased_at", null)
-      .limit(3);
-
-    if (!pets || pets.length === 0) continue;
-
-    const petName = escapeHtml(pets[0].name);
+    const petName = escapeHtml(pet.name);
     const isFR = (profile.locale ?? profile.language ?? "en").toLowerCase().startsWith("fr");
     const unsubscribeUrl = `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`;
 
