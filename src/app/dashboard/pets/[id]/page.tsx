@@ -711,10 +711,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
               {isFR ? "Voulez-vous vraiment supprimer ce moment ?" : "Are you sure you want to delete this moment?"}
             </p>
             <div style={{ display: "flex", gap: ".625rem" }}>
-              <button onClick={() => setDeletingEntryId(null)} style={{ flex: 1, padding: ".6rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".85rem", cursor: "pointer" }}>
+              <button onClick={() => setDeletingEntryId(null)} style={{ flex: 1, padding: ".6rem 1rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".85rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
                 {isFR ? "Annuler" : "Cancel"}
               </button>
-              <button onClick={() => deleteEntry(deletingEntryId)} style={{ flex: 1, padding: ".6rem", borderRadius: 100, border: "none", background: "#A32D2D", color: "#fff", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer" }}>
+              <button onClick={() => deleteEntry(deletingEntryId)} style={{ flex: 1, padding: ".6rem 1rem", borderRadius: 100, border: "none", background: "#A32D2D", color: "#fff", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
                 {isFR ? "Supprimer" : "Delete"}
               </button>
             </div>
@@ -825,10 +825,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
             />
 
             <div style={{ display: "flex", gap: ".625rem", marginTop: ".5rem" }}>
-              <button onClick={() => setEditingEntry(null)} style={{ flex: 1, padding: ".6rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer" }}>
+              <button onClick={() => setEditingEntry(null)} style={{ flex: 1, padding: ".6rem 1rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
                 {isFR ? "Annuler" : "Cancel"}
               </button>
-              <button onClick={updateEntry} disabled={savingEdit} style={{ flex: 2, padding: ".6rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: savingEdit ? .7 : 1 }}>
+              <button onClick={updateEntry} disabled={savingEdit} style={{ flex: 2, padding: ".6rem 1rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: savingEdit ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
                 {savingEdit ? (isFR ? "Enregistrement…" : "Saving…") : (isFR ? "Enregistrer" : "Save")}
               </button>
             </div>
@@ -893,10 +893,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
             </p>
 
             <div style={{ display: "flex", gap: ".75rem" }}>
-              <button onClick={() => setShowGenerateModal(false)} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer" }}>
+              <button onClick={() => setShowGenerateModal(false)} style={{ flex: 1, padding: ".75rem 1rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 44 }}>
                 {isFR ? "Annuler" : "Cancel"}
               </button>
-              <button onClick={generateStory} style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer" }}>
+              <button onClick={generateStory} style={{ flex: 2, padding: ".75rem 1rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 44 }}>
                 {isFR ? "Générer ✨" : "Generate ✨"}
               </button>
             </div>
