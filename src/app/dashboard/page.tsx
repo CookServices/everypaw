@@ -8,6 +8,7 @@ import OnboardingModal from "@/components/onboarding/OnboardingModal";
 import GettingStartedChecklist from "@/components/onboarding/GettingStartedChecklist";
 import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
+import { fmtDateOrdinal } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
@@ -344,7 +345,7 @@ export default function DashboardPage() {
                   {bookCredits > 0
                     ? t.dashboard.month_book_credit_available.replace("{n}", String(bookCredits))
                     : subscriptionRenewalDate
-                      ? t.dashboard.month_book_credit_used.replace("{date}", new Date(subscriptionRenewalDate * 1000).toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "numeric" }))
+                      ? t.dashboard.month_book_credit_used.replace("{date}", fmtDateOrdinal(new Date(subscriptionRenewalDate * 1000), isFR, { month: "short", year: "numeric" }))
                       : (isFR ? "Crédit utilisé cette année" : "Credit used this year")}
                 </p>
                 <Link
@@ -490,7 +491,7 @@ export default function DashboardPage() {
                       {/* Date + mood */}
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px", flexShrink: 0 }}>
                         <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300, whiteSpace: "nowrap" }}>
-                          {new Date(entry.entry_date).toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}
+                          {fmtDateOrdinal(new Date(entry.entry_date), isFR, { month: "short" })}
                         </span>
                         {entry.mood && (
                           <span style={{ fontSize: ".9rem" }}>

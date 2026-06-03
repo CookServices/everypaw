@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
 import { useRouter } from "next/navigation";
 import { formatPrice, type Currency } from "@/lib/currency";
+import { fmtDateOrdinal } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
@@ -112,9 +113,7 @@ export default function SettingsPage() {
   };
 
   const formatDate = (ts: number) =>
-    new Date(ts * 1000).toLocaleDateString(isFR ? "fr-FR" : "en-US", {
-      day: "numeric", month: "long", year: "numeric",
-    });
+    fmtDateOrdinal(new Date(ts * 1000), isFR, { month: "long", year: "numeric" });
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleSave = async () => {

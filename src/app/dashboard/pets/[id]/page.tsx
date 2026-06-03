@@ -7,6 +7,7 @@ import { Pet, Entry, Story } from "@/types";
 import Link from "next/link";
 import { detectMilestones, MILESTONE_TYPES, translateMilestone, MilestoneDefinition } from "@/lib/milestones";
 import { useLocale } from "@/hooks/useLocale";
+import { fmtDateOrdinal } from "@/lib/date";
 
 const MOOD_OPTIONS = [
   { value: "happy", emoji: "😄", label: "Happy" },
@@ -1221,7 +1222,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: entry.content.trim() ? ".5rem" : 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
                             <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>
-                              {new Date(entry.entry_date).toLocaleDateString(dateLocale, { weekday: "short", month: "short", day: "numeric" })}
+                              {fmtDateOrdinal(new Date(entry.entry_date), isFR, { weekday: "short", month: "short" })}
                             </span>
                             {entry.mood && <span style={{ fontSize: ".9rem" }}>{ALL_EMOJIS.find(m => m.value === entry.mood)?.emoji ?? MOOD_OPTIONS.find(m => m.value === entry.mood)?.emoji}</span>}
                           </div>
@@ -1322,13 +1323,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
               <div key={story.id} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1rem", gap: ".75rem" }}>
                   <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>{story.title || `${pet.name}'s Story`}</h3>
-                  <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300, flexShrink: 0 }}>{new Date(story.created_at).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}</span>
+                  <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300, flexShrink: 0 }}>{fmtDateOrdinal(new Date(story.created_at), isFR, { month: "short", year: "numeric" })}</span>
                 </div>
                 {(story.period_start && story.period_end || story.style) && (
                   <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: ".875rem", alignItems: "center" }}>
                     {story.period_start && story.period_end && (
                       <span style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", background: "rgba(200,129,58,.07)", borderRadius: 100, padding: ".25rem .75rem", fontSize: ".72rem", color: "#C8813A", fontWeight: 500 }}>
-                        {new Date(story.period_start + "T12:00:00").toLocaleDateString(dateLocale, { day: "numeric", month: "short" })} → {new Date(story.period_end + "T12:00:00").toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "numeric" })}
+                        {fmtDateOrdinal(new Date(story.period_start + "T12:00:00"), isFR, { month: "short" })} → {fmtDateOrdinal(new Date(story.period_end + "T12:00:00"), isFR, { month: "short", year: "numeric" })}
                       </span>
                     )}
                     {story.style && (() => {
@@ -1459,7 +1460,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                       <p style={{ fontSize: ".875rem", fontWeight: 500, color: achieved ? "#3D2B1F" : "#7A5C44", margin: "0 0 .15rem" }}>{localTitle}</p>
                       <p style={{ fontSize: ".72rem", color: achieved ? "#7A5C44" : "#9A8070", margin: 0, fontWeight: 300 }}>
                         {achieved
-                          ? new Date(achieved.achieved_at).toLocaleDateString(dateLocale, { month: "long", day: "numeric", year: "numeric" })
+                          ? fmtDateOrdinal(new Date(achieved.achieved_at), isFR, { month: "long", year: "numeric" })
                           : (lockHint ?? t.milestones.not_yet)}
                       </p>
                     </div>
