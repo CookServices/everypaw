@@ -76,7 +76,7 @@ export default async function MemorialPage({ params, searchParams }: { params: {
               href={`/dashboard/pets/${params.id}?openMemorial=1`}
               style={{ fontSize: ".75rem", color: "rgba(200,129,58,.7)", textDecoration: "none", fontFamily: "sans-serif", border: "1px solid rgba(200,129,58,.25)", padding: ".3rem .75rem", borderRadius: 100 }}
             >
-              {locale === "fr" ? "✏️ Modifier" : "✏️ Edit"}
+              {locale === "fr" ? "Modifier" : "Edit"}
             </Link>
           )}
           <span style={{ fontSize: ".7rem", letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(247,242,234,.3)", fontFamily: "sans-serif" }}>

@@ -1085,8 +1085,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                   display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem", minHeight: 44,
                 }}
               >
-                <span>{previewLoading ? "…" : "📖"}</span>
-                <span>{previewLabel}</span>
+                <span>{previewLoading ? "…" : previewLabel}</span>
               </button>
               <button
                 onClick={() => handleSave()}
@@ -1104,8 +1103,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 }}
               >
                 {saving ? "…" : saveSuccess
-                  ? <><span>✓</span><span>{locale === "fr" ? "Sauvegardé" : "Saved"}</span></>
-                  : <><span>💾</span><span>{locale === "fr" ? "Sauvegarder" : "Save"}</span></>}
+                  ? (locale === "fr" ? "✓ Sauvegardé" : "✓ Saved")
+                  : (locale === "fr" ? "Sauvegarder" : "Save")}
               </button>
               <Link
                 href={`/dashboard/pets/${id}`}

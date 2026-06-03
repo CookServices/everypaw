@@ -624,7 +624,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                           onClick={() => memorialPhotoInputRef.current?.click()}
                           style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".375rem .75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "#7A5C44", cursor: "pointer" }}
                         >
-                          📷 {isFR ? "Uploader une photo" : "Upload a photo"}
+                          {isFR ? "Uploader une photo" : "Upload a photo"}
                         </button>
                         {entryPhotos.length > 0 && (
                           <button
@@ -632,7 +632,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                             onClick={() => setShowMemorialPhotoGrid(v => !v)}
                             style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".375rem .75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "#7A5C44", cursor: "pointer" }}
                           >
-                            🖼️ {isFR ? "Choisir dans le journal" : "Pick from journal"} {showMemorialPhotoGrid ? "▲" : "▼"}
+                            {isFR ? "Choisir dans le journal" : "Pick from journal"} {showMemorialPhotoGrid ? "▲" : "▼"}
                           </button>
                         )}
                         {displaySrc && (
@@ -829,7 +829,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 onClick={() => editFileInputRef.current?.click()}
                 style={{ display: "flex", alignItems: "center", gap: ".4rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".8rem", cursor: "pointer", marginBottom: ".75rem" }}
               >
-                <span>📷</span>
                 <span>{isFR ? "Ajouter une photo" : "Add a photo"}</span>
               </button>
             )}
