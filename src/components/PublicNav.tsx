@@ -63,7 +63,7 @@ export default function PublicNav({ variant = "simple", fixed = false }: PublicN
             {t.nav.sign_in}
           </Link>
           <Link
-            href="/auth/signup"
+            href="/auth/login"
             style={{
               background: "#3D2B1F",
               color: "#F7F2EA",
@@ -75,7 +75,7 @@ export default function PublicNav({ variant = "simple", fixed = false }: PublicN
               whiteSpace: "nowrap",
             }}
           >
-            {t.nav.get_started}
+            {t.nav.sign_in}
           </Link>
         </div>
       )}
