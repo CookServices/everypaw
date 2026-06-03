@@ -652,25 +652,20 @@ export default function DashboardNav() {
     </aside>
   );
 
-  // ── Mobile: bottom nav (4 items + burger) + drawer ───────────────────────
+  // ── Mobile: top header + left drawer (all nav) ────────────────────────────
 
-  const bottomNavItems = [
-    { href: "/dashboard",   label: isFR ? "Accueil"    : "Home",      icon: <IconHome />,      active: isDashboard },
-    { href: petLink,        label: "Journal",                           icon: <IconBook />,      active: isPetPage && currentTab !== "stories" && currentTab !== "milestones" },
-    { href: storiesLink,    label: isFR ? "Histoires"  : "Stories",   icon: <IconSparkles />,  active: isPetPage && currentTab === "stories" },
-    { href: milestonesLink, label: isFR ? "Étapes"     : "Steps",     icon: <IconTrophy />,    active: isPetPage && currentTab === "milestones" },
+  const allNavItems = [
+    { href: "/dashboard",   label: isFR ? "Accueil"      : "Home",       icon: <IconHome />,      active: isDashboard },
+    { href: petLink,        label: "Journal",                              icon: <IconBook />,      active: isPetPage && currentTab !== "stories" && currentTab !== "milestones" },
+    { href: storiesLink,    label: isFR ? "Histoires IA" : "AI Stories",  icon: <IconSparkles />,  active: isPetPage && currentTab === "stories" },
+    { href: milestonesLink, label: isFR ? "Étapes"       : "Milestones",  icon: <IconTrophy />,    active: isPetPage && currentTab === "milestones" },
+    { href: orderLink,      label: isFR ? "Livre"        : "Book",        icon: <IconBookCover />, active: isOrderPage },
+    { href: booksLink,      label: isFR ? "Mes livres"   : "My books",    icon: <IconBooks />,     active: isBooksPage },
   ];
-
-  const drawerNavItems = [
-    { href: orderLink,  label: isFR ? "Livre"      : "Book",      icon: <IconBookCover />, active: isOrderPage },
-    { href: booksLink,  label: isFR ? "Mes livres" : "My books",  icon: <IconBooks />,     active: isBooksPage },
-  ];
-
-  const isDrawerActive = isOrderPage || isBooksPage;
 
   const BottomNav = (
     <>
-      {/* Drawer overlay */}
+      {/* Overlay */}
       {drawerOpen && (
         <div
           onClick={() => setDrawerOpen(false)}
@@ -681,41 +676,55 @@ export default function DashboardNav() {
         />
       )}
 
-      {/* Drawer panel */}
+      {/* Left drawer */}
       <div style={{
-        position: "fixed", top: 0, right: 0, bottom: 0,
-        width: 260, zIndex: 50,
-        background: "#FDFAF5", borderLeft: "1px solid rgba(61,43,31,.1)",
-        boxShadow: drawerOpen ? "-8px 0 32px rgba(61,43,31,.15)" : "none",
+        position: "fixed", top: 0, left: 0, bottom: 0,
+        width: 272, zIndex: 50,
+        background: "#FDFAF5", borderRight: "1px solid rgba(61,43,31,.1)",
+        boxShadow: drawerOpen ? "8px 0 32px rgba(61,43,31,.15)" : "none",
         display: "flex", flexDirection: "column",
-        transform: drawerOpen ? "translateX(0)" : "translateX(100%)",
+        transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
         transition: "transform .25s cubic-bezier(.4,0,.2,1)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}>
         {/* Drawer header */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "1rem 1rem .75rem",
+          padding: "1rem 1rem .875rem",
           borderBottom: "1px solid rgba(61,43,31,.08)",
         }}>
-          <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#3D2B1F" }}>
-            {isFR ? "Menu" : "Menu"}
-          </span>
+          <Link
+            href="/dashboard"
+            onClick={() => setDrawerOpen(false)}
+            style={{ display: "flex", alignItems: "center", gap: ".5rem", textDecoration: "none" }}
+          >
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
+            <span style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "#3D2B1F" }}>Everypaw</span>
+          </Link>
           <button
             onClick={() => setDrawerOpen(false)}
             style={{
               background: "none", border: "none", cursor: "pointer",
               color: "#7A5C44", padding: 4, borderRadius: 8,
               display: "flex", alignItems: "center", justifyContent: "center",
+              minHeight: "unset",
             }}
           >
             <IconX />
           </button>
         </div>
 
-        {/* Drawer nav items */}
-        <nav style={{ padding: ".625rem .625rem 0", display: "flex", flexDirection: "column", gap: ".15rem" }}>
-          {drawerNavItems.map(item => (
+        {/* Pet selector */}
+        <PetSelector
+          pets={pets} selectedId={resolvedPetId} showAll={showAll}
+          onSelect={(id) => { handleSelectPet(id); setDrawerOpen(false); }}
+          onSelectAll={() => { handleSelectAll(); setDrawerOpen(false); }}
+          isFR={isFR}
+        />
+
+        {/* Nav items */}
+        <nav style={{ flex: 1, padding: ".625rem .625rem 0", display: "flex", flexDirection: "column", gap: ".15rem", overflowY: "auto" }}>
+          {allNavItems.map(item => (
             <Link
               key={item.label}
               href={item.href}
@@ -729,28 +738,25 @@ export default function DashboardNav() {
                 fontSize: ".9rem",
               }}
             >
-              <span style={{ opacity: item.active ? 1 : 0.6 }}>{item.icon}</span>
+              <span style={{ opacity: item.active ? 1 : 0.65, flexShrink: 0 }}>{item.icon}</span>
               {item.label}
             </Link>
           ))}
         </nav>
 
-        {/* Separator */}
-        <div style={{ height: 1, background: "rgba(61,43,31,.08)", margin: ".75rem .625rem" }} />
-
         {/* Suggestion */}
-        <div style={{ padding: "0 .625rem" }}>
+        <div style={{ padding: ".5rem .625rem 0" }}>
           <button
             onClick={() => { setDrawerOpen(false); setSuggestionOpen(true); }}
             style={{
               display: "flex", alignItems: "center", gap: ".75rem",
               width: "100%", padding: ".75rem .875rem", borderRadius: 10,
-              background: "transparent", color: "#3D2B1F",
-              border: "none", fontFamily: "inherit", fontSize: ".9rem",
-              fontWeight: 400, cursor: "pointer", textAlign: "left",
+              background: "transparent", color: "#7A5C44",
+              border: "none", fontFamily: "inherit", fontSize: ".875rem",
+              fontWeight: 400, cursor: "pointer", textAlign: "left", minHeight: "unset",
             }}
           >
-            <span style={{ opacity: 0.6 }}>
+            <span style={{ opacity: 0.6, flexShrink: 0 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
               </svg>
@@ -759,9 +765,8 @@ export default function DashboardNav() {
           </button>
         </div>
 
-        {/* Footer: Settings + Logout */}
+        {/* Settings + Logout */}
         <div style={{
-          marginTop: "auto",
           borderTop: "1px solid rgba(61,43,31,.08)",
           padding: ".625rem .625rem .875rem",
           display: "flex", flexDirection: "column", gap: ".15rem",
@@ -787,6 +792,7 @@ export default function DashboardNav() {
               background: "none", border: "none", cursor: "pointer",
               fontSize: ".875rem", color: "#7A5C44", padding: ".625rem .875rem",
               fontFamily: "inherit", textAlign: "left", borderRadius: 10, width: "100%",
+              minHeight: "unset",
             }}
           >
             <IconLogout />
@@ -795,47 +801,36 @@ export default function DashboardNav() {
         </div>
       </div>
 
-      {/* Bottom nav */}
-      <nav className="ep-bottom-nav" style={{
-        position: "fixed", bottom: 0, left: 0, right: 0, height: 56,
-        background: "#F7F2EA", borderTop: "0.5px solid rgba(61,43,31,.12)",
-        zIndex: 40, display: "flex", alignItems: "stretch",
+      {/* Top header */}
+      <header className="ep-mobile-header" style={{
+        position: "fixed", top: 0, left: 0, right: 0, height: 56,
+        background: "#F7F2EA", borderBottom: "0.5px solid rgba(61,43,31,.12)",
+        zIndex: 40, alignItems: "center", justifyContent: "space-between",
+        padding: "0 1rem",
       }}>
-        {bottomNavItems.map(item => (
-          <Link
-            key={item.label}
-            href={item.href}
-            style={{
-              flex: 1, display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center", gap: "2px",
-              textDecoration: "none", minHeight: 44,
-              color: item.active ? "#C8813A" : "#7A5C44",
-            }}
-          >
-            <span style={{ opacity: item.active ? 1 : 0.6, lineHeight: 1 }}>{item.icon}</span>
-            <span style={{ fontSize: ".575rem", fontWeight: item.active ? 600 : 400, letterSpacing: ".01em", lineHeight: 1 }}>
-              {item.label}
-            </span>
-          </Link>
-        ))}
-        {/* Burger button */}
+        {/* Burger */}
         <button
           onClick={() => setDrawerOpen(v => !v)}
           aria-label={isFR ? "Menu" : "Menu"}
           style={{
-            flex: 1, display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center", gap: "2px",
             background: "none", border: "none", cursor: "pointer",
-            minHeight: 44, color: isDrawerActive ? "#C8813A" : "#7A5C44",
-            fontFamily: "inherit",
+            color: "#3D2B1F", padding: 4, borderRadius: 8,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            minHeight: "unset",
           }}
         >
-          <span style={{ opacity: isDrawerActive ? 1 : 0.6, lineHeight: 1 }}><IconBurger /></span>
-          <span style={{ fontSize: ".575rem", fontWeight: isDrawerActive ? 600 : 400, letterSpacing: ".01em", lineHeight: 1 }}>
-            {isFR ? "Plus" : "More"}
-          </span>
+          <IconBurger />
         </button>
-      </nav>
+
+        {/* Logo */}
+        <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: ".4rem", textDecoration: "none", position: "absolute", left: "50%", transform: "translateX(-50%)" }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
+          <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#3D2B1F" }}>Everypaw</span>
+        </Link>
+
+        {/* Right spacer to balance burger */}
+        <div style={{ width: 32 }} />
+      </header>
     </>
   );
 

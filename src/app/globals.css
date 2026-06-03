@@ -141,8 +141,8 @@ img {
   display: none !important;
 }
 
-/* Bottom nav shown on mobile, hidden on desktop */
-.ep-bottom-nav {
+/* Mobile header shown on mobile, hidden on desktop */
+.ep-mobile-header {
   display: flex !important;
 }
 
@@ -150,19 +150,19 @@ img {
   .ep-sidebar {
     display: flex !important;
   }
-  .ep-bottom-nav {
+  .ep-mobile-header {
     display: none !important;
   }
   .ep-dashboard-main {
     margin-left: 220px;
-    padding-bottom: 0 !important;
+    padding-top: 0 !important;
   }
 }
 
 .ep-dashboard-main {
   flex: 1;
   min-width: 0;
-  padding-bottom: 56px;
+  padding-top: 56px;
 }
 
 /* ── Tap targets: interactive elements ≥44px on touch ───────────────────── */
@@ -198,25 +198,14 @@ img {
   }
 }
 
-/* ── FAB (floating action button) — mobile only ─────────────────────────── */
-.ep-fab {
-  display: flex !important;
-}
-
-@media (min-width: 768px) {
-  .ep-fab {
-    display: none !important;
-  }
-}
-
 /* ── Safe area for notched phones (iOS) ─────────────────────────────────── */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .ep-bottom-nav {
-    padding-bottom: env(safe-area-inset-bottom);
-    height: calc(56px + env(safe-area-inset-bottom));
+@supports (padding-top: env(safe-area-inset-top)) {
+  .ep-mobile-header {
+    padding-top: env(safe-area-inset-top);
+    height: calc(56px + env(safe-area-inset-top));
   }
   .ep-dashboard-main {
-    padding-bottom: calc(56px + env(safe-area-inset-bottom));
+    padding-top: calc(56px + env(safe-area-inset-top));
   }
 }
 
@@ -294,7 +283,7 @@ img {
 
 @media (max-width: 767px) {
   .ep-toast {
-    bottom: calc(56px + env(safe-area-inset-bottom, 0px) + .75rem);
+    bottom: 1.5rem;
   }
 }
 
