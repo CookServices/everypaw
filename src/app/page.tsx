@@ -205,7 +205,7 @@ export default function Home() {
               }}>
                 {t.landing.hero_cta}
               </Link>
-              <Link href="/auth/login" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none", opacity: .7 }}>
+              <Link href="/auth/login" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none", opacity: .7, alignSelf: "center" }}>
                 {t.landing.hero_signin}
               </Link>
             </div>
