@@ -226,12 +226,12 @@ export default function EditPetPage({ params }: { params: { id: string } }) {
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} style={{ display: "none" }} />
             <button
               onClick={() => fileInputRef.current?.click()}
-              style={{ position: "relative", width: 96, height: 96, borderRadius: "50%", border: "2px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.06)", cursor: "pointer", overflow: "hidden", padding: 0 }}
+              style={{ position: "relative", width: 96, height: 96, borderRadius: "50%", border: "2px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.06)", cursor: "pointer", overflow: "hidden", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset", flexShrink: 0 }}
             >
               {photoPreview ? (
                 <img src={photoPreview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
-                <span style={{ fontSize: "2.5rem", lineHeight: 1 }}>{selectedSpeciesEmoji}</span>
+                <span style={{ fontSize: "2.5rem", lineHeight: 1, display: "block" }}>{selectedSpeciesEmoji}</span>
               )}
               <div
                 style={{ position: "absolute", inset: 0, background: "rgba(61,43,31,.35)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity .15s" }}
@@ -249,9 +249,9 @@ export default function EditPetPage({ params }: { params: { id: string } }) {
           {/* Species */}
           <div style={{ marginBottom: "1.5rem" }}>
             <label style={labelStyle}>{t.pet.species}</label>
-            <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: ".5rem" }}>
               {SPECIES.map(s => (
-                <button key={s.value} onClick={() => setSpecies(s.value)} style={{ padding: ".5rem 1rem", borderRadius: 100, border: `1.5px solid ${species === s.value ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: species === s.value ? "rgba(200,129,58,.1)" : "transparent", color: species === s.value ? "#C8813A" : "#3D2B1F", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", display: "flex", alignItems: "center", gap: ".35rem" }}>
+                <button key={s.value} onClick={() => setSpecies(s.value)} style={{ padding: ".5rem .75rem", borderRadius: 100, border: `1.5px solid ${species === s.value ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: species === s.value ? "rgba(200,129,58,.1)" : "transparent", color: species === s.value ? "#C8813A" : "#3D2B1F", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: ".35rem", minHeight: 40 }}>
                   {s.emoji} {s.label}
                 </button>
               ))}
