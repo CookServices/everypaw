@@ -169,7 +169,7 @@ export default function LoginPage() {
             <button
               onClick={handleEmailLogin}
               disabled={status === "loading"}
-              style={{ padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "loading" ? .7 : 1 }}
+              style={{ padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "loading" ? .7 : 1, width: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
             >
               {status === "loading" ? (isFR ? "Connexion…" : "Signing in…") : (isFR ? "Se connecter" : "Sign in")}
             </button>
