@@ -1048,29 +1048,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             )}
             <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
               <button
-                onClick={async () => {
-                  if (profile?.plan === "print" && profile.book_credits === 0) {
-                    setCheckoutError(false);
-                    setCheckoutLoading(true);
-                    try {
-                      const res = await fetch("/api/stripe/book-checkout", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
-                      });
-                      const data = await res.json();
-                      if (data.url) {
-                        window.location.href = data.url;
-                      } else {
-                        setCheckoutError(true);
-                      }
-                    } catch {
-                      setCheckoutError(true);
-                    } finally {
-                      setCheckoutLoading(false);
-                    }
-                    return;
-                  }
+                onClick={() => {
                   setStep("address");
                 }}
                 disabled={(visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading}
@@ -1199,7 +1177,26 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               <button onClick={() => setStep("address")} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`, background: "transparent", fontFamily: "inherit", fontSize: ".875rem", color: textMuted, cursor: "pointer" }}>
                 {t.order.edit_address}
               </button>
-              <button onClick={handleOrder} disabled={loading} style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: loading ? "wait" : "pointer", opacity: loading ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}>
+              <button
+                onClick={async () => {
+                  if (profile?.plan === "print" && profile.book_credits === 0) {
+                    setLoading(true);
+                    try {
+                      const res = await fetch("/api/stripe/book-checkout", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
+                      });
+                      const data = await res.json();
+                      if (data.url) window.location.href = data.url;
+                    } catch { /* silent */ } finally { setLoading(false); }
+                    return;
+                  }
+                  handleOrder();
+                }}
+                disabled={loading}
+                style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: loading ? "wait" : "pointer", opacity: loading ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}
+              >
                 {loading && <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .7s linear infinite" }} />}
                 {loading ? t.order.placing : t.order.place_order}
               </button>
