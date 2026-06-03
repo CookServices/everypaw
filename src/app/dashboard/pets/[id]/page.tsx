@@ -172,6 +172,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [showKebabMenu, setShowKebabMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingPet, setDeletingPet] = useState(false);
+  const [bioExpanded, setBioExpanded] = useState(false);
   const [sharingStoryId, setSharingStoryId] = useState<string | null>(null);
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
@@ -944,7 +945,19 @@ export default function PetPage({ params }: { params: { id: string } }) {
             <p style={{ fontSize: ".85rem", color: "#7A5C44", fontWeight: 300, margin: 0 }}>
               {pet.breed || pet.species}{pet.birthdate ? ` · ${t.pet.born} ${new Date(pet.birthdate).toLocaleDateString(dateLocale, { month: "long", year: "numeric" })}` : ""}
             </p>
-            {pet.bio && <p style={{ fontSize: ".85rem", color: "#7A5C44", marginTop: ".5rem", fontStyle: "italic" }}>{pet.bio}</p>}
+            {pet.bio && (
+              <>
+                <p style={{
+                  fontSize: ".85rem", color: "#7A5C44", marginTop: ".5rem", fontStyle: "italic", margin: ".5rem 0 0",
+                  ...(bioExpanded ? {} : { overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const }),
+                }}>{pet.bio}</p>
+                {pet.bio.length > 120 && (
+                  <button onClick={() => setBioExpanded(v => !v)} style={{ background: "none", border: "none", padding: ".25rem 0 0", cursor: "pointer", fontSize: ".75rem", color: "#C8813A", fontFamily: "inherit", display: "block" }}>
+                    {bioExpanded ? (isFR ? "Voir moins" : "See less") : (isFR ? "Voir plus" : "See more")}
+                  </button>
+                )}
+              </>
+            )}
             {pet.deceased_at && (
               <div style={{ display: "flex", gap: ".75rem", marginTop: ".75rem", flexWrap: "wrap" }}>
                 <Link href={`/memorial/${id}`} style={{ fontSize: ".75rem", color: "#8B6B4A", textDecoration: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".2rem .75rem" }}>
@@ -1044,6 +1057,26 @@ export default function PetPage({ params }: { params: { id: string } }) {
           )}
 
           </div>{/* end right column */}
+        </div>
+
+        {/* Tab bar */}
+        <div style={{ display: "flex", gap: ".375rem", marginBottom: "1.5rem", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" as const }}>
+          {tabs.map(t => (
+            <Link
+              key={t.key}
+              href={`/dashboard/pets/${id}?tab=${t.key}`}
+              style={{
+                padding: ".5rem 1.125rem", borderRadius: 100, fontSize: ".85rem",
+                whiteSpace: "nowrap", textDecoration: "none", flexShrink: 0,
+                background: tab === t.key ? "#C8813A" : "rgba(61,43,31,.07)",
+                color: tab === t.key ? "#FDFAF5" : "#7A5C44",
+                fontWeight: tab === t.key ? 500 : 400,
+                transition: "background .15s, color .15s",
+              }}
+            >
+              {t.label}
+            </Link>
+          ))}
         </div>
 
         {tab === "journal" && (

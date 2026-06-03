@@ -737,7 +737,7 @@ export default function DashboardNav() {
         />
 
         {/* Nav items */}
-        <nav style={{ flex: 1, padding: ".625rem .625rem 0", display: "flex", flexDirection: "column", gap: ".15rem", overflowY: "auto" }}>
+        <nav style={{ padding: ".625rem .625rem 0", display: "flex", flexDirection: "column", gap: ".15rem" }}>
           {allNavItems.map(item => (
             <Link
               key={item.label}
