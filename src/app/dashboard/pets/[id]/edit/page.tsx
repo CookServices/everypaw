@@ -289,14 +289,14 @@ export default function EditPetPage({ params }: { params: { id: string } }) {
           <div style={{ display: "flex", gap: ".75rem" }}>
             <button
               onClick={() => { window.location.href = `/dashboard/pets/${id}`; }}
-              style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".9rem", cursor: "pointer" }}
+              style={{ flex: 1, padding: ".75rem 1rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".9rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 44 }}
             >
               {t.pet.back}
             </button>
             <button
               onClick={handleSave}
               disabled={status === "saving"}
-              style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "saving" ? .7 : 1 }}
+              style={{ flex: 2, padding: ".75rem 1rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "saving" ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 44 }}
             >
               {status === "saving" ? t.pet.saving : t.pet.save}
             </button>
