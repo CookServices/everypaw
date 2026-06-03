@@ -1075,7 +1075,13 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                   setStep("address");
                 }}
                 disabled={(visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading}
-                style={{ width: "100%", padding: ".875rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading ? "not-allowed" : "pointer", opacity: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading ? .5 : 1 }}
+                style={{
+                  width: "100%", padding: ".875rem 1rem", borderRadius: 100, border: "none",
+                  background: accentColor, color: "#FDFAF5", fontFamily: "inherit",
+                  fontSize: ".9rem", fontWeight: 600, cursor: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading ? "not-allowed" : "pointer",
+                  opacity: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading ? .5 : 1,
+                  display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", minHeight: 48,
+                }}
               >
                 {checkoutLoading
                   ? (locale === "fr" ? "Chargement…" : "Loading…")
@@ -1094,20 +1100,22 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 onClick={handleFullPreview}
                 disabled={previewLoading}
                 style={{
-                  width: "100%", padding: ".75rem", borderRadius: 100,
+                  width: "100%", padding: ".75rem 1rem", borderRadius: 100,
                   border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
                   background: "transparent", fontFamily: "inherit", fontSize: ".875rem",
                   color: textPrimary, cursor: previewLoading ? "wait" : "pointer",
-                  opacity: previewLoading ? .6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem",
+                  opacity: previewLoading ? .6 : 1,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem", minHeight: 44,
                 }}
               >
-                {previewLoading ? "…" : "📖"} {previewLabel}
+                <span>{previewLoading ? "…" : "📖"}</span>
+                <span>{previewLabel}</span>
               </button>
               <button
                 onClick={() => handleSave()}
                 disabled={saving}
                 style={{
-                  width: "100%", padding: ".75rem", borderRadius: 100,
+                  width: "100%", padding: ".75rem 1rem", borderRadius: 100,
                   border: `1.5px solid ${saveSuccess ? "#6A9E78" : isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
                   background: saveSuccess ? "rgba(106,158,120,.1)" : "transparent",
                   fontFamily: "inherit", fontSize: ".875rem",
@@ -1115,13 +1123,21 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                   cursor: saving ? "wait" : "pointer",
                   opacity: saving ? .6 : 1,
                   transition: "all .2s",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: ".4rem", minHeight: 44,
                 }}
               >
-                {saving ? "…" : saveSuccess ? (locale === "fr" ? "✓ Sauvegardé" : "✓ Saved") : (locale === "fr" ? "💾 Sauvegarder cette config" : "💾 Save this config")}
+                {saving ? "…" : saveSuccess
+                  ? <><span>✓</span><span>{locale === "fr" ? "Sauvegardé" : "Saved"}</span></>
+                  : <><span>💾</span><span>{locale === "fr" ? "Sauvegarder cette config" : "Save this config"}</span></>}
               </button>
               <Link
                 href={`/dashboard/pets/${id}`}
-                style={{ display: "block", textAlign: "center", padding: ".75rem", borderRadius: 100, border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`, color: textMuted, textDecoration: "none", fontSize: ".875rem" }}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  textAlign: "center", padding: ".75rem 1rem", borderRadius: 100, minHeight: 44,
+                  border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`,
+                  color: textMuted, textDecoration: "none", fontSize: ".875rem",
+                }}
               >
                 {t.order.preview_back}
               </Link>
