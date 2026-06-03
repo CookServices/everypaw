@@ -1092,4 +1092,24 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 
 ---
 
-*Dernière mise à jour : 2026-06-03 (session 25 — refonte nav mobile : header + burger drawer, audit UX, bio truncation, tab bar)*
+### ✅ Session 26 — Corrections UX mobile suite (2026-06-03)
+
+**Commits** : `c509492`, `272d394`, `af6035d`, `32196a3`, `fe4b3cb`, `6674ce0`, `7ef7962`, `631b08f`, `90f5717`, `7b15d96`
+
+**Bugs et polish :**
+- "Moments récents" dashboard : `whiteSpace: nowrap` → `-webkit-line-clamp: 2` (texte ne déborde plus)
+- Card profil animal mobile entièrement restructurée : layout vertical (photo+nom en ligne, kebab `position: absolute`, milestone badge en pill horizontale, bio + liens mémorial pleine largeur)
+- Tab bar labels : majuscules + libellés alignés avec drawer (Journal, Histoires IA, Étapes / Journal, AI Stories, Milestones)
+- Tuile "Votre livre 2026" dashboard : `gridColumn: "1 / -1"` → pleine largeur des 2 colonnes
+- Boutons modales (édition, suppression, génération) : `display: flex + alignItems: center + justifyContent: center + minHeight` — pills correctes et texte centré
+- Dates ordinales partout : `fmtDateOrdinal()` dans `src/lib/date.ts` — "1er juillet" / "July 1st", "2nd", "3rd"… appliqué sur entries, stories, milestones, settings, dashboard
+- Boutons mise en page livre : grille 2×2, labels raccourcis (Photo / Texte)
+- Boutons page order (Commander, Aperçu, Sauvegarder, Retour) : `display: flex`, centrage, `minHeight`, CTA raccourci "Commander un exemplaire · 29 € →"
+- "Nouveau livre" button : `display: inline-flex + whiteSpace: nowrap + flexShrink: 0` — plus de wrapping dans le header flex
+
+**Nouveau fichier :**
+- `src/lib/date.ts` : `ordinalDay(day, isFR)` + `fmtDateOrdinal(date, isFR, options)` — helper de dates ordinales FR/EN réutilisable
+
+---
+
+*Dernière mise à jour : 2026-06-03 (session 26 — corrections UX mobile, dates ordinales, polish boutons)*
