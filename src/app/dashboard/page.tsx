@@ -307,7 +307,12 @@ export default function DashboardPage() {
                 {chapterLabel}
               </p>
               <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: "0 0 .5rem", fontWeight: 300 }}>
-                {firstOfNextMonth.toLocaleDateString(dateLocale, { month: "long", day: "numeric" })}
+                {(() => {
+                  const d = firstOfNextMonth.getDate();
+                  const m = firstOfNextMonth.toLocaleDateString(dateLocale, { month: "long" });
+                  const ord = isFR ? (d === 1 ? "1er" : `${d}`) : (d === 1 ? "1st" : d === 2 ? "2nd" : d === 3 ? "3rd" : `${d}th`);
+                  return isFR ? `${ord} ${m}` : `${m} ${ord}`;
+                })()}
               </p>
               {hasStories && (
                 <Link

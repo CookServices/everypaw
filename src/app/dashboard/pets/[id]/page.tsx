@@ -1276,7 +1276,12 @@ export default function PetPage({ params }: { params: { id: string } }) {
               const daysUntil = Math.ceil((firstOfNextMonth.getTime() - now.getTime()) / 864e5);
               const thisMonthPrefix = now.toISOString().slice(0, 7);
               const hasThisMonthStory = stories.some(s => s.created_at.slice(0, 7) === thisMonthPrefix);
-              const nextDate = firstOfNextMonth.toLocaleDateString(dateLocale, { day: "numeric", month: "long" });
+              const nextDay = firstOfNextMonth.getDate();
+              const nextMonthName = firstOfNextMonth.toLocaleDateString(dateLocale, { month: "long" });
+              const ordinal = isFR
+                ? (nextDay === 1 ? `1er` : `${nextDay}`)
+                : (nextDay === 1 ? "1st" : nextDay === 2 ? "2nd" : nextDay === 3 ? "3rd" : `${nextDay}th`);
+              const nextDate = isFR ? `${ordinal} ${nextMonthName}` : `${nextMonthName} ${ordinal}`;
               return (
                 <div style={{ background: hasThisMonthStory ? "rgba(61,43,31,.04)" : "rgba(200,129,58,.06)", borderRadius: 12, padding: ".625rem 1rem", border: `1px solid ${hasThisMonthStory ? "rgba(61,43,31,.08)" : "rgba(200,129,58,.2)"}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".5rem", flexWrap: "wrap" }}>
                   <span style={{ fontSize: ".8rem", color: hasThisMonthStory ? "#7A5C44" : "#C8813A", fontWeight: hasThisMonthStory ? 300 : 500 }}>
