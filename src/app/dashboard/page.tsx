@@ -323,7 +323,7 @@ export default function DashboardPage() {
 
             {/* Book card — Premium only */}
             {isPremium && (
-              <div style={{ background: "linear-gradient(135deg, rgba(200,129,58,.1) 0%, rgba(200,129,58,.05) 100%)", borderRadius: 16, padding: "1rem 1.1rem", border: "1px solid rgba(200,129,58,.2)" }}>
+              <div style={{ background: "linear-gradient(135deg, rgba(200,129,58,.1) 0%, rgba(200,129,58,.05) 100%)", borderRadius: 16, padding: "1rem 1.1rem", border: "1px solid rgba(200,129,58,.2)", gridColumn: "1 / -1" }}>
                 <p style={{ fontSize: ".68rem", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: ".07em", margin: "0 0 .4rem", fontFamily: "sans-serif" }}>
                   {t.dashboard.month_book_label.replace("{year}", String(year))}
                 </p>
