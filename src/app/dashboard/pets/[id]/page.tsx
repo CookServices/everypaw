@@ -927,113 +927,37 @@ export default function PetPage({ params }: { params: { id: string } }) {
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1.5rem" }}>
 
         {/* Pet header */}
-        <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)", display: "flex", gap: "1.25rem", alignItems: "center", position: "relative" }}>
-          <div style={{ width: 64, height: 64, borderRadius: 18, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", flexShrink: 0, overflow: "hidden" }}>
-            {pet.photo_url
-              ? <img src={pet.photo_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : SPECIES_EMOJI[pet.species]}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
-              <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.4rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .25rem" }}>{pet.name}</h1>
-              {pet.deceased_at && (
-                <span style={{ fontSize: ".7rem", background: "rgba(139,107,74,.12)", color: "#8B6B4A", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".2rem .6rem", fontWeight: 500, letterSpacing: ".04em" }}>
-                  🕊️ {t.memorial.badge}
-                </span>
-              )}
-            </div>
-            <p style={{ fontSize: ".85rem", color: "#7A5C44", fontWeight: 300, margin: 0 }}>
-              {pet.breed || pet.species}{pet.birthdate ? ` · ${t.pet.born} ${new Date(pet.birthdate).toLocaleDateString(dateLocale, { month: "long", year: "numeric" })}` : ""}
-            </p>
-            {pet.bio && (
-              <>
-                <p style={{
-                  fontSize: ".85rem", color: "#7A5C44", marginTop: ".5rem", fontStyle: "italic", margin: ".5rem 0 0",
-                  ...(bioExpanded ? {} : { overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const }),
-                }}>{pet.bio}</p>
-                {pet.bio.length > 120 && (
-                  <button onClick={() => setBioExpanded(v => !v)} style={{ background: "none", border: "none", padding: ".25rem 0 0", cursor: "pointer", fontSize: ".75rem", color: "#C8813A", fontFamily: "inherit", display: "block" }}>
-                    {bioExpanded ? (isFR ? "Voir moins" : "See less") : (isFR ? "Voir plus" : "See more")}
-                  </button>
-                )}
-              </>
-            )}
-            {pet.deceased_at && (
-              <div style={{ display: "flex", gap: ".75rem", marginTop: ".75rem", flexWrap: "wrap" }}>
-                <Link href={`/memorial/${id}`} style={{ fontSize: ".75rem", color: "#8B6B4A", textDecoration: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".2rem .75rem" }}>
-                  {t.memorial.view_memorial}
-                </Link>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/memorial/${id}?lang=${locale}`);
-                    alert(t.pet.link_copied);
-                  }}
-                  style={{ fontSize: ".75rem", color: "#8B6B4A", background: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".2rem .75rem", cursor: "pointer", fontFamily: "inherit" }}
-                >
-                  {t.memorial.share_memorial}
-                </button>
-              </div>
-            )}
-          </div>
+        <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.25rem 1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)", position: "relative" }}>
 
-          {/* Right column: kebab + milestone badge */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: ".625rem", flexShrink: 0 }}>
-
-          {/* Kebab menu */}
-          <div ref={kebabRef} style={{ position: "relative" }}>
+          {/* Kebab — absolute top-right */}
+          <div ref={kebabRef} style={{ position: "absolute", top: "1rem", right: "1rem", zIndex: 10 }}>
             <button
               onClick={() => { setShowKebabMenu(v => !v); setShowDeleteConfirm(false); }}
-              style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", color: "#7A5C44", fontFamily: "inherit" }}
+              style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", color: "#7A5C44", fontFamily: "inherit", minHeight: "unset" }}
               aria-label="Options"
             >
               ···
             </button>
-
             {showKebabMenu && (
               <div style={{ position: "absolute", top: "calc(100% + .5rem)", right: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 14, boxShadow: "0 8px 30px rgba(61,43,31,.12)", minWidth: 200, overflow: "hidden", zIndex: 60 }}>
                 {!showDeleteConfirm ? (
                   <>
-                    <Link
-                      href={`/dashboard/pets/${id}/edit`}
-                      style={{ display: "block", padding: ".75rem 1rem", fontSize: ".875rem", color: "#3D2B1F", textDecoration: "none", fontFamily: "inherit" }}
-                      onClick={() => setShowKebabMenu(false)}
-                    >
+                    <Link href={`/dashboard/pets/${id}/edit`} style={{ display: "block", padding: ".75rem 1rem", fontSize: ".875rem", color: "#3D2B1F", textDecoration: "none", fontFamily: "inherit" }} onClick={() => setShowKebabMenu(false)}>
                       {t.pet.edit_profile}
                     </Link>
-                    <button
-                      onClick={() => { setShowKebabMenu(false); openMemorialModal(); }}
-                      style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "#8B6B4A", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}
-                    >
-                      {pet.deceased_at
-                        ? (isFR ? "Modifier le mémorial" : "Edit memorial")
-                        : t.memorial.mark_passed}
+                    <button onClick={() => { setShowKebabMenu(false); openMemorialModal(); }} style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "#8B6B4A", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                      {pet.deceased_at ? (isFR ? "Modifier le mémorial" : "Edit memorial") : t.memorial.mark_passed}
                     </button>
-                    <button
-                      onClick={() => setShowDeleteConfirm(true)}
-                      style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "#A32D2D", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}
-                    >
+                    <button onClick={() => setShowDeleteConfirm(true)} style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "#A32D2D", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
                       {t.pet.delete_pet}
                     </button>
                   </>
                 ) : (
                   <div style={{ padding: "1rem" }}>
-                    <p style={{ fontSize: ".8rem", color: "#3D2B1F", margin: "0 0 .875rem", lineHeight: 1.5 }}>
-                      {t.pet.delete_confirm.replace("{name}", pet.name)}
-                    </p>
+                    <p style={{ fontSize: ".8rem", color: "#3D2B1F", margin: "0 0 .875rem", lineHeight: 1.5 }}>{t.pet.delete_confirm.replace("{name}", pet.name)}</p>
                     <div style={{ display: "flex", gap: ".5rem" }}>
-                      <button
-                        onClick={() => setShowDeleteConfirm(false)}
-                        style={{ flex: 1, padding: ".5rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", fontSize: ".8rem", color: "#7A5C44", cursor: "pointer", fontFamily: "inherit" }}
-                      >
-                        {t.pet.delete_cancel}
-                      </button>
-                      <button
-                        onClick={deletePet}
-                        disabled={deletingPet}
-                        style={{ flex: 1, padding: ".5rem", borderRadius: 100, border: "none", background: "#A32D2D", color: "#fff", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", opacity: deletingPet ? .6 : 1 }}
-                      >
-                        {t.pet.delete_yes}
-                      </button>
+                      <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: ".5rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", fontSize: ".8rem", color: "#7A5C44", cursor: "pointer", fontFamily: "inherit" }}>{t.pet.delete_cancel}</button>
+                      <button onClick={deletePet} disabled={deletingPet} style={{ flex: 1, padding: ".5rem", borderRadius: 100, border: "none", background: "#A32D2D", color: "#fff", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", opacity: deletingPet ? .6 : 1 }}>{t.pet.delete_yes}</button>
                     </div>
                   </div>
                 )}
@@ -1041,22 +965,69 @@ export default function PetPage({ params }: { params: { id: string } }) {
             )}
           </div>
 
+          {/* Top row: photo + name + breed */}
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem", paddingRight: "2.5rem" }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.75rem", flexShrink: 0, overflow: "hidden" }}>
+              {pet.photo_url
+                ? <img src={pet.photo_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : SPECIES_EMOJI[pet.species]}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
+                <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.3rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>{pet.name}</h1>
+                {pet.deceased_at && (
+                  <span style={{ fontSize: ".7rem", background: "rgba(139,107,74,.12)", color: "#8B6B4A", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".2rem .6rem", fontWeight: 500, letterSpacing: ".04em", whiteSpace: "nowrap" }}>
+                    🕊️ {t.memorial.badge}
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: ".82rem", color: "#7A5C44", fontWeight: 300, margin: ".2rem 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {pet.breed || pet.species}{pet.birthdate ? ` · ${t.pet.born} ${new Date(pet.birthdate).toLocaleDateString(dateLocale, { month: "long", year: "numeric" })}` : ""}
+              </p>
+            </div>
+          </div>
+
+          {/* Milestone badge — inline pill below name */}
           {milestones.length > 0 && (
-            <div style={{ background: "rgba(200,129,58,.1)", borderRadius: 12, padding: ".5rem .875rem", textAlign: "center", minWidth: 70 }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length} / {totalMilestoneCount}</div>
-              <div style={{ fontSize: ".65rem", color: "#7A5C44", lineHeight: 1.3 }}>{t.milestones.label}</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: ".5rem", marginTop: ".875rem", background: "rgba(200,129,58,.1)", borderRadius: 100, padding: ".35rem .875rem" }}>
+              <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length} / {totalMilestoneCount}</span>
+              <span style={{ fontSize: ".7rem", color: "#7A5C44" }}>{t.milestones.label}</span>
               {milestones[0] && (() => {
                 const localTitle = translateMilestone(milestones[0].type, isFR, milestoneDefinitions, milestones[0].title);
-                return (
-                  <div style={{ fontSize: ".62rem", color: "#C8813A", marginTop: ".2rem", opacity: .8, lineHeight: 1.2 }}>
-                    🏆 {localTitle.slice(0, 22)}{localTitle.length > 22 ? "…" : ""}
-                  </div>
-                );
+                return <span style={{ fontSize: ".7rem", color: "#C8813A", opacity: .85 }}>· 🏆 {localTitle.slice(0, 20)}{localTitle.length > 20 ? "…" : ""}</span>;
               })()}
             </div>
           )}
 
-          </div>{/* end right column */}
+          {/* Bio — full width */}
+          {pet.bio && (
+            <div style={{ marginTop: ".875rem" }}>
+              <p style={{
+                fontSize: ".85rem", color: "#7A5C44", fontStyle: "italic", margin: 0, lineHeight: 1.55,
+                ...(bioExpanded ? {} : { overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const }),
+              }}>{pet.bio}</p>
+              {pet.bio.length > 120 && (
+                <button onClick={() => setBioExpanded(v => !v)} style={{ background: "none", border: "none", padding: ".25rem 0 0", cursor: "pointer", fontSize: ".75rem", color: "#C8813A", fontFamily: "inherit", display: "block" }}>
+                  {bioExpanded ? (isFR ? "Voir moins" : "See less") : (isFR ? "Voir plus" : "See more")}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Memorial links — full width */}
+          {pet.deceased_at && (
+            <div style={{ display: "flex", gap: ".75rem", marginTop: ".875rem", flexWrap: "wrap" }}>
+              <Link href={`/memorial/${id}`} style={{ fontSize: ".8rem", color: "#8B6B4A", textDecoration: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".375rem .875rem" }}>
+                {t.memorial.view_memorial}
+              </Link>
+              <button
+                onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/memorial/${id}?lang=${locale}`); alert(t.pet.link_copied); }}
+                style={{ fontSize: ".8rem", color: "#8B6B4A", background: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".375rem .875rem", cursor: "pointer", fontFamily: "inherit" }}
+              >
+                {t.memorial.share_memorial}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Tab bar */}
