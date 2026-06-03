@@ -426,9 +426,9 @@
     "print_extra_book_cta": "Order an extra copy ($29) →",
     "layout_label": "Page layout",
     "layout_classic": "Classic",
-    "layout_photo_hero": "Photo hero",
+    "layout_photo_hero": "Photo",
     "layout_split": "Split",
-    "layout_text_only": "Text only"
+    "layout_text_only": "Text"
   },
   "memorial": {
     "mark_passed": "Record passing…",

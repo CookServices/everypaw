@@ -426,9 +426,9 @@
     "print_extra_book_cta": "Commander un exemplaire supplémentaire (29 €) →",
     "layout_label": "Mise en page",
     "layout_classic": "Classique",
-    "layout_photo_hero": "Photo vedette",
+    "layout_photo_hero": "Photo",
     "layout_split": "Côte à côte",
-    "layout_text_only": "Texte seul"
+    "layout_text_only": "Texte"
   },
   "memorial": {
     "mark_passed": "Enregistrer le décès…",

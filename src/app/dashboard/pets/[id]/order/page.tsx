@@ -987,28 +987,29 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                             <div style={{ fontSize: ".65rem", color: textMuted, fontFamily: "sans-serif", marginBottom: ".4rem", textTransform: "uppercase", letterSpacing: ".08em" }}>
                               {t.order.layout_label}
                             </div>
-                            <div style={{ display: "flex", gap: ".4rem" }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".35rem" }}>
                               {PAGE_LAYOUTS.map(layout => {
                                 const isActive = (storyLayouts[story.id] ?? "classic") === layout.id;
                                 return (
                                   <button
                                     key={layout.id}
                                     onClick={() => setStoryLayouts(prev => ({ ...prev, [story.id]: layout.id }))}
-                                    title={t.order[layout.labelKey]}
                                     style={{
-                                      padding: ".3rem .6rem",
-                                      borderRadius: 6,
+                                      padding: ".4rem .5rem",
+                                      borderRadius: 8,
                                       border: `1.5px solid ${isActive ? accentColor : isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`,
                                       background: isActive ? `${accentColor}18` : "transparent",
                                       color: isActive ? accentColor : textMuted,
                                       cursor: "pointer",
-                                      fontSize: ".7rem",
+                                      fontSize: ".68rem",
                                       fontFamily: "sans-serif",
-                                      display: "flex", alignItems: "center", gap: ".3rem",
+                                      display: "flex", alignItems: "center", justifyContent: "center", gap: ".3rem",
                                       transition: "all .12s",
+                                      whiteSpace: "nowrap",
+                                      minHeight: "unset",
                                     }}
                                   >
-                                    <span style={{ fontSize: ".85rem", lineHeight: 1 }}>{layout.icon}</span>
+                                    <span style={{ fontSize: ".9rem", lineHeight: 1, flexShrink: 0 }}>{layout.icon}</span>
                                     <span>{t.order[layout.labelKey]}</span>
                                   </button>
                                 );
