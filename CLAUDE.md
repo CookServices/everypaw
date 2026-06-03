@@ -218,15 +218,16 @@ Messages dans `messages/en.json` et `messages/fr.json`. `src/lib/i18n.ts` charge
 
 ### Dashboard layout & navigation
 
-`src/app/dashboard/layout.tsx` rend `<DashboardNav>` (sidebar fixe desktop, bottom nav mobile) + `{children}`.
+`src/app/dashboard/layout.tsx` rend `<DashboardNav>` (sidebar fixe desktop, header + drawer mobile) + `{children}`.
 
 `src/components/DashboardNav.tsx` — composant central de navigation :
 - **PetSelector** : liste tous les pets + "Tous mes animaux". Persiste le dernier pet visité dans `localStorage` (`lastPetId`)
 - `showAll` state : `true` quand on est sur `/dashboard` (vue globale)
 - Navigation tab-aware : les liens sidebar utilisent `?tab=journal|stories|milestones`
 - Le switch de pet préserve l'onglet actif
-- **Sidebar desktop** (3 zones) : sélecteur animal proéminent → nav principale 6 items → CTA "Ajouter un moment" → section secondaire (Paramètres, langue, déconnexion)
-- **Mobile** : bottom nav 5 items + FAB orange flottant
+- **Sidebar desktop** (≥768px) : sélecteur animal → nav 6 items → bouton Suggestion → section secondaire (Paramètres, Déconnexion)
+- **Mobile** : header fixe en haut (burger gauche + logo centré) + drawer slide-in depuis la gauche contenant PetSelector + 6 items nav + Suggestion + Paramètres + Déconnexion. Pas de bottom nav ni de FAB.
+- Drawer : `aria-hidden` + `inert` quand fermé, `body.overflow = hidden` quand ouvert, `padding safe-area-inset-top` pour les notches, tap targets 44×44px sur burger et bouton X.
 
 ### Labels de navigation (nommage définitif)
 
@@ -357,7 +358,7 @@ currency: "USD"
 - Border-radius généreux, ombres douces
 - Tous les styles sont **inline** (`style={{}}`), pas de classes Tailwind
 - Hover states via `onMouseEnter` / `onMouseLeave` handlers React
-- Media queries dans `src/app/globals.css` (`.ep-sidebar`, `.ep-bottom-nav`, `.ep-fab`, `.ep-dashboard-main`)
+- Media queries dans `src/app/globals.css` (`.ep-sidebar`, `.ep-mobile-header`, `.ep-dashboard-main`) — `.ep-bottom-nav` et `.ep-fab` supprimés
 
 ---
 
@@ -1066,4 +1067,29 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 
 ---
 
-*Dernière mise à jour : 2026-06-02 (session 24 — tous les sujets UX/UI restants traités, 6 PRs, export RGPD, 3 crons manquants)*
+### ✅ Session 25 — Refonte navigation mobile (2026-06-03)
+
+**Commits** : `e1af93e`, `8e7b9ea`, `bcfafbb`, `b528597`
+
+**Navigation mobile — bottom nav → header + burger drawer** :
+- Suppression bottom nav (56px) + FAB orange flottant
+- Header fixe top : burger (gauche, 44×44px) + logo centré
+- Drawer slide-in depuis la gauche (272px) : PetSelector + 6 items nav (Accueil, Journal, Histoires IA, Étapes, Livre, Mes livres) + Suggestion + Paramètres + Déconnexion
+- `ep-bottom-nav` et `ep-fab` supprimés de `globals.css` → remplacés par `ep-mobile-header`
+- `padding-bottom: 56px` → `padding-top: 56px` sur `ep-dashboard-main`
+- `.ep-toast` : offset bottom nav supprimé → `bottom: 1.5rem` fixe
+
+**Audit UX mobile + fixes** (5 corrections post-audit) :
+- Tap targets : burger + bouton X → `44×44px` explicite
+- Scroll lock : `body.overflow = hidden` via `useEffect` quand drawer ouvert
+- Safe-area notch : `paddingTop: env(safe-area-inset-top)` sur le drawer panel
+- A11y : `aria-hidden` + `inert` sur drawer fermé
+- Dead code : `mobileOnly` / `shortLabel` supprimés de `mainItems`
+
+**Page animal (`/dashboard/pets/[id]`)** :
+- Bio tronquée à 3 lignes (`-webkit-line-clamp: 3`) + bouton "Voir plus / See more" si bio > 120 chars
+- Tab bar pills horizontale (Journal · Histoires IA · Étapes) affichée directement sous la card profil — plus besoin d'ouvrir le drawer pour switcher d'onglet
+
+---
+
+*Dernière mise à jour : 2026-06-03 (session 25 — refonte nav mobile : header + burger drawer, audit UX, bio truncation, tab bar)*
