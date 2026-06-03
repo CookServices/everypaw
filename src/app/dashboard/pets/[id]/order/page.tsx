@@ -1127,7 +1127,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               >
                 {saving ? "…" : saveSuccess
                   ? <><span>✓</span><span>{locale === "fr" ? "Sauvegardé" : "Saved"}</span></>
-                  : <><span>💾</span><span>{locale === "fr" ? "Sauvegarder cette config" : "Save this config"}</span></>}
+                  : <><span>💾</span><span>{locale === "fr" ? "Sauvegarder" : "Save"}</span></>}
               </button>
               <Link
                 href={`/dashboard/pets/${id}`}
