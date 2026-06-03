@@ -223,7 +223,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
           </h1>
           <Link
             href={`/dashboard/pets/${petId}/order`}
-            style={{ background: accentColor, color: "#FDFAF5", padding: ".6rem 1.25rem", borderRadius: 100, fontSize: ".85rem", fontWeight: 500, textDecoration: "none" }}
+            style={{ background: accentColor, color: "#FDFAF5", padding: ".6rem 1.25rem", borderRadius: 100, fontSize: ".85rem", fontWeight: 500, textDecoration: "none", display: "inline-flex", alignItems: "center", whiteSpace: "nowrap", flexShrink: 0 }}
           >
             + {isFR ? "Nouveau livre" : "New book"}
           </Link>
