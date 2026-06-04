@@ -1138,4 +1138,18 @@ Tous les comptes A–E ✅ PASS après round 2.
 
 ---
 
-*Dernière mise à jour : 2026-06-04 (session 27 — tests A–E round 2, tous ✅)*
+---
+
+### ✅ Session 28 — Améliorations mineures (2026-06-04)
+
+**PR #53 — minor-improvements**
+
+- **Liste animaux triée alphabétiquement** (`DashboardNav.tsx`) : `.order("name", { ascending: true })` remplace `.order("created_at", ...)` — valable sidebar desktop et drawer mobile
+- **Point "nouveau chapitre" dans le menu** (`DashboardNav.tsx`) : fetch des stories des 30 derniers jours au mount, `newChapterPetIds: Set<string>` passé à `PetSelector` — point orange + `title` tooltip "Nouveau chapitre disponible / New chapter available" dans la liste des animaux. Même tooltip ajouté sur les chips du dashboard (`dashboard/page.tsx`).
+- **Settings — toggle auto-save** (`settings/page.tsx`) : bouton "Enregistrer les préférences" supprimé — `handleToggleReminders` sauvegarde `email_reminders` immédiatement au clic du toggle (rollback en cas d'erreur)
+- **Settings — toggle corrigé** : `overflow: hidden` sur le bouton toggle pour éviter le débordement visuel du thumb
+- **Settings — boutons full-width** : `btnOutline` perd `alignSelf: flex-start`, gagne `width: "100%"`, `display: "block"`, `textAlign: "center"`, `boxSizing: "border-box"` — appliqué à tous les boutons action sauf "Réinitialiser le guide"
+- **Page order — livraison affichée après adresse** (`order/page.tsx`) : step confirm affiche désormais `shippingEstimate` (depuis `SHIPPING_BY_COUNTRY[address.country]`) au lieu du générique "calculée à la commande" — cohérent avec le bloc déjà conditionnel du step adresse
+- **Page books — chip animal** (`books/page.tsx`) : fetch du pet (name, species, photo_url) au mount, chip pill affiché dans chaque cartouche (photo ou emoji espèce + nom)
+
+*Dernière mise à jour : 2026-06-04 (session 28 — améliorations mineures UI/UX, PR #53 mergée)*
