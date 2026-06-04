@@ -115,16 +115,25 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [checkoutError, setCheckoutError] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [awaitingCredit, setAwaitingCredit] = useState(false);
 
-  const [address, setAddress] = useState(() => ({
-    firstName: "",
-    lastName: "",
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    postCode: "",
-    country: typeof navigator !== "undefined" && navigator.language.startsWith("fr") ? "FR" : "",
-  }));
+  const [address, setAddress] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem(`ep_order_${id}_addr`);
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {
+      firstName: "",
+      lastName: "",
+      addressLine1: "",
+      addressLine2: "",
+      city: "",
+      postCode: "",
+      country: typeof navigator !== "undefined" && navigator.language.startsWith("fr") ? "FR" : "",
+    };
+  });
 
   useEffect(() => {
     const supabase = createClient();
@@ -192,6 +201,37 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stories]);
+
+  // After Stripe book payment: poll for credit then auto-place order
+  useEffect(() => {
+    if (searchParams.get("book_paid") !== "true") return;
+    if (!profile) return;
+    setStep("confirm");
+    setAwaitingCredit(true);
+
+    let attempts = 0;
+    const poll = setInterval(async () => {
+      attempts++;
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { clearInterval(poll); setAwaitingCredit(false); return; }
+      const { data: p } = await supabase.from("profiles").select("book_credits").eq("id", user.id).single();
+      if ((p?.book_credits ?? 0) > 0 || attempts >= 10) {
+        clearInterval(poll);
+        setAwaitingCredit(false);
+        if ((p?.book_credits ?? 0) > 0) {
+          setProfile(prev => prev ? { ...prev, book_credits: p!.book_credits } : prev);
+          try {
+            sessionStorage.removeItem(`ep_order_${id}_addr`);
+          } catch {}
+          handleOrder();
+        }
+      }
+    }, 2000);
+
+    return () => clearInterval(poll);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.get("book_paid"), profile?.plan]);
 
   // Reset selectedStoryIds when yearFilter changes (null = all years)
   const handleYearChange = (year: number | null) => {
@@ -1139,7 +1179,18 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         )}
 
         {/* ─── CONFIRM STEP ─── */}
-        {step === "confirm" && (
+        {step === "confirm" && awaitingCredit && (
+          <div style={{ background: cardBg, borderRadius: 24, padding: "2.5rem", border: cardBorder, textAlign: "center" }}>
+            <div style={{ display: "inline-block", width: 32, height: 32, border: "3px solid rgba(200,129,58,.3)", borderTopColor: "#C8813A", borderRadius: "50%", animation: "spin .8s linear infinite", marginBottom: "1.25rem" }} />
+            <p style={{ fontSize: ".95rem", color: textPrimary, fontWeight: 500, margin: "0 0 .4rem" }}>
+              {locale === "fr" ? "Paiement reçu" : "Payment received"}
+            </p>
+            <p style={{ fontSize: ".85rem", color: textMuted, fontWeight: 300, margin: 0 }}>
+              {locale === "fr" ? "Envoi de la commande en cours…" : "Placing your order…"}
+            </p>
+          </div>
+        )}
+        {step === "confirm" && !awaitingCredit && (
           <div style={{ background: cardBg, borderRadius: 24, padding: "2rem", border: cardBorder }}>
             <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.5rem" }}>{t.order.confirm_title}</h2>
 
@@ -1181,6 +1232,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                   if (profile?.plan === "print" && profile.book_credits === 0) {
                     setLoading(true);
                     try {
+                      // Persist address so it survives the Stripe redirect
+                      try { sessionStorage.setItem(`ep_order_${id}_addr`, JSON.stringify(address)); } catch {}
                       const res = await fetch("/api/stripe/book-checkout", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
