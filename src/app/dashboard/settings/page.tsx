@@ -638,11 +638,11 @@ export default function SettingsPage() {
             <button
               onClick={handleExportData}
               disabled={exportLoading}
-              style={{ background: "none", border: "1.5px solid rgba(61,43,31,.2)", borderRadius: 100, cursor: exportLoading ? "wait" : "pointer", color: "#3D2B1F", fontSize: ".875rem", fontFamily: "inherit", padding: ".6rem 1.25rem", fontWeight: 500, opacity: exportLoading ? .6 : 1, width: "100%", boxSizing: "border-box", textAlign: "center" }}
+              style={{ ...btnOutline, cursor: exportLoading ? "wait" : "pointer", opacity: exportLoading ? .6 : 1 }}
             >
               {exportLoading
                 ? (isFR ? "Préparation…" : "Preparing…")
-                : (isFR ? "⬇ Télécharger mes données (JSON)" : "⬇ Download my data (JSON)")}
+                : (isFR ? "Télécharger mes données (JSON)" : "Download my data (JSON)")}
             </button>
           </div>
         )}
