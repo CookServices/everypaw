@@ -128,6 +128,25 @@ export async function POST(req: Request) {
   const storyCount = activeStories.length;
   const pageCount = calcPageCount(storyCount, hasOrphanPhotos, hasDedication);
 
+  // Cover dimensions: call Gelato API, fallback to formula.
+  // Interior pages = pageCount (content) + 2 (endpapers). Spine empirically ~0.38mm/page for 170gsm coated silk hardcover.
+  const interiorPages = pageCount + 2;
+  const WRAP_BLEED_MM = 23;
+  const TRIM_MM = 200;
+  let coverWidthMm = TRIM_MM * 2 + Math.ceil(interiorPages * 0.38 + 0.5) + WRAP_BLEED_MM * 2;
+  const coverHeightMm = TRIM_MM + WRAP_BLEED_MM * 2; // always 246mm for 200mm trim
+
+  try {
+    const dimRes = await fetch(
+      `https://product.gelatoapis.com/v3/products/${GELATO_PRODUCT_UID}/cover-dimensions?pageCount=${interiorPages}`,
+      { headers: { "X-API-KEY": process.env.GELATO_API_KEY! } },
+    );
+    if (dimRes.ok) {
+      const dimData = await dimRes.json();
+      if (dimData?.width && typeof dimData.width === "number") coverWidthMm = Math.round(dimData.width);
+    }
+  } catch { /* use formula fallback */ }
+
   // Build PDF URL with all params
   const pdfUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/book-pdf`);
   pdfUrl.searchParams.set("petId", petId);
@@ -155,6 +174,8 @@ export async function POST(req: Request) {
   if (typeof coverTheme === "string" && VALID_THEMES.includes(coverTheme)) {
     pdfUrl.searchParams.set("theme", coverTheme);
   }
+  pdfUrl.searchParams.set("coverWidthMm", String(coverWidthMm));
+  pdfUrl.searchParams.set("coverHeightMm", String(coverHeightMm));
   if (typeof customTitle === "string" && customTitle.trim().length > 0) {
     pdfUrl.searchParams.set("customTitle", encodeURIComponent(customTitle.trim().slice(0, 60)));
   }

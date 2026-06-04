@@ -13,10 +13,20 @@ import { getServiceSupabase } from "@/lib/plan";
 
 export const dynamic = "force-dynamic";
 
-// 200mm × 200mm in points (1pt = 0.352778mm)
-const PW = 566.93;
-const PH = 566.93;
-const PAD = 40;
+// Dimensions in points (1mm = 2.83465pt)
+const MM = 2.83465;
+const TRIM = 200 * MM;         // 566.93pt — 200mm trim area
+const BLEED_INT = 3 * MM;      // 8.504pt  — 3mm interior bleed each side
+const WRAP_BLEED = 23 * MM;    // 65.2pt   — 23mm wraparound bleed each side
+
+// Interior page size (with bleed)
+const PW_INNER = TRIM + 2 * BLEED_INT; // 583.94pt = 206mm
+const PH_INNER = TRIM + 2 * BLEED_INT;
+
+// Legacy aliases used in interior page components (content fits in trim area)
+const PW = TRIM;
+const PH = TRIM;
+const PAD = 40; // content padding within trim area
 
 const VALID_LANGS = ["en", "fr"] as const;
 type Lang = (typeof VALID_LANGS)[number];
@@ -87,13 +97,17 @@ type EntryRow = { id: string; photo_urls: string[]; entry_date: string };
 
 // ── Page components ──────────────────────────────────────────────────────────
 
-function CoverPage({
+// Wraparound cover: front panel (right) + spine (center) + back panel (left)
+// Page dimensions provided by caller (from Gelato cover-dimensions API or formula).
+function WrapCoverPage({
   colors,
   strings,
   petName,
   birthdate,
   coverPhotoUrl,
   customTitle,
+  coverWidthPt,
+  coverHeightPt,
 }: {
   colors: ThemeColors;
   strings: Strings;
@@ -101,96 +115,44 @@ function CoverPage({
   birthdate: string | null;
   coverPhotoUrl: string | null;
   customTitle: string | null;
+  coverWidthPt: number;
+  coverHeightPt: number;
 }) {
   const title = customTitle || `${strings.coverTitle}\n${petName}`;
+  const spinePt = coverWidthPt - 2 * WRAP_BLEED - 2 * TRIM;
+  const frontLeft = WRAP_BLEED + TRIM + spinePt; // x-start of front panel
+
   return (
-    <Page size={[PW, PH]}>
-      <View
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: PW,
-          height: PH,
-          backgroundColor: colors.bg,
-        }}
-      />
+    <Page size={[coverWidthPt, coverHeightPt]}>
+      {/* Full background */}
+      <View style={{ position: "absolute", top: 0, left: 0, width: coverWidthPt, height: coverHeightPt, backgroundColor: colors.bg }} />
+
+      {/* ── Back panel (left) ── */}
+      <View style={{ position: "absolute", top: WRAP_BLEED, left: WRAP_BLEED, width: TRIM, height: TRIM, alignItems: "center", justifyContent: "center", padding: PAD }}>
+        <Text style={{ fontSize: 18, fontFamily: "Times-Bold", color: "#FDFAF5", marginBottom: 12, textAlign: "center" }}>{strings.backTitle}</Text>
+        <Text style={{ fontSize: 9, color: "rgba(253,250,245,0.7)", fontFamily: "Helvetica", lineHeight: 1.7, textAlign: "center", maxWidth: 320 }}>{strings.backText}</Text>
+        <Text style={{ fontSize: 7, color: "rgba(253,250,245,0.5)", fontFamily: "Helvetica", letterSpacing: 2, marginTop: 24 }}>everypaw.app</Text>
+      </View>
+
+      {/* ── Spine ── */}
+      <View style={{ position: "absolute", top: 0, left: WRAP_BLEED + TRIM, width: spinePt, height: coverHeightPt, backgroundColor: colors.back }} />
+
+      {/* ── Front panel (right) ── */}
       {coverPhotoUrl && (
-        <PdfImage
-          src={coverPhotoUrl}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: PW,
-            height: PH,
-            objectFit: "cover",
-          }}
-        />
+        <PdfImage src={coverPhotoUrl} style={{ position: "absolute", top: WRAP_BLEED, left: frontLeft, width: TRIM, height: TRIM, objectFit: "cover" }} />
       )}
       {coverPhotoUrl && (
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: PW,
-            height: PH,
-            backgroundColor: "rgba(0,0,0,0.55)",
-          }}
-        />
+        <View style={{ position: "absolute", top: WRAP_BLEED, left: frontLeft, width: TRIM, height: TRIM, backgroundColor: "rgba(0,0,0,0.55)" }} />
       )}
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          padding: PAD,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 28,
-            color: colors.title,
-            textAlign: "center",
-            fontFamily: "Times-Bold",
-            lineHeight: 1.3,
-          }}
-        >
-          {title}
-        </Text>
+      <View style={{ position: "absolute", top: WRAP_BLEED, left: frontLeft, width: TRIM, height: TRIM, alignItems: "center", justifyContent: "center", padding: PAD }}>
+        <Text style={{ fontSize: 28, color: colors.title, textAlign: "center", fontFamily: "Times-Bold", lineHeight: 1.3 }}>{title}</Text>
         {birthdate && (
-          <Text
-            style={{
-              fontSize: 11,
-              color: "rgba(247,242,234,0.6)",
-              marginTop: 10,
-              fontFamily: "Times-Italic",
-              textAlign: "center",
-            }}
-          >
+          <Text style={{ fontSize: 11, color: "rgba(247,242,234,0.6)", marginTop: 10, fontFamily: "Times-Italic", textAlign: "center" }}>
             {strings.birthdate(new Date(birthdate))}
           </Text>
         )}
-        <View
-          style={{
-            width: 60,
-            height: 2,
-            backgroundColor: colors.accent,
-            marginTop: 22,
-            marginBottom: 22,
-          }}
-        />
-        <Text
-          style={{
-            fontSize: 7,
-            color: "rgba(247,242,234,0.4)",
-            letterSpacing: 2,
-            fontFamily: "Helvetica",
-          }}
-        >
-          {strings.brand}
-        </Text>
+        <View style={{ width: 60, height: 2, backgroundColor: colors.accent, marginTop: 22, marginBottom: 22 }} />
+        <Text style={{ fontSize: 7, color: "rgba(247,242,234,0.4)", letterSpacing: 2, fontFamily: "Helvetica" }}>{strings.brand}</Text>
       </View>
     </Page>
   );
@@ -206,37 +168,13 @@ function DedicationPage({
   dedication: string;
 }) {
   return (
-    <Page size={[PW, PH]} style={{ backgroundColor: "#F7F2EA" }}>
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          padding: PAD,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 7,
-            fontFamily: "Helvetica-Bold",
-            letterSpacing: 2,
-            color: colors.accent,
-            marginBottom: 18,
-            textAlign: "center",
-          }}
-        >
+    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: BLEED_INT + PAD }}>
+        <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 2, color: colors.accent, marginBottom: 18, textAlign: "center" }}>
           {strings.dedication}
         </Text>
         <View style={{ maxWidth: 380 }}>
-          <Text
-            style={{
-              fontSize: 12,
-              fontFamily: "Times-Italic",
-              lineHeight: 1.85,
-              color: "#3D2B1F",
-              textAlign: "center",
-            }}
-          >
+          <Text style={{ fontSize: 12, fontFamily: "Times-Italic", lineHeight: 1.85, color: "#3D2B1F", textAlign: "center" }}>
             {dedication}
           </Text>
         </View>
@@ -333,24 +271,16 @@ function ChapterPage({
     </Text>
   );
 
+  const BP = BLEED_INT + PAD; // bleed + content padding
+
   if (layout === "photo_hero") {
     const heroUrl = safeUrl(photoUrls[0] ?? "");
     return (
-      <Page size={[PW, PH]} style={{ backgroundColor: "#FDFAF5" }}>
+      <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
         {heroUrl ? (
-          <PdfImage
-            src={heroUrl}
-            style={{ width: PW, height: PH * 0.36, objectFit: "cover" }}
-          />
+          <PdfImage src={heroUrl} style={{ width: PW_INNER, height: PH_INNER * 0.36, objectFit: "cover" }} />
         ) : null}
-        <View
-          style={{
-            flex: 1,
-            padding: PAD,
-            paddingTop: heroUrl ? 18 : PAD,
-            overflow: "hidden",
-          }}
-        >
+        <View style={{ flex: 1, padding: BP, paddingTop: heroUrl ? 18 : BP, overflow: "hidden" }}>
           {Header}
           {BodyText}
         </View>
@@ -362,32 +292,15 @@ function ChapterPage({
     const splitUrls = photoUrls.slice(0, 2).filter(safeUrl);
     const colW = (CONTENT_W - 16) / 2;
     return (
-      <Page size={[PW, PH]} style={{ backgroundColor: "#FDFAF5" }}>
-        <View
-          style={{
-            flexDirection: "row",
-            padding: PAD,
-            flex: 1,
-            gap: 16,
-            overflow: "hidden",
-          }}
-        >
+      <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+        <View style={{ flexDirection: "row", padding: BP, flex: 1, gap: 16, overflow: "hidden" }}>
           <View style={{ flex: 1, overflow: "hidden" }}>
             {Header}
             {BodyText}
           </View>
           <View style={{ width: colW, gap: 8 }}>
             {splitUrls.map((url, j) => (
-              <PdfImage
-                key={j}
-                src={url}
-                style={{
-                  width: colW,
-                  height: splitUrls.length === 1 ? CONTENT_H * 0.7 : CONTENT_H / 2 - 4,
-                  objectFit: "cover",
-                  borderRadius: 8,
-                }}
-              />
+              <PdfImage key={j} src={url} style={{ width: colW, height: splitUrls.length === 1 ? CONTENT_H * 0.7 : CONTENT_H / 2 - 4, objectFit: "cover", borderRadius: 8 }} />
             ))}
           </View>
         </View>
@@ -397,8 +310,8 @@ function ChapterPage({
 
   if (layout === "text_only") {
     return (
-      <Page size={[PW, PH]} style={{ backgroundColor: "#FDFAF5" }}>
-        <View style={{ padding: PAD, flex: 1, overflow: "hidden" }}>
+      <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+        <View style={{ padding: BP, flex: 1, overflow: "hidden" }}>
           {Header}
           {BodyText}
         </View>
@@ -410,31 +323,15 @@ function ChapterPage({
   const photoW = photoUrls.length === 1 ? CONTENT_W : (CONTENT_W - 8) / 2;
   const safePhotoUrls = photoUrls.filter(safeUrl);
   return (
-    <Page size={[PW, PH]} style={{ backgroundColor: "#FDFAF5" }}>
-      <View style={{ padding: PAD, flex: 1, overflow: "hidden" }}>
+    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+      <View style={{ padding: BP, flex: 1, overflow: "hidden" }}>
         {Header}
         <View style={{ flex: 1, overflow: "hidden" }}>{BodyText}</View>
         {safePhotoUrls.length > 0 && (
-          <View
-            style={{
-              marginTop: 14,
-              paddingTop: 12,
-              borderTopWidth: 1,
-              borderTopColor: "rgba(61,43,31,0.08)",
-            }}
-          >
+          <View style={{ marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: "rgba(61,43,31,0.08)" }}>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {safePhotoUrls.map((url, j) => (
-                <PdfImage
-                  key={j}
-                  src={url}
-                  style={{
-                    width: photoW,
-                    height: 110,
-                    objectFit: "cover",
-                    borderRadius: 8,
-                  }}
-                />
+                <PdfImage key={j} src={url} style={{ width: photoW, height: 110, objectFit: "cover", borderRadius: 8 }} />
               ))}
             </View>
           </View>
@@ -454,39 +351,13 @@ function NoStoriesPage({
   petName: string;
 }) {
   return (
-    <Page size={[PW, PH]} style={{ backgroundColor: "#FDFAF5" }}>
-      <View style={{ padding: PAD, flex: 1 }}>
-        <Text
-          style={{
-            fontSize: 7,
-            fontFamily: "Helvetica-Bold",
-            letterSpacing: 2,
-            color: colors.accent,
-            marginBottom: 4,
-          }}
-        >
+    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+      <View style={{ padding: BLEED_INT + PAD, flex: 1 }}>
+        <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 2, color: colors.accent, marginBottom: 4 }}>
           {strings.chapter.toUpperCase()} 1
         </Text>
-        <Text
-          style={{
-            fontSize: 18,
-            fontFamily: "Times-Bold",
-            color: "#3D2B1F",
-            marginBottom: 18,
-          }}
-        >
-          The story begins…
-        </Text>
-        <Text
-          style={{
-            fontSize: 11,
-            color: "#7A5C44",
-            fontFamily: "Helvetica",
-            lineHeight: 1.6,
-          }}
-        >
-          {strings.noStories(petName)}
-        </Text>
+        <Text style={{ fontSize: 18, fontFamily: "Times-Bold", color: "#3D2B1F", marginBottom: 18 }}>The story begins…</Text>
+        <Text style={{ fontSize: 11, color: "#7A5C44", fontFamily: "Helvetica", lineHeight: 1.6 }}>{strings.noStories(petName)}</Text>
       </View>
     </Page>
   );
@@ -508,31 +379,14 @@ function OrphanPhotosPage({
   const CONTENT_W = PW - PAD * 2;
   const photoW = (CONTENT_W - 8) / 2;
   return (
-    <Page size={[PW, PH]} style={{ backgroundColor: "#F7F2EA" }}>
-      <View style={{ padding: PAD, flex: 1, overflow: "hidden" }}>
-        <Text
-          style={{
-            fontSize: 7,
-            fontFamily: "Helvetica-Bold",
-            letterSpacing: 2,
-            color: colors.accent,
-            marginBottom: 18,
-          }}
-        >
+    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
+      <View style={{ padding: BLEED_INT + PAD, flex: 1, overflow: "hidden" }}>
+        <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 2, color: colors.accent, marginBottom: 18 }}>
           {strings.moments.toUpperCase()}
         </Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           {urls.map((url, j) => (
-            <PdfImage
-              key={j}
-              src={url}
-              style={{
-                width: photoW,
-                height: 160,
-                objectFit: "cover",
-                borderRadius: 10,
-              }}
-            />
+            <PdfImage key={j} src={url} style={{ width: photoW, height: 160, objectFit: "cover", borderRadius: 10 }} />
           ))}
         </View>
       </View>
@@ -541,57 +395,7 @@ function OrphanPhotosPage({
 }
 
 function BlankPage() {
-  return <Page size={[PW, PH]} style={{ backgroundColor: "#F7F2EA" }} />;
-}
-
-function BackCoverPage({ colors, strings }: { colors: ThemeColors; strings: Strings }) {
-  return (
-    <Page size={[PW, PH]} style={{ backgroundColor: colors.back }}>
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          padding: PAD,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 18,
-            fontFamily: "Times-Bold",
-            color: "#FDFAF5",
-            marginBottom: 12,
-            textAlign: "center",
-          }}
-        >
-          {strings.backTitle}
-        </Text>
-        <View style={{ maxWidth: 320, marginBottom: 24 }}>
-          <Text
-            style={{
-              fontSize: 9,
-              color: "rgba(253,250,245,0.7)",
-              fontFamily: "Helvetica",
-              lineHeight: 1.7,
-              textAlign: "center",
-            }}
-          >
-            {strings.backText}
-          </Text>
-        </View>
-        <Text
-          style={{
-            fontSize: 7,
-            color: "rgba(253,250,245,0.5)",
-            fontFamily: "Helvetica",
-            letterSpacing: 2,
-          }}
-        >
-          everypaw.app
-        </Text>
-      </View>
-    </Page>
-  );
+  return <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }} />;
 }
 
 // ── Main document ─────────────────────────────────────────────────────────────
@@ -611,6 +415,8 @@ interface BookDocumentProps {
   customTitle: string | null;
   layouts: Record<string, LayoutType>;
   blankPagesCount: number;
+  coverWidthPt: number;
+  coverHeightPt: number;
 }
 
 function BookDocument({
@@ -628,42 +434,37 @@ function BookDocument({
   customTitle,
   layouts,
   blankPagesCount,
+  coverWidthPt,
+  coverHeightPt,
 }: BookDocumentProps) {
   const colors = COVER_THEMES[theme];
   const strings = STRINGS[lang];
 
   return (
     <Document>
-      <CoverPage
+      {/* Page 1: full wraparound cover (front + spine + back) at Gelato-required dimensions */}
+      <WrapCoverPage
         colors={colors}
         strings={strings}
         petName={petName}
         birthdate={birthdate}
         coverPhotoUrl={coverPhotoUrl}
         customTitle={customTitle}
+        coverWidthPt={coverWidthPt}
+        coverHeightPt={coverHeightPt}
       />
+      {/* Pages 2+: interior pages at 206×206mm (200mm trim + 3mm bleed each side) */}
       <BlankPage />
       {hasDedication && (
         <DedicationPage colors={colors} strings={strings} dedication={dedication} />
       )}
       {stories.length > 0 ? (
         stories.map((story, i) => {
-          const layout: LayoutType = (VALID_LAYOUTS as readonly string[]).includes(
-            layouts[story.id],
-          )
+          const layout: LayoutType = (VALID_LAYOUTS as readonly string[]).includes(layouts[story.id])
             ? (layouts[story.id] as LayoutType)
             : "classic";
           return (
-            <ChapterPage
-              key={story.id}
-              colors={colors}
-              strings={strings}
-              story={story}
-              photos={chapterPhotos[i] ?? []}
-              layout={layout}
-              index={i}
-              lang={lang}
-            />
+            <ChapterPage key={story.id} colors={colors} strings={strings} story={story} photos={chapterPhotos[i] ?? []} layout={layout} index={i} lang={lang} />
           );
         })
       ) : (
@@ -675,7 +476,7 @@ function BookDocument({
       {Array.from({ length: blankPagesCount }).map((_, i) => (
         <BlankPage key={`blank-${i}`} />
       ))}
-      <BackCoverPage colors={colors} strings={strings} />
+      <BlankPage />
     </Document>
   );
 }
@@ -738,6 +539,12 @@ export async function GET(req: Request) {
 
   const coverPhotoParam = url.searchParams.get("coverPhoto");
   const coverPhotoUrl = coverPhotoParam ? safeUrl(decodeURIComponent(coverPhotoParam)) || null : null;
+
+  // Cover dimensions in points (from Gelato cover-dimensions API, passed by gelato/order route)
+  const coverWidthMm = parseFloat(url.searchParams.get("coverWidthMm") ?? "458");
+  const coverHeightMm = parseFloat(url.searchParams.get("coverHeightMm") ?? "246");
+  const coverWidthPt = (isNaN(coverWidthMm) || coverWidthMm < 300 || coverWidthMm > 800 ? 458 : coverWidthMm) * MM;
+  const coverHeightPt = (isNaN(coverHeightMm) || coverHeightMm < 150 || coverHeightMm > 400 ? 246 : coverHeightMm) * MM;
 
   // Fetch data
   const supabase = getServiceSupabase();
@@ -822,6 +629,8 @@ export async function GET(req: Request) {
         customTitle={customTitle}
         layouts={layouts}
         blankPagesCount={blankPagesCount}
+        coverWidthPt={coverWidthPt}
+        coverHeightPt={coverHeightPt}
       />,
     );
 
