@@ -115,6 +115,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [checkoutError, setCheckoutError] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [addressErrors, setAddressErrors] = useState<Record<string, boolean>>({});
   const [awaitingCredit, setAwaitingCredit] = useState(false);
 
   const [address, setAddress] = useState(() => {
@@ -492,9 +493,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const textMuted = isMemorial ? "rgba(247,242,234,.5)" : "#7A5C44";
   const labelColor = isMemorial ? "rgba(247,242,234,.4)" : "#7A5C44";
   const accentColor = isMemorial ? "#8B6B4A" : "#C8813A";
-  const price = isMemorial ? t.memorial.order_price : t.order.product_price;
   const extraBookPrice = calcGelatoBookPrice(estimatedPages);
   const extraBookPriceLabel = `${extraBookPrice.toFixed(2).replace(".", ",")} €`;
+  const price = isMemorial ? t.memorial.order_price : extraBookPriceLabel;
   const productName = isMemorial
     ? (petName ? t.memorial.order_tribute.replace("{name}", petName) : "…")
     : t.order.product_detail;
@@ -653,6 +654,37 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           </div>
         )}
 
+        {/* Gate — Free plan: book is Print-only */}
+        {profile !== null && profile.plan === "free" && step === "preview" && (
+          <div style={{
+            background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
+            border: isMemorial ? "1px solid rgba(200,129,58,.25)" : "1px solid #F7C27A",
+            borderRadius: 16, padding: "1.5rem", marginBottom: "1.75rem",
+            textAlign: "center",
+          }}>
+            <div style={{ fontSize: "1.5rem", marginBottom: ".75rem" }}>📚</div>
+            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
+              {locale === "fr" ? "Fonctionnalité Premium Print" : "Premium Print Feature"}
+            </h3>
+            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto 1rem" }}>
+              {locale === "fr"
+                ? "La commande d'un livre imprimé est réservée aux abonnés Premium Print. Passez à l'abonnement Print pour recevoir un livre chaque année."
+                : "Ordering a printed book is available to Premium Print subscribers. Upgrade to Print to receive a book every year."}
+            </p>
+            <a
+              href="/dashboard/settings"
+              style={{
+                background: accentColor, color: "#FDFAF5", border: "none",
+                padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
+                fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                textDecoration: "none", display: "inline-block",
+              }}
+            >
+              {locale === "fr" ? "Passer à Premium Print" : "Upgrade to Premium Print"}
+            </a>
+          </div>
+        )}
+
         {/* No-credits upsell — non-Print plans (digital, book_only): existing message */}
         {profile !== null && profile.book_credits === 0 && profile.plan !== "free" && profile.plan !== "print" && step === "preview" && (
           <div style={{
@@ -665,30 +697,38 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
               {t.order.no_credits_title}
             </h3>
-            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto .5rem" }}>
+            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto 1rem" }}>
               {t.order.no_credits_desc}
             </p>
-            <p style={{ fontSize: ".9rem", fontWeight: 600, color: accentColor, margin: "0 auto .75rem" }}>
-              {extraBookPriceLabel} {locale === "fr" ? "+ livraison" : "+ shipping"}
-            </p>
-            <button
-              onClick={async () => {
-                const res = await fetch("/api/stripe/book-checkout", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
-                });
-                const data = await res.json();
-                if (data.url) window.location.href = data.url;
-              }}
-              style={{
-                background: accentColor, color: "#FDFAF5", border: "none",
-                padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
-                fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-              }}
-            >
-              {t.order.no_credits_cta}
-            </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: ".625rem", alignItems: "center" }}>
+              <button
+                onClick={async () => {
+                  const res = await fetch("/api/stripe/book-checkout", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
+                  });
+                  const data = await res.json();
+                  if (data.url) window.location.href = data.url;
+                }}
+                style={{
+                  background: accentColor, color: "#FDFAF5", border: "none",
+                  padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
+                  fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                }}
+              >
+                {t.order.no_credits_cta} — {extraBookPriceLabel} {locale === "fr" ? "+ livraison" : "+ shipping"}
+              </button>
+              <a
+                href="/dashboard/settings#plan"
+                style={{
+                  fontSize: ".8rem", color: accentColor, textDecoration: "underline",
+                  textDecorationStyle: "dotted", textUnderlineOffset: "3px", cursor: "pointer",
+                }}
+              >
+                {(t.order as Record<string, string>).no_credits_upgrade_cta ?? (locale === "fr" ? "Passer au plan Print" : "Upgrade to Print")}
+              </a>
+            </div>
           </div>
         )}
 
@@ -1087,16 +1127,17 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               </div>
             )}
             <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-              <button
+              {/* Hide main CTA when user has no credits and can't proceed — upsell banner already shown above */}
+              {(profile?.book_credits ?? 0) > 0 && <button
                 onClick={() => {
                   setStep("address");
                 }}
-                disabled={(visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading}
+                disabled={(visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading || profile?.plan === "free"}
                 style={{
                   width: "100%", padding: ".875rem 1rem", borderRadius: 100, border: "none",
                   background: accentColor, color: "#FDFAF5", fontFamily: "inherit",
-                  fontSize: ".9rem", fontWeight: 600, cursor: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading ? "not-allowed" : "pointer",
-                  opacity: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading ? .5 : 1,
+                  fontSize: ".9rem", fontWeight: 600, cursor: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading || profile?.plan === "free" ? "not-allowed" : "pointer",
+                  opacity: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading || profile?.plan === "free" ? .5 : 1,
                   display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", minHeight: 48,
                 }}
               >
@@ -1105,7 +1146,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                   : profile?.plan === "print" && profile.book_credits === 0
                     ? t.order.print_extra_book_cta
                     : t.order.preview_cta}
-              </button>
+              </button>}
               {checkoutError && (
                 <p style={{ fontSize: ".8rem", color: "#A32D2D", textAlign: "center", margin: "-.25rem 0 0" }}>
                   {locale === "fr"
@@ -1265,7 +1306,16 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 <p style={{ fontSize: ".875rem", fontWeight: 500, color: textPrimary, margin: "0 0 .2rem" }}>{productName}</p>
                 <p style={{ fontSize: ".8rem", color: textMuted, margin: 0, fontWeight: 300, fontFamily: "sans-serif" }}>{productSpecs}</p>
               </div>
-              <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A", marginLeft: "auto", whiteSpace: "nowrap" }}>{price}</span>
+              <div style={{ marginLeft: "auto", textAlign: "right" }}>
+                <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A", whiteSpace: "nowrap" }}>{price}</span>
+                {(profile?.book_credits ?? 0) > 0 && (
+                  <p style={{ fontSize: ".72rem", color: textMuted, margin: ".2rem 0 0", fontFamily: "sans-serif", whiteSpace: "nowrap" }}>
+                    {locale === "fr"
+                      ? `1 crédit utilisé · reste ${(profile?.book_credits ?? 1) - 1}`
+                      : `1 credit used · ${(profile?.book_credits ?? 1) - 1} remaining`}
+                  </p>
+                )}
+              </div>
             </div>
 
             <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.5rem" }}>{t.order.shipping_address}</h2>
@@ -1275,14 +1325,16 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 {fields.slice(0, 2).map(field => (
                   <div key={field.key}>
                     <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
-                    <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => setAddress({ ...address, [field.key]: e.target.value })} style={inputStyle} />
+                    <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => { setAddress({ ...address, [field.key]: e.target.value }); setAddressErrors(prev => ({ ...prev, [field.key]: false })); }} style={{ ...inputStyle, borderColor: addressErrors[field.key] ? "#EF4444" : undefined }} />
+                    {addressErrors[field.key] && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
                   </div>
                 ))}
               </div>
               {fields.slice(2).map(field => (
                 <div key={field.key}>
                   <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
-                  <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => setAddress({ ...address, [field.key]: e.target.value })} style={inputStyle} />
+                  <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => { setAddress({ ...address, [field.key]: e.target.value }); setAddressErrors(prev => ({ ...prev, [field.key]: false })); }} style={{ ...inputStyle, borderColor: addressErrors[field.key] ? "#EF4444" : undefined }} />
+                  {addressErrors[field.key] && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
                 </div>
               ))}
               <div>
@@ -1313,7 +1365,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                       ) : COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase())).map(c => (
                         <div
                           key={c.code}
-                          onMouseDown={() => { setAddress({ ...address, country: c.code }); setCountrySearch(""); }}
+                          onMouseDown={() => { setAddress({ ...address, country: c.code }); setCountrySearch(""); setAddressErrors(prev => ({ ...prev, country: false })); }}
                           style={{
                             padding: ".625rem 1rem", fontSize: ".875rem", cursor: "pointer",
                             color: textPrimary, fontFamily: "sans-serif",
@@ -1331,6 +1383,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 </div>
               </div>
             </div>
+
+            {addressErrors.country && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif", marginTop: ".25rem", display: "block" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
 
             {/* Shipping + price estimate (shown once country selected) */}
             {address.country && (
@@ -1373,10 +1427,14 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
             <button
               onClick={() => {
-                if (!address.firstName || !address.lastName || !address.addressLine1 || !address.city || !address.postCode) {
-                  alert(t.order.required_fields);
+                const required = ["firstName", "lastName", "addressLine1", "city", "postCode", "country"];
+                const errors: Record<string, boolean> = {};
+                required.forEach(k => { if (!address[k as keyof typeof address]) errors[k] = true; });
+                if (Object.keys(errors).length > 0) {
+                  setAddressErrors(errors);
                   return;
                 }
+                setAddressErrors({});
                 setStep("confirm");
               }}
               style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: 1 }}

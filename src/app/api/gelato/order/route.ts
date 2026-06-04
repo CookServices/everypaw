@@ -260,7 +260,9 @@ export async function POST(req: Request) {
     const configPayload = {
       user_id: user.id,
       pet_id: petId,
-      name: "",
+      name: typeof customTitle === "string" && customTitle.trim().length > 0
+        ? customTitle.trim()
+        : `${new Date().getFullYear()}`,
       status: "ordered",
       theme: typeof coverTheme === "string" ? coverTheme : "classic",
       custom_title: typeof customTitle === "string" ? customTitle : null,
