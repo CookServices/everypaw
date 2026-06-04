@@ -1263,7 +1263,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".85rem", color: textMuted }}>
                 <span>{t.order.shipping}</span>
-                <span>{t.order.shipping_calculated}</span>
+                <span>{shippingEstimate ?? t.order.shipping_calculated}</span>
               </div>
             </div>
 
