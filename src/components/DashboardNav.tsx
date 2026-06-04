@@ -447,7 +447,7 @@ export default function DashboardNav() {
     supabase
       .from("pets")
       .select("id, name, species, breed, photo_url")
-      .order("created_at", { ascending: true })
+      .order("name", { ascending: true })
       .then(({ data }) => {
         if (data && data.length > 0) setPets(data as PetOption[]);
       });
