@@ -1112,4 +1112,23 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 
 ---
 
-*Dernière mise à jour : 2026-06-03 (session 26 — corrections UX mobile, dates ordinales, polish boutons)*
+---
+
+### ✅ Session 27 — Tests comptes livre, corrections bugs order page (2026-06-04)
+
+**Seed de test** (`supabase/seed_book_test.sql`) : 5 comptes yopmail couvrant les scénarios free (bloqué), digital (bloqué), print-fresh (1 crédit), print-ordered (0 crédit + book_config), print-multi (3 crédits). Comptes créés via Supabase Admin API (`scripts/create-test-users.mjs`, SERVICE_ROLE_KEY effacée après usage). Mot de passe : `Test1234!`.
+
+**Bugs corrigés suite aux tests automatisés (Claude Chrome, comptes A–E)** :
+
+- **Plan Free** (`order/page.tsx`) : bannière gate + CTA désactivé pour `plan === "free"` → lien vers `/dashboard/settings`
+- **Plan Digital** : bannière upsell neutre (sans mention "Print"), prix dynamique via `extraBookPriceLabel`, lien "Passer au plan Print / Upgrade to Print"
+- **Step adresse — validation inline** : bordure rouge par champ + texte "Champ requis / Required" ; suppression des `alert()`
+- **Step adresse — info crédit** : affichage "1 crédit utilisé · reste N / 1 credit used · N remaining" quand `book_credits > 0`
+- **book_config name vide** (`gelato/order`) : `name` défaut sur l'année courante au lieu de chaîne vide (→ "Sans titre" corrigé)
+- **i18n** (`messages/fr.json` + `messages/en.json`) : réécriture `no_credits_*`, ajout `no_credits_upgrade_cta`, suppression du prix 29 € hardcodé dans `print_extra_book_desc`
+
+**Commit** : `30871b6` — 4 fichiers (`order/page.tsx`, `gelato/order/route.ts`, `messages/fr.json`, `messages/en.json`)
+
+---
+
+*Dernière mise à jour : 2026-06-04 (session 27 — tests comptes A–E, bugs order page, info crédit adresse step)*
