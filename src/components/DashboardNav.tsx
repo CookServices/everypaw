@@ -267,6 +267,7 @@ function PetSelector({
   onSelect,
   onSelectAll,
   isFR,
+  newChapterPetIds,
 }: {
   pets: PetOption[];
   selectedId: string | null;
@@ -274,6 +275,7 @@ function PetSelector({
   onSelect: (id: string) => void;
   onSelectAll: () => void;
   isFR: boolean;
+  newChapterPetIds: Set<string>;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -387,6 +389,12 @@ function PetSelector({
                   <span style={{ fontSize: "1rem", lineHeight: 1 }}>{SPECIES_EMOJI[pet.species] ?? "🐾"}</span>
                 )}
                 <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pet.name}</span>
+                {newChapterPetIds.has(pet.id) && (
+                  <span
+                    title={isFR ? "Nouveau chapitre disponible" : "New chapter available"}
+                    style={{ width: 6, height: 6, borderRadius: "50%", background: "#C8813A", display: "inline-block", flexShrink: 0 }}
+                  />
+                )}
                 {isActive && <span style={{ fontSize: ".7rem", color: "#C8813A" }}>✓</span>}
               </button>
             );
@@ -432,6 +440,7 @@ export default function DashboardNav() {
   const [showAll, setShowAll] = useState(false);
   const [suggestionOpen, setSuggestionOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [newChapterPetIds, setNewChapterPetIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (drawerOpen) {
@@ -444,13 +453,14 @@ export default function DashboardNav() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase
-      .from("pets")
-      .select("id, name, species, breed, photo_url")
-      .order("name", { ascending: true })
-      .then(({ data }) => {
-        if (data && data.length > 0) setPets(data as PetOption[]);
-      });
+    const since = new Date(Date.now() - 30 * 864e5).toISOString();
+    Promise.all([
+      supabase.from("pets").select("id, name, species, breed, photo_url").order("name", { ascending: true }),
+      supabase.from("stories").select("pet_id").gte("created_at", since),
+    ]).then(([{ data: petsData }, { data: storiesData }]) => {
+      if (petsData && petsData.length > 0) setPets(petsData as PetOption[]);
+      if (storiesData) setNewChapterPetIds(new Set(storiesData.map((s: { pet_id: string }) => s.pet_id)));
+    });
   }, []);
 
   useEffect(() => {
@@ -550,6 +560,7 @@ export default function DashboardNav() {
       <PetSelector
         pets={pets} selectedId={resolvedPetId} showAll={showAll}
         onSelect={handleSelectPet} onSelectAll={handleSelectAll} isFR={isFR}
+        newChapterPetIds={newChapterPetIds}
       />
 
       {/* Main nav */}
@@ -734,6 +745,7 @@ export default function DashboardNav() {
           onSelect={(id) => { handleSelectPet(id); setDrawerOpen(false); }}
           onSelectAll={() => { handleSelectAll(); setDrawerOpen(false); }}
           isFR={isFR}
+          newChapterPetIds={newChapterPetIds}
         />
 
         {/* Nav items */}

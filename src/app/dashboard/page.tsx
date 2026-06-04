@@ -255,7 +255,10 @@ export default function DashboardPage() {
                   )}
                   <span style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pet.name}</span>
                   {petMetadata[pet.id]?.hasNewChapter && (
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#C8813A", display: "inline-block", flexShrink: 0 }} />
+                    <span
+                      title={isFR ? "Nouveau chapitre disponible" : "New chapter available"}
+                      style={{ width: 6, height: 6, borderRadius: "50%", background: "#C8813A", display: "inline-block", flexShrink: 0 }}
+                    />
                   )}
                 </Link>
               ))}
