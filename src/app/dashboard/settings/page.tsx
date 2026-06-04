@@ -536,9 +536,16 @@ export default function SettingsPage() {
                     <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .25rem" }}>{t.settings.weekly_reminders}</p>
                     <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.settings.weekly_reminders_desc}</p>
                   </div>
-                  <button onClick={() => handleToggleReminders(!emailReminders)} style={{ width: 44, height: 24, borderRadius: 100, background: emailReminders ? "#C8813A" : "rgba(61,43,31,.15)", border: "none", cursor: "pointer", position: "relative", transition: "background .2s", flexShrink: 0, marginLeft: "1rem", overflow: "hidden" }}>
-                    <span style={{ position: "absolute", top: 2, left: emailReminders ? 22 : 2, width: 20, height: 20, borderRadius: "50%", background: "#FDFAF5", transition: "left .2s", display: "block" }} />
-                  </button>
+                  <div
+                    role="switch"
+                    aria-checked={emailReminders}
+                    tabIndex={0}
+                    onClick={() => handleToggleReminders(!emailReminders)}
+                    onKeyDown={e => { if (e.key === "Enter" || e.key === " ") handleToggleReminders(!emailReminders); }}
+                    style={{ width: 44, height: 24, borderRadius: 100, background: emailReminders ? "#C8813A" : "rgba(61,43,31,.15)", cursor: "pointer", position: "relative", transition: "background .2s", flexShrink: 0, marginLeft: "1rem" }}
+                  >
+                    <div style={{ position: "absolute", top: 2, left: emailReminders ? 22 : 2, width: 20, height: 20, borderRadius: "50%", background: "#FDFAF5", transition: "left .2s" }} />
+                  </div>
                 </div>
                 {emailReminders && (
                   <p style={{ fontSize: ".75rem", color: "#C8813A", margin: ".6rem 0 0", fontWeight: 300, fontStyle: "italic" }}>{t.settings.weekly_reminders_info}</p>
