@@ -419,7 +419,7 @@
     "price_total_est": "Estimated total",
     "few_stories_warning": "Your book will contain fewer than 3 stories. We recommend generating at least 3 for a richer result. You can still order.",
     "no_credits_title": "Order a printed book",
-    "no_credits_desc": "Your Digital plan does not include a printed book. You can order one now, or upgrade to Premium Print to receive a book every year.",
+    "no_credits_desc": "Your current plan does not include a printed book. You can order one now, or upgrade to receive one every year.",
     "no_credits_cta": "Buy a book",
     "no_credits_upgrade_cta": "Upgrade to Print",
     "print_extra_book_title": "Your annual book has already been ordered this year.",

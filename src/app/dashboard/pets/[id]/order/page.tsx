@@ -641,16 +641,26 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
               {t.order.print_extra_book_title}
             </h3>
-            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto" }}>
+            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto 1rem" }}>
               {renewalDate
                 ? locale === "fr"
-                  ? `Vous pourrez de nouveau commander un livre gratuitement à partir du ${renewalDate}, date du renouvellement de votre abonnement Premium Print.`
-                  : `You can order a free book again from ${renewalDate}, when your Premium Print subscription renews.`
+                  ? `Votre livre gratuit sera disponible à partir du ${renewalDate}, date de renouvellement de votre abonnement.`
+                  : `Your free book will be available again from ${renewalDate}, when your subscription renews.`
                 : locale === "fr"
-                  ? "Vous pourrez de nouveau commander un livre gratuitement à la date de renouvellement de votre abonnement Premium Print."
-                  : "You can order a free book again when your Premium Print subscription renews."
+                  ? "Votre livre gratuit sera disponible à la date de renouvellement de votre abonnement."
+                  : "Your free book will be available again when your subscription renews."
               }
             </p>
+            <button
+              onClick={() => setStep("address")}
+              style={{
+                background: accentColor, color: "#FDFAF5", border: "none",
+                padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
+                fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              {t.order.print_extra_book_cta}
+            </button>
           </div>
         )}
 
@@ -1127,8 +1137,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               </div>
             )}
             <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-              {/* Hide main CTA when user has no credits and can't proceed — upsell banner already shown above */}
-              {(profile?.book_credits ?? 0) > 0 && <button
+              {/* Hide main CTA when user has no credits, except free plan (show disabled so user understands the gate) */}
+              {((profile?.book_credits ?? 0) > 0 || profile?.plan === "free") && <button
                 onClick={() => {
                   setStep("address");
                 }}
