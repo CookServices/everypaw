@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
+import { createClient } from "@/lib/supabase/client";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,10 @@ interface GelatoStatus {
   shipments: { trackingCode: string; trackingUrl: string; carrier: string; shippedAt: string }[];
 }
 
+const SPECIES_EMOJI: Record<string, string> = {
+  dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾",
+};
+
 const STATUS_LABEL: Record<string, { fr: string; en: string; color: string }> = {
   created:    { fr: "Créée",       en: "Created",    color: "#7A5C44" },
   passed:     { fr: "En cours",    en: "Processing", color: "#C8813A" },
@@ -51,6 +56,9 @@ export default function BooksPage({ params }: { params: { id: string } }) {
   const [gelatoStatuses, setGelatoStatuses] = useState<Record<string, GelatoStatus>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const [petName, setPetName] = useState<string>("");
+  const [petSpecies, setPetSpecies] = useState<string>("");
+  const [petPhotoUrl, setPetPhotoUrl] = useState<string | null>(null);
 
   const bg = "#F7F2EA";
   const textPrimary = "#3D2B1F";
@@ -70,6 +78,14 @@ export default function BooksPage({ params }: { params: { id: string } }) {
   }, [petId]);
 
   useEffect(() => { fetchConfigs(); }, [fetchConfigs]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.from("pets").select("name, species, photo_url").eq("id", petId).single()
+      .then(({ data }) => {
+        if (data) { setPetName(data.name); setPetSpecies(data.species); setPetPhotoUrl(data.photo_url ?? null); }
+      });
+  }, [petId]);
 
   // Fetch Gelato status for ordered configs
   useEffect(() => {
@@ -131,6 +147,20 @@ export default function BooksPage({ params }: { params: { id: string } }) {
               {statusInfo && (
                 <span style={{ fontSize: ".65rem", fontWeight: 600, color: statusInfo.color, textTransform: "uppercase", letterSpacing: ".06em" }}>
                   · {isFR ? statusInfo.fr : statusInfo.en}
+                </span>
+              )}
+              {petName && (
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: ".3rem",
+                  fontSize: ".72rem", fontWeight: 500,
+                  padding: ".2rem .55rem", borderRadius: 100,
+                  background: "rgba(61,43,31,.06)", color: textMuted,
+                }}>
+                  {petPhotoUrl
+                    ? <img src={petPhotoUrl} alt="" style={{ width: 14, height: 14, borderRadius: "50%", objectFit: "cover" }} />
+                    : <span style={{ fontSize: ".8rem", lineHeight: 1 }}>{SPECIES_EMOJI[petSpecies] ?? "🐾"}</span>
+                  }
+                  {petName}
                 </span>
               )}
             </div>
