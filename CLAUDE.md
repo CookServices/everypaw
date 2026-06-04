@@ -1129,6 +1129,13 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 
 **Commit** : `30871b6` — 4 fichiers (`order/page.tsx`, `gelato/order/route.ts`, `messages/fr.json`, `messages/en.json`)
 
+**Round 2 corrections (commit `b6bb3db`) suite aux tests A–E :**
+- **A (Free)** : bouton CTA désormais visible + grisé/disabled (était caché car `book_credits=0`) — condition `book_credits > 0 || plan === "free"`
+- **B (Digital)** : `no_credits_desc` FR/EN reécrits sans mention "Premium Print" → wording neutre ("plan actuel", "abonnement supérieur")
+- **D (Print ordered)** : bouton "Commander un exemplaire supplémentaire" ajouté dans le bloc `print_extra_book` → passe à l'étape adresse au clic
+
+Tous les comptes A–E ✅ PASS après round 2.
+
 ---
 
-*Dernière mise à jour : 2026-06-04 (session 27 — tests comptes A–E, bugs order page, info crédit adresse step)*
+*Dernière mise à jour : 2026-06-04 (session 27 — tests A–E round 2, tous ✅)*
