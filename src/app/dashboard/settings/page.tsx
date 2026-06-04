@@ -116,15 +116,15 @@ export default function SettingsPage() {
     fmtDateOrdinal(new Date(ts * 1000), isFR, { month: "long", year: "numeric" });
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
-  const handleSave = async () => {
-    setSaving(true);
+  const handleToggleReminders = async (newValue: boolean) => {
+    setEmailReminders(newValue);
     const supabase = createClient();
-    const { error } = await supabase
-      .from("profiles")
-      .update({ email_reminders: emailReminders })
-      .eq("id", (await supabase.auth.getUser()).data.user!.id);
-    setSaving(false);
-    showToast(error ? t.settings.save_error : t.settings.save_success, error ? "error" : "success");
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("profiles").update({ email_reminders: newValue }).eq("id", user!.id);
+    if (error) {
+      setEmailReminders(!newValue);
+      showToast(t.settings.save_error, "error");
+    }
   };
 
   const handleEmailChange = async () => {
@@ -313,7 +313,9 @@ export default function SettingsPage() {
     padding: ".6rem 1rem", borderRadius: 100,
     border: "1.5px solid rgba(200,129,58,.4)", background: "transparent",
     color: "#C8813A", fontFamily: "inherit", fontSize: ".875rem",
-    fontWeight: 500, cursor: "pointer", alignSelf: "flex-start" as const,
+    fontWeight: 500, cursor: "pointer",
+    width: "100%", display: "block", textAlign: "center" as const,
+    boxSizing: "border-box" as const,
   };
 
   return (
@@ -534,7 +536,7 @@ export default function SettingsPage() {
                     <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .25rem" }}>{t.settings.weekly_reminders}</p>
                     <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.settings.weekly_reminders_desc}</p>
                   </div>
-                  <button onClick={() => setEmailReminders(!emailReminders)} style={{ width: 44, height: 24, borderRadius: 100, background: emailReminders ? "#C8813A" : "rgba(61,43,31,.15)", border: "none", cursor: "pointer", position: "relative", transition: "background .2s", flexShrink: 0, marginLeft: "1rem" }}>
+                  <button onClick={() => handleToggleReminders(!emailReminders)} style={{ width: 44, height: 24, borderRadius: 100, background: emailReminders ? "#C8813A" : "rgba(61,43,31,.15)", border: "none", cursor: "pointer", position: "relative", transition: "background .2s", flexShrink: 0, marginLeft: "1rem", overflow: "hidden" }}>
                     <span style={{ position: "absolute", top: 2, left: emailReminders ? 22 : 2, width: 20, height: 20, borderRadius: "50%", background: "#FDFAF5", transition: "left .2s", display: "block" }} />
                   </button>
                 </div>
@@ -553,9 +555,6 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              <button onClick={handleSave} disabled={saving} style={{ marginTop: ".5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: saving ? .7 : 1 }}>
-                {saving ? t.settings.saving : t.settings.save}
-              </button>
             </>
           )}
         </div>
@@ -632,7 +631,7 @@ export default function SettingsPage() {
             <button
               onClick={handleExportData}
               disabled={exportLoading}
-              style={{ background: "none", border: "1.5px solid rgba(61,43,31,.2)", borderRadius: 100, cursor: exportLoading ? "wait" : "pointer", color: "#3D2B1F", fontSize: ".875rem", fontFamily: "inherit", padding: ".6rem 1.25rem", fontWeight: 500, opacity: exportLoading ? .6 : 1 }}
+              style={{ background: "none", border: "1.5px solid rgba(61,43,31,.2)", borderRadius: 100, cursor: exportLoading ? "wait" : "pointer", color: "#3D2B1F", fontSize: ".875rem", fontFamily: "inherit", padding: ".6rem 1.25rem", fontWeight: 500, opacity: exportLoading ? .6 : 1, width: "100%", boxSizing: "border-box", textAlign: "center" }}
             >
               {exportLoading
                 ? (isFR ? "Préparation…" : "Preparing…")
@@ -654,7 +653,7 @@ export default function SettingsPage() {
             </p>
             <button
               onClick={() => setShowDeleteModal(true)}
-              style={{ background: "none", border: "1.5px solid #A32D2D", borderRadius: 100, cursor: "pointer", color: "#A32D2D", fontSize: ".875rem", fontFamily: "inherit", padding: ".6rem 1.25rem", fontWeight: 500 }}
+              style={{ background: "none", border: "1.5px solid #A32D2D", borderRadius: 100, cursor: "pointer", color: "#A32D2D", fontSize: ".875rem", fontFamily: "inherit", padding: ".6rem 1.25rem", fontWeight: 500, width: "100%", boxSizing: "border-box", textAlign: "center" }}
             >
               {isFR ? "Supprimer mon compte et toutes mes données" : "Delete my account and all my data"}
             </button>
