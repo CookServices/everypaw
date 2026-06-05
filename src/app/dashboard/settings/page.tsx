@@ -415,13 +415,13 @@ export default function SettingsPage() {
               {plan === "print" && !cancelledAt && (
                 <p style={{ fontSize: ".8rem", margin: "0 0 1.25rem", fontWeight: 400, color: bookCredits > 0 ? "#C8813A" : "#9A8070" }}>
                   {bookCredits > 0
-                    ? (isFR ? `📖 ${bookCredits} crédit livre disponible` : `📖 ${bookCredits} book credit available`)
+                    ? (isFR ? "📖 Votre livre offert n'a pas encore été commandé" : "📖 Your free book hasn't been ordered yet")
                     : (() => {
                         const renewalTs = subscription?.current_period_end ?? profileRenewalDate;
                         const renewalStr = renewalTs ? formatDate(renewalTs) : null;
                         return isFR
-                          ? (renewalStr ? `📖 Crédit utilisé · Prochain : ${renewalStr}` : "📖 Crédit annuel utilisé")
-                          : (renewalStr ? `📖 Credit used · Next: ${renewalStr}` : "📖 Annual credit used");
+                          ? (renewalStr ? `📖 Votre livre offert a déjà été commandé · Prochain : ${renewalStr}` : "📖 Votre livre offert a déjà été commandé")
+                          : (renewalStr ? `📖 Your free book has already been ordered · Next: ${renewalStr}` : "📖 Your free book has already been ordered");
                       })()}
                 </p>
               )}

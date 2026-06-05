@@ -1030,6 +1030,10 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 |---|---|---|
 | LT1 | Exit-intent capture email : popup avant départ → `"Recevez un exemple de livre Everypaw par email"` | 2h |
 | LT2 | Partage social natif sur profil public avec Open Graph preview | 2h |
+| LT3 | **Page `/books` — bouton "Recommander le même exemplaire"** : sur chaque `book_config` avec `status=ordered`, bouton qui charge la config existante et saute directement au step `address` → step `confirm` → paiement Stripe. Passer `configId` + `step=address` en query params vers `order/page.tsx` (le mécanisme `?configId=` existe déjà, ajouter `?startStep=address`). | 3h |
+| LT4 | **Page `/books` — bouton "Créer un nouveau livre à partir de ce modèle"** : sur chaque `book_config` (tous statuts), bouton → `/dashboard/pets/[id]/order?configId=[id]`. Le mécanisme `?configId=` existe déjà dans `order/page.tsx` (charge la config au mount). Effort quasi nul côté backend — UI seulement. | 1h |
+| LT5 | **Date de renouvellement Stripe — affichage dans settings + order page** : créer `GET /api/stripe/subscription` qui retourne `{ current_period_end: ISO }` depuis Stripe API (stripe.subscriptions.retrieve sur `stripe_customer_id`). Afficher dans : (1) bloc "Mon abonnement" settings → "Renouvellement le JJ mois AAAA" ; (2) encart "Votre livre annuel a déjà été commandé" sur `order/page.tsx` → remplacer la phrase générique par "Votre prochain livre offert sera disponible le JJ mois AAAA". Fallback si route échoue : masquer la date. | 3h |
+| LT6 | **Wording crédit livre settings — remplacement "📖 Crédit annuel utilisé"** : dans `settings/page.tsx` bloc "Mon abonnement" (plan Print), remplacer le badge crédit par un message contextuel : `book_credits === 0` → "Votre livre offert a déjà été commandé" ; `book_credits > 0` → "Votre livre offert n'a pas encore été commandé". Dépend de LT5 pour afficher la date de renouvellement en sous-texte. | 1h |
 
 ---
 
@@ -1152,4 +1156,19 @@ Tous les comptes A–E ✅ PASS après round 2.
 - **Page order — livraison affichée après adresse** (`order/page.tsx`) : step confirm affiche désormais `shippingEstimate` (depuis `SHIPPING_BY_COUNTRY[address.country]`) au lieu du générique "calculée à la commande" — cohérent avec le bloc déjà conditionnel du step adresse
 - **Page books — chip animal** (`books/page.tsx`) : fetch du pet (name, species, photo_url) au mount, chip pill affiché dans chaque cartouche (photo ou emoji espèce + nom)
 
-*Dernière mise à jour : 2026-06-04 (session 28 — améliorations mineures UI/UX, PR #53 mergée)*
+### ✅ Session 29 — Refacto + Security Round 5 (2026-06-05)
+
+**Refacto `order/page.tsx`**
+- 1460 lignes → 7 render closures (`renderPreviewModal`, `renderStepper`, `renderUpsellBanners`, `renderPreviewStep`, `renderSuccessStep`, `renderConfirmStep`, `renderAddressStep`) — `return` réduit à 23 lignes
+- Closures sur l'état parent : zéro prop drilling, zéro changement de logique
+
+**Security Round 5 — 7 findings corrigés**
+- **H1** `book-configs POST` : `cover_photo_url` validée `https://` à l'écriture (SSRF)
+- **H2** `book-configs POST` : `selected_story_ids` — chaque élément validé UUID_REGEX
+- **M1** `book-configs POST` : `story_layouts` — valeurs whitelistées (`classic|photo_hero|split|text_only`)
+- **M2** `book-configs POST` : `year_filter` — borné 2000–2100
+- **M3** `export-data` : rate limit 3 req/heure par user via `checkRateLimit`
+- **L1** crons (`streak-alert`, `birthday-check`, `daily-prompts`, `on-this-day`) : `unsubscribe_token` null-guardé → fallback `/dashboard`
+- **L2** `book-configs DELETE` : vérifie `count` après delete → 404 si aucune ligne affectée
+
+*Dernière mise à jour : 2026-06-05 (session 29 — refacto order page + security round 5)*
