@@ -5,6 +5,8 @@ import { getCurrencyFromCountry } from "@/lib/currency";
 import { calcGelatoBookPrice } from "@/lib/gelato-pricing";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_PAGE_COUNT = 500; // Gelato practical limit
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -16,8 +18,13 @@ export async function POST(req: Request) {
 
   const { petId, pageCount } = await req.json().catch(() => ({}));
 
-  if (!pageCount || typeof pageCount !== "number" || pageCount < 28) {
+  if (!pageCount || typeof pageCount !== "number" || pageCount < 28 || pageCount > MAX_PAGE_COUNT) {
     return NextResponse.json({ error: "Invalid pageCount" }, { status: 400 });
+  }
+
+  // Validate petId to prevent path manipulation in redirect URLs
+  if (petId !== undefined && petId !== "" && !UUID_REGEX.test(petId)) {
+    return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
   }
 
   const country = req.headers.get("x-vercel-ip-country");

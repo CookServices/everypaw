@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
+import { PRICE_MAP } from "@/lib/stripe-helpers";
+import { getCurrencyFromCountry } from "@/lib/currency";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { code } = await req.json();
+  const body = await req.json().catch(() => ({}));
+  const { code } = body;
   if (!code || typeof code !== "string") {
     return NextResponse.json({ error: "Missing code" }, { status: 400 });
   }
@@ -32,15 +35,19 @@ export async function POST(req: Request) {
     }
 
     // Read plan from promotion code metadata
-    const plan = promoCode.metadata?.plan === "print" ? "print" : "digital";
-    const priceId = plan === "print"
-      ? process.env.STRIPE_PRICE_ID_PRINT
-      : process.env.STRIPE_PRICE_ID_DIGITAL;
+    // Normalize: "print" (legacy) → "print_annual" to match 3-plan system
+    const rawPlan = promoCode.metadata?.plan;
+    const planKey = (rawPlan === "print" || rawPlan === "print_annual") ? "print_annual" : "digital";
 
-    console.log("[gift/redeem] plan:", plan, "priceId:", priceId);
+    // Derive currency from user's country for the checkout session
+    const country = req.headers.get("x-vercel-ip-country");
+    const currency = getCurrencyFromCountry(country);
+    const priceId = PRICE_MAP[planKey]?.[currency];
+
+    console.log("[gift/redeem] plan:", planKey, "currency:", currency, "priceId:", priceId ?? "(not set)");
 
     if (!priceId) {
-      console.error(`[gift/redeem] Missing env var STRIPE_PRICE_ID_${plan.toUpperCase()}`);
+      console.error(`[gift/redeem] Missing price ID for plan ${planKey} / currency ${currency} — check PRICE_MAP env vars`);
       return NextResponse.json({ error: "Gift service not configured" }, { status: 500 });
     }
 

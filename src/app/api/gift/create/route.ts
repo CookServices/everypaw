@@ -119,7 +119,7 @@ export async function POST(req: Request) {
         recipient_email: recipientEmail,
         recipient_name: recipientName,
         sender_name: senderName,
-        plan: plan === "print" ? "print" : "digital",
+        plan: (plan === "print" || plan === "print_annual") ? "print_annual" : "digital",
       },
     });
 

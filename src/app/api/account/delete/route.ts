@@ -75,6 +75,7 @@ export async function POST() {
       await adminSupabase.from("milestones").delete().in("pet_id", petIds);
     }
 
+    await adminSupabase.from("book_configs").delete().eq("user_id", user.id);
     await adminSupabase.from("pets").delete().eq("user_id", user.id);
     await adminSupabase.from("events_log").delete().eq("user_id", user.id);
     await adminSupabase.from("daily_prompts").delete().eq("user_id", user.id);

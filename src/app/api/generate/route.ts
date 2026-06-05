@@ -218,7 +218,8 @@ You MUST respond with valid JSON only, no other text:
 
     if (insertError) {
       console.error("[generate] Supabase INSERT error:", insertError);
-      return NextResponse.json({ error: "Failed to save story", detail: insertError.message }, { status: 500 });
+      console.error("[generate] Supabase INSERT error detail:", insertError.message);
+      return NextResponse.json({ error: "Failed to save story" }, { status: 500 });
     }
 
     console.log("[generate] story saved, id:", saved?.id);
