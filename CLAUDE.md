@@ -1444,4 +1444,23 @@ Files audited this round (no changes required):
 - `api/gift/redeem/route.ts` — code format `^[A-Z0-9_-]+$`, recipient_email check, PRICE_MAP ✅
 - `api/stripe/book-checkout/route.ts` — UUID petId, `pageCount` borné 28–500 ✅
 
-*Dernière mise à jour : 2026-06-05 (session 38 — Security Round 12)*
+### ✅ Session 39 — Security Round 13 — Dashboard client pages (2026-06-05)
+
+**Commit** : `964fbcc`
+
+**Findings corrigés :**
+
+- **`books/page.tsx` — `trackingUrl` sans validation `https://`** (Info) : `<a href={shipment.trackingUrl}>` — URL depuis Gelato API rendue directement. Fix : `shipment?.trackingUrl?.startsWith("https://")` avant le rendu.
+- **`settings/page.tsx` — `invoice_pdf` + `hosted_invoice_url` sans validation `https://`** (Info) : URLs depuis Stripe API rendues comme `<a href>`. Fix : `?.startsWith("https://")` sur les deux. Toutes avaient déjà `rel="noopener noreferrer"`.
+
+**Pages dashboard revues sans finding :**
+- `dashboard/page.tsx` — auth session client, JSX auto-escape, `handleSubscribe` plan typé ✅
+- `dashboard/upgrade/page.tsx` — plans hardcodés (`"digital"` | `"print_annual"`), URLs Stripe ✅
+- `pets/new/page.tsx` — auth `getUser()`, upload canvas→JPEG, `maxLength` sur inputs ✅
+- `pets/[id]/edit/page.tsx` — auth + RLS session, même pattern upload ✅
+- `pets/[id]/books/page.tsx` — IDOR via book_configs session-scoped, `rel="noopener noreferrer"` ✅
+- `settings/page.tsx` — `signInWithPassword` avant update mdp, confirm "DELETE" avant suppression compte, `encodeURIComponent(newPlan)` sur upgrade-preview ✅
+
+**Couverture complète :** 37 fichiers API + 8 pages dashboard + 8 pages auth/public. Codebase production-ready.
+
+*Dernière mise à jour : 2026-06-05 (session 39 — Security Round 13)*
