@@ -1,29 +1,9 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
-import { getServiceSupabase } from "@/lib/plan";
+import { resolveSubscriptionId } from "@/lib/stripe-helpers";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-async function resolveSubscriptionId(
-  userId: string,
-  subscriptionId: string | null,
-  customerId: string | null,
-): Promise<string | null> {
-  if (subscriptionId) return subscriptionId;
-  if (!customerId) return null;
-  try {
-    const list = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
-    const sub = list.data[0];
-    if (sub) {
-      await getServiceSupabase().from("profiles").update({ stripe_subscription_id: sub.id }).eq("id", userId);
-      return sub.id;
-    }
-  } catch (err) {
-    console.error("[stripe/cancel] customer lookup error:", err);
-  }
-  return null;
-}
 
 export async function POST() {
   const supabase = await createClient();
@@ -37,6 +17,7 @@ export async function POST() {
     .single();
 
   const subscriptionId = await resolveSubscriptionId(
+    stripe,
     user.id,
     profile?.stripe_subscription_id ?? null,
     profile?.stripe_customer_id ?? null,

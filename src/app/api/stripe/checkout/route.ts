@@ -2,28 +2,10 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrencyFromCountry, type Currency } from "@/lib/currency";
+import { getCurrencyFromCountry } from "@/lib/currency";
+import { PRICE_MAP } from "@/lib/stripe-helpers";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-const PRICE_MAP: Record<string, Record<Currency, string | undefined>> = {
-  digital: {
-    EUR: process.env.STRIPE_PRICE_ID_DIGITAL_EUR,
-    USD: process.env.STRIPE_PRICE_ID_DIGITAL_USD,
-  },
-  digital_annual: {
-    EUR: process.env.STRIPE_PRICE_ID_DIGITAL_ANNUAL_EUR,
-    USD: process.env.STRIPE_PRICE_ID_DIGITAL_ANNUAL_USD,
-  },
-  print_monthly: {
-    EUR: process.env.STRIPE_PRICE_ID_PRINT_EUR,
-    USD: process.env.STRIPE_PRICE_ID_PRINT_USD,
-  },
-  print_annual: {
-    EUR: process.env.STRIPE_PRICE_PRINT_ANNUAL_EUR ?? process.env.STRIPE_PRICE_PRINT_ANNUAL,
-    USD: process.env.STRIPE_PRICE_PRINT_ANNUAL_USD ?? process.env.STRIPE_PRICE_PRINT_ANNUAL,
-  },
-};
 
 export async function POST(req: Request) {
   const supabase = await createClient();

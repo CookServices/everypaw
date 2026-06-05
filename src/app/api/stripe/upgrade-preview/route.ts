@@ -1,29 +1,10 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
-import { getServiceSupabase } from "@/lib/plan";
 import type { Currency } from "@/lib/currency";
+import { PRICE_MAP, resolveSubscriptionId } from "@/lib/stripe-helpers";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-const PRICE_MAP: Record<string, Record<Currency, string | undefined>> = {
-  digital: {
-    EUR: process.env.STRIPE_PRICE_ID_DIGITAL_EUR,
-    USD: process.env.STRIPE_PRICE_ID_DIGITAL_USD,
-  },
-  digital_annual: {
-    EUR: process.env.STRIPE_PRICE_ID_DIGITAL_ANNUAL_EUR,
-    USD: process.env.STRIPE_PRICE_ID_DIGITAL_ANNUAL_USD,
-  },
-  print: {
-    EUR: process.env.STRIPE_PRICE_ID_PRINT_EUR,
-    USD: process.env.STRIPE_PRICE_ID_PRINT_USD,
-  },
-  print_annual: {
-    EUR: process.env.STRIPE_PRICE_PRINT_ANNUAL_EUR ?? process.env.STRIPE_PRICE_PRINT_ANNUAL,
-    USD: process.env.STRIPE_PRICE_PRINT_ANNUAL_USD ?? process.env.STRIPE_PRICE_PRINT_ANNUAL,
-  },
-};
 
 export async function GET(req: Request) {
   const supabase = await createClient();
@@ -43,21 +24,13 @@ export async function GET(req: Request) {
     .eq("id", user.id)
     .single();
 
-  let subscriptionId = profile?.stripe_subscription_id ?? null;
   const customerId = profile?.stripe_customer_id ?? null;
-
-  if (!subscriptionId && customerId) {
-    try {
-      const list = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
-      const sub = list.data[0];
-      if (sub) {
-        await getServiceSupabase().from("profiles").update({ stripe_subscription_id: sub.id }).eq("id", user.id);
-        subscriptionId = sub.id;
-      }
-    } catch (err) {
-      console.error("[stripe/upgrade-preview] customer lookup error:", err);
-    }
-  }
+  const subscriptionId = await resolveSubscriptionId(
+    stripe,
+    user.id,
+    profile?.stripe_subscription_id ?? null,
+    customerId,
+  );
 
   if (!subscriptionId || !customerId) {
     return NextResponse.json({ error: "No active subscription" }, { status: 400 });
