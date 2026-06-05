@@ -1249,4 +1249,41 @@ Tous les comptes A–E ✅ PASS après round 2.
 
 **Roadmap — entrées ajoutées** : LT3 (reorder même exemplaire), LT4 (cloner config), LT5 ✅, LT6 ✅
 
-*Dernière mise à jour : 2026-06-05 (session 30 — password strength + export HTML + wording crédits)*
+### ✅ Session 31 (suite) — Abonnements annuels + réactivation + factures (2026-06-05)
+
+**Commits** : `8bf7d3c` (reactivate), `c11705d` (invoices + billing settings)
+
+**Abonnement annuel — toggle dans Settings** (`settings/page.tsx`)
+- `SubscriptionInfo` interface : champ `interval: "month" | "year"` (retourné par `/api/stripe/subscription`)
+- État `settingsBilling: "monthly" | "annual"` initialisé depuis `subscription.interval`
+- Toggle mensuel/annuel visible dans la section abonnement pour tous les états de plan (free, digital, print)
+- `handleCheckout` étendu : `"digital" | "digital_annual" | "print_monthly" | "print_annual"` — calcule le bon plan selon `settingsBilling`
+- Correction : `handleCheckout("print")` → `handleCheckout("print_monthly")` (clé invalide dans `PRICE_MAP`)
+- Correction : plan Digital respecte le billing cycle (`digitalPlan` dérivé de `settingsBilling`)
+- **Page upgrade** : toggle annuel masqué via `{false && (...)}` — mensuel uniquement pour l'instant. Commentaire : `TODO: remove false && to re-enable annual billing`
+
+**Réactivation abonnement** (`src/app/api/stripe/reactivate/route.ts`) — nouveau fichier
+- `POST /api/stripe/reactivate` : `stripe.subscriptions.update(id, { cancel_at_period_end: false })`
+- `resolveSubscriptionId()` : si `stripe_subscription_id` absent, lookup via `customer.id` status=active + backfill DB
+- Bouton "Annuler ma résiliation" dans `settings/page.tsx` si `subscription.cancel_at_period_end === true`
+- État `reactivateLoading` + vidage de `cancelledAt` après succès
+
+**Factures Stripe** (`src/app/api/stripe/invoices/route.ts`) — nouveau fichier
+- `GET /api/stripe/invoices` : fetch `stripe.invoices.list({ customer: stripe_customer_id, limit: 24 })` filtré `status=paid`
+- Retourne : `id, number, amount_paid, currency, created, invoice_pdf, hosted_invoice_url, period_start, period_end`
+- Retourne `{ invoices: [] }` si pas de `stripe_customer_id`
+- Masqué entièrement pour users free (pas de customer ID)
+
+**Section "Mes factures" dans Settings**
+- Visible uniquement si `invoices.length > 0`
+- Par facture : montant · date de paiement · période couverte · numéro · bouton "PDF" + bouton "Voir"
+- Chargée au mount dans `useEffect` via `fetch("/api/stripe/invoices")`
+
+**`/api/stripe/subscription`** — `interval` ajouté à `formatSubscription()`
+- Retourne `interval: (sub.items.data[0]?.plan?.interval ?? "month") as "month" | "year"`
+
+**Action requise (Stripe Dashboard)** : Settings → Billing → Customer emails → activer "Successful payments" pour envoi automatique PDF facture
+
+---
+
+*Dernière mise à jour : 2026-06-05 (session 31 — abonnements annuels, réactivation, factures)*
