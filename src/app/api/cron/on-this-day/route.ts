@@ -71,7 +71,9 @@ export async function GET(req: Request) {
     const petName = escapeHtml(petMap[featured.pet_id] ?? (isFR ? "votre animal" : "your pet"));
     const yearsAgo = currentYear - parseInt(featured.entry_date.slice(0, 4), 10);
     const snippet = escapeHtml(featured.content.trim().slice(0, 120)) + (featured.content.length > 120 ? "…" : "");
-    const unsubscribeUrl = `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`;
+    const unsubscribeUrl = profile.unsubscribe_token
+      ? `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`
+      : "https://everypaw.app/dashboard";
 
     const subject = isFR
       ? `🐾 Il y a ${yearsAgo} an${yearsAgo > 1 ? "s" : ""}, ${petName}…`

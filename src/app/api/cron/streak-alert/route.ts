@@ -86,7 +86,9 @@ export async function GET(req: Request) {
 
     const petName = escapeHtml(pet.name);
     const isFR = (profile.locale ?? profile.language ?? "en").toLowerCase().startsWith("fr");
-    const unsubscribeUrl = `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`;
+    const unsubscribeUrl = profile.unsubscribe_token
+      ? `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`
+      : "https://everypaw.app/dashboard";
 
     const subject = isFR
       ? `🐾 ${daysSince} jours sans entrée pour ${petName}`

@@ -5,6 +5,7 @@ const MAX_DRAFTS = 15;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const VALID_THEMES = ["classic", "noir", "forest", "ocean", "rose"];
 const VALID_STATUSES = ["draft", "ordered"];
+const VALID_LAYOUTS = ["classic", "photo_hero", "split", "text_only"];
 
 // GET /api/book-configs?petId=xxx
 export async function GET(req: Request) {
@@ -87,10 +88,19 @@ export async function POST(req: Request) {
     status: status ?? "draft",
     theme: theme ?? "classic",
     custom_title: custom_title ? String(custom_title).slice(0, 60) : null,
-    year_filter: year_filter ? Number(year_filter) : null,
-    selected_story_ids: Array.isArray(selected_story_ids) ? selected_story_ids : [],
-    cover_photo_url: cover_photo_url ? String(cover_photo_url) : null,
-    story_layouts: (story_layouts && typeof story_layouts === "object") ? story_layouts : {},
+    year_filter: year_filter && Number(year_filter) >= 2000 && Number(year_filter) <= 2100 ? Number(year_filter) : null,
+    selected_story_ids: Array.isArray(selected_story_ids)
+      ? selected_story_ids.filter((sid: unknown) => typeof sid === "string" && UUID_REGEX.test(sid))
+      : [],
+    cover_photo_url: cover_photo_url && typeof cover_photo_url === "string" && cover_photo_url.startsWith("https://")
+      ? cover_photo_url
+      : null,
+    story_layouts: (story_layouts && typeof story_layouts === "object" && !Array.isArray(story_layouts))
+      ? Object.fromEntries(
+          Object.entries(story_layouts as Record<string, unknown>)
+            .filter(([k, v]) => UUID_REGEX.test(k) && VALID_LAYOUTS.includes(v as string))
+        )
+      : {},
     dedication_text: dedication_text ? String(dedication_text).slice(0, 500) : null,
     gelato_order_id: gelato_order_id ? String(gelato_order_id) : null,
     ordered_at: ordered_at ?? null,

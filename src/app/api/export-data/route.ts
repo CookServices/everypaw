@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { allowed } = checkRateLimit(`export:${user.id}`, 3, 60 * 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
   const uid = user.id;
 

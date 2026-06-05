@@ -52,7 +52,9 @@ export async function GET(req: Request) {
     const currentYear = today.getFullYear();
     const birthYear = pet.birthdate ? parseInt(pet.birthdate.slice(0, 4), 10) : null;
     const age = birthYear ? currentYear - birthYear : null;
-    const unsubscribeUrl = `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`;
+    const unsubscribeUrl = profile.unsubscribe_token
+      ? `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`
+      : "https://everypaw.app/dashboard";
 
     const ageLabel = age
       ? (isFR ? `${age} an${age > 1 ? "s" : ""}` : `${age} year${age > 1 ? "s" : ""} old`)

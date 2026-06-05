@@ -13,12 +13,13 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("book_configs")
-    .delete()
+    .delete({ count: "exact" })
     .eq("id", params.id)
-    .eq("user_id", user.id); // prevents IDOR
+    .eq("user_id", user.id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!count || count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ success: true });
 }

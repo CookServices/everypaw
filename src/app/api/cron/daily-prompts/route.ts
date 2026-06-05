@@ -155,7 +155,9 @@ export async function GET(req: Request) {
 
     const prompts = isFR ? PROMPTS_FR[speciesKey] : PROMPTS_EN[speciesKey];
     const prompt = pickPrompt(prompts, dayOfYear);
-    const unsubscribeUrl = `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`;
+    const unsubscribeUrl = profile.unsubscribe_token
+      ? `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`
+      : "https://everypaw.app/dashboard";
 
     const subject = isFR
       ? `✍️ Prompt du jour pour ${petName}`
