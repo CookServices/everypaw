@@ -531,930 +531,940 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const previewLabel = locale === "fr" ? "Aperçu complet du livre" : "Full book preview";
   const closeLabel = locale === "fr" ? "Fermer" : "Close";
 
-  return (
-    <>
-    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    {/* Full-book preview modal */}
-    {previewHtml && (
+  // ── Render helpers ───────────────────────────────────────────────────────
+
+  const renderPreviewModal = () => (
+    <div
+      onClick={closePreview}
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(0,0,0,.75)", backdropFilter: "blur(4px)",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        padding: "1rem",
+      }}
+    >
       <div
-        onClick={closePreview}
-        style={{
-          position: "fixed", inset: 0, zIndex: 1000,
-          background: "rgba(0,0,0,.75)", backdropFilter: "blur(4px)",
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          padding: "1rem",
-        }}
+        onClick={e => e.stopPropagation()}
+        style={{ width: "100%", maxWidth: 860, height: "90vh", display: "flex", flexDirection: "column", borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.5)" }}
       >
-        <div
-          onClick={e => e.stopPropagation()}
-          style={{ width: "100%", maxWidth: 860, height: "90vh", display: "flex", flexDirection: "column", borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.5)" }}
-        >
-          {/* Modal header */}
-          <div style={{ background: "#3D2B1F", padding: ".75rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-            <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", color: "#F7C27A", display: "flex", alignItems: "center", gap: ".5rem" }}>
-              {previewLabel}
-              {previewStale && <span style={{ fontSize: ".7rem", background: "rgba(200,129,58,.25)", color: "#F7C27A", padding: ".15rem .5rem", borderRadius: 4 }}>↻ mise à jour…</span>}
-            </span>
-            <button
-              onClick={closePreview}
-              style={{ background: "rgba(247,242,234,.12)", border: "none", color: "#F7F2EA", borderRadius: 8, padding: ".35rem .75rem", cursor: "pointer", fontFamily: "inherit", fontSize: ".8rem" }}
-            >
-              {closeLabel} ✕
-            </button>
+        {/* Modal header */}
+        <div style={{ background: "#3D2B1F", padding: ".75rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", color: "#F7C27A", display: "flex", alignItems: "center", gap: ".5rem" }}>
+            {previewLabel}
+            {previewStale && <span style={{ fontSize: ".7rem", background: "rgba(200,129,58,.25)", color: "#F7C27A", padding: ".15rem .5rem", borderRadius: 4 }}>↻ mise à jour…</span>}
+          </span>
+          <button
+            onClick={closePreview}
+            style={{ background: "rgba(247,242,234,.12)", border: "none", color: "#F7F2EA", borderRadius: 8, padding: ".35rem .75rem", cursor: "pointer", fontFamily: "inherit", fontSize: ".8rem" }}
+          >
+            {closeLabel} ✕
+          </button>
+        </div>
+        {/* iframe via srcdoc — evite les restrictions blob: URL / CSP */}
+        <iframe
+          srcDoc={previewHtml!}
+          style={{ flex: 1, border: "none", background: "#F7F2EA" }}
+          title="Book preview"
+        />
+      </div>
+    </div>
+  );
+
+  const renderStepper = () => (
+    <div style={{ display: "flex", alignItems: "flex-start", marginBottom: "2.5rem" }}>
+      {stepLabels.map((label, i) => {
+        const steps: Step[] = ["preview", "address", "confirm"];
+        const clickable = i < currentIdx;
+        return (
+        <div key={i}
+          onClick={() => clickable && setStep(steps[i])}
+          style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", cursor: clickable ? "pointer" : "default" }}>
+          {/* Connector line left */}
+          {i > 0 && (
+            <div style={{
+              position: "absolute", top: 15, right: "50%", width: "100%", height: 2,
+              background: i <= currentIdx ? accentColor : isMemorial ? "rgba(247,242,234,.1)" : "rgba(61,43,31,.12)",
+              zIndex: 0,
+            }} />
+          )}
+          {/* Circle */}
+          <div style={{
+            width: 30, height: 30, borderRadius: "50%", zIndex: 1, position: "relative",
+            background: i < currentIdx ? accentColor : i === currentIdx ? accentColor : isMemorial ? "rgba(247,242,234,.08)" : "rgba(61,43,31,.08)",
+            border: i === currentIdx ? `2px solid ${accentColor}` : "2px solid transparent",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: i <= currentIdx ? "#FDFAF5" : textMuted,
+            fontSize: i < currentIdx ? ".85rem" : ".8rem",
+            fontWeight: 600, transition: "all .3s",
+            boxShadow: clickable ? `0 0 0 3px ${accentColor}22` : "none",
+          }}>
+            {i < currentIdx ? "✓" : i + 1}
           </div>
-          {/* iframe via srcdoc — evite les restrictions blob: URL / CSP */}
-          <iframe
-            srcDoc={previewHtml}
-            style={{ flex: 1, border: "none", background: "#F7F2EA" }}
-            title="Book preview"
-          />
+          {/* Label */}
+          <span style={{
+            fontSize: ".7rem", marginTop: ".35rem",
+            color: i === currentIdx ? accentColor : i < currentIdx ? accentColor : textMuted,
+            fontWeight: i === currentIdx ? 600 : 400,
+            textAlign: "center", lineHeight: 1.2,
+          }}>
+            {label}
+          </span>
+        </div>
+        );
+      })}
+    </div>
+  );
+
+  const renderUpsellBanners = () => (
+    <>
+      {/* No-credits upsell — Print plan */}
+      {profile !== null && profile.book_credits === 0 && profile.plan === "print" && step === "preview" && (
+        <div style={{
+          background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
+          border: isMemorial ? "1px solid rgba(200,129,58,.25)" : "1px solid #F7C27A",
+          borderRadius: 16, padding: "1.5rem", marginBottom: "1.75rem",
+          textAlign: "center",
+        }}>
+          <div style={{ fontSize: "1.5rem", marginBottom: ".75rem" }}>📚</div>
+          <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
+            {t.order.print_extra_book_title}
+          </h3>
+          <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto 1rem" }}>
+            {renewalDate
+              ? locale === "fr"
+                ? `Votre livre gratuit sera disponible à partir du ${renewalDate}, date de renouvellement de votre abonnement.`
+                : `Your free book will be available again from ${renewalDate}, when your subscription renews.`
+              : locale === "fr"
+                ? "Votre livre gratuit sera disponible à la date de renouvellement de votre abonnement."
+                : "Your free book will be available again when your subscription renews."
+            }
+          </p>
+          <button
+            onClick={() => setStep("address")}
+            style={{
+              background: accentColor, color: "#FDFAF5", border: "none",
+              padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
+              fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            {t.order.print_extra_book_cta}
+          </button>
+        </div>
+      )}
+
+      {/* Gate — Free plan */}
+      {profile !== null && profile.plan === "free" && step === "preview" && (
+        <div style={{
+          background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
+          border: isMemorial ? "1px solid rgba(200,129,58,.25)" : "1px solid #F7C27A",
+          borderRadius: 16, padding: "1.5rem", marginBottom: "1.75rem",
+          textAlign: "center",
+        }}>
+          <div style={{ fontSize: "1.5rem", marginBottom: ".75rem" }}>📚</div>
+          <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
+            {locale === "fr" ? "Fonctionnalité Premium Print" : "Premium Print Feature"}
+          </h3>
+          <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto 1rem" }}>
+            {locale === "fr"
+              ? "La commande d'un livre imprimé est réservée aux abonnés Premium Print. Passez à l'abonnement Print pour recevoir un livre chaque année."
+              : "Ordering a printed book is available to Premium Print subscribers. Upgrade to Print to receive a book every year."}
+          </p>
+          <a
+            href="/dashboard/settings"
+            style={{
+              background: accentColor, color: "#FDFAF5", border: "none",
+              padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
+              fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+              textDecoration: "none", display: "inline-block",
+            }}
+          >
+            {locale === "fr" ? "Passer à Premium Print" : "Upgrade to Premium Print"}
+          </a>
+        </div>
+      )}
+
+      {/* No-credits upsell — non-Print plans */}
+      {profile !== null && profile.book_credits === 0 && profile.plan !== "free" && profile.plan !== "print" && step === "preview" && (
+        <div style={{
+          background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
+          border: isMemorial ? "1px solid rgba(200,129,58,.25)" : "1px solid #F7C27A",
+          borderRadius: 16, padding: "1.5rem", marginBottom: "1.75rem",
+          textAlign: "center",
+        }}>
+          <div style={{ fontSize: "1.5rem", marginBottom: ".75rem" }}>📚</div>
+          <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
+            {t.order.no_credits_title}
+          </h3>
+          <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto 1rem" }}>
+            {t.order.no_credits_desc}
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: ".625rem", alignItems: "center" }}>
+            <button
+              onClick={async () => {
+                const res = await fetch("/api/stripe/book-checkout", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
+                });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+              }}
+              style={{
+                background: accentColor, color: "#FDFAF5", border: "none",
+                padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
+                fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              {t.order.no_credits_cta} — {extraBookPriceLabel} {locale === "fr" ? "+ livraison" : "+ shipping"}
+            </button>
+            <a
+              href="/dashboard/settings#plan"
+              style={{
+                fontSize: ".8rem", color: accentColor, textDecoration: "underline",
+                textDecorationStyle: "dotted", textUnderlineOffset: "3px", cursor: "pointer",
+              }}
+            >
+              {(t.order as Record<string, string>).no_credits_upgrade_cta ?? (locale === "fr" ? "Passer au plan Print" : "Upgrade to Print")}
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Memorial hero */}
+      {isMemorial && petName && step === "preview" && (
+        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+          <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>🕊️</div>
+          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.75rem", fontWeight: 600, color: "#F7F2EA", marginBottom: ".5rem" }}>
+            {t.memorial.order_tribute.replace("{name}", petName)}
+          </h1>
+          <p style={{ fontSize: ".9rem", color: "rgba(247,242,234,.5)", fontWeight: 300, lineHeight: 1.7, maxWidth: 380, margin: "0 auto" }}>
+            {t.memorial.order_subtitle}
+          </p>
+        </div>
+      )}
+    </>
+  );
+
+  const renderPreviewStep = () => (
+    <div>
+      <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.25rem", textAlign: "center" }}>
+        {t.order.preview_title}
+      </h2>
+
+      {/* Year filter — shown as soon as there is data (Point 9) */}
+      {availableYears.length >= 1 && (
+        <div style={{ marginBottom: "1.25rem" }}>
+          <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>
+            {bookYearLabel}
+          </label>
+          <select
+            value={yearFilter ?? ""}
+            onChange={e => handleYearChange(e.target.value === "" ? null : Number(e.target.value))}
+            style={inputStyle}
+          >
+            {availableYears.length > 1 && (
+              <option value="">{allYearsLabel}</option>
+            )}
+            {availableYears.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Customization — theme + title */}
+      {!isMemorial && (
+        <div style={{ marginBottom: "1.25rem", background: cardBg, border: cardBorder, borderRadius: 14, padding: "1rem 1.25rem" }}>
+          <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+            {locale === "fr" ? "Personnalisation" : "Customization"}
+          </div>
+          {/* Theme swatches */}
+          <div style={{ marginBottom: ".875rem" }}>
+            <div style={{ fontSize: ".7rem", color: textMuted, marginBottom: ".5rem", fontFamily: "sans-serif" }}>
+              {locale === "fr" ? "Thème de couleur" : "Color theme"}
+            </div>
+            <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
+              {COVER_THEMES.map(theme => (
+                <button
+                  key={theme.id}
+                  onClick={() => setCoverTheme(theme.id)}
+                  title={locale === "fr" ? theme.labelFr : theme.labelEn}
+                  style={{
+                    width: 36, height: 36, borderRadius: 8,
+                    background: theme.bg,
+                    border: coverTheme === theme.id ? `2.5px solid ${accentColor}` : "2.5px solid transparent",
+                    cursor: "pointer", position: "relative",
+                    boxShadow: coverTheme === theme.id ? `0 0 0 1px ${accentColor}` : "none",
+                    transition: "border .15s, box-shadow .15s",
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* Accent color strip at bottom */}
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 8, background: theme.accent }} />
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: ".65rem", color: textMuted, marginTop: ".35rem", fontFamily: "sans-serif" }}>
+              {locale === "fr"
+                ? (COVER_THEMES.find(t => t.id === coverTheme)?.labelFr ?? "")
+                : (COVER_THEMES.find(t => t.id === coverTheme)?.labelEn ?? "")}
+            </div>
+          </div>
+          {/* Custom title */}
+          <div>
+            <div style={{ fontSize: ".7rem", color: textMuted, marginBottom: ".5rem", fontFamily: "sans-serif" }}>
+              {locale === "fr" ? "Titre du livre (optionnel)" : "Book title (optional)"}
+            </div>
+            <input
+              type="text"
+              value={customTitle}
+              onChange={e => setCustomTitle(e.target.value)}
+              maxLength={60}
+              placeholder={defaultCoverTitle}
+              style={{ ...inputStyle, fontSize: ".85rem" }}
+            />
+            <div style={{ fontSize: ".65rem", color: customTitle.length >= 54 ? "#A32D2D" : textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
+              {customTitle.length}/60
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Book cover */}
+      <div style={{
+        background: coverPhotoUrl ? "transparent" : bookBg,
+        backgroundImage: coverPhotoUrl
+          ? `linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.65)), url('${coverPhotoUrl}')`
+          : undefined,
+        backgroundSize: coverPhotoUrl ? "cover" : undefined,
+        backgroundPosition: coverPhotoUrl ? "center" : undefined,
+        borderRadius: 20, padding: "3rem 2rem",
+        textAlign: "center", marginBottom: "1.25rem",
+        boxShadow: "0 12px 40px rgba(0,0,0,.25)",
+        position: "relative", overflow: "hidden",
+        transition: "background .3s",
+      }}>
+        {/* Decorative spine line */}
+        <div style={{ position: "absolute", left: 18, top: 0, bottom: 0, width: 4, background: `${bookAccentColor}60`, borderRadius: 2 }} />
+        <div style={{ fontSize: "2.75rem", marginBottom: "1.25rem" }}>{isMemorial ? "🕊️" : "🐾"}</div>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: "1.9rem", fontWeight: 600, color: bookTitleColor, lineHeight: 1.25, marginBottom: ".75rem", transition: "color .3s" }}>
+          {displayCoverTitle}
+        </div>
+        {coverPeriod && (
+          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "1rem", color: "rgba(247,242,234,.45)", marginBottom: "1.5rem" }}>
+            {petName} · {coverPeriod}
+          </div>
+        )}
+        <div style={{ width: 48, height: 2, background: bookAccentColor, margin: "0 auto 1.5rem", borderRadius: 1, transition: "background .3s" }} />
+        <div style={{ fontSize: ".7rem", color: "rgba(247,242,234,.3)", letterSpacing: ".12em", textTransform: "uppercase" }}>
+          {t.order.book_cover_label}
         </div>
       </div>
-    )}
 
-    <div style={{ minHeight: "100vh", background: bg, fontFamily: "'DM Sans', sans-serif", transition: "background .3s" }}>
-      <nav style={{ background: isMemorial ? "rgba(28,20,16,.9)" : "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.08)"}`, padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary }}>
-          {isMemorial && petName
-            ? t.memorial.order_tribute.replace("{name}", petName)
-            : t.order.title}
-        </span>
-      </nav>
+      {/* Cover photo picker (Point 10) — always visible */}
+      <div style={{ marginBottom: "1.25rem" }}>
+        <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+          {coverPhotoLabel}
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", alignItems: "center" }}>
+          {/* Default button */}
+          <button
+            onClick={() => setCoverPhotoUrl(null)}
+            style={{
+              width: 72, height: 72, borderRadius: 8,
+              background: "#3D2B1F",
+              border: coverPhotoUrl === null ? "2px solid #C8813A" : "2px solid transparent",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              color: "rgba(247,242,234,.6)", fontSize: ".6rem", fontFamily: "sans-serif",
+              textAlign: "center", padding: 4, lineHeight: 1.2,
+            }}
+          >
+            {coverDefaultLabel}
+          </button>
+          {/* Journal photo thumbnails (filtered by year) */}
+          {availablePhotos.map((photoUrl, i) => (
+            <button
+              key={i}
+              onClick={() => setCoverPhotoUrl(photoUrl)}
+              style={{
+                width: 72, height: 72, borderRadius: 8,
+                border: coverPhotoUrl === photoUrl ? "2px solid #C8813A" : "2px solid transparent",
+                padding: 0, cursor: "pointer", overflow: "hidden", background: "transparent",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoUrl}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              />
+            </button>
+          ))}
+          {/* Upload custom cover photo */}
+          <label style={{
+            width: 72, height: 72, borderRadius: 8, flexShrink: 0,
+            border: `2px dashed ${isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
+            cursor: uploadingCover ? "wait" : "pointer",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: 3, color: textMuted, fontSize: ".55rem", fontFamily: "sans-serif",
+            textAlign: "center", lineHeight: 1.2,
+            opacity: uploadingCover ? 0.5 : 1,
+            transition: "opacity .15s",
+          }}>
+            <input
+              type="file"
+              accept="image/*"
+              disabled={uploadingCover}
+              onChange={handleCoverUpload}
+              style={{ display: "none" }}
+            />
+            {uploadingCover
+              ? <span style={{ fontSize: ".8rem" }}>⏳</span>
+              : <>
+                  <span style={{ fontSize: ".9rem" }}>+</span>
+                  <span>{locale === "fr" ? "Importer" : "Upload"}</span>
+                </>
+            }
+          </label>
+          {/* Preview of custom uploaded photo (if not from journal) */}
+          {coverPhotoUrl && !availablePhotos.includes(coverPhotoUrl) && (
+            <div style={{ position: "relative", width: 72, height: 72 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={coverPhotoUrl}
+                alt=""
+                style={{ width: 72, height: 72, borderRadius: 8, objectFit: "cover", display: "block", border: "2px solid #C8813A" }}
+              />
+              <button
+                onClick={() => setCoverPhotoUrl(null)}
+                style={{
+                  position: "absolute", top: -6, right: -6,
+                  width: 18, height: 18, borderRadius: "50%",
+                  background: "#C8813A", border: "none",
+                  color: "#fff", fontSize: ".6rem", fontWeight: 700,
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  lineHeight: 1,
+                }}
+              >✕</button>
+            </div>
+          )}
+        </div>
+      </div>
 
-      <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+      {/* Content summary pill */}
+      <div style={{
+        background: cardBg, border: cardBorder, borderRadius: 14,
+        padding: ".875rem 1.25rem", marginBottom: "1.5rem",
+        display: "flex", justifyContent: "center", alignItems: "center",
+        gap: ".75rem", flexWrap: "wrap",
+      }}>
+        {[
+          (() => { const n = selectedStoryIds.length || visibleStories.length; return n === 1 ? (locale === "fr" ? "1 chapitre" : "1 chapter") : t.order.summary_chapters.replace("{n}", String(n)); })(),
+          t.order.summary_photos.replace("{n}", String(photoCount)),
+          t.order.summary_months.replace("{n}", String(monthsCount)),
+          t.order.summary_pages.replace("{n}", String(estimatedPages)),
+        ].map((item, i, arr) => (
+          <span key={i} style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
+            {i === 1 && photoCount === 0 ? (
+              <Link
+                href={`/dashboard/pets/${id}?tab=journal`}
+                title={locale === "fr" ? "Ajoutez des photos dans vos entrées du journal pour les inclure dans votre livre" : "Add photos to your journal entries to include them in your book"}
+                style={{ fontSize: ".875rem", fontWeight: 400, color: "#C8813A", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "3px" }}
+              >
+                {item}
+              </Link>
+            ) : (
+              <span style={{
+                fontSize: ".875rem",
+                fontWeight: i === 3 ? 600 : i === 1 ? 400 : 500,
+                color: i === 3 ? accentColor : i === 1 ? accentColor : textPrimary,
+              }}>
+                {item}
+              </span>
+            )}
+            {i < arr.length - 1 && <span style={{ color: isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)", fontSize: ".75rem" }}>·</span>}
+          </span>
+        ))}
+      </div>
+      {/* Note sur la dédicace */}
+      <p style={{ fontSize: ".7rem", color: textMuted, textAlign: "center", margin: "-.75rem 0 1.5rem", fontFamily: "sans-serif", opacity: .7 }}>
+        {t.order.summary_pages_note}
+      </p>
 
-        {/* Stepper — hidden on success */}
-        {step !== "success" && (
-          <div style={{ display: "flex", alignItems: "flex-start", marginBottom: "2.5rem" }}>
-            {stepLabels.map((label, i) => {
-              const steps: Step[] = ["preview", "address", "confirm"];
-              const clickable = i < currentIdx;
+      {/* Chapter selection (Point 4 & 9) */}
+      {visibleStories.length > 0 && (
+        <div style={{ marginBottom: "1.25rem" }}>
+          <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+            {chaptersLabel}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+            {visibleStories.map((story, i) => {
+              const isSelected = selectedStoryIds.includes(story.id);
               return (
-              <div key={i}
-                onClick={() => clickable && setStep(steps[i])}
-                style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", cursor: clickable ? "pointer" : "default" }}>
-                {/* Connector line left */}
-                {i > 0 && (
+                <div
+                  key={story.id}
+                  onClick={() => {
+                    setSelectedStoryIds(prev =>
+                      isSelected
+                        ? prev.filter(sid => sid !== story.id)
+                        : [...prev, story.id]
+                    );
+                  }}
+                  style={{
+                    background: cardBg,
+                    border: isSelected
+                      ? `1.5px solid ${accentColor}`
+                      : cardBorder,
+                    borderRadius: 16, padding: "1.25rem 1.5rem",
+                    cursor: "pointer",
+                    display: "flex", alignItems: "flex-start", gap: "1rem",
+                    transition: "border-color .15s",
+                  }}
+                >
+                  {/* Checkbox indicator */}
                   <div style={{
-                    position: "absolute", top: 15, right: "50%", width: "100%", height: 2,
-                    background: i <= currentIdx ? accentColor : isMemorial ? "rgba(247,242,234,.1)" : "rgba(61,43,31,.12)",
-                    zIndex: 0,
-                  }} />
-                )}
-                {/* Circle */}
-                <div style={{
-                  width: 30, height: 30, borderRadius: "50%", zIndex: 1, position: "relative",
-                  background: i < currentIdx ? accentColor : i === currentIdx ? accentColor : isMemorial ? "rgba(247,242,234,.08)" : "rgba(61,43,31,.08)",
-                  border: i === currentIdx ? `2px solid ${accentColor}` : "2px solid transparent",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: i <= currentIdx ? "#FDFAF5" : textMuted,
-                  fontSize: i < currentIdx ? ".85rem" : ".8rem",
-                  fontWeight: 600, transition: "all .3s",
-                  boxShadow: clickable ? `0 0 0 3px ${accentColor}22` : "none",
-                }}>
-                  {i < currentIdx ? "✓" : i + 1}
+                    width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 2,
+                    background: isSelected ? accentColor : "transparent",
+                    border: `2px solid ${isSelected ? accentColor : isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#FDFAF5", fontSize: ".7rem", fontWeight: 700,
+                  }}>
+                    {isSelected ? "✓" : ""}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: ".6rem", marginBottom: ".4rem", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".1em" }}>
+                        {t.order.preview_chapter} {i + 1}
+                      </span>
+                      {(() => {
+                        const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
+                        const fmt = (d: string) => new Date(d).toLocaleDateString(dateLocale, { month: "short", year: "numeric" });
+                        // Fallback sur created_at si period_start est absent
+                        const start = fmt(story.period_start ?? story.created_at);
+                        const end = story.period_end ? fmt(story.period_end) : null;
+                        const label = end && end !== start ? `${start} – ${end}` : start;
+                        return (
+                          <span style={{ fontSize: ".68rem", color: textMuted, fontFamily: "sans-serif" }}>
+                            {label}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                    <div style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem", lineHeight: 1.3 }}>
+                      {story.title || `${petName}'s Story`}
+                    </div>
+                    <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: ".84rem", color: textMuted, lineHeight: 1.75, marginBottom: ".875rem" }}>
+                      {story.content.slice(0, 160).trim()}
+                      {story.content.length > 160 ? "…" : ""}
+                    </div>
+                    {/* Layout selector — stop click propagation so it doesn't toggle selection */}
+                    <div
+                      onClick={e => e.stopPropagation()}
+                      style={{ borderTop: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.06)"}`, paddingTop: ".75rem" }}
+                    >
+                      <div style={{ fontSize: ".65rem", color: textMuted, fontFamily: "sans-serif", marginBottom: ".4rem", textTransform: "uppercase", letterSpacing: ".08em" }}>
+                        {t.order.layout_label}
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".35rem" }}>
+                        {PAGE_LAYOUTS.map(layout => {
+                          const isActive = (storyLayouts[story.id] ?? "classic") === layout.id;
+                          return (
+                            <button
+                              key={layout.id}
+                              onClick={() => setStoryLayouts(prev => ({ ...prev, [story.id]: layout.id }))}
+                              style={{
+                                padding: ".4rem .5rem",
+                                borderRadius: 8,
+                                border: `1.5px solid ${isActive ? accentColor : isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`,
+                                background: isActive ? `${accentColor}18` : "transparent",
+                                color: isActive ? accentColor : textMuted,
+                                cursor: "pointer",
+                                fontSize: ".68rem",
+                                fontFamily: "sans-serif",
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: ".3rem",
+                                transition: "all .12s",
+                                whiteSpace: "nowrap",
+                                minHeight: "unset",
+                              }}
+                            >
+                              <span style={{ fontSize: ".9rem", lineHeight: 1, flexShrink: 0 }}>{layout.icon}</span>
+                              <span>{t.order[layout.labelKey]}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                {/* Label */}
-                <span style={{
-                  fontSize: ".7rem", marginTop: ".35rem",
-                  color: i === currentIdx ? accentColor : i < currentIdx ? accentColor : textMuted,
-                  fontWeight: i === currentIdx ? 600 : 400,
-                  textAlign: "center", lineHeight: 1.2,
-                }}>
-                  {label}
-                </span>
-              </div>
               );
             })}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* No-credits upsell — Print plan: extra copy */}
-        {profile !== null && profile.book_credits === 0 && profile.plan === "print" && step === "preview" && (
-          <div style={{
-            background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
-            border: isMemorial ? "1px solid rgba(200,129,58,.25)" : "1px solid #F7C27A",
-            borderRadius: 16, padding: "1.5rem", marginBottom: "1.75rem",
-            textAlign: "center",
-          }}>
-            <div style={{ fontSize: "1.5rem", marginBottom: ".75rem" }}>📚</div>
-            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
-              {t.order.print_extra_book_title}
-            </h3>
-            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto 1rem" }}>
-              {renewalDate
-                ? locale === "fr"
-                  ? `Votre livre gratuit sera disponible à partir du ${renewalDate}, date de renouvellement de votre abonnement.`
-                  : `Your free book will be available again from ${renewalDate}, when your subscription renews.`
-                : locale === "fr"
-                  ? "Votre livre gratuit sera disponible à la date de renouvellement de votre abonnement."
-                  : "Your free book will be available again when your subscription renews."
-              }
+      {/* Photo preview (first available photo) */}
+      {photoEntries.length > 0 && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+            {t.order.preview_photos_page}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: photoEntries.length > 1 ? "1fr 1fr" : "1fr", gap: ".625rem" }}>
+            {photoEntries.slice(0, 2).map(e => (
+              <div key={e.id} style={{ borderRadius: 14, overflow: "hidden", aspectRatio: "4/3", background: isMemorial ? "rgba(247,242,234,.04)" : "rgba(61,43,31,.05)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={e.photo_urls[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* CTA buttons */}
+      {visibleStories.length > 0 && selectedStoryIds.length === 0 && (
+        <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 12, padding: ".75rem 1rem", marginBottom: ".25rem", fontSize: ".8rem", color: "#C8813A", fontFamily: "sans-serif" }}>
+          {locale === "fr" ? "Sélectionnez au moins un chapitre pour continuer." : "Select at least one chapter to continue."}
+        </div>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+        {/* Hide main CTA when user has no credits, except free plan (show disabled so user understands the gate) */}
+        {((profile?.book_credits ?? 0) > 0 || profile?.plan === "free") && <button
+          onClick={() => {
+            setStep("address");
+          }}
+          disabled={(visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading || profile?.plan === "free"}
+          style={{
+            width: "100%", padding: ".875rem 1rem", borderRadius: 100, border: "none",
+            background: accentColor, color: "#FDFAF5", fontFamily: "inherit",
+            fontSize: ".9rem", fontWeight: 600, cursor: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading || profile?.plan === "free" ? "not-allowed" : "pointer",
+            opacity: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading || profile?.plan === "free" ? .5 : 1,
+            display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", minHeight: 48,
+          }}
+        >
+          {checkoutLoading
+            ? (locale === "fr" ? "Chargement…" : "Loading…")
+            : profile?.plan === "print" && profile.book_credits === 0
+              ? t.order.print_extra_book_cta
+              : t.order.preview_cta}
+        </button>}
+        {checkoutError && (
+          <p style={{ fontSize: ".8rem", color: "#A32D2D", textAlign: "center", margin: "-.25rem 0 0" }}>
+            {locale === "fr"
+              ? "Une erreur est survenue. Vérifie ta connexion et réessaie."
+              : "Something went wrong. Check your connection and try again."}
+          </p>
+        )}
+        <button
+          onClick={handleFullPreview}
+          disabled={previewLoading}
+          style={{
+            width: "100%", padding: ".75rem 1rem", borderRadius: 100,
+            border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
+            background: "transparent", fontFamily: "inherit", fontSize: ".875rem",
+            color: textPrimary, cursor: previewLoading ? "wait" : "pointer",
+            opacity: previewLoading ? .6 : 1,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem", minHeight: 44,
+          }}
+        >
+          <span>{previewLoading ? "…" : previewLabel}</span>
+        </button>
+        <button
+          onClick={() => handleSave()}
+          disabled={saving}
+          style={{
+            width: "100%", padding: ".75rem 1rem", borderRadius: 100,
+            border: `1.5px solid ${saveSuccess ? "#6A9E78" : isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
+            background: saveSuccess ? "rgba(106,158,120,.1)" : "transparent",
+            fontFamily: "inherit", fontSize: ".875rem",
+            color: saveSuccess ? "#6A9E78" : textMuted,
+            cursor: saving ? "wait" : "pointer",
+            opacity: saving ? .6 : 1,
+            transition: "all .2s",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: ".4rem", minHeight: 44,
+          }}
+        >
+          {saving ? "…" : saveSuccess
+            ? (locale === "fr" ? "✓ Sauvegardé" : "✓ Saved")
+            : (locale === "fr" ? "Sauvegarder" : "Save")}
+        </button>
+        <Link
+          href={`/dashboard/pets/${id}`}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            textAlign: "center", padding: ".75rem 1rem", borderRadius: 100, minHeight: 44,
+            border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`,
+            color: textMuted, textDecoration: "none", fontSize: ".875rem",
+          }}
+        >
+          {t.order.preview_back}
+        </Link>
+      </div>
+    </div>
+  );
+
+  const renderSuccessStep = () => (
+    <div style={{ background: cardBg, borderRadius: 24, padding: "2.5rem", border: cardBorder, textAlign: "center" }}>
+      <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>{isMemorial ? "🕊️" : "📬"}</div>
+      <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", color: textPrimary, marginBottom: ".75rem" }}>{t.order.success_title}</h2>
+      <p style={{ fontSize: ".9rem", color: textMuted, fontWeight: 300, lineHeight: 1.6, marginBottom: ".5rem" }}>
+        {t.order.success_desc}
+      </p>
+      <p style={{ fontSize: ".8rem", color: textMuted, fontWeight: 300, marginBottom: "2rem" }}>
+        {t.order.order_id} <code style={{ background: isMemorial ? "rgba(247,242,234,.08)" : "rgba(61,43,31,.06)", padding: "2px 6px", borderRadius: 4 }}>{orderId}</code>
+      </p>
+      <Link href="/dashboard" style={{ background: accentColor, color: "#FDFAF5", padding: ".75rem 2rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
+        {t.order.back_dashboard}
+      </Link>
+    </div>
+  );
+
+  const renderConfirmStep = () => (
+    <>
+      {awaitingCredit && (
+        <div style={{ background: cardBg, borderRadius: 24, padding: "2.5rem", border: cardBorder, textAlign: "center" }}>
+          <div style={{ display: "inline-block", width: 32, height: 32, border: "3px solid rgba(200,129,58,.3)", borderTopColor: "#C8813A", borderRadius: "50%", animation: "spin .8s linear infinite", marginBottom: "1.25rem" }} />
+          <p style={{ fontSize: ".95rem", color: textPrimary, fontWeight: 500, margin: "0 0 .4rem" }}>
+            {locale === "fr" ? "Paiement reçu" : "Payment received"}
+          </p>
+          <p style={{ fontSize: ".85rem", color: textMuted, fontWeight: 300, margin: 0 }}>
+            {locale === "fr" ? "Envoi de la commande en cours…" : "Placing your order…"}
+          </p>
+        </div>
+      )}
+      {!awaitingCredit && (
+        <div style={{ background: cardBg, borderRadius: 24, padding: "2rem", border: cardBorder }}>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.5rem" }}>{t.order.confirm_title}</h2>
+
+          <div style={{ background: isMemorial ? "rgba(247,242,234,.04)" : "#F7F2EA", borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
+            <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".75rem", fontFamily: "sans-serif" }}>{t.order.shipping_to}</div>
+            <p style={{ fontSize: ".9rem", color: textPrimary, lineHeight: 1.7, margin: 0 }}>
+              {address.firstName} {address.lastName}<br />
+              {address.addressLine1}{address.addressLine2 ? `, ${address.addressLine2}` : ""}<br />
+              {address.city}, {address.postCode}<br />
+              {address.country}
             </p>
-            <button
-              onClick={() => setStep("address")}
-              style={{
-                background: accentColor, color: "#FDFAF5", border: "none",
-                padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
-                fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-              }}
-            >
-              {t.order.print_extra_book_cta}
+          </div>
+
+          <div style={{ background: isMemorial ? "rgba(247,242,234,.04)" : "#F7F2EA", borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
+            <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".75rem", fontFamily: "sans-serif" }}>{t.order.order_summary}</div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".9rem", color: textPrimary, marginBottom: ".5rem" }}>
+              <span>{isMemorial && petName ? t.memorial.order_tribute.replace("{name}", petName) : t.order.product_name}</span>
+              <span style={{ fontWeight: 500 }}>{price}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".85rem", color: textMuted }}>
+              <span>{t.order.shipping}</span>
+              <span>{shippingEstimate ?? t.order.shipping_calculated}</span>
+            </div>
+          </div>
+
+          {selectedStoryIds.length < 3 && (
+            <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 12, padding: ".875rem 1rem", marginBottom: "1rem", fontSize: ".8rem", color: "#C8813A", lineHeight: 1.5, fontFamily: "sans-serif" }}>
+              {t.order.few_stories_warning}
+            </div>
+          )}
+
+
+          <div style={{ display: "flex", gap: ".75rem" }}>
+            <button onClick={() => setStep("address")} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`, background: "transparent", fontFamily: "inherit", fontSize: ".875rem", color: textMuted, cursor: "pointer" }}>
+              {t.order.edit_address}
             </button>
-          </div>
-        )}
-
-        {/* Gate — Free plan: book is Print-only */}
-        {profile !== null && profile.plan === "free" && step === "preview" && (
-          <div style={{
-            background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
-            border: isMemorial ? "1px solid rgba(200,129,58,.25)" : "1px solid #F7C27A",
-            borderRadius: 16, padding: "1.5rem", marginBottom: "1.75rem",
-            textAlign: "center",
-          }}>
-            <div style={{ fontSize: "1.5rem", marginBottom: ".75rem" }}>📚</div>
-            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
-              {locale === "fr" ? "Fonctionnalité Premium Print" : "Premium Print Feature"}
-            </h3>
-            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto 1rem" }}>
-              {locale === "fr"
-                ? "La commande d'un livre imprimé est réservée aux abonnés Premium Print. Passez à l'abonnement Print pour recevoir un livre chaque année."
-                : "Ordering a printed book is available to Premium Print subscribers. Upgrade to Print to receive a book every year."}
-            </p>
-            <a
-              href="/dashboard/settings"
-              style={{
-                background: accentColor, color: "#FDFAF5", border: "none",
-                padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
-                fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-                textDecoration: "none", display: "inline-block",
-              }}
-            >
-              {locale === "fr" ? "Passer à Premium Print" : "Upgrade to Premium Print"}
-            </a>
-          </div>
-        )}
-
-        {/* No-credits upsell — non-Print plans (digital, book_only): existing message */}
-        {profile !== null && profile.book_credits === 0 && profile.plan !== "free" && profile.plan !== "print" && step === "preview" && (
-          <div style={{
-            background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
-            border: isMemorial ? "1px solid rgba(200,129,58,.25)" : "1px solid #F7C27A",
-            borderRadius: 16, padding: "1.5rem", marginBottom: "1.75rem",
-            textAlign: "center",
-          }}>
-            <div style={{ fontSize: "1.5rem", marginBottom: ".75rem" }}>📚</div>
-            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem" }}>
-              {t.order.no_credits_title}
-            </h3>
-            <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto 1rem" }}>
-              {t.order.no_credits_desc}
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: ".625rem", alignItems: "center" }}>
-              <button
-                onClick={async () => {
-                  const res = await fetch("/api/stripe/book-checkout", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
-                  });
-                  const data = await res.json();
-                  if (data.url) window.location.href = data.url;
-                }}
-                style={{
-                  background: accentColor, color: "#FDFAF5", border: "none",
-                  padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
-                  fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-                }}
-              >
-                {t.order.no_credits_cta} — {extraBookPriceLabel} {locale === "fr" ? "+ livraison" : "+ shipping"}
-              </button>
-              <a
-                href="/dashboard/settings#plan"
-                style={{
-                  fontSize: ".8rem", color: accentColor, textDecoration: "underline",
-                  textDecorationStyle: "dotted", textUnderlineOffset: "3px", cursor: "pointer",
-                }}
-              >
-                {(t.order as Record<string, string>).no_credits_upgrade_cta ?? (locale === "fr" ? "Passer au plan Print" : "Upgrade to Print")}
-              </a>
-            </div>
-          </div>
-        )}
-
-        {/* Memorial hero — preview step only */}
-        {isMemorial && petName && step === "preview" && (
-          <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>🕊️</div>
-            <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.75rem", fontWeight: 600, color: "#F7F2EA", marginBottom: ".5rem" }}>
-              {t.memorial.order_tribute.replace("{name}", petName)}
-            </h1>
-            <p style={{ fontSize: ".9rem", color: "rgba(247,242,234,.5)", fontWeight: 300, lineHeight: 1.7, maxWidth: 380, margin: "0 auto" }}>
-              {t.memorial.order_subtitle}
-            </p>
-          </div>
-        )}
-
-        {/* ─── PREVIEW STEP ─── */}
-        {step === "preview" && (
-          <div>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.25rem", textAlign: "center" }}>
-              {t.order.preview_title}
-            </h2>
-
-            {/* Year filter — shown as soon as there is data (Point 9) */}
-            {availableYears.length >= 1 && (
-              <div style={{ marginBottom: "1.25rem" }}>
-                <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>
-                  {bookYearLabel}
-                </label>
-                <select
-                  value={yearFilter ?? ""}
-                  onChange={e => handleYearChange(e.target.value === "" ? null : Number(e.target.value))}
-                  style={inputStyle}
-                >
-                  {availableYears.length > 1 && (
-                    <option value="">{allYearsLabel}</option>
-                  )}
-                  {availableYears.map(y => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Customization — theme + title */}
-            {!isMemorial && (
-              <div style={{ marginBottom: "1.25rem", background: cardBg, border: cardBorder, borderRadius: 14, padding: "1rem 1.25rem" }}>
-                <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
-                  {locale === "fr" ? "Personnalisation" : "Customization"}
-                </div>
-                {/* Theme swatches */}
-                <div style={{ marginBottom: ".875rem" }}>
-                  <div style={{ fontSize: ".7rem", color: textMuted, marginBottom: ".5rem", fontFamily: "sans-serif" }}>
-                    {locale === "fr" ? "Thème de couleur" : "Color theme"}
-                  </div>
-                  <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
-                    {COVER_THEMES.map(theme => (
-                      <button
-                        key={theme.id}
-                        onClick={() => setCoverTheme(theme.id)}
-                        title={locale === "fr" ? theme.labelFr : theme.labelEn}
-                        style={{
-                          width: 36, height: 36, borderRadius: 8,
-                          background: theme.bg,
-                          border: coverTheme === theme.id ? `2.5px solid ${accentColor}` : "2.5px solid transparent",
-                          cursor: "pointer", position: "relative",
-                          boxShadow: coverTheme === theme.id ? `0 0 0 1px ${accentColor}` : "none",
-                          transition: "border .15s, box-shadow .15s",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {/* Accent color strip at bottom */}
-                        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 8, background: theme.accent }} />
-                      </button>
-                    ))}
-                  </div>
-                  <div style={{ fontSize: ".65rem", color: textMuted, marginTop: ".35rem", fontFamily: "sans-serif" }}>
-                    {locale === "fr"
-                      ? (COVER_THEMES.find(t => t.id === coverTheme)?.labelFr ?? "")
-                      : (COVER_THEMES.find(t => t.id === coverTheme)?.labelEn ?? "")}
-                  </div>
-                </div>
-                {/* Custom title */}
-                <div>
-                  <div style={{ fontSize: ".7rem", color: textMuted, marginBottom: ".5rem", fontFamily: "sans-serif" }}>
-                    {locale === "fr" ? "Titre du livre (optionnel)" : "Book title (optional)"}
-                  </div>
-                  <input
-                    type="text"
-                    value={customTitle}
-                    onChange={e => setCustomTitle(e.target.value)}
-                    maxLength={60}
-                    placeholder={defaultCoverTitle}
-                    style={{ ...inputStyle, fontSize: ".85rem" }}
-                  />
-                  <div style={{ fontSize: ".65rem", color: customTitle.length >= 54 ? "#A32D2D" : textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
-                    {customTitle.length}/60
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Book cover */}
-            <div style={{
-              background: coverPhotoUrl ? "transparent" : bookBg,
-              backgroundImage: coverPhotoUrl
-                ? `linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.65)), url('${coverPhotoUrl}')`
-                : undefined,
-              backgroundSize: coverPhotoUrl ? "cover" : undefined,
-              backgroundPosition: coverPhotoUrl ? "center" : undefined,
-              borderRadius: 20, padding: "3rem 2rem",
-              textAlign: "center", marginBottom: "1.25rem",
-              boxShadow: "0 12px 40px rgba(0,0,0,.25)",
-              position: "relative", overflow: "hidden",
-              transition: "background .3s",
-            }}>
-              {/* Decorative spine line */}
-              <div style={{ position: "absolute", left: 18, top: 0, bottom: 0, width: 4, background: `${bookAccentColor}60`, borderRadius: 2 }} />
-              <div style={{ fontSize: "2.75rem", marginBottom: "1.25rem" }}>{isMemorial ? "🕊️" : "🐾"}</div>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.9rem", fontWeight: 600, color: bookTitleColor, lineHeight: 1.25, marginBottom: ".75rem", transition: "color .3s" }}>
-                {displayCoverTitle}
-              </div>
-              {coverPeriod && (
-                <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "1rem", color: "rgba(247,242,234,.45)", marginBottom: "1.5rem" }}>
-                  {petName} · {coverPeriod}
-                </div>
-              )}
-              <div style={{ width: 48, height: 2, background: bookAccentColor, margin: "0 auto 1.5rem", borderRadius: 1, transition: "background .3s" }} />
-              <div style={{ fontSize: ".7rem", color: "rgba(247,242,234,.3)", letterSpacing: ".12em", textTransform: "uppercase" }}>
-                {t.order.book_cover_label}
-              </div>
-            </div>
-
-            {/* Cover photo picker (Point 10) — always visible */}
-            <div style={{ marginBottom: "1.25rem" }}>
-              <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
-                {coverPhotoLabel}
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", alignItems: "center" }}>
-                {/* Default button */}
-                <button
-                  onClick={() => setCoverPhotoUrl(null)}
-                  style={{
-                    width: 72, height: 72, borderRadius: 8,
-                    background: "#3D2B1F",
-                    border: coverPhotoUrl === null ? "2px solid #C8813A" : "2px solid transparent",
-                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "rgba(247,242,234,.6)", fontSize: ".6rem", fontFamily: "sans-serif",
-                    textAlign: "center", padding: 4, lineHeight: 1.2,
-                  }}
-                >
-                  {coverDefaultLabel}
-                </button>
-                {/* Journal photo thumbnails (filtered by year) */}
-                {availablePhotos.map((photoUrl, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCoverPhotoUrl(photoUrl)}
-                    style={{
-                      width: 72, height: 72, borderRadius: 8,
-                      border: coverPhotoUrl === photoUrl ? "2px solid #C8813A" : "2px solid transparent",
-                      padding: 0, cursor: "pointer", overflow: "hidden", background: "transparent",
-                    }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photoUrl}
-                      alt=""
-                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                    />
-                  </button>
-                ))}
-                {/* Upload custom cover photo */}
-                <label style={{
-                  width: 72, height: 72, borderRadius: 8, flexShrink: 0,
-                  border: `2px dashed ${isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
-                  cursor: uploadingCover ? "wait" : "pointer",
-                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  gap: 3, color: textMuted, fontSize: ".55rem", fontFamily: "sans-serif",
-                  textAlign: "center", lineHeight: 1.2,
-                  opacity: uploadingCover ? 0.5 : 1,
-                  transition: "opacity .15s",
-                }}>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    disabled={uploadingCover}
-                    onChange={handleCoverUpload}
-                    style={{ display: "none" }}
-                  />
-                  {uploadingCover
-                    ? <span style={{ fontSize: ".8rem" }}>⏳</span>
-                    : <>
-                        <span style={{ fontSize: ".9rem" }}>+</span>
-                        <span>{locale === "fr" ? "Importer" : "Upload"}</span>
-                      </>
-                  }
-                </label>
-                {/* Preview of custom uploaded photo (if not from journal) */}
-                {coverPhotoUrl && !availablePhotos.includes(coverPhotoUrl) && (
-                  <div style={{ position: "relative", width: 72, height: 72 }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={coverPhotoUrl}
-                      alt=""
-                      style={{ width: 72, height: 72, borderRadius: 8, objectFit: "cover", display: "block", border: "2px solid #C8813A" }}
-                    />
-                    <button
-                      onClick={() => setCoverPhotoUrl(null)}
-                      style={{
-                        position: "absolute", top: -6, right: -6,
-                        width: 18, height: 18, borderRadius: "50%",
-                        background: "#C8813A", border: "none",
-                        color: "#fff", fontSize: ".6rem", fontWeight: 700,
-                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                        lineHeight: 1,
-                      }}
-                    >✕</button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Content summary pill */}
-            <div style={{
-              background: cardBg, border: cardBorder, borderRadius: 14,
-              padding: ".875rem 1.25rem", marginBottom: "1.5rem",
-              display: "flex", justifyContent: "center", alignItems: "center",
-              gap: ".75rem", flexWrap: "wrap",
-            }}>
-              {[
-                (() => { const n = selectedStoryIds.length || visibleStories.length; return n === 1 ? (locale === "fr" ? "1 chapitre" : "1 chapter") : t.order.summary_chapters.replace("{n}", String(n)); })(),
-                t.order.summary_photos.replace("{n}", String(photoCount)),
-                t.order.summary_months.replace("{n}", String(monthsCount)),
-                t.order.summary_pages.replace("{n}", String(estimatedPages)),
-              ].map((item, i, arr) => (
-                <span key={i} style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
-                  {i === 1 && photoCount === 0 ? (
-                    <Link
-                      href={`/dashboard/pets/${id}?tab=journal`}
-                      title={locale === "fr" ? "Ajoutez des photos dans vos entrées du journal pour les inclure dans votre livre" : "Add photos to your journal entries to include them in your book"}
-                      style={{ fontSize: ".875rem", fontWeight: 400, color: "#C8813A", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "3px" }}
-                    >
-                      {item}
-                    </Link>
-                  ) : (
-                    <span style={{
-                      fontSize: ".875rem",
-                      fontWeight: i === 3 ? 600 : i === 1 ? 400 : 500,
-                      color: i === 3 ? accentColor : i === 1 ? accentColor : textPrimary,
-                    }}>
-                      {item}
-                    </span>
-                  )}
-                  {i < arr.length - 1 && <span style={{ color: isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)", fontSize: ".75rem" }}>·</span>}
-                </span>
-              ))}
-            </div>
-            {/* Note sur la dédicace */}
-            <p style={{ fontSize: ".7rem", color: textMuted, textAlign: "center", margin: "-.75rem 0 1.5rem", fontFamily: "sans-serif", opacity: .7 }}>
-              {t.order.summary_pages_note}
-            </p>
-
-            {/* Chapter selection (Point 4 & 9) */}
-            {visibleStories.length > 0 && (
-              <div style={{ marginBottom: "1.25rem" }}>
-                <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
-                  {chaptersLabel}
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-                  {visibleStories.map((story, i) => {
-                    const isSelected = selectedStoryIds.includes(story.id);
-                    return (
-                      <div
-                        key={story.id}
-                        onClick={() => {
-                          setSelectedStoryIds(prev =>
-                            isSelected
-                              ? prev.filter(sid => sid !== story.id)
-                              : [...prev, story.id]
-                          );
-                        }}
-                        style={{
-                          background: cardBg,
-                          border: isSelected
-                            ? `1.5px solid ${accentColor}`
-                            : cardBorder,
-                          borderRadius: 16, padding: "1.25rem 1.5rem",
-                          cursor: "pointer",
-                          display: "flex", alignItems: "flex-start", gap: "1rem",
-                          transition: "border-color .15s",
-                        }}
-                      >
-                        {/* Checkbox indicator */}
-                        <div style={{
-                          width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 2,
-                          background: isSelected ? accentColor : "transparent",
-                          border: `2px solid ${isSelected ? accentColor : isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          color: "#FDFAF5", fontSize: ".7rem", fontWeight: 700,
-                        }}>
-                          {isSelected ? "✓" : ""}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", alignItems: "baseline", gap: ".6rem", marginBottom: ".4rem", flexWrap: "wrap" }}>
-                            <span style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".1em" }}>
-                              {t.order.preview_chapter} {i + 1}
-                            </span>
-                            {(() => {
-                              const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
-                              const fmt = (d: string) => new Date(d).toLocaleDateString(dateLocale, { month: "short", year: "numeric" });
-                              // Fallback sur created_at si period_start est absent
-                              const start = fmt(story.period_start ?? story.created_at);
-                              const end = story.period_end ? fmt(story.period_end) : null;
-                              const label = end && end !== start ? `${start} – ${end}` : start;
-                              return (
-                                <span style={{ fontSize: ".68rem", color: textMuted, fontFamily: "sans-serif" }}>
-                                  {label}
-                                </span>
-                              );
-                            })()}
-                          </div>
-                          <div style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: textPrimary, marginBottom: ".5rem", lineHeight: 1.3 }}>
-                            {story.title || `${petName}'s Story`}
-                          </div>
-                          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: ".84rem", color: textMuted, lineHeight: 1.75, marginBottom: ".875rem" }}>
-                            {story.content.slice(0, 160).trim()}
-                            {story.content.length > 160 ? "…" : ""}
-                          </div>
-                          {/* Layout selector — stop click propagation so it doesn't toggle selection */}
-                          <div
-                            onClick={e => e.stopPropagation()}
-                            style={{ borderTop: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.06)"}`, paddingTop: ".75rem" }}
-                          >
-                            <div style={{ fontSize: ".65rem", color: textMuted, fontFamily: "sans-serif", marginBottom: ".4rem", textTransform: "uppercase", letterSpacing: ".08em" }}>
-                              {t.order.layout_label}
-                            </div>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".35rem" }}>
-                              {PAGE_LAYOUTS.map(layout => {
-                                const isActive = (storyLayouts[story.id] ?? "classic") === layout.id;
-                                return (
-                                  <button
-                                    key={layout.id}
-                                    onClick={() => setStoryLayouts(prev => ({ ...prev, [story.id]: layout.id }))}
-                                    style={{
-                                      padding: ".4rem .5rem",
-                                      borderRadius: 8,
-                                      border: `1.5px solid ${isActive ? accentColor : isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`,
-                                      background: isActive ? `${accentColor}18` : "transparent",
-                                      color: isActive ? accentColor : textMuted,
-                                      cursor: "pointer",
-                                      fontSize: ".68rem",
-                                      fontFamily: "sans-serif",
-                                      display: "flex", alignItems: "center", justifyContent: "center", gap: ".3rem",
-                                      transition: "all .12s",
-                                      whiteSpace: "nowrap",
-                                      minHeight: "unset",
-                                    }}
-                                  >
-                                    <span style={{ fontSize: ".9rem", lineHeight: 1, flexShrink: 0 }}>{layout.icon}</span>
-                                    <span>{t.order[layout.labelKey]}</span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Photo preview (first available photo) */}
-            {photoEntries.length > 0 && (
-              <div style={{ marginBottom: "1.5rem" }}>
-                <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
-                  {t.order.preview_photos_page}
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: photoEntries.length > 1 ? "1fr 1fr" : "1fr", gap: ".625rem" }}>
-                  {photoEntries.slice(0, 2).map(e => (
-                    <div key={e.id} style={{ borderRadius: 14, overflow: "hidden", aspectRatio: "4/3", background: isMemorial ? "rgba(247,242,234,.04)" : "rgba(61,43,31,.05)" }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={e.photo_urls[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* CTA buttons */}
-            {visibleStories.length > 0 && selectedStoryIds.length === 0 && (
-              <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 12, padding: ".75rem 1rem", marginBottom: ".25rem", fontSize: ".8rem", color: "#C8813A", fontFamily: "sans-serif" }}>
-                {locale === "fr" ? "Sélectionnez au moins un chapitre pour continuer." : "Select at least one chapter to continue."}
-              </div>
-            )}
-            <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-              {/* Hide main CTA when user has no credits, except free plan (show disabled so user understands the gate) */}
-              {((profile?.book_credits ?? 0) > 0 || profile?.plan === "free") && <button
-                onClick={() => {
-                  setStep("address");
-                }}
-                disabled={(visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading || profile?.plan === "free"}
-                style={{
-                  width: "100%", padding: ".875rem 1rem", borderRadius: 100, border: "none",
-                  background: accentColor, color: "#FDFAF5", fontFamily: "inherit",
-                  fontSize: ".9rem", fontWeight: 600, cursor: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading || profile?.plan === "free" ? "not-allowed" : "pointer",
-                  opacity: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading || profile?.plan === "free" ? .5 : 1,
-                  display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", minHeight: 48,
-                }}
-              >
-                {checkoutLoading
-                  ? (locale === "fr" ? "Chargement…" : "Loading…")
-                  : profile?.plan === "print" && profile.book_credits === 0
-                    ? t.order.print_extra_book_cta
-                    : t.order.preview_cta}
-              </button>}
-              {checkoutError && (
-                <p style={{ fontSize: ".8rem", color: "#A32D2D", textAlign: "center", margin: "-.25rem 0 0" }}>
-                  {locale === "fr"
-                    ? "Une erreur est survenue. Vérifie ta connexion et réessaie."
-                    : "Something went wrong. Check your connection and try again."}
-                </p>
-              )}
-              <button
-                onClick={handleFullPreview}
-                disabled={previewLoading}
-                style={{
-                  width: "100%", padding: ".75rem 1rem", borderRadius: 100,
-                  border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
-                  background: "transparent", fontFamily: "inherit", fontSize: ".875rem",
-                  color: textPrimary, cursor: previewLoading ? "wait" : "pointer",
-                  opacity: previewLoading ? .6 : 1,
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem", minHeight: 44,
-                }}
-              >
-                <span>{previewLoading ? "…" : previewLabel}</span>
-              </button>
-              <button
-                onClick={() => handleSave()}
-                disabled={saving}
-                style={{
-                  width: "100%", padding: ".75rem 1rem", borderRadius: 100,
-                  border: `1.5px solid ${saveSuccess ? "#6A9E78" : isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
-                  background: saveSuccess ? "rgba(106,158,120,.1)" : "transparent",
-                  fontFamily: "inherit", fontSize: ".875rem",
-                  color: saveSuccess ? "#6A9E78" : textMuted,
-                  cursor: saving ? "wait" : "pointer",
-                  opacity: saving ? .6 : 1,
-                  transition: "all .2s",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: ".4rem", minHeight: 44,
-                }}
-              >
-                {saving ? "…" : saveSuccess
-                  ? (locale === "fr" ? "✓ Sauvegardé" : "✓ Saved")
-                  : (locale === "fr" ? "Sauvegarder" : "Save")}
-              </button>
-              <Link
-                href={`/dashboard/pets/${id}`}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  textAlign: "center", padding: ".75rem 1rem", borderRadius: 100, minHeight: 44,
-                  border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`,
-                  color: textMuted, textDecoration: "none", fontSize: ".875rem",
-                }}
-              >
-                {t.order.preview_back}
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* ─── SUCCESS STEP ─── */}
-        {step === "success" && (
-          <div style={{ background: cardBg, borderRadius: 24, padding: "2.5rem", border: cardBorder, textAlign: "center" }}>
-            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>{isMemorial ? "🕊️" : "📬"}</div>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", color: textPrimary, marginBottom: ".75rem" }}>{t.order.success_title}</h2>
-            <p style={{ fontSize: ".9rem", color: textMuted, fontWeight: 300, lineHeight: 1.6, marginBottom: ".5rem" }}>
-              {t.order.success_desc}
-            </p>
-            <p style={{ fontSize: ".8rem", color: textMuted, fontWeight: 300, marginBottom: "2rem" }}>
-              {t.order.order_id} <code style={{ background: isMemorial ? "rgba(247,242,234,.08)" : "rgba(61,43,31,.06)", padding: "2px 6px", borderRadius: 4 }}>{orderId}</code>
-            </p>
-            <Link href="/dashboard" style={{ background: accentColor, color: "#FDFAF5", padding: ".75rem 2rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
-              {t.order.back_dashboard}
-            </Link>
-          </div>
-        )}
-
-        {/* ─── CONFIRM STEP ─── */}
-        {step === "confirm" && awaitingCredit && (
-          <div style={{ background: cardBg, borderRadius: 24, padding: "2.5rem", border: cardBorder, textAlign: "center" }}>
-            <div style={{ display: "inline-block", width: 32, height: 32, border: "3px solid rgba(200,129,58,.3)", borderTopColor: "#C8813A", borderRadius: "50%", animation: "spin .8s linear infinite", marginBottom: "1.25rem" }} />
-            <p style={{ fontSize: ".95rem", color: textPrimary, fontWeight: 500, margin: "0 0 .4rem" }}>
-              {locale === "fr" ? "Paiement reçu" : "Payment received"}
-            </p>
-            <p style={{ fontSize: ".85rem", color: textMuted, fontWeight: 300, margin: 0 }}>
-              {locale === "fr" ? "Envoi de la commande en cours…" : "Placing your order…"}
-            </p>
-          </div>
-        )}
-        {step === "confirm" && !awaitingCredit && (
-          <div style={{ background: cardBg, borderRadius: 24, padding: "2rem", border: cardBorder }}>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.5rem" }}>{t.order.confirm_title}</h2>
-
-            <div style={{ background: isMemorial ? "rgba(247,242,234,.04)" : "#F7F2EA", borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
-              <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".75rem", fontFamily: "sans-serif" }}>{t.order.shipping_to}</div>
-              <p style={{ fontSize: ".9rem", color: textPrimary, lineHeight: 1.7, margin: 0 }}>
-                {address.firstName} {address.lastName}<br />
-                {address.addressLine1}{address.addressLine2 ? `, ${address.addressLine2}` : ""}<br />
-                {address.city}, {address.postCode}<br />
-                {address.country}
-              </p>
-            </div>
-
-            <div style={{ background: isMemorial ? "rgba(247,242,234,.04)" : "#F7F2EA", borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
-              <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".75rem", fontFamily: "sans-serif" }}>{t.order.order_summary}</div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".9rem", color: textPrimary, marginBottom: ".5rem" }}>
-                <span>{isMemorial && petName ? t.memorial.order_tribute.replace("{name}", petName) : t.order.product_name}</span>
-                <span style={{ fontWeight: 500 }}>{price}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".85rem", color: textMuted }}>
-                <span>{t.order.shipping}</span>
-                <span>{shippingEstimate ?? t.order.shipping_calculated}</span>
-              </div>
-            </div>
-
-            {selectedStoryIds.length < 3 && (
-              <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 12, padding: ".875rem 1rem", marginBottom: "1rem", fontSize: ".8rem", color: "#C8813A", lineHeight: 1.5, fontFamily: "sans-serif" }}>
-                {t.order.few_stories_warning}
-              </div>
-            )}
-
-
-            <div style={{ display: "flex", gap: ".75rem" }}>
-              <button onClick={() => setStep("address")} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`, background: "transparent", fontFamily: "inherit", fontSize: ".875rem", color: textMuted, cursor: "pointer" }}>
-                {t.order.edit_address}
-              </button>
-              <button
-                onClick={async () => {
-                  if (profile?.plan === "print" && profile.book_credits === 0) {
-                    setLoading(true);
-                    try {
-                      // Persist address so it survives the Stripe redirect
-                      try { sessionStorage.setItem(`ep_order_${id}_addr`, JSON.stringify(address)); } catch {}
-                      const res = await fetch("/api/stripe/book-checkout", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
-                      });
-                      const data = await res.json();
-                      if (data.url) window.location.href = data.url;
-                    } catch { /* silent */ } finally { setLoading(false); }
-                    return;
-                  }
-                  handleOrder();
-                }}
-                disabled={loading}
-                style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: loading ? "wait" : "pointer", opacity: loading ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}
-              >
-                {loading && <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .7s linear infinite" }} />}
-                {loading ? t.order.placing : t.order.place_order}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ─── ADDRESS STEP ─── */}
-        {step === "address" && (
-          <div style={{ background: cardBg, borderRadius: 24, padding: "2rem", border: cardBorder }}>
-            <div style={{ background: isMemorial ? "rgba(200,129,58,.06)" : "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", gap: "1rem", alignItems: "center" }}>
-              <span style={{ fontSize: "1.5rem" }}>{isMemorial ? "🕊️" : "📖"}</span>
-              <div>
-                <p style={{ fontSize: ".875rem", fontWeight: 500, color: textPrimary, margin: "0 0 .2rem" }}>{productName}</p>
-                <p style={{ fontSize: ".8rem", color: textMuted, margin: 0, fontWeight: 300, fontFamily: "sans-serif" }}>{productSpecs}</p>
-              </div>
-              <div style={{ marginLeft: "auto", textAlign: "right" }}>
-                <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A", whiteSpace: "nowrap" }}>{price}</span>
-                {(profile?.book_credits ?? 0) > 0 && (
-                  <p style={{ fontSize: ".72rem", color: textMuted, margin: ".2rem 0 0", fontFamily: "sans-serif", whiteSpace: "nowrap" }}>
-                    {locale === "fr"
-                      ? `1 crédit utilisé · reste ${(profile?.book_credits ?? 1) - 1}`
-                      : `1 credit used · ${(profile?.book_credits ?? 1) - 1} remaining`}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.5rem" }}>{t.order.shipping_address}</h2>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                {fields.slice(0, 2).map(field => (
-                  <div key={field.key}>
-                    <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
-                    <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => { setAddress({ ...address, [field.key]: e.target.value }); setAddressErrors(prev => ({ ...prev, [field.key]: false })); }} style={{ ...inputStyle, borderColor: addressErrors[field.key] ? "#EF4444" : undefined }} />
-                    {addressErrors[field.key] && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
-                  </div>
-                ))}
-              </div>
-              {fields.slice(2).map(field => (
-                <div key={field.key}>
-                  <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
-                  <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => { setAddress({ ...address, [field.key]: e.target.value }); setAddressErrors(prev => ({ ...prev, [field.key]: false })); }} style={{ ...inputStyle, borderColor: addressErrors[field.key] ? "#EF4444" : undefined }} />
-                  {addressErrors[field.key] && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
-                </div>
-              ))}
-              <div>
-                <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{t.order.country}</label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type="text"
-                    autoComplete="off"
-                    placeholder={locale === "fr" ? "Rechercher un pays…" : "Search country…"}
-                    value={countrySearch || (address.country ? (COUNTRIES.find(c => c.code === address.country)?.name ?? "") : "")}
-                    onFocus={() => setCountrySearch("")}
-                    onChange={e => { setCountrySearch(e.target.value); setAddress({ ...address, country: "" }); }}
-                    style={inputStyle}
-                  />
-                  {countrySearch.trim().length > 0 && (
-                    <div style={{
-                      position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
-                      background: isMemorial ? "#1C1410" : "#FDFAF5",
-                      border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`,
-                      borderRadius: 12, overflow: "hidden",
-                      boxShadow: "0 8px 24px rgba(0,0,0,.12)",
-                      maxHeight: 200, overflowY: "auto",
-                    }}>
-                      {COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase())).length === 0 ? (
-                        <div style={{ padding: ".75rem 1rem", fontSize: ".85rem", color: textMuted, fontFamily: "sans-serif" }}>
-                          {locale === "fr" ? "Aucun résultat" : "No results"}
-                        </div>
-                      ) : COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase())).map(c => (
-                        <div
-                          key={c.code}
-                          onMouseDown={() => { setAddress({ ...address, country: c.code }); setCountrySearch(""); setAddressErrors(prev => ({ ...prev, country: false })); }}
-                          style={{
-                            padding: ".625rem 1rem", fontSize: ".875rem", cursor: "pointer",
-                            color: textPrimary, fontFamily: "sans-serif",
-                            background: address.country === c.code ? `${accentColor}18` : "transparent",
-                            borderBottom: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.05)"}`,
-                          }}
-                          onMouseEnter={e => (e.currentTarget.style.background = `${accentColor}12`)}
-                          onMouseLeave={e => (e.currentTarget.style.background = address.country === c.code ? `${accentColor}18` : "transparent")}
-                        >
-                          {c.name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {addressErrors.country && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif", marginTop: ".25rem", display: "block" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
-
-            {/* Shipping + price estimate (shown once country selected) */}
-            {address.country && (
-              <div style={{ marginTop: "1.25rem", background: isMemorial ? "rgba(200,129,58,.06)" : "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.18)", borderRadius: 14, padding: "1rem 1.25rem" }}>
-                <div style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".75rem", fontFamily: "sans-serif" }}>
-                  {t.order.price_total_est}
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".875rem", color: textPrimary, marginBottom: ".375rem" }}>
-                  <span>{t.order.price_book}</span>
-                  <span style={{ fontWeight: 500 }}>{price}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".875rem", color: textMuted }}>
-                  <span>{t.order.estimated_shipping}</span>
-                  <span>{shippingEstimate ?? t.order.shipping_calculated}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Dedication textarea (Point 7) */}
-            <div style={{ marginTop: "1.5rem" }}>
-              <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>
-                {dedicationLabel}
-              </label>
-              <textarea
-                value={dedicationText}
-                onChange={e => setDedicationText(e.target.value)}
-                maxLength={400}
-                rows={4}
-                placeholder={dedicationPlaceholder}
-                style={{
-                  ...inputStyle,
-                  resize: "vertical",
-                  lineHeight: 1.6,
-                }}
-              />
-              <div style={{ fontSize: ".7rem", color: dedicationText.length >= 360 ? "#A32D2D" : textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
-                {dedicationText.length}/400
-              </div>
-            </div>
-
             <button
-              onClick={() => {
-                const required = ["firstName", "lastName", "addressLine1", "city", "postCode", "country"];
-                const errors: Record<string, boolean> = {};
-                required.forEach(k => { if (!address[k as keyof typeof address]) errors[k] = true; });
-                if (Object.keys(errors).length > 0) {
-                  setAddressErrors(errors);
+              onClick={async () => {
+                if (profile?.plan === "print" && profile.book_credits === 0) {
+                  setLoading(true);
+                  try {
+                    // Persist address so it survives the Stripe redirect
+                    try { sessionStorage.setItem(`ep_order_${id}_addr`, JSON.stringify(address)); } catch {}
+                    const res = await fetch("/api/stripe/book-checkout", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
+                    });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                  } catch { /* silent */ } finally { setLoading(false); }
                   return;
                 }
-                setAddressErrors({});
-                setStep("confirm");
+                handleOrder();
               }}
-              style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: 1 }}
+              disabled={loading}
+              style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: loading ? "wait" : "pointer", opacity: loading ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}
             >
-              {t.order.continue_to_payment}
+              {loading && <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .7s linear infinite" }} />}
+              {loading ? t.order.placing : t.order.place_order}
             </button>
           </div>
-        )}
-      </main>
+        </div>
+      )}
+    </>
+  );
+
+  const renderAddressStep = () => (
+    <div style={{ background: cardBg, borderRadius: 24, padding: "2rem", border: cardBorder }}>
+      <div style={{ background: isMemorial ? "rgba(200,129,58,.06)" : "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", gap: "1rem", alignItems: "center" }}>
+        <span style={{ fontSize: "1.5rem" }}>{isMemorial ? "🕊️" : "📖"}</span>
+        <div>
+          <p style={{ fontSize: ".875rem", fontWeight: 500, color: textPrimary, margin: "0 0 .2rem" }}>{productName}</p>
+          <p style={{ fontSize: ".8rem", color: textMuted, margin: 0, fontWeight: 300, fontFamily: "sans-serif" }}>{productSpecs}</p>
+        </div>
+        <div style={{ marginLeft: "auto", textAlign: "right" }}>
+          <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A", whiteSpace: "nowrap" }}>{price}</span>
+          {(profile?.book_credits ?? 0) > 0 && (
+            <p style={{ fontSize: ".72rem", color: textMuted, margin: ".2rem 0 0", fontFamily: "sans-serif", whiteSpace: "nowrap" }}>
+              {locale === "fr"
+                ? `1 crédit utilisé · reste ${(profile?.book_credits ?? 1) - 1}`
+                : `1 credit used · ${(profile?.book_credits ?? 1) - 1} remaining`}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.5rem" }}>{t.order.shipping_address}</h2>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          {fields.slice(0, 2).map(field => (
+            <div key={field.key}>
+              <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
+              <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => { setAddress({ ...address, [field.key]: e.target.value }); setAddressErrors(prev => ({ ...prev, [field.key]: false })); }} style={{ ...inputStyle, borderColor: addressErrors[field.key] ? "#EF4444" : undefined }} />
+              {addressErrors[field.key] && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
+            </div>
+          ))}
+        </div>
+        {fields.slice(2).map(field => (
+          <div key={field.key}>
+            <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
+            <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => { setAddress({ ...address, [field.key]: e.target.value }); setAddressErrors(prev => ({ ...prev, [field.key]: false })); }} style={{ ...inputStyle, borderColor: addressErrors[field.key] ? "#EF4444" : undefined }} />
+            {addressErrors[field.key] && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
+          </div>
+        ))}
+        <div>
+          <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{t.order.country}</label>
+          <div style={{ position: "relative" }}>
+            <input
+              type="text"
+              autoComplete="off"
+              placeholder={locale === "fr" ? "Rechercher un pays…" : "Search country…"}
+              value={countrySearch || (address.country ? (COUNTRIES.find(c => c.code === address.country)?.name ?? "") : "")}
+              onFocus={() => setCountrySearch("")}
+              onChange={e => { setCountrySearch(e.target.value); setAddress({ ...address, country: "" }); }}
+              style={inputStyle}
+            />
+            {countrySearch.trim().length > 0 && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
+                background: isMemorial ? "#1C1410" : "#FDFAF5",
+                border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`,
+                borderRadius: 12, overflow: "hidden",
+                boxShadow: "0 8px 24px rgba(0,0,0,.12)",
+                maxHeight: 200, overflowY: "auto",
+              }}>
+                {COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase())).length === 0 ? (
+                  <div style={{ padding: ".75rem 1rem", fontSize: ".85rem", color: textMuted, fontFamily: "sans-serif" }}>
+                    {locale === "fr" ? "Aucun résultat" : "No results"}
+                  </div>
+                ) : COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase())).map(c => (
+                  <div
+                    key={c.code}
+                    onMouseDown={() => { setAddress({ ...address, country: c.code }); setCountrySearch(""); setAddressErrors(prev => ({ ...prev, country: false })); }}
+                    style={{
+                      padding: ".625rem 1rem", fontSize: ".875rem", cursor: "pointer",
+                      color: textPrimary, fontFamily: "sans-serif",
+                      background: address.country === c.code ? `${accentColor}18` : "transparent",
+                      borderBottom: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.05)"}`,
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = `${accentColor}12`)}
+                    onMouseLeave={e => (e.currentTarget.style.background = address.country === c.code ? `${accentColor}18` : "transparent")}
+                  >
+                    {c.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {addressErrors.country && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif", marginTop: ".25rem", display: "block" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
+
+      {/* Shipping + price estimate (shown once country selected) */}
+      {address.country && (
+        <div style={{ marginTop: "1.25rem", background: isMemorial ? "rgba(200,129,58,.06)" : "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.18)", borderRadius: 14, padding: "1rem 1.25rem" }}>
+          <div style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".75rem", fontFamily: "sans-serif" }}>
+            {t.order.price_total_est}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".875rem", color: textPrimary, marginBottom: ".375rem" }}>
+            <span>{t.order.price_book}</span>
+            <span style={{ fontWeight: 500 }}>{price}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".875rem", color: textMuted }}>
+            <span>{t.order.estimated_shipping}</span>
+            <span>{shippingEstimate ?? t.order.shipping_calculated}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Dedication textarea (Point 7) */}
+      <div style={{ marginTop: "1.5rem" }}>
+        <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>
+          {dedicationLabel}
+        </label>
+        <textarea
+          value={dedicationText}
+          onChange={e => setDedicationText(e.target.value)}
+          maxLength={400}
+          rows={4}
+          placeholder={dedicationPlaceholder}
+          style={{
+            ...inputStyle,
+            resize: "vertical",
+            lineHeight: 1.6,
+          }}
+        />
+        <div style={{ fontSize: ".7rem", color: dedicationText.length >= 360 ? "#A32D2D" : textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
+          {dedicationText.length}/400
+        </div>
+      </div>
+
+      <button
+        onClick={() => {
+          const required = ["firstName", "lastName", "addressLine1", "city", "postCode", "country"];
+          const errors: Record<string, boolean> = {};
+          required.forEach(k => { if (!address[k as keyof typeof address]) errors[k] = true; });
+          if (Object.keys(errors).length > 0) {
+            setAddressErrors(errors);
+            return;
+          }
+          setAddressErrors({});
+          setStep("confirm");
+        }}
+        style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: 1 }}
+      >
+        {t.order.continue_to_payment}
+      </button>
     </div>
+  );
+
+  return (
+    <>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {previewHtml && renderPreviewModal()}
+      <div style={{ minHeight: "100vh", background: bg, fontFamily: "'DM Sans', sans-serif", transition: "background .3s" }}>
+        <nav style={{ background: isMemorial ? "rgba(28,20,16,.9)" : "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.08)"}`, padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary }}>
+            {isMemorial && petName
+              ? t.memorial.order_tribute.replace("{name}", petName)
+              : t.order.title}
+          </span>
+        </nav>
+        <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+          {step !== "success" && renderStepper()}
+          {renderUpsellBanners()}
+          {step === "preview" && renderPreviewStep()}
+          {step === "success" && renderSuccessStep()}
+          {step === "confirm" && renderConfirmStep()}
+          {step === "address" && renderAddressStep()}
+        </main>
+      </div>
     </>
   );
 }
