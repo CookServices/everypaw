@@ -13,6 +13,7 @@ export default function GiftPage() {
   const isFR = locale === "fr";
 
   const [selectedPlan, setSelectedPlan] = useState<"digital" | "print">("digital");
+  const [isMobile, setIsMobile] = useState(false);
   // Digital = monthly only, Print = annual only — no billing toggle needed
   const [step, setStep] = useState<"form" | "confirm">("form");
   const [form, setForm] = useState({
@@ -33,6 +34,13 @@ export default function GiftPage() {
 
   useEffect(() => {
     fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 500);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   // Restore form saved before login redirect
@@ -184,7 +192,7 @@ export default function GiftPage() {
 
       <PublicNav variant="full" />
 
-      <main className="ep-gift-main" style={{ maxWidth: 520, margin: "0 auto" }}>
+      <main style={{ maxWidth: 520, margin: "0 auto", padding: isMobile ? "1.25rem 1rem" : "2.5rem 1.5rem" }}>
 
         {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
@@ -223,7 +231,7 @@ export default function GiftPage() {
         </div>
 
         {/* Card : form OR confirm */}
-        <div className="ep-gift-card" style={{ background: "#FDFAF5", borderRadius: 24, border: "1px solid rgba(61,43,31,.08)" }}>
+        <div style={{ background: "#FDFAF5", borderRadius: 24, padding: isMobile ? "1.25rem 1rem" : "2rem", border: "1px solid rgba(61,43,31,.08)" }}>
 
           {step === "confirm" ? (
             /* ── Confirmation screen ──────────────────────────────────── */
@@ -288,7 +296,7 @@ export default function GiftPage() {
 
               {/* Digital = mensuel, Print = annuel — pas de toggle */}
 
-              <div className="ep-gift-plans-grid">
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: ".625rem", marginBottom: ".75rem" }}>
 
                 {/* Digital */}
                 <button
