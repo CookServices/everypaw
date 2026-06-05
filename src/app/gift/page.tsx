@@ -184,7 +184,7 @@ export default function GiftPage() {
 
       <PublicNav variant="full" />
 
-      <main style={{ maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+      <main className="ep-gift-main" style={{ maxWidth: 520, margin: "0 auto" }}>
 
         {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
@@ -223,7 +223,7 @@ export default function GiftPage() {
         </div>
 
         {/* Card : form OR confirm */}
-        <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)" }}>
+        <div className="ep-gift-card" style={{ background: "#FDFAF5", borderRadius: 24, border: "1px solid rgba(61,43,31,.08)" }}>
 
           {step === "confirm" ? (
             /* ── Confirmation screen ──────────────────────────────────── */
@@ -288,7 +288,7 @@ export default function GiftPage() {
 
               {/* Digital = mensuel, Print = annuel — pas de toggle */}
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".625rem", marginBottom: ".75rem" }}>
+              <div className="ep-gift-plans-grid">
 
                 {/* Digital */}
                 <button
