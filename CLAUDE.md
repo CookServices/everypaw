@@ -1408,4 +1408,22 @@ Files audited this round (no changes required):
 - `cron/monthly-story` — escapeXml prompt, escapeHtml emails ✅
 - `cron/birthday-check`, `on-this-day`, `streak-alert`, `daily-prompts` — clean ✅
 
-*Dernière mise à jour : 2026-06-05 (session 36 — Security Round 10)*
+### ✅ Session 37 — Security Round 11 (2026-06-05)
+
+**Commit** : `0e694f0`
+
+**Finding corrigé :**
+
+- **Open redirect `login/page.tsx` + `signup/page.tsx`** (H) : `getRedirectTarget()` acceptait n'importe quelle valeur pour le paramètre URL `redirect` — incluant des URLs absolues externes (`https://evil.com`). Après login email/password, `window.location.href = getRedirectTarget()` redirigait sans validation, exposant le `?code=` de cadeau à un site malveillant. Fix : `redirect.startsWith("/") && !redirect.startsWith("//")` — même garde que `auth/callback/route.ts`. Appliqué aux deux pages.
+
+**Fichiers revus sans finding :**
+- `src/lib/html.ts` — `escapeHtml` + `escapeXml` correctes, pas de cas edge manquant ✅
+- `src/lib/plan.ts` — `getUserPlan`, `getUserPlanById`, guards, `priceIdToPlan` ✅
+- `src/app/api/unsubscribe/route.ts` — rate limit, UUID/hex token format, count check ✅
+- `src/app/pets/[id]/page.tsx` — service role justifié, filtres `pet_id`, JSX auto-escape ✅
+- `src/app/memorial/[id]/page.tsx` — anon client, ownership check pour bouton édition ✅
+- `src/app/auth/update-password/page.tsx` — validation client min 8 chars + confirm match ✅
+- `src/app/api/generate/route.ts` — clean (revue Round 10) ✅
+- `src/app/auth/login/page.tsx` — path Google OAuth safe (passe par auth/callback qui valide) ✅
+
+*Dernière mise à jour : 2026-06-05 (session 37 — Security Round 11)*
