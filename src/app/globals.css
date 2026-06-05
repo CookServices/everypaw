@@ -219,6 +219,35 @@ img {
   }
 }
 
+/* ── Gift page ───────────────────────────────────────────────────────────── */
+.ep-gift-plans-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .625rem;
+  margin-bottom: .75rem;
+}
+@media (max-width: 500px) {
+  .ep-gift-plans-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.ep-gift-card {
+  padding: 2rem;
+}
+@media (max-width: 500px) {
+  .ep-gift-card {
+    padding: 1.25rem 1rem;
+  }
+}
+.ep-gift-main {
+  padding: 2.5rem 1.5rem;
+}
+@media (max-width: 500px) {
+  .ep-gift-main {
+    padding: 1.25rem 1rem;
+  }
+}
+
 /* ── Utility hover/active classes ───────────────────────────────────────── */
 .ep-btn-primary {
   background: var(--ep-brand);
