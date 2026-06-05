@@ -1328,4 +1328,20 @@ Tous les comptes A–E ✅ PASS après round 2.
 - `GET /api/stripe/upgrade-preview?newPlan=` : prorata via `stripe.invoices.retrieveUpcoming()` + carte via `stripe.customers.retrieve(expand: invoice_settings.default_payment_method)`
 - Modal : montant TTC · carte "Visa ····XXXX" · warning immédiat · boutons Annuler / "Confirmer et payer" (`flex: 1` pour égalité de largeur)
 
-*Dernière mise à jour : 2026-06-05 (session 32 — 3 plans, PDF download, garde annuelle, pagination factures)*
+### ✅ Session 32 (suite) — Security Round 6 + Refacto pré-prod (2026-06-05)
+
+**Commit** : `67e04bb`
+
+**Security — `book-pdf-link` input validation (High)**
+- `lang` whitelisté `["en","fr"]`, `year` borné 2000–2100, `dedication` max 500, `theme` whitelisté, `customTitle` max 60, `storyIds` UUID_REGEX, `coverPhoto` https: enforced (SSRF), `layouts` valeurs whitelistées
+- Defence-in-depth : `book-pdf/route.tsx` validait déjà à réception, mais la validation doit aussi être à la source du token
+
+**Refacto — `src/lib/stripe-helpers.ts`** (nouveau fichier)
+- `PRICE_MAP` : source unique pour les 4 plans EUR+USD — remplace 3 copies divergentes (`upgrade` avait `"print"`, `checkout` avait `"print_monthly"` — drift silencieux)
+- `resolveSubscriptionId(stripe, userId, subscriptionId, customerId)` : remplace 2 fonctions inline identiques dans `cancel` + `reactivate`
+- Consommé par 5 routes : `checkout`, `upgrade`, `upgrade-preview`, `cancel`, `reactivate`
+
+**Règle critique ajoutée**
+- **Partage Stripe** : tout `PRICE_MAP` et toute résolution de subscription ID doivent passer par `src/lib/stripe-helpers.ts`. Ne jamais dupliquer inline.
+
+*Dernière mise à jour : 2026-06-05 (session 32 — Security Round 6 + stripe-helpers refacto)*
