@@ -1028,7 +1028,7 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 ### Long terme (non traité — faible urgence)
 | ID | Description | Effort |
 |---|---|---|
-| LT1 | Exit-intent capture email : popup avant départ → `"Recevez un exemple de livre Everypaw par email"` | 2h |
+| ~~LT1~~ | ~~Exit-intent capture email~~ | ✅ session 31 — `ExitIntentPopup.tsx`, `mouseleave` top + 3s delay, `sessionStorage`, POST `/api/waitlist`, FR/EN. Commit `0a05387`. | — |
 | ~~LT2~~ | ~~Partage social natif sur profil public avec Open Graph preview~~ | ✅ session 31 — `generateMetadata` OG+Twitter sur `/pets/[id]`. Commit `6858ec1`. | — |
 | LT3 | **Page `/books` — bouton "Recommander le même exemplaire"** : sur chaque `book_config` avec `status=ordered`, bouton qui charge la config existante et saute directement au step `address` → step `confirm` → paiement Stripe. Passer `configId` + `step=address` en query params vers `order/page.tsx` (le mécanisme `?configId=` existe déjà, ajouter `?startStep=address`). | 3h |
 | LT4 | **Page `/books` — bouton "Créer un nouveau livre à partir de ce modèle"** : sur chaque `book_config` (tous statuts), bouton → `/dashboard/pets/[id]/order?configId=[id]`. Le mécanisme `?configId=` existe déjà dans `order/page.tsx` (charge la config au mount). Effort quasi nul côté backend — UI seulement. | 1h |
@@ -1184,6 +1184,13 @@ Tous les comptes A–E ✅ PASS après round 2.
 - Bouton "Modifier" visible propriétaire seulement
 - RLS `pets_public_read` + `stories_public_read` : public SELECT ✅
 - Lien depuis `/dashboard/pets/[id]` (bouton "Voir la page mémorial") ✅
+
+**Exit-intent popup** (`src/components/ExitIntentPopup.tsx`) — commit `0a05387`
+- Déclenche sur `mouseleave` vers le haut de page, après 3s de délai
+- Une seule fois par session via `sessionStorage`
+- Email → POST `/api/waitlist` (confirmation Resend + notif interne déjà en place)
+- FR/EN, état succès, gestion erreur rate-limit
+- Injecté dans `/` (isFR détecté) et `/fr` (always FR)
 
 **OG meta `/pets/[id]`** (`src/app/pets/[id]/page.tsx`) — commit `6858ec1`
 - `generateMetadata()` : title `{nom} · {espèce} · Everypaw`, description = bio ou fallback, OG + Twitter card
