@@ -1426,4 +1426,22 @@ Files audited this round (no changes required):
 - `src/app/api/generate/route.ts` — clean (revue Round 10) ✅
 - `src/app/auth/login/page.tsx` — path Google OAuth safe (passe par auth/callback qui valide) ✅
 
-*Dernière mise à jour : 2026-06-05 (session 37 — Security Round 11)*
+### ✅ Session 38 — Security Round 12 (2026-06-05)
+
+**Commit** : `1539cea`
+
+**Finding corrigé :**
+
+- **`redeem/page.tsx` — URL param injection** (L) : `code` (gift code) non encodé dans `loginUrl` / `signupUrl`. Un code contenant `&` ou `?` (via l'input field) pouvait créer des URL malformées avec injection de paramètres. Impact réel nul (serveur valide `^[A-Z0-9_-]+$` + guard redirect), mais fix propre : `encodeURIComponent(code)` sur les 3 URLs.
+
+**Fichiers revus sans finding :**
+- `api/gelato/status/[orderId]/route.ts` — IDOR guard via `book_configs` ownership, `orderId.length > 100`, filtrage des champs réponse ✅
+- `api/suggestion/route.ts` — rate limit 3/min, bounds (3–2000 chars), `escapeHtml` ✅
+- `api/waitlist/route.ts` — rate limit, email regex + max 254 chars, `escapeHtml` sur notif interne ✅
+- `api/export-data/route.ts` — auth session, rate limit 3/hr par user, tout `escapeHtml`'é en HTML ✅
+- `redeem/page.tsx` — auth check avant form, `window.location.href = data.url` depuis API (URL Stripe) ✅
+- `lib/rate-limit.ts` — limitations documentées (serverless unreliable), `getClientIp` correct ✅
+- `api/gift/redeem/route.ts` — code format `^[A-Z0-9_-]+$`, recipient_email check, PRICE_MAP ✅
+- `api/stripe/book-checkout/route.ts` — UUID petId, `pageCount` borné 28–500 ✅
+
+*Dernière mise à jour : 2026-06-05 (session 38 — Security Round 12)*
