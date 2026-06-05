@@ -1171,4 +1171,33 @@ Tous les comptes A–E ✅ PASS après round 2.
 - **L1** crons (`streak-alert`, `birthday-check`, `daily-prompts`, `on-this-day`) : `unsubscribe_token` null-guardé → fallback `/dashboard`
 - **L2** `book-configs DELETE` : vérifie `count` après delete → 404 si aucune ligne affectée
 
-*Dernière mise à jour : 2026-06-05 (session 29 — refacto order page + security round 5)*
+### ✅ Session 30 — Features UX + qualité (2026-06-05)
+
+**Commits** : `69a9624`, `c03770b`, `46c3e94`, `fa95918`
+
+**Indicateur de force du mot de passe** (`src/components/PasswordStrength.tsx`)
+- Composant partagé : 3 barres colorées + label FR/EN (Faible/Weak · Moyen/Medium · Fort/Strong)
+- Invisible < 8 chars — contrainte min-length inchangée
+- Logique : classes de caractères (min/maj/chiffre/spécial) + bonus longueur ≥ 14
+- Couleurs : rouge `#A32D2D` / amber `#C8813A` / sage `#6B7B5E`
+- Injecté dans : `auth/signup`, `auth/update-password`, `dashboard/settings`
+- `settings` : placeholder "Nouveau mot de passe" mis à jour avec `(min. 8 caractères)`
+
+**Wording crédit livre settings** (`settings/page.tsx`)
+- `book_credits > 0` → "📖 Votre livre offert n'a pas encore été commandé"
+- `book_credits === 0` → "📖 Votre livre offert a déjà été commandé [· Prochain : date]"
+
+**Migration `subscription_renewal_date`** (`supabase/migrations/add_subscription_renewal_date_2026_06_05.sql`)
+- Colonne `bigint` sur `profiles` — Unix timestamp Stripe `current_period_end`
+- Était déjà utilisée par webhook + settings + order page sans migration formelle
+
+**Export données — format HTML lisible** (`/api/export-data?format=html`)
+- Fichier `.html` stylé palette Everypaw, sections par animal, imprimable (`@media print`)
+- Contenu : profil → animaux → journal (date/mood/tags) → histoires IA → étapes
+- Tout échappé via `escapeHtml()` — pas de risque XSS
+- Même rate limit 3/heure que JSON
+- `settings/page.tsx` : bouton HTML primaire + bouton JSON rétrogradé (texte secondaire)
+
+**Roadmap — entrées ajoutées** : LT3 (reorder même exemplaire), LT4 (cloner config), LT5 ✅, LT6 ✅
+
+*Dernière mise à jour : 2026-06-05 (session 30 — password strength + export HTML + wording crédits)*
