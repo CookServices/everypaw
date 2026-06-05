@@ -50,7 +50,9 @@ export async function GET(req: Request) {
     const petNames = pets.map(p => p.name).join(", ");
     const petNamesHtml = escapeHtml(petNames);
     const entriesCount = recentEntries?.length || 0;
-    const unsubscribeUrl = `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`;
+    const unsubscribeUrl = profile.unsubscribe_token
+      ? `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`
+      : "https://everypaw.app/dashboard";
 
     await resend.emails.send({
       from: "Everypaw <hello@everypaw.app>",
