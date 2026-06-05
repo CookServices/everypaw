@@ -464,22 +464,22 @@ export default function SettingsPage() {
               ⚠️ {isFR ? "Ce changement est effectif immédiatement." : "This change takes effect immediately."}
             </p>
 
-            <div style={{ display: "flex", gap: ".75rem", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", gap: ".75rem" }}>
               <button
                 onClick={() => setUpgradeModal(null)}
                 disabled={!!upgradeLoading}
-                style={{ ...btnOutline, border: "1.5px solid rgba(61,43,31,.2)", color: "#3D2B1F" }}
+                style={{ ...btnOutline, border: "1.5px solid rgba(61,43,31,.2)", color: "#3D2B1F", flex: 1 }}
               >
                 {isFR ? "Annuler" : "Cancel"}
               </button>
               <button
                 onClick={() => handleUpgrade(upgradeModal.newPlan)}
                 disabled={!!upgradeLoading}
-                style={{ ...btnPrimary, opacity: upgradeLoading ? .7 : 1 }}
+                style={{ ...btnPrimary, opacity: upgradeLoading ? .7 : 1, flex: 1 }}
               >
                 {upgradeLoading
                   ? (isFR ? "Mise à jour…" : "Updating…")
-                  : (isFR ? "Confirmer et payer →" : "Confirm & pay →")}
+                  : (isFR ? "Confirmer et payer" : "Confirm & pay")}
               </button>
             </div>
           </div>
