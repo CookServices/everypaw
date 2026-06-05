@@ -1356,4 +1356,19 @@ Tous les comptes A–E ✅ PASS après round 2.
 - **`gift/redeem/route.ts` (M)** : remplace `STRIPE_PRICE_ID_PRINT` / `STRIPE_PRICE_ID_DIGITAL` (env vars non documentées, probablement absentes en prod) par `PRICE_MAP` + `getCurrencyFromCountry` — cohérent avec le reste du codebase + gère EUR/USD
 - **`gift/create/route.ts` (M)** : metadata Stripe `plan: "print"` → `"print_annual"` (cohérence 3 plans)
 
-*Dernière mise à jour : 2026-06-05 (session 33 — Security Round 7)*
+### ✅ Session 34 — Security Round 8 (2026-06-05)
+
+**No findings — full API surface reviewed, all clean.**
+
+Files audited this round (no changes required):
+- `emails/auth-hook` : Standard Webhooks HMAC-SHA256 + timingSafeEqual + confirmation_url domain check ✅
+- `emails/confirm-signup` / `change-email` / `reset-password` : Bearer auth via `verifyBearer` + `validateRedirectTo` ✅
+- `preview-pdf` POST branch : ownership check `pet.user_id !== user.id` + UUID + https: coverPhoto + layouts whitelist ✅
+- `middleware.ts` : clean redirect logic, no issues ✅
+- `currency/route.ts` : read-only, no user input ✅
+- `locale/route.ts` : whitelist `["en","fr"]`, secure cookie ✅
+- Cron routes (6 files) : all use `verifyBearer` + `CRON_SECRET` min-32-char guard ✅
+
+**Full API surface is now reviewed across 8 rounds. Codebase is production-ready from a security standpoint.**
+
+*Dernière mise à jour : 2026-06-05 (session 34 — Security Round 8)*
