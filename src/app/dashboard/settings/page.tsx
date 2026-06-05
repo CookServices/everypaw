@@ -70,6 +70,12 @@ export default function SettingsPage() {
   // ── RGPD export state ────────────────────────────────────────────────────────
   const [exportLoading, setExportLoading] = useState(false);
   const [exportHtmlLoading, setExportHtmlLoading] = useState(false);
+  const [invoices, setInvoices] = useState<Array<{
+    id: string; number: string | null; amount_paid: number; currency: string;
+    created: number; invoice_pdf: string | null; hosted_invoice_url: string | null;
+    period_start: number; period_end: number;
+  }>>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
 
   // ── Load ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -108,6 +114,20 @@ export default function SettingsPage() {
       setSubLoading(false);
     };
     loadSub();
+
+    // Load invoices
+    const loadInvoices = async () => {
+      setInvoicesLoading(true);
+      try {
+        const res = await fetch("/api/stripe/invoices");
+        if (res.ok) {
+          const data = await res.json();
+          setInvoices(data.invoices ?? []);
+        }
+      } catch {}
+      setInvoicesLoading(false);
+    };
+    loadInvoices();
   }, []);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -632,6 +652,60 @@ export default function SettingsPage() {
             </>
           )}
         </div>
+
+        {/* ── Invoices section ─────────────────────────────────────────────── */}
+        {(invoicesLoading || invoices.length > 0) && (
+          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1.25rem" }}>
+              {isFR ? "Mes factures" : "My invoices"}
+            </h2>
+            {invoicesLoading ? (
+              <p style={{ color: "#9A8070", fontSize: ".875rem" }}>…</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
+                {invoices.map(inv => {
+                  const amount = (inv.amount_paid / 100).toLocaleString(isFR ? "fr-FR" : "en-US", { style: "currency", currency: inv.currency.toUpperCase(), minimumFractionDigits: 2 });
+                  const date = new Date(inv.created * 1000).toLocaleDateString(isFR ? "fr-FR" : "en-GB", { day: "2-digit", month: "long", year: "numeric" });
+                  const period = `${new Date(inv.period_start * 1000).toLocaleDateString(isFR ? "fr-FR" : "en-GB", { day: "2-digit", month: "short" })} – ${new Date(inv.period_end * 1000).toLocaleDateString(isFR ? "fr-FR" : "en-GB", { day: "2-digit", month: "short", year: "numeric" })}`;
+                  return (
+                    <div key={inv.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", padding: ".75rem 1rem", background: "#F7F2EA", borderRadius: 12, flexWrap: "wrap" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
+                          <span style={{ fontSize: ".875rem", fontWeight: 600, color: "#3D2B1F" }}>{amount}</span>
+                          <span style={{ fontSize: ".72rem", color: "#9A8070" }}>· {date}</span>
+                        </div>
+                        <div style={{ fontSize: ".72rem", color: "#9A8070", marginTop: ".15rem" }}>{period}</div>
+                        {inv.number && <div style={{ fontSize: ".68rem", color: "#9A8070", marginTop: ".1rem", fontFamily: "monospace" }}>{inv.number}</div>}
+                      </div>
+                      <div style={{ display: "flex", gap: ".5rem", flexShrink: 0 }}>
+                        {inv.invoice_pdf && (
+                          <a
+                            href={inv.invoice_pdf}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ fontSize: ".75rem", color: "#C8813A", textDecoration: "none", border: "1px solid rgba(200,129,58,.3)", borderRadius: 100, padding: ".3rem .75rem", whiteSpace: "nowrap" }}
+                          >
+                            {isFR ? "PDF" : "PDF"}
+                          </a>
+                        )}
+                        {inv.hosted_invoice_url && (
+                          <a
+                            href={inv.hosted_invoice_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ fontSize: ".75rem", color: "#7A5C44", textDecoration: "none", border: "1px solid rgba(61,43,31,.15)", borderRadius: 100, padding: ".3rem .75rem", whiteSpace: "nowrap" }}
+                          >
+                            {isFR ? "Voir" : "View"}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Preferences section ──────────────────────────────────────────── */}
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>
