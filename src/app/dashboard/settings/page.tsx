@@ -184,7 +184,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleCheckout = async (targetPlan: "digital" | "print") => {
+  const handleCheckout = async (targetPlan: "digital" | "print_monthly") => {
     setCheckoutLoading(targetPlan);
     try {
       const res = await fetch("/api/stripe/checkout", {
@@ -476,11 +476,11 @@ export default function SettingsPage() {
                       : (isFR ? `Passer à Premium Digital — ${formatPrice(currency, "digital")}/mois` : `Upgrade to Premium Digital — ${formatPrice(currency, "digital")}/mo`)}
                   </button>
                   <button
-                    onClick={() => handleCheckout("print")}
-                    disabled={checkoutLoading === "print"}
-                    style={{ ...btnPrimary, background: "#3D2B1F", opacity: checkoutLoading === "print" ? .7 : 1 }}
+                    onClick={() => handleCheckout("print_monthly")}
+                    disabled={checkoutLoading === "print_monthly"}
+                    style={{ ...btnPrimary, background: "#3D2B1F", opacity: checkoutLoading === "print_monthly" ? .7 : 1 }}
                   >
-                    {checkoutLoading === "print"
+                    {checkoutLoading === "print_monthly"
                       ? "…"
                       : (isFR ? `Passer à Premium Print — ${formatPrice(currency, "print")}/mois` : `Upgrade to Premium Print — ${formatPrice(currency, "print")}/mo`)}
                   </button>
