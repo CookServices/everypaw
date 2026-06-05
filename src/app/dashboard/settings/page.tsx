@@ -66,6 +66,7 @@ export default function SettingsPage() {
 
   // ── RGPD export state ────────────────────────────────────────────────────────
   const [exportLoading, setExportLoading] = useState(false);
+  const [exportHtmlLoading, setExportHtmlLoading] = useState(false);
 
   // ── Load ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -292,6 +293,27 @@ export default function SettingsPage() {
       alert(isFR ? "Erreur lors de l'export. Réessayez." : "Export failed. Please try again.");
     } finally {
       setExportLoading(false);
+    }
+  };
+
+  const handleExportHtml = async () => {
+    setExportHtmlLoading(true);
+    try {
+      const res = await fetch("/api/export-data?format=html");
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `everypaw-donnees-${new Date().toISOString().slice(0, 10)}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert(isFR ? "Erreur lors de l'export. Réessayez." : "Export failed. Please try again.");
+    } finally {
+      setExportHtmlLoading(false);
     }
   };
 
@@ -637,15 +659,26 @@ export default function SettingsPage() {
                 ? "Téléchargez une copie complète de vos données : profil, animaux, entrées du journal, histoires IA, étapes et configurations de livres."
                 : "Download a full copy of your data: profile, pets, journal entries, AI stories, milestones and book configurations."}
             </p>
-            <button
-              onClick={handleExportData}
-              disabled={exportLoading}
-              style={{ ...btnOutline, cursor: exportLoading ? "wait" : "pointer", opacity: exportLoading ? .6 : 1 }}
-            >
-              {exportLoading
-                ? (isFR ? "Préparation…" : "Preparing…")
-                : (isFR ? "Télécharger mes données (JSON)" : "Download my data (JSON)")}
-            </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+              <button
+                onClick={handleExportHtml}
+                disabled={exportHtmlLoading}
+                style={{ ...btnOutline, cursor: exportHtmlLoading ? "wait" : "pointer", opacity: exportHtmlLoading ? .6 : 1 }}
+              >
+                {exportHtmlLoading
+                  ? (isFR ? "Préparation…" : "Preparing…")
+                  : (isFR ? "📄 Télécharger un résumé lisible (HTML)" : "📄 Download a readable summary (HTML)")}
+              </button>
+              <button
+                onClick={handleExportData}
+                disabled={exportLoading}
+                style={{ ...btnOutline, cursor: exportLoading ? "wait" : "pointer", opacity: exportLoading ? .6 : 1, fontSize: ".8rem", color: "#9A8070" }}
+              >
+                {exportLoading
+                  ? (isFR ? "Préparation…" : "Preparing…")
+                  : (isFR ? "Télécharger les données brutes (JSON)" : "Download raw data (JSON)")}
+              </button>
+            </div>
           </div>
         )}
 
