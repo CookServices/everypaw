@@ -1,8 +1,49 @@
 import { cookies, headers } from "next/headers";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getTranslations } from "@/lib/i18n";
 import PublicFooter from "@/components/PublicFooter";
 import { getServiceSupabase } from "@/lib/plan";
+
+// ── OG meta ───────────────────────────────────────────────────────────────────
+
+export async function generateMetadata(
+  { params }: { params: { id: string } }
+): Promise<Metadata> {
+  const { data: pet } = await getServiceSupabase()
+    .from("pets")
+    .select("name, species, bio, photo_url")
+    .eq("id", params.id)
+    .single();
+
+  if (!pet) return { title: "Everypaw" };
+
+  const species = pet.species
+    ? ` · ${pet.species.charAt(0).toUpperCase()}${pet.species.slice(1)}`
+    : "";
+  const title = `${pet.name}${species} · Everypaw`;
+  const description = pet.bio ?? `Découvrez le journal de vie de ${pet.name} sur Everypaw.`;
+  const image = pet.photo_url ?? null;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `https://everypaw.app/pets/${params.id}`,
+      siteName: "Everypaw",
+      type: "profile",
+      ...(image ? { images: [{ url: image, width: 800, height: 800, alt: pet.name }] } : {}),
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  };
+}
 
 const SPECIES_EMOJI: Record<string, string> = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", other: "🐾" };
 
