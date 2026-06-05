@@ -7,13 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 
 export const dynamic = "force-dynamic";
 
-type BillingCycle = "monthly" | "annual";
-
 export default function UpgradePage() {
   const { locale } = useLocale();
   const isFR = locale === "fr";
 
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [loading, setLoading] = useState<string | null>(null);
   const [currency, setCurrency] = useState<Currency>("USD");
   const [userPlan, setUserPlan] = useState<string>("free");
@@ -26,7 +23,7 @@ export default function UpgradePage() {
     });
   }, []);
 
-  const handleSubscribe = async (plan: "digital" | "digital_annual" | "print_monthly" | "print_annual") => {
+  const handleSubscribe = async (plan: "digital" | "print_annual") => {
     setLoading(plan);
     try {
       const res = await fetch("/api/stripe/checkout", {
@@ -57,17 +54,15 @@ export default function UpgradePage() {
   };
 
   const t = {
-    title:        isFR ? "Choisissez votre formule" : "Choose your plan",
-    subtitle:     isFR ? "Commencez gratuitement — évoluez quand vous êtes prêt." : "Start free — upgrade when you're ready.",
-    monthly:      isFR ? "Mensuel" : "Monthly",
-    annual:       isFR ? "Annuel" : "Annual",
-    save:         isFR ? `Économisez ${currency === "EUR" ? "40 €" : "40 $"}/an` : `Save ${currency === "EUR" ? "€40" : "$40"}/year`,
-    cta_loading:  isFR ? "Redirection…" : "Redirecting…",
-    cancel:       isFR ? "Sans engagement" : "Cancel anytime",
+    title:       isFR ? "Choisissez votre formule" : "Choose your plan",
+    subtitle:    isFR ? "Commencez gratuitement — évoluez quand vous êtes prêt." : "Start free — upgrade when you're ready.",
+    cta_loading: isFR ? "Redirection…" : "Redirecting…",
+    cancel:      isFR ? "Sans engagement pour Digital · Engagement annuel pour Print" : "Cancel anytime for Digital · Annual commitment for Print",
 
     free: {
       name:  isFR ? "Gratuit" : "Free",
       price: "$0",
+      sub:   isFR ? "/mois" : "/month",
       desc:  isFR ? "Pour découvrir Everypaw" : "Explore Everypaw",
       feats: isFR
         ? ["10 entrées de journal", "1 histoire IA", "1 profil animal"]
@@ -78,23 +73,23 @@ export default function UpgradePage() {
     digital: {
       name:  isFR ? "Premium Digital" : "Premium Digital",
       price: formatPrice(currency, "digital"),
+      sub:   isFR ? "/mois" : "/month",
       desc:  isFR ? "Pour les passionnés" : "For dedicated pet parents",
       feats: isFR
-        ? ["Entrées illimitées", "Histoires IA illimitées", "Profils animaux illimités", "Export PDF"]
-        : ["Unlimited entries", "Unlimited AI stories", "Unlimited pet profiles", "PDF export"],
+        ? ["Entrées illimitées", "Histoires IA illimitées", "Profils animaux illimités", "Téléchargement PDF du livre"]
+        : ["Unlimited entries", "Unlimited AI stories", "Unlimited pet profiles", "PDF book download"],
       cta: isFR ? "Commencer Digital" : "Get Digital",
     },
 
     print: {
-      name:         isFR ? "Premium Print" : "Premium Print",
-      priceMonthly: formatPrice(currency, "print"),
-      priceAnnual:  formatPrice(currency, "printAnnual"),
-      priceAnnualPer: `${formatPrice(currency, "printAnnualMonthly")}/${isFR ? "mois" : "month"}`,
-      desc:         isFR ? "Avec un beau livre relié chaque année" : "With a beautiful hardcover book each year",
+      name:  isFR ? "Premium Print" : "Premium Print",
+      price: formatPrice(currency, "printAnnual"),
+      sub:   `${formatPrice(currency, "printAnnualMonthly")}/${isFR ? "mois" : "month"}`,
+      desc:  isFR ? "Avec un beau livre relié chaque année" : "With a beautiful hardcover book each year",
       feats: isFR
         ? ["Tout le plan Digital", "1 livre hardcover / an inclus", "Impression & livraison incluses", "Support prioritaire"]
         : ["Everything in Digital", "1 hardcover book/year included", "Printing & shipping included", "Priority support"],
-      cta: isFR ? "Commencer Print" : "Get Print",
+      cta:   isFR ? "Commencer Print" : "Get Print",
       badge: isFR ? "Meilleure valeur" : "Best value",
     },
 
@@ -184,14 +179,6 @@ export default function UpgradePage() {
     </div>
   );
 
-  const digitalPlan   = billingCycle === "annual" ? "digital_annual"  : "digital";
-  const digitalPrice  = billingCycle === "annual" ? formatPrice(currency, "digitalAnnual")        : formatPrice(currency, "digital");
-  const digitalPriceSub = billingCycle === "annual" ? `${formatPrice(currency, "digitalAnnualMonthly")}/${isFR ? "mois" : "month"}` : (isFR ? "/mois" : "/month");
-
-  const printPlan     = billingCycle === "annual" ? "print_annual"    : "print_monthly";
-  const printPrice    = billingCycle === "annual" ? t.print.priceAnnual   : t.print.priceMonthly;
-  const printPriceSub = billingCycle === "annual" ? t.print.priceAnnualPer : (isFR ? "/mois" : "/month");
-
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "3rem 1.5rem 4rem" }}>
@@ -205,43 +192,13 @@ export default function UpgradePage() {
           <p style={{ fontSize: "1rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.7 }}>{t.subtitle}</p>
         </div>
 
-        {/* Billing toggle — hidden until annual plans are activated */}
-        {/* TODO: remove the false && to re-enable annual billing option */}
-        {false && (
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "2.5rem", gap: 0 }}>
-          <div style={{ display: "inline-flex", background: "#FDFAF5", borderRadius: 100, border: "1px solid rgba(61,43,31,.1)", padding: "4px" }}>
-            {(["monthly", "annual"] as const).map(cycle => (
-              <button
-                key={cycle}
-                onClick={() => setBillingCycle(cycle)}
-                style={{
-                  padding: ".45rem 1.25rem", borderRadius: 100, border: "none",
-                  background: billingCycle === cycle ? "#3D2B1F" : "transparent",
-                  color: billingCycle === cycle ? "#F7F2EA" : "#7A5C44",
-                  fontFamily: "inherit", fontSize: ".875rem", fontWeight: billingCycle === cycle ? 600 : 400,
-                  cursor: "pointer", transition: "all .15s",
-                  display: "flex", alignItems: "center", gap: ".5rem",
-                }}
-              >
-                {cycle === "monthly" ? t.monthly : t.annual}
-                {cycle === "annual" && (
-                  <span style={{ fontSize: ".68rem", background: "#C8813A", color: "#FDFAF5", padding: ".15rem .5rem", borderRadius: 100, fontWeight: 600 }}>
-                    {t.save}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-        )}
-
-        {/* Plan grid */}
+        {/* Plan grid — 3 plans fixes */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.25rem", marginBottom: "2.5rem" }}>
 
           {planCard(
             t.free.name,
             t.free.price,
-            isFR ? "/mois" : "/month",
+            t.free.sub,
             t.free.desc,
             t.free.feats,
             t.free.cta,
@@ -253,23 +210,23 @@ export default function UpgradePage() {
 
           {planCard(
             t.digital.name,
-            digitalPrice,
-            digitalPriceSub,
+            t.digital.price,
+            t.digital.sub,
             t.digital.desc,
             t.digital.feats,
-            loading === "digital" || loading === "digital_annual" ? t.cta_loading : t.digital.cta,
-            loading ? null : () => handleSubscribe(digitalPlan),
+            loading === "digital" ? t.cta_loading : t.digital.cta,
+            loading ? null : () => handleSubscribe("digital"),
             false,
           )}
 
           {planCard(
             t.print.name,
-            printPrice,
-            printPriceSub,
+            t.print.price,
+            t.print.sub,
             t.print.desc,
             t.print.feats,
-            loading === "print_monthly" || loading === "print_annual" ? t.cta_loading : t.print.cta,
-            loading ? null : () => handleSubscribe(printPlan),
+            loading === "print_annual" ? t.cta_loading : t.print.cta,
+            loading ? null : () => handleSubscribe("print_annual"),
             true,
             t.print.badge,
           )}

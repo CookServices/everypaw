@@ -255,6 +255,21 @@ export async function POST(req: Request) {
         return NextResponse.json({ received: true });
       }
 
+      // Annual cadence guard: max 1 book credit per 365 days regardless of subscription churn
+      const { data: profileForCredit } = await supabase
+        .from("profiles")
+        .select("last_book_credit_at")
+        .eq("id", userId)
+        .single();
+
+      if (profileForCredit?.last_book_credit_at) {
+        const daysSinceLast = (Date.now() - new Date(profileForCredit.last_book_credit_at).getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSinceLast < 365) {
+          console.log(`[webhook] book credit skipped — last credit was ${Math.floor(daysSinceLast)}d ago (< 365d), user: ${userId}`);
+          return NextResponse.json({ received: true });
+        }
+      }
+
       const { error: creditError } = await supabase.rpc("increment_book_credits", { p_user_id: userId });
 
       if (creditError) {
@@ -262,11 +277,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Database update failed" }, { status: 500 });
       }
 
-      // Store renewal date from invoice period end
+      // Store renewal date + last_book_credit_at
       const renewalTs = invoice.lines?.data?.[0]?.period?.end ?? null;
-      if (renewalTs) {
-        await supabase.from("profiles").update({ subscription_renewal_date: renewalTs }).eq("id", userId);
-      }
+      await supabase.from("profiles").update({
+        ...(renewalTs ? { subscription_renewal_date: renewalTs } : {}),
+        last_book_credit_at: new Date().toISOString(),
+      }).eq("id", userId);
 
       await supabase.from("events_log").insert({
         user_id: userId,

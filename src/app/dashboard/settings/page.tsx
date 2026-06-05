@@ -218,7 +218,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleCheckout = async (targetPlan: "digital" | "digital_annual" | "print_monthly" | "print_annual") => {
+  const handleCheckout = async (targetPlan: "digital" | "print_annual") => {
     setCheckoutLoading(targetPlan);
     try {
       const res = await fetch("/api/stripe/checkout", {
@@ -545,202 +545,129 @@ export default function SettingsPage() {
             <p style={{ color: "#9A8070", fontSize: ".875rem" }}>…</p>
           ) : (
             <>
-              {/* Current plan badge */}
-              {(() => {
-                const currentInterval = subscription?.interval ?? "month";
-                const intervalLabel = currentInterval === "year"
-                  ? (isFR ? "/an" : "/yr")
-                  : (isFR ? "/mois" : "/mo");
-                const currentPriceKey = plan === "digital"
-                  ? (currentInterval === "year" ? "digitalAnnual" : "digital")
-                  : plan === "print"
-                    ? (currentInterval === "year" ? "printAnnual" : "print")
-                    : null;
+              {/* Badge plan actuel */}
+              <div style={{ display: "flex", alignItems: "center", gap: ".625rem", marginBottom: "1rem" }}>
+                <span style={{ display: "inline-block", padding: ".3rem .875rem", borderRadius: 100, background: plan === "free" ? "rgba(61,43,31,.08)" : "rgba(200,129,58,.12)", border: `1px solid ${plan === "free" ? "rgba(61,43,31,.15)" : "rgba(200,129,58,.3)"}`, fontSize: ".8rem", fontWeight: 600, color: plan === "free" ? "#7A5C44" : "#C8813A" }}>
+                  {plan === "free" ? (isFR ? "Plan gratuit" : "Free plan") : plan === "digital" ? "Premium Digital" : "Premium Print"}
+                </span>
+                {plan === "digital" && (
+                  <span style={{ fontSize: ".8rem", color: "#9A8070" }}>{formatPrice(currency, "digital")}/{isFR ? "mois" : "mo"}</span>
+                )}
+                {plan === "print" && (
+                  <span style={{ fontSize: ".8rem", color: "#9A8070" }}>{formatPrice(currency, "printAnnual")}/{isFR ? "an" : "yr"}</span>
+                )}
+              </div>
 
-                // Derived values for the billing toggle
-                const isAnnual = settingsBilling === "annual";
-                // Keys for checkout (free → paid)
-                const checkoutDigital = isAnnual ? "digital_annual" : "digital";
-                const checkoutPrint   = isAnnual ? "print_annual"   : "print_monthly";
-                // Keys for upgrade (paid → different paid) — upgrade route uses "print" not "print_monthly"
-                const upgradeDigital  = isAnnual ? "digital_annual" : "digital";
-                const upgradePrint    = isAnnual ? "print_annual"   : "print";
-                // Price labels
-                const priceDigital    = isAnnual ? `${formatPrice(currency, "digitalAnnual")}` : formatPrice(currency, "digital");
-                const priceDigitalSub = isAnnual ? `${formatPrice(currency, "digitalAnnualMonthly")}/${isFR ? "mois" : "mo"}` : null;
-                const pricePrint      = isAnnual ? `${formatPrice(currency, "printAnnual")}` : formatPrice(currency, "print");
-                const pricePrintSub   = isAnnual ? `${formatPrice(currency, "printAnnualMonthly")}/${isFR ? "mois" : "mo"}` : null;
+              {/* Renouvellement */}
+              {plan !== "free" && !cancelledAt && (subscription?.current_period_end || profileRenewalDate) && (
+                <p style={{ fontSize: ".8rem", color: "#9A8070", margin: "0 0 .75rem", fontWeight: 300 }}>
+                  {isFR
+                    ? `Prochain renouvellement : ${formatDate((subscription?.current_period_end ?? profileRenewalDate)!)}`
+                    : `Next renewal: ${formatDate((subscription?.current_period_end ?? profileRenewalDate)!)}`}
+                </p>
+              )}
 
-                const billingToggle = (
-                  <div style={{ display: "flex", gap: 0, marginBottom: "1rem" }}>
-                    <div style={{ display: "inline-flex", background: "#F7F2EA", borderRadius: 100, border: "1px solid rgba(61,43,31,.1)", padding: "3px" }}>
-                      {(["monthly", "annual"] as const).map(cycle => (
-                        <button
-                          key={cycle}
-                          onClick={() => setSettingsBilling(cycle)}
-                          style={{
-                            padding: ".35rem 1rem", borderRadius: 100, border: "none",
-                            background: settingsBilling === cycle ? "#3D2B1F" : "transparent",
-                            color: settingsBilling === cycle ? "#F7F2EA" : "#7A5C44",
-                            fontFamily: "inherit", fontSize: ".78rem", fontWeight: settingsBilling === cycle ? 600 : 400,
-                            cursor: "pointer", display: "flex", alignItems: "center", gap: ".4rem",
-                          }}
-                        >
-                          {cycle === "monthly" ? (isFR ? "Mensuel" : "Monthly") : (isFR ? "Annuel" : "Annual")}
-                          {cycle === "annual" && (
-                            <span style={{ fontSize: ".65rem", background: "#C8813A", color: "#FDFAF5", padding: ".1rem .4rem", borderRadius: 100, fontWeight: 600 }}>
-                              {isFR ? "−40%" : "−40%"}
-                            </span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
+              {/* Crédits livre */}
+              {plan === "print" && !cancelledAt && (
+                <p style={{ fontSize: ".8rem", margin: "0 0 1rem", fontWeight: 400, color: bookCredits > 0 ? "#C8813A" : "#9A8070" }}>
+                  {bookCredits > 0
+                    ? (isFR ? "📖 Votre livre offert n'a pas encore été commandé" : "📖 Your free book hasn't been ordered yet")
+                    : (() => {
+                        const renewalTs = subscription?.current_period_end ?? profileRenewalDate;
+                        const renewalStr = renewalTs ? formatDate(renewalTs) : null;
+                        return isFR
+                          ? (renewalStr ? `📖 Votre livre offert a déjà été commandé · Prochain : ${renewalStr}` : "📖 Votre livre offert a déjà été commandé")
+                          : (renewalStr ? `📖 Your free book has already been ordered · Next: ${renewalStr}` : "📖 Your free book has already been ordered");
+                      })()}
+                </p>
+              )}
 
-                return (
-                  <>
-                    {/* Badge plan actuel */}
-                    <div style={{ display: "flex", alignItems: "center", gap: ".625rem", marginBottom: "1rem" }}>
-                      <span style={{ display: "inline-block", padding: ".3rem .875rem", borderRadius: 100, background: plan === "free" ? "rgba(61,43,31,.08)" : "rgba(200,129,58,.12)", border: `1px solid ${plan === "free" ? "rgba(61,43,31,.15)" : "rgba(200,129,58,.3)"}`, fontSize: ".8rem", fontWeight: 600, color: plan === "free" ? "#7A5C44" : "#C8813A" }}>
-                        {plan === "free" ? (isFR ? "Plan gratuit" : "Free plan") : plan === "digital" ? "Premium Digital" : "Premium Print"}
-                      </span>
-                      {plan !== "free" && currentPriceKey && (
-                        <span style={{ fontSize: ".8rem", color: "#9A8070" }}>
-                          {`${formatPrice(currency, currentPriceKey as Parameters<typeof formatPrice>[1])}${intervalLabel}`}
-                        </span>
+              {/* Annulation en cours */}
+              {cancelledAt && (
+                <div style={{ background: "rgba(163,45,45,.05)", border: "1px solid rgba(163,45,45,.2)", borderRadius: 10, padding: ".75rem 1rem", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+                  <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>
+                    {isFR
+                      ? `Votre abonnement sera annulé le ${formatDate(cancelledAt)}. Vous gardez l'accès jusqu'à cette date.`
+                      : `Your subscription will be cancelled on ${formatDate(cancelledAt)}. You keep access until then.`}
+                  </p>
+                  <button
+                    onClick={handleReactivate}
+                    disabled={reactivateLoading}
+                    style={{ background: "none", border: "1px solid rgba(163,45,45,.4)", borderRadius: 100, cursor: "pointer", color: "#A32D2D", fontSize: ".75rem", fontFamily: "inherit", padding: ".3rem .875rem", whiteSpace: "nowrap", opacity: reactivateLoading ? .6 : 1, flexShrink: 0 }}
+                  >
+                    {reactivateLoading ? (isFR ? "Réactivation…" : "Reactivating…") : (isFR ? "Annuler ma résiliation" : "Keep my subscription")}
+                  </button>
+                </div>
+              )}
+
+              {/* ── Plan gratuit → choix abonnement ── */}
+              {plan === "free" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+                  <p style={{ fontSize: ".875rem", color: "#7A5C44", margin: "0 0 .25rem", fontWeight: 300 }}>
+                    {isFR ? "Passez à Premium pour débloquer toutes les fonctionnalités." : "Upgrade to Premium to unlock all features."}
+                  </p>
+                  <button
+                    onClick={() => handleCheckout("digital")}
+                    disabled={!!checkoutLoading}
+                    style={{ ...btnPrimary, opacity: checkoutLoading ? .7 : 1 }}
+                  >
+                    {checkoutLoading === "digital" ? "…" : (isFR ? `Premium Digital — ${formatPrice(currency, "digital")}/mois` : `Premium Digital — ${formatPrice(currency, "digital")}/mo`)}
+                  </button>
+                  <button
+                    onClick={() => handleCheckout("print_annual")}
+                    disabled={!!checkoutLoading}
+                    style={{ ...btnPrimary, background: "#3D2B1F", opacity: checkoutLoading ? .7 : 1 }}
+                  >
+                    {checkoutLoading === "print_annual" ? "…" : (isFR ? `Premium Print — ${formatPrice(currency, "printAnnual")}/an` : `Premium Print — ${formatPrice(currency, "printAnnual")}/yr`)}
+                  </button>
+                  <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".25rem 0 0", lineHeight: 1.5, fontWeight: 300, textAlign: "center" as const }}>
+                    {isFR ? (<>En continuant, vous acceptez les <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>CGV</a>.</>) : (<>By continuing, you agree to our <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Terms of Service</a>.</>)}
+                  </p>
+                </div>
+              )}
+
+              {/* ── Plan payant actif → changer ── */}
+              {plan !== "free" && !cancelledAt && (
+                <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+                  <p style={{ fontSize: ".8rem", color: "#9A8070", margin: "0 0 .25rem", fontWeight: 300 }}>
+                    {isFR ? "Changer de formule :" : "Switch plan:"}
+                  </p>
+
+                  {/* Digital → Print annuel */}
+                  {plan === "digital" && (
+                    <button
+                      onClick={() => handleUpgradeWithPreview("print_annual")}
+                      disabled={!!upgradeLoading || !!upgradePreviewLoading}
+                      style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, background: "rgba(61,43,31,.04)", opacity: (upgradeLoading || upgradePreviewLoading) ? .7 : 1 }}
+                    >
+                      {upgradePreviewLoading === "print_annual" ? (isFR ? "Calcul…" : "Calculating…") : upgradeLoading === "print_annual" ? (isFR ? "Mise à jour…" : "Updating…") : (
+                        isFR ? `Premium Print — ${formatPrice(currency, "printAnnual")}/an` : `Premium Print — ${formatPrice(currency, "printAnnual")}/yr`
                       )}
-                    </div>
+                    </button>
+                  )}
 
-                    {/* Renouvellement */}
-                    {plan !== "free" && !cancelledAt && (subscription?.current_period_end || profileRenewalDate) && (
-                      <p style={{ fontSize: ".8rem", color: "#9A8070", margin: "0 0 .75rem", fontWeight: 300 }}>
-                        {isFR
-                          ? `Prochain renouvellement : ${formatDate((subscription?.current_period_end ?? profileRenewalDate)!)}`
-                          : `Next renewal: ${formatDate((subscription?.current_period_end ?? profileRenewalDate)!)}`}
-                      </p>
-                    )}
+                  {/* Print annuel → Digital mensuel */}
+                  {plan === "print" && (
+                    <button
+                      onClick={() => handleUpgradeWithPreview("digital")}
+                      disabled={!!upgradeLoading || !!upgradePreviewLoading}
+                      style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, opacity: (upgradeLoading || upgradePreviewLoading) ? .7 : 1 }}
+                    >
+                      {upgradePreviewLoading === "digital" ? (isFR ? "Calcul…" : "Calculating…") : upgradeLoading === "digital" ? (isFR ? "Mise à jour…" : "Updating…") : (
+                        isFR ? `Premium Digital — ${formatPrice(currency, "digital")}/mois` : `Premium Digital — ${formatPrice(currency, "digital")}/mo`
+                      )}
+                    </button>
+                  )}
 
-                    {/* Crédits livre */}
-                    {plan === "print" && !cancelledAt && (
-                      <p style={{ fontSize: ".8rem", margin: "0 0 1rem", fontWeight: 400, color: bookCredits > 0 ? "#C8813A" : "#9A8070" }}>
-                        {bookCredits > 0
-                          ? (isFR ? "📖 Votre livre offert n'a pas encore été commandé" : "📖 Your free book hasn't been ordered yet")
-                          : (() => {
-                              const renewalTs = subscription?.current_period_end ?? profileRenewalDate;
-                              const renewalStr = renewalTs ? formatDate(renewalTs) : null;
-                              return isFR
-                                ? (renewalStr ? `📖 Votre livre offert a déjà été commandé · Prochain : ${renewalStr}` : "📖 Votre livre offert a déjà été commandé")
-                                : (renewalStr ? `📖 Your free book has already been ordered · Next: ${renewalStr}` : "📖 Your free book has already been ordered");
-                            })()}
-                      </p>
-                    )}
-
-                    {/* Annulation en cours */}
-                    {cancelledAt && (
-                      <div style={{ background: "rgba(163,45,45,.05)", border: "1px solid rgba(163,45,45,.2)", borderRadius: 10, padding: ".75rem 1rem", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
-                        <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>
-                          {isFR
-                            ? `Votre abonnement sera annulé le ${formatDate(cancelledAt)}. Vous gardez l'accès jusqu'à cette date.`
-                            : `Your subscription will be cancelled on ${formatDate(cancelledAt)}. You keep access until then.`}
-                        </p>
-                        <button
-                          onClick={handleReactivate}
-                          disabled={reactivateLoading}
-                          style={{ background: "none", border: "1px solid rgba(163,45,45,.4)", borderRadius: 100, cursor: "pointer", color: "#A32D2D", fontSize: ".75rem", fontFamily: "inherit", padding: ".3rem .875rem", whiteSpace: "nowrap", opacity: reactivateLoading ? .6 : 1, flexShrink: 0 }}
-                        >
-                          {reactivateLoading
-                            ? (isFR ? "Réactivation…" : "Reactivating…")
-                            : (isFR ? "Annuler ma résiliation" : "Keep my subscription")}
-                        </button>
-                      </div>
-                    )}
-
-                    {/* ── Plan gratuit → choix abonnement ── */}
-                    {plan === "free" && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-                        <p style={{ fontSize: ".875rem", color: "#7A5C44", margin: "0 0 .25rem", fontWeight: 300 }}>
-                          {isFR ? "Passez à Premium pour débloquer toutes les fonctionnalités." : "Upgrade to Premium to unlock all features."}
-                        </p>
-                        {billingToggle}
-                        <button
-                          onClick={() => handleCheckout(checkoutDigital as "digital" | "print_monthly")}
-                          disabled={!!checkoutLoading}
-                          style={{ ...btnPrimary, opacity: checkoutLoading ? .7 : 1 }}
-                        >
-                          {checkoutLoading === checkoutDigital ? "…" : (
-                            isFR
-                              ? `Premium Digital — ${priceDigital}${isAnnual ? "/an" : "/mois"}${priceDigitalSub ? ` (${priceDigitalSub})` : ""}`
-                              : `Premium Digital — ${priceDigital}${isAnnual ? "/yr" : "/mo"}${priceDigitalSub ? ` (${priceDigitalSub})` : ""}`
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleCheckout(checkoutPrint as "digital" | "print_monthly")}
-                          disabled={!!checkoutLoading}
-                          style={{ ...btnPrimary, background: "#3D2B1F", opacity: checkoutLoading ? .7 : 1 }}
-                        >
-                          {checkoutLoading === checkoutPrint ? "…" : (
-                            isFR
-                              ? `Premium Print — ${pricePrint}${isAnnual ? "/an" : "/mois"}${pricePrintSub ? ` (${pricePrintSub})` : ""}`
-                              : `Premium Print — ${pricePrint}${isAnnual ? "/yr" : "/mo"}${pricePrintSub ? ` (${pricePrintSub})` : ""}`
-                          )}
-                        </button>
-                        <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".25rem 0 0", lineHeight: 1.5, fontWeight: 300, textAlign: "center" as const }}>
-                          {isFR ? (<>En continuant, vous acceptez les <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>CGV</a>.</>) : (<>By continuing, you agree to our <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Terms of Service</a>.</>)}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* ── Plan payant actif → changer ── */}
-                    {plan !== "free" && !cancelledAt && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-                        <p style={{ fontSize: ".8rem", color: "#9A8070", margin: "0 0 .25rem", fontWeight: 300 }}>
-                          {isFR ? "Changer de formule :" : "Switch plan:"}
-                        </p>
-                        {billingToggle}
-
-                        {/* Option Digital si pas déjà dessus au même cycle */}
-                        {!(plan === "digital" && currentInterval === (isAnnual ? "year" : "month")) && (
-                          <button
-                            onClick={() => handleUpgradeWithPreview(upgradeDigital)}
-                            disabled={!!upgradeLoading || !!upgradePreviewLoading}
-                            style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, opacity: (upgradeLoading || upgradePreviewLoading) ? .7 : 1 }}
-                          >
-                            {upgradePreviewLoading === upgradeDigital ? (isFR ? "Calcul…" : "Calculating…") : upgradeLoading === upgradeDigital ? (isFR ? "Mise à jour…" : "Updating…") : (
-                              isFR
-                                ? `Premium Digital — ${priceDigital}${isAnnual ? "/an" : "/mois"}${priceDigitalSub ? ` (${priceDigitalSub})` : ""}`
-                                : `Premium Digital — ${priceDigital}${isAnnual ? "/yr" : "/mo"}${priceDigitalSub ? ` (${priceDigitalSub})` : ""}`
-                            )}
-                          </button>
-                        )}
-
-                        {/* Option Print si pas déjà dessus au même cycle */}
-                        {!(plan === "print" && currentInterval === (isAnnual ? "year" : "month")) && (
-                          <button
-                            onClick={() => handleUpgradeWithPreview(upgradePrint)}
-                            disabled={!!upgradeLoading || !!upgradePreviewLoading}
-                            style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, background: "rgba(61,43,31,.04)", opacity: (upgradeLoading || upgradePreviewLoading) ? .7 : 1 }}
-                          >
-                            {upgradePreviewLoading === upgradePrint ? (isFR ? "Calcul…" : "Calculating…") : upgradeLoading === upgradePrint ? (isFR ? "Mise à jour…" : "Updating…") : (
-                              isFR
-                                ? `Premium Print — ${pricePrint}${isAnnual ? "/an" : "/mois"}${pricePrintSub ? ` (${pricePrintSub})` : ""}`
-                                : `Premium Print — ${pricePrint}${isAnnual ? "/yr" : "/mo"}${pricePrintSub ? ` (${pricePrintSub})` : ""}`
-                            )}
-                          </button>
-                        )}
-
-                        <button
-                          onClick={handleCancel}
-                          disabled={cancelLoading}
-                          style={{ background: "none", border: "none", cursor: "pointer", color: "#A32D2D", fontSize: ".8rem", fontFamily: "inherit", padding: ".25rem 0", textDecoration: "underline", opacity: cancelLoading ? .6 : 1, textAlign: "left" as const }}
-                        >
-                          {cancelLoading ? (isFR ? "Annulation…" : "Cancelling…") : (isFR ? "Annuler mon abonnement" : "Cancel my subscription")}
-                        </button>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+                  <button
+                    onClick={handleCancel}
+                    disabled={cancelLoading}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#A32D2D", fontSize: ".8rem", fontFamily: "inherit", padding: ".25rem 0", textDecoration: "underline", opacity: cancelLoading ? .6 : 1, textAlign: "left" as const }}
+                  >
+                    {cancelLoading ? (isFR ? "Annulation…" : "Cancelling…") : (isFR ? "Annuler mon abonnement" : "Cancel my subscription")}
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
