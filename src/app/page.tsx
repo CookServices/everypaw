@@ -521,12 +521,6 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <Link
-              href={isFR ? "/fr/auth/signup?plan=print" : "/auth/signup?plan=print"}
-              style={{ display: "inline-flex", alignItems: "center", gap: ".5rem", background: "#3D2B1F", color: "#F7F2EA", padding: ".75rem 1.75rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}
-            >
-              {isFR ? "Commander mon livre" : "Get my book"}
-            </Link>
           </div>
 
           {/* Right: 3D book mockup */}
