@@ -1029,7 +1029,7 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 | ID | Description | Effort |
 |---|---|---|
 | LT1 | Exit-intent capture email : popup avant départ → `"Recevez un exemple de livre Everypaw par email"` | 2h |
-| LT2 | Partage social natif sur profil public avec Open Graph preview | 2h |
+| ~~LT2~~ | ~~Partage social natif sur profil public avec Open Graph preview~~ | ✅ session 31 — `generateMetadata` OG+Twitter sur `/pets/[id]`. Commit `6858ec1`. | — |
 | LT3 | **Page `/books` — bouton "Recommander le même exemplaire"** : sur chaque `book_config` avec `status=ordered`, bouton qui charge la config existante et saute directement au step `address` → step `confirm` → paiement Stripe. Passer `configId` + `step=address` en query params vers `order/page.tsx` (le mécanisme `?configId=` existe déjà, ajouter `?startStep=address`). | 3h |
 | LT4 | **Page `/books` — bouton "Créer un nouveau livre à partir de ce modèle"** : sur chaque `book_config` (tous statuts), bouton → `/dashboard/pets/[id]/order?configId=[id]`. Le mécanisme `?configId=` existe déjà dans `order/page.tsx` (charge la config au mount). Effort quasi nul côté backend — UI seulement. | 1h |
 | ~~LT5~~ | ~~Date de renouvellement Stripe~~ | ✅ déjà implémenté — `/api/stripe/subscription` existe, settings + order page affichent la date. Migration SQL ajoutée : `add_subscription_renewal_date_2026_06_05.sql` (colonne `bigint` sur `profiles`). | — |
@@ -1172,7 +1172,7 @@ Tous les comptes A–E ✅ PASS après round 2.
 - **L1** crons (`streak-alert`, `birthday-check`, `daily-prompts`, `on-this-day`) : `unsubscribe_token` null-guardé → fallback `/dashboard`
 - **L2** `book-configs DELETE` : vérifie `count` après delete → 404 si aucune ligne affectée
 
-### ✅ Session 31 — Page mémorial + OG meta (2026-06-05)
+### ✅ Session 31 — Page mémorial + OG meta social (2026-06-05)
 
 **Commit** : `accd141`
 
@@ -1184,6 +1184,11 @@ Tous les comptes A–E ✅ PASS après round 2.
 - Bouton "Modifier" visible propriétaire seulement
 - RLS `pets_public_read` + `stories_public_read` : public SELECT ✅
 - Lien depuis `/dashboard/pets/[id]` (bouton "Voir la page mémorial") ✅
+
+**OG meta `/pets/[id]`** (`src/app/pets/[id]/page.tsx`) — commit `6858ec1`
+- `generateMetadata()` : title `{nom} · {espèce} · Everypaw`, description = bio ou fallback, OG + Twitter card
+- Photo quand disponible (`photo_url`), sinon `summary` sans image
+- Même couverture sociale : Facebook / LinkedIn / WhatsApp / Slack / Discord / Twitter ✅
 
 ---
 
