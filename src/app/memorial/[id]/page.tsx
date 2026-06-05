@@ -2,8 +2,55 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { cookies, headers } from "next/headers";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getTranslations } from "@/lib/i18n";
 import PublicFooter from "@/components/PublicFooter";
+
+// ── OG meta ───────────────────────────────────────────────────────────────────
+
+function anonClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+
+export async function generateMetadata(
+  { params }: { params: { id: string } }
+): Promise<Metadata> {
+  const { data: pet } = await anonClient()
+    .from("pets")
+    .select("name, species, memorial_message, memorial_photo_url, photo_url")
+    .eq("id", params.id)
+    .single();
+
+  if (!pet) return { title: "Mémorial · Everypaw" };
+
+  const image = pet.memorial_photo_url ?? pet.photo_url ?? null;
+  const description = pet.memorial_message
+    ?? `En mémoire de ${pet.name} · Everypaw`;
+
+  return {
+    title: `En mémoire de ${pet.name} · Everypaw`,
+    description,
+    openGraph: {
+      title: `En mémoire de ${pet.name}`,
+      description,
+      url: `https://everypaw.app/memorial/${params.id}`,
+      siteName: "Everypaw",
+      type: "website",
+      ...(image ? { images: [{ url: image, width: 800, height: 800, alt: pet.name }] } : {}),
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title: `En mémoire de ${pet.name}`,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  };
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function MemorialPage({ params, searchParams }: { params: { id: string }; searchParams: { lang?: string } }) {
   const langParam = searchParams.lang;
@@ -25,10 +72,7 @@ export default async function MemorialPage({ params, searchParams }: { params: {
 
   // Anon key is sufficient here — RLS allows public reads on pets/stories.
   // Never use the service role key in public server components.
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = anonClient();
 
   // Check if the viewer is the owner (for edit button)
   const supabaseAuth = await createServerClient();
