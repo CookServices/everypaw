@@ -680,16 +680,6 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 : "Your free book will be available again when your subscription renews."
             }
           </p>
-          <button
-            onClick={() => setStep("address")}
-            style={{
-              background: accentColor, color: "#FDFAF5", border: "none",
-              padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
-              fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-            }}
-          >
-            {t.order.print_extra_book_cta}
-          </button>
         </div>
       )}
 
@@ -1220,7 +1210,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem", minHeight: 44,
           }}
         >
-          <span>{downloadLoading ? "…" : (locale === "fr" ? "📄 Télécharger le PDF" : "📄 Download PDF")}</span>
+          <span>{downloadLoading ? "…" : (locale === "fr" ? "Télécharger le PDF" : "Download PDF")}</span>
         </button>
         <button
           onClick={() => handleSave()}
@@ -1241,17 +1231,6 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             ? (locale === "fr" ? "✓ Sauvegardé" : "✓ Saved")
             : (locale === "fr" ? "Sauvegarder" : "Save")}
         </button>
-        <Link
-          href={`/dashboard/pets/${id}`}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            textAlign: "center", padding: ".75rem 1rem", borderRadius: 100, minHeight: 44,
-            border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`,
-            color: textMuted, textDecoration: "none", fontSize: ".875rem",
-          }}
-        >
-          {t.order.preview_back}
-        </Link>
       </div>
     </div>
   );
