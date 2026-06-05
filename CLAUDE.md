@@ -1172,9 +1172,9 @@ Tous les comptes A–E ✅ PASS après round 2.
 - **L1** crons (`streak-alert`, `birthday-check`, `daily-prompts`, `on-this-day`) : `unsubscribe_token` null-guardé → fallback `/dashboard`
 - **L2** `book-configs DELETE` : vérifie `count` après delete → 404 si aucune ligne affectée
 
-### ✅ Session 31 — Page mémorial + OG meta social (2026-06-05)
+### ✅ Session 31 — Memorial + OG social + LT1/LT2/LT3 + pricing (2026-06-05)
 
-**Commit** : `accd141`
+**Commits** : `accd141`, `6858ec1`, `ca22206`, `0a05387`, `430bb60`, `245667a`, `cdd0515`, `a018d14`
 
 **Page `/memorial/[id]`** — était déjà implémentée (165 lignes). Complétée :
 - `generateMetadata()` : OG (`og:title`, `og:description`, `og:image`) + Twitter card — partage social Facebook/LinkedIn/WhatsApp/Slack/Discord/Twitter ✅
@@ -1185,22 +1185,28 @@ Tous les comptes A–E ✅ PASS après round 2.
 - RLS `pets_public_read` + `stories_public_read` : public SELECT ✅
 - Lien depuis `/dashboard/pets/[id]` (bouton "Voir la page mémorial") ✅
 
-**LT3 — Recommander saute au step adresse** — commit `245667a`
-- `books/page.tsx` : bouton "Recommander/Reorder" → `?configId=X&startStep=address`
-- `order/page.tsx` : `startStepParam` lu depuis URL, `setStep(startStepParam)` après chargement config (garde validité des valeurs)
-- "Dupliquer en brouillon" inchangé → reste sur `preview`
+**LT2 — OG meta `/pets/[id]`** (`src/app/pets/[id]/page.tsx`) — commit `6858ec1`
+- `generateMetadata()` : title `{nom} · {espèce} · Everypaw`, description = bio ou fallback, OG + Twitter card
+- Photo quand disponible (`photo_url`), sinon `summary` sans image
+- Même couverture sociale : Facebook / LinkedIn / WhatsApp / Slack / Discord / Twitter ✅
 
-**Exit-intent popup** (`src/components/ExitIntentPopup.tsx`) — commit `0a05387`
+**LT1 — Exit-intent popup** (`src/components/ExitIntentPopup.tsx`) — commit `0a05387`
 - Déclenche sur `mouseleave` vers le haut de page, après 3s de délai
 - Une seule fois par session via `sessionStorage`
 - Email → POST `/api/waitlist` (confirmation Resend + notif interne déjà en place)
 - FR/EN, état succès, gestion erreur rate-limit
 - Injecté dans `/` (isFR détecté) et `/fr` (always FR)
 
-**OG meta `/pets/[id]`** (`src/app/pets/[id]/page.tsx`) — commit `6858ec1`
-- `generateMetadata()` : title `{nom} · {espèce} · Everypaw`, description = bio ou fallback, OG + Twitter card
-- Photo quand disponible (`photo_url`), sinon `summary` sans image
-- Même couverture sociale : Facebook / LinkedIn / WhatsApp / Slack / Discord / Twitter ✅
+**LT3 — Recommander saute au step adresse** — commit `245667a`
+- `books/page.tsx` : bouton "Recommander/Reorder" → `?configId=X&startStep=address`
+- `order/page.tsx` : `startStepParam` lu depuis URL, `setStep(startStepParam)` après chargement config (garde validité des valeurs)
+- "Dupliquer en brouillon" inchangé → reste sur `preview`
+- LT4 : déjà couvert par "Dupliquer en brouillon" + `?configId=` existants
+
+**Arrondi supérieur prix livre** (`src/lib/gelato-pricing.ts`) — commit `a018d14`
+- `Math.ceil` au lieu de `Math.round` → prix toujours entier (ex: 27,46 → 28 €)
+- Cohérent affichage + charge Stripe (même fonction)
+- Prix abonnements `currency.ts` inchangés (contrôlés par Stripe)
 
 ---
 
