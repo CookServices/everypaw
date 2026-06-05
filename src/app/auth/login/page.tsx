@@ -18,7 +18,10 @@ export default function LoginPage() {
     const p = new URLSearchParams(window.location.search);
     const redirect = p.get("redirect");
     const code = p.get("code");
-    if (redirect) return code ? `${redirect}?code=${code}` : redirect;
+    // Only allow relative paths — prevent open redirect to external sites
+    if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
+      return code ? `${redirect}?code=${code}` : redirect;
+    }
     return "/dashboard";
   };
   const [email, setEmail] = useState("");
