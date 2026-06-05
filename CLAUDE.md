@@ -1030,8 +1030,8 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 |---|---|---|
 | ~~LT1~~ | ~~Exit-intent capture email~~ | ✅ session 31 — `ExitIntentPopup.tsx`, `mouseleave` top + 3s delay, `sessionStorage`, POST `/api/waitlist`, FR/EN. Commit `0a05387`. | — |
 | ~~LT2~~ | ~~Partage social natif sur profil public avec Open Graph preview~~ | ✅ session 31 — `generateMetadata` OG+Twitter sur `/pets/[id]`. Commit `6858ec1`. | — |
-| LT3 | **Page `/books` — bouton "Recommander le même exemplaire"** : sur chaque `book_config` avec `status=ordered`, bouton qui charge la config existante et saute directement au step `address` → step `confirm` → paiement Stripe. Passer `configId` + `step=address` en query params vers `order/page.tsx` (le mécanisme `?configId=` existe déjà, ajouter `?startStep=address`). | 3h |
-| LT4 | **Page `/books` — bouton "Créer un nouveau livre à partir de ce modèle"** : sur chaque `book_config` (tous statuts), bouton → `/dashboard/pets/[id]/order?configId=[id]`. Le mécanisme `?configId=` existe déjà dans `order/page.tsx` (charge la config au mount). Effort quasi nul côté backend — UI seulement. | 1h |
+| ~~LT3~~ | ~~Page `/books` — bouton "Recommander le même exemplaire"~~ | ✅ session 31 — `books/page.tsx` : lien "Recommander" passe `?configId=X&startStep=address`. `order/page.tsx` : lit `startStepParam`, saute au step après chargement config. "Dupliquer en brouillon" reste sur `preview`. Commit `245667a`. | — |
+| ~~LT4~~ | ~~Page `/books` — bouton "Créer un nouveau livre à partir de ce modèle"~~ | ✅ déjà en place — "Dupliquer en brouillon" + `?configId=` existants couvrent ce cas. | — |
 | ~~LT5~~ | ~~Date de renouvellement Stripe~~ | ✅ déjà implémenté — `/api/stripe/subscription` existe, settings + order page affichent la date. Migration SQL ajoutée : `add_subscription_renewal_date_2026_06_05.sql` (colonne `bigint` sur `profiles`). | — |
 | ~~LT6~~ | ~~Wording crédit livre settings~~ | ✅ session 29 — commit `69a9624` | — |
 | ~~LT7~~ | ~~Page mémorial `/memorial/[id]`~~ | ✅ session 31 — déjà implémentée. Ajouté : `generateMetadata` OG+Twitter, colonne `memorial_photo_url` (migration `add_memorial_photo_url_2026_06_05.sql`), helper `anonClient()`. Commit `accd141`. | — |
@@ -1184,6 +1184,11 @@ Tous les comptes A–E ✅ PASS après round 2.
 - Bouton "Modifier" visible propriétaire seulement
 - RLS `pets_public_read` + `stories_public_read` : public SELECT ✅
 - Lien depuis `/dashboard/pets/[id]` (bouton "Voir la page mémorial") ✅
+
+**LT3 — Recommander saute au step adresse** — commit `245667a`
+- `books/page.tsx` : bouton "Recommander/Reorder" → `?configId=X&startStep=address`
+- `order/page.tsx` : `startStepParam` lu depuis URL, `setStep(startStepParam)` après chargement config (garde validité des valeurs)
+- "Dupliquer en brouillon" inchangé → reste sur `preview`
 
 **Exit-intent popup** (`src/components/ExitIntentPopup.tsx`) — commit `0a05387`
 - Déclenche sur `mouseleave` vers le haut de page, après 3s de délai
