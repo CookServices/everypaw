@@ -1388,4 +1388,24 @@ Files audited this round (no changes required):
 - `api/contact/route.ts` — rate limit + escapeHtml + SUBJECT_ROUTING whitelist ✅
 - `next.config.js` — headers HSTS/CSP/X-Frame-Options corrects (hors frame-src) ✅
 
-*Dernière mise à jour : 2026-06-05 (session 35 — Security Round 9)*
+### ✅ Session 36 — Security Round 10 (2026-06-05)
+
+**Commits** : `28a03af`, `6a3a957`
+
+**Findings corrigés :**
+
+- **`auth-emails.ts` XSS** (M1) : version EN de `buildChangeEmailEmail` interpolait `${newEmail}` brut dans le HTML — la version FR utilisait déjà `escapeHtml`. Fix : `escapeHtml(newEmail)` dans les deux branches.
+- **`gelato/order` `yearFilter` non validé** (M2) : pas de type-check ni de range-check. Une string ou valeur hors 2000-2100 filtrait silencieusement à 0 stories. Fix : `Number.isInteger(yearFilter) && yearFilter >= 2000 && yearFilter <= 2100`.
+- **`gelato/order` `dedicationText` non borné** (L1) : aucune limite de longueur → risque URL overflow / DB bloat. Fix : max 500 chars validé avant ownership check.
+- **`gelato/order` `addressLine2` non borné** (L2) : les autres champs d'adresse avaient `ADDR_MAX = 100`, pas `addressLine2`. Fix : validation conditionnelle ajoutée.
+- **`weekly-reminder` unsubscribe_token null guard manquant** (L3) : `?token=null` littéral si token null — unsubscribe route rejetait. Fix : même null-guard que les 4 autres crons (Round 5 l'avait manqué).
+
+**Fichiers revus sans finding :**
+- `api/generate/route.ts` — plan gate, ownership, escapeXml, UUID, rate limit DB-backed ✅
+- `lib/rate-limit.ts` — correctement documenté comme non fiable sur serverless, commentaire clair ✅
+- `lib/auth-emails.ts` — toutes les branches escapées (hors M1 corrigé) ✅
+- `api/gelato/order/route.ts` — SSRF, UUID, credit atomic, IDOR guard ✅ (hors M2/L1/L2)
+- `cron/monthly-story` — escapeXml prompt, escapeHtml emails ✅
+- `cron/birthday-check`, `on-this-day`, `streak-alert`, `daily-prompts` — clean ✅
+
+*Dernière mise à jour : 2026-06-05 (session 36 — Security Round 10)*
