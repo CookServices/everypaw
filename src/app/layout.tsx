@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
@@ -28,6 +28,11 @@ export const metadata: Metadata = {
     title: "Everypaw , Your pet's life story, printed",
     description: "Turn your pet's daily moments into a beautiful AI-crafted book.",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export const dynamic = "force-dynamic";
