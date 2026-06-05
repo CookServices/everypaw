@@ -296,12 +296,12 @@ export default function GiftPage() {
 
               {/* Digital = mensuel, Print = annuel — pas de toggle */}
 
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: ".625rem", marginBottom: ".75rem" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: ".625rem", marginBottom: ".75rem" }}>
 
                 {/* Digital */}
                 <button
                   onClick={() => setSelectedPlan("digital")}
-                  style={{ padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "digital" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "digital" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s" }}
+                  style={{ flex: "1 1 160px", padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "digital" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "digital" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s" }}
                 >
                   <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Digital</p>
                   <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .15rem" }}>
@@ -321,7 +321,7 @@ export default function GiftPage() {
                 {/* Print */}
                 <button
                   onClick={() => setSelectedPlan("print")}
-                  style={{ padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "print" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "print" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s", position: "relative" }}
+                  style={{ flex: "1 1 160px", padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "print" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "print" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s", position: "relative" }}
                 >
                   <div style={{ position: "absolute", top: "-.5rem", right: ".75rem", background: "#C8813A", color: "#FDFAF5", fontSize: ".6rem", fontWeight: 600, borderRadius: 100, padding: ".15rem .5rem", letterSpacing: ".04em" }}>
                     {isFR ? "Meilleure valeur" : "Best value"}
