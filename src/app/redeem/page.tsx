@@ -45,9 +45,9 @@ export default function RedeemPage() {
     }
   };
 
-  const redeemRedirect = `/redeem${code ? `?code=${code}` : ""}`;
-  const loginUrl = `/auth/login?redirect=/redeem${code ? `&code=${code}` : ""}`;
-  const signupUrl = `/auth/signup?redirect=/redeem${code ? `&code=${code}` : ""}`;
+  const redeemRedirect = `/redeem${code ? `?code=${encodeURIComponent(code)}` : ""}`;
+  const loginUrl = `/auth/login?redirect=/redeem${code ? `&code=${encodeURIComponent(code)}` : ""}`;
+  const signupUrl = `/auth/signup?redirect=/redeem${code ? `&code=${encodeURIComponent(code)}` : ""}`;
 
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
