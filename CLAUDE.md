@@ -1032,8 +1032,8 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 | LT2 | Partage social natif sur profil public avec Open Graph preview | 2h |
 | LT3 | **Page `/books` — bouton "Recommander le même exemplaire"** : sur chaque `book_config` avec `status=ordered`, bouton qui charge la config existante et saute directement au step `address` → step `confirm` → paiement Stripe. Passer `configId` + `step=address` en query params vers `order/page.tsx` (le mécanisme `?configId=` existe déjà, ajouter `?startStep=address`). | 3h |
 | LT4 | **Page `/books` — bouton "Créer un nouveau livre à partir de ce modèle"** : sur chaque `book_config` (tous statuts), bouton → `/dashboard/pets/[id]/order?configId=[id]`. Le mécanisme `?configId=` existe déjà dans `order/page.tsx` (charge la config au mount). Effort quasi nul côté backend — UI seulement. | 1h |
-| LT5 | **Date de renouvellement Stripe — affichage dans settings + order page** : créer `GET /api/stripe/subscription` qui retourne `{ current_period_end: ISO }` depuis Stripe API (stripe.subscriptions.retrieve sur `stripe_customer_id`). Afficher dans : (1) bloc "Mon abonnement" settings → "Renouvellement le JJ mois AAAA" ; (2) encart "Votre livre annuel a déjà été commandé" sur `order/page.tsx` → remplacer la phrase générique par "Votre prochain livre offert sera disponible le JJ mois AAAA". Fallback si route échoue : masquer la date. | 3h |
-| LT6 | **Wording crédit livre settings — remplacement "📖 Crédit annuel utilisé"** : dans `settings/page.tsx` bloc "Mon abonnement" (plan Print), remplacer le badge crédit par un message contextuel : `book_credits === 0` → "Votre livre offert a déjà été commandé" ; `book_credits > 0` → "Votre livre offert n'a pas encore été commandé". Dépend de LT5 pour afficher la date de renouvellement en sous-texte. | 1h |
+| ~~LT5~~ | ~~Date de renouvellement Stripe~~ | ✅ déjà implémenté — `/api/stripe/subscription` existe, settings + order page affichent la date. Migration SQL ajoutée : `add_subscription_renewal_date_2026_06_05.sql` (colonne `bigint` sur `profiles`). | — |
+| ~~LT6~~ | ~~Wording crédit livre settings~~ | ✅ session 29 — commit `69a9624` | — |
 
 ---
 
