@@ -11,6 +11,7 @@ function formatSubscription(sub: Stripe.Subscription) {
     cancel_at_period_end: sub.cancel_at_period_end,
     cancel_at: sub.cancel_at,
     current_period_end: sub.current_period_end,
+    interval: (sub.items.data[0]?.plan?.interval ?? "month") as "month" | "year",
   };
 }
 
