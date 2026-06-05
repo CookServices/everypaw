@@ -278,7 +278,7 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/dashboard/pets/[id]/books` | Historique livres & brouillons — liste `book_configs`, statut Gelato temps réel, tracking, reprendre/recommander/supprimer |
 | `/dashboard/settings` | Préférences utilisateur |
 | `/pets/[id]` | Profil public animal |
-| `/memorial/[id]` | Page mémorial (à implémenter) |
+| `/memorial/[id]` | Page mémorial publique ✅ — design dark, photo, message, histoires IA, OG meta |
 | `/gift` | Page cadeau |
 | `/unsubscribe` | Désinscription emails (token) |
 
@@ -1034,6 +1034,7 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 | LT4 | **Page `/books` — bouton "Créer un nouveau livre à partir de ce modèle"** : sur chaque `book_config` (tous statuts), bouton → `/dashboard/pets/[id]/order?configId=[id]`. Le mécanisme `?configId=` existe déjà dans `order/page.tsx` (charge la config au mount). Effort quasi nul côté backend — UI seulement. | 1h |
 | ~~LT5~~ | ~~Date de renouvellement Stripe~~ | ✅ déjà implémenté — `/api/stripe/subscription` existe, settings + order page affichent la date. Migration SQL ajoutée : `add_subscription_renewal_date_2026_06_05.sql` (colonne `bigint` sur `profiles`). | — |
 | ~~LT6~~ | ~~Wording crédit livre settings~~ | ✅ session 29 — commit `69a9624` | — |
+| ~~LT7~~ | ~~Page mémorial `/memorial/[id]`~~ | ✅ session 31 — déjà implémentée. Ajouté : `generateMetadata` OG+Twitter, colonne `memorial_photo_url` (migration `add_memorial_photo_url_2026_06_05.sql`), helper `anonClient()`. Commit `accd141`. | — |
 
 ---
 
@@ -1170,6 +1171,21 @@ Tous les comptes A–E ✅ PASS après round 2.
 - **M3** `export-data` : rate limit 3 req/heure par user via `checkRateLimit`
 - **L1** crons (`streak-alert`, `birthday-check`, `daily-prompts`, `on-this-day`) : `unsubscribe_token` null-guardé → fallback `/dashboard`
 - **L2** `book-configs DELETE` : vérifie `count` après delete → 404 si aucune ligne affectée
+
+### ✅ Session 31 — Page mémorial + OG meta (2026-06-05)
+
+**Commit** : `accd141`
+
+**Page `/memorial/[id]`** — était déjà implémentée (165 lignes). Complétée :
+- `generateMetadata()` : OG (`og:title`, `og:description`, `og:image`) + Twitter card — partage social Facebook/LinkedIn/WhatsApp/Slack/Discord/Twitter ✅
+- Colonne `memorial_photo_url text` ajoutée sur `pets` (migration `add_memorial_photo_url_2026_06_05.sql`, appliquée en prod)
+- `anonClient()` helper extrait pour éviter duplication dans `generateMetadata` + `MemorialPage`
+- Design : dark (#1C1410), photo ronde 140px, dates naissance/décès, message mémorial, 3 dernières histoires IA, CTA signup
+- Bouton "Modifier" visible propriétaire seulement
+- RLS `pets_public_read` + `stories_public_read` : public SELECT ✅
+- Lien depuis `/dashboard/pets/[id]` (bouton "Voir la page mémorial") ✅
+
+---
 
 ### ✅ Session 30 — Features UX + qualité (2026-06-05)
 
