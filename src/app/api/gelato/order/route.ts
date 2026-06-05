@@ -48,12 +48,29 @@ export async function POST(req: Request) {
     }
   }
 
+  // Validate yearFilter — must be an integer in [2000, 2100]
+  if (yearFilter !== undefined && yearFilter !== null) {
+    if (!Number.isInteger(yearFilter) || yearFilter < 2000 || yearFilter > 2100) {
+      return NextResponse.json({ error: "Invalid yearFilter" }, { status: 400 });
+    }
+  }
+
+  // Validate dedicationText — max 500 chars
+  const MAX_DEDICATION = 500;
+  if (dedicationText !== undefined && dedicationText !== null) {
+    if (typeof dedicationText !== "string" || dedicationText.length > MAX_DEDICATION) {
+      return NextResponse.json({ error: "Dedication too long (max 500 chars)" }, { status: 400 });
+    }
+  }
+
   // Validate shippingAddress fields — presence + max length
   const ADDR_MAX = 100;
   if (!shippingAddress ||
       typeof shippingAddress.firstName !== "string" || shippingAddress.firstName.length > ADDR_MAX ||
       typeof shippingAddress.lastName !== "string" || shippingAddress.lastName.length > ADDR_MAX ||
       typeof shippingAddress.addressLine1 !== "string" || shippingAddress.addressLine1.length > ADDR_MAX ||
+      (shippingAddress.addressLine2 !== undefined && shippingAddress.addressLine2 !== "" &&
+       (typeof shippingAddress.addressLine2 !== "string" || shippingAddress.addressLine2.length > ADDR_MAX)) ||
       typeof shippingAddress.city !== "string" || shippingAddress.city.length > ADDR_MAX ||
       typeof shippingAddress.postCode !== "string" || shippingAddress.postCode.length > 20 ||
       typeof shippingAddress.country !== "string" || shippingAddress.country.length > 3) {

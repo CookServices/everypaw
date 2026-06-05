@@ -108,7 +108,7 @@ export function buildChangeEmailEmail(lang: "fr" | "en", confirmUrl: string, new
     html: baseLayout(`
       <h1 style="font-family:Georgia,serif;font-size:1.4rem;font-weight:600;color:${BRAND.text};margin:0 0 12px;">Email address change</h1>
       <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 8px;">You requested to change your email address to:</p>
-      <p style="font-size:.95rem;font-weight:600;color:${BRAND.text};margin:0 0 24px;">${newEmail}</p>
+      <p style="font-size:.95rem;font-weight:600;color:${BRAND.text};margin:0 0 24px;">${escapeHtml(newEmail)}</p>
       <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 24px;">Click the button below to confirm this change:</p>
       ${ctaButton(confirmUrl, "Confirm the change →")}
       <p style="font-size:.78rem;color:#9A8070;margin:16px 0 0;line-height:1.5;">This link expires in 24 hours. If you didn't request this change, please ignore this email.</p>
