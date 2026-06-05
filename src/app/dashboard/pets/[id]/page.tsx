@@ -8,6 +8,7 @@ import Link from "next/link";
 import { detectMilestones, MILESTONE_TYPES, translateMilestone, MilestoneDefinition } from "@/lib/milestones";
 import { useLocale } from "@/hooks/useLocale";
 import { fmtDateOrdinal } from "@/lib/date";
+import CoachMark from "@/components/CoachMark";
 
 const MOOD_OPTIONS = [
   { value: "happy", emoji: "😄", label: "Happy" },
@@ -181,6 +182,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [sharingStoryId, setSharingStoryId] = useState<string | null>(null);
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [userPlan, setUserPlan] = useState<string>("free");
+  const [bookCredits, setBookCredits] = useState(0);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const [entryMenuId, setEntryMenuId] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
@@ -240,7 +243,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
         supabase.from("entries").select("entry_date").eq("pet_id", id),
         supabase.from("stories").select("*").eq("pet_id", id).order("created_at", { ascending: false }),
         supabase.from("milestones").select("*").eq("pet_id", id).order("achieved_at", { ascending: false }),
-        supabase.from("profiles").select("is_premium, plan").single(),
+        supabase.from("profiles").select("is_premium, plan, book_credits").single(),
         supabase.from("milestone_definitions").select("*").order("order_index"),
       ]);
       setPet(petData);
@@ -250,6 +253,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
       setStories(storiesData || []);
       setMilestones(milestonesData || []);
       setIsPremium(profile?.is_premium ?? false);
+      setUserPlan(profile?.plan ?? "free");
+      setBookCredits(profile?.book_credits ?? 0);
       if (definitionsData?.length) setMilestoneDefinitions(definitionsData);
       setLoading(false);
     };
@@ -1533,6 +1538,49 @@ export default function PetPage({ params }: { params: { id: string } }) {
           </div>
         )}
       </main>
+
+      {/* ── Coach marks ─────────────────────────────────────────────────────── */}
+      {/* 1. First entry added → push to generate AI story */}
+      {entries.length >= 1 && stories.length === 0 && (
+        <CoachMark
+          id="first_entry"
+          title={isFR ? "✨ Génère ta première histoire IA" : "✨ Generate your first AI story"}
+          body={isFR
+            ? "Tu as ajouté ta première entrée ! Rends-toi dans l'onglet Histoires pour créer un récit magique."
+            : "You added your first entry! Head to the Stories tab to create a magical narrative."}
+          cta={isFR ? "Voir les histoires" : "See stories"}
+          ctaHref={`/dashboard/pets/${id}?tab=stories`}
+          delay={1500}
+        />
+      )}
+
+      {/* 2. First story generated → push to create book */}
+      {stories.length >= 1 && (
+        <CoachMark
+          id="first_story"
+          title={isFR ? "📖 Ton livre prend forme" : "📖 Your book is taking shape"}
+          body={isFR
+            ? "Avec plusieurs histoires, tu peux créer un livre imprimé. Plus tu en génères, plus le livre sera riche."
+            : "With several stories, you can create a printed book. The more you generate, the richer it gets."}
+          cta={isFR ? "Créer mon livre" : "Create my book"}
+          ctaHref={`/dashboard/pets/${id}/order`}
+          delay={2000}
+        />
+      )}
+
+      {/* 3. Print plan with unused book credit */}
+      {userPlan === "print" && bookCredits > 0 && (
+        <CoachMark
+          id="book_credit"
+          title={isFR ? "🎁 Tu as un livre offert !" : "🎁 You have a free book!"}
+          body={isFR
+            ? "Ton abonnement Print inclut un livre offert par an. Il t'attend — commence ta configuration."
+            : "Your Print plan includes one free book per year. It's waiting for you — start your configuration."}
+          cta={isFR ? "Configurer mon livre" : "Configure my book"}
+          ctaHref={`/dashboard/pets/${id}/order`}
+          delay={2500}
+        />
+      )}
     </div>
   );
 }
