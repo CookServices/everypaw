@@ -205,7 +205,9 @@ export default function UpgradePage() {
           <p style={{ fontSize: "1rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.7 }}>{t.subtitle}</p>
         </div>
 
-        {/* Billing toggle */}
+        {/* Billing toggle — hidden until annual plans are activated */}
+        {/* TODO: remove the false && to re-enable annual billing option */}
+        {false && (
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "2.5rem", gap: 0 }}>
           <div style={{ display: "inline-flex", background: "#FDFAF5", borderRadius: 100, border: "1px solid rgba(61,43,31,.1)", padding: "4px" }}>
             {(["monthly", "annual"] as const).map(cycle => (
@@ -231,6 +233,7 @@ export default function UpgradePage() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Plan grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.25rem", marginBottom: "2.5rem" }}>
