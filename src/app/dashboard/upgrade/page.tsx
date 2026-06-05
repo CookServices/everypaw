@@ -26,7 +26,7 @@ export default function UpgradePage() {
     });
   }, []);
 
-  const handleSubscribe = async (plan: "digital" | "print_monthly" | "print_annual") => {
+  const handleSubscribe = async (plan: "digital" | "digital_annual" | "print_monthly" | "print_annual") => {
     setLoading(plan);
     try {
       const res = await fetch("/api/stripe/checkout", {
@@ -184,8 +184,12 @@ export default function UpgradePage() {
     </div>
   );
 
-  const printPlan = billingCycle === "annual" ? "print_annual" : "print_monthly";
-  const printPrice = billingCycle === "annual" ? t.print.priceAnnual : t.print.priceMonthly;
+  const digitalPlan   = billingCycle === "annual" ? "digital_annual"  : "digital";
+  const digitalPrice  = billingCycle === "annual" ? formatPrice(currency, "digitalAnnual")        : formatPrice(currency, "digital");
+  const digitalPriceSub = billingCycle === "annual" ? `${formatPrice(currency, "digitalAnnualMonthly")}/${isFR ? "mois" : "month"}` : (isFR ? "/mois" : "/month");
+
+  const printPlan     = billingCycle === "annual" ? "print_annual"    : "print_monthly";
+  const printPrice    = billingCycle === "annual" ? t.print.priceAnnual   : t.print.priceMonthly;
   const printPriceSub = billingCycle === "annual" ? t.print.priceAnnualPer : (isFR ? "/mois" : "/month");
 
   return (
@@ -246,12 +250,12 @@ export default function UpgradePage() {
 
           {planCard(
             t.digital.name,
-            t.digital.price,
-            isFR ? "/mois" : "/month",
+            digitalPrice,
+            digitalPriceSub,
             t.digital.desc,
             t.digital.feats,
-            loading === "digital" ? t.cta_loading : t.digital.cta,
-            loading ? null : () => handleSubscribe("digital"),
+            loading === "digital" || loading === "digital_annual" ? t.cta_loading : t.digital.cta,
+            loading ? null : () => handleSubscribe(digitalPlan),
             false,
           )}
 
