@@ -77,6 +77,16 @@ export default function SettingsPage() {
   }>>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
 
+  // ── Upgrade confirmation modal ────────────────────────────────────────────────
+  const [upgradeModal, setUpgradeModal] = useState<{
+    newPlan: string;
+    amountDue: number;
+    currency: string;
+    cardLast4: string | null;
+    cardBrand: string | null;
+  } | null>(null);
+  const [upgradePreviewLoading, setUpgradePreviewLoading] = useState<string | null>(null);
+
   // ── Load ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
@@ -235,6 +245,7 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.success) {
         setPlan(data.plan);
+        setUpgradeModal(null);
         showToast(isFR ? "Plan mis à jour avec succès." : "Plan updated successfully.", "success");
       } else {
         showToast(data.error ?? (isFR ? "Erreur lors du changement de plan." : "Plan change failed."), "error");
@@ -243,6 +254,22 @@ export default function SettingsPage() {
       showToast(isFR ? "Erreur réseau." : "Network error.", "error");
     }
     setUpgradeLoading(null);
+  };
+
+  const handleUpgradeWithPreview = async (newPlan: string) => {
+    setUpgradePreviewLoading(newPlan);
+    try {
+      const res = await fetch(`/api/stripe/upgrade-preview?newPlan=${encodeURIComponent(newPlan)}`);
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        showToast(data.error ?? (isFR ? "Impossible de calculer le montant." : "Could not calculate amount."), "error");
+      } else {
+        setUpgradeModal({ newPlan, ...data });
+      }
+    } catch {
+      showToast(isFR ? "Erreur réseau." : "Network error.", "error");
+    }
+    setUpgradePreviewLoading(null);
   };
 
   const handleCancel = async () => {
@@ -392,6 +419,70 @@ export default function SettingsPage() {
       {saveResult && (
         <div className="ep-toast" style={{ background: saveResult === "success" ? "#2E5E1E" : "#A32D2D", color: "#FDFAF5", padding: ".875rem 1.5rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", whiteSpace: "nowrap" }}>
           {toastMsg || (saveResult === "success" ? t.settings.save_success : t.settings.save_error)}
+        </div>
+      )}
+
+      {/* Upgrade confirmation modal */}
+      {upgradeModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, padding: "1rem" }}>
+          <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "2rem", maxWidth: 420, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,.25)" }}>
+            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#3D2B1F", margin: "0 0 1.25rem" }}>
+              {isFR ? "Confirmer le changement de plan" : "Confirm plan change"}
+            </h3>
+
+            {/* Amount */}
+            <div style={{ background: "#F7F2EA", borderRadius: 12, padding: "1rem 1.25rem", marginBottom: ".875rem" }}>
+              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: "0 0 .25rem", fontWeight: 300 }}>
+                {isFR ? "Montant débité immédiatement" : "Amount charged immediately"}
+              </p>
+              <p style={{ fontSize: "1.5rem", fontFamily: "Georgia, serif", fontWeight: 700, color: "#3D2B1F", margin: 0 }}>
+                {(upgradeModal.amountDue / 100).toLocaleString(isFR ? "fr-FR" : "en-US", {
+                  style: "currency",
+                  currency: upgradeModal.currency.toUpperCase(),
+                  minimumFractionDigits: 2,
+                })}
+              </p>
+              <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".25rem 0 0", fontWeight: 300 }}>
+                {isFR ? "Prorata pour la fin de la période en cours." : "Prorated for the remainder of the current period."}
+              </p>
+            </div>
+
+            {/* Card */}
+            {upgradeModal.cardLast4 && (
+              <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: ".875rem", padding: ".75rem 1.25rem", background: "#F7F2EA", borderRadius: 12 }}>
+                <span style={{ fontSize: "1rem" }}>💳</span>
+                <span style={{ fontSize: ".875rem", color: "#3D2B1F" }}>
+                  {upgradeModal.cardBrand
+                    ? `${upgradeModal.cardBrand.charAt(0).toUpperCase()}${upgradeModal.cardBrand.slice(1)} ····${upgradeModal.cardLast4}`
+                    : `····${upgradeModal.cardLast4}`}
+                </span>
+              </div>
+            )}
+
+            {/* Warning */}
+            <p style={{ fontSize: ".78rem", color: "#A32D2D", margin: "0 0 1.5rem", padding: ".625rem 1rem", background: "rgba(163,45,45,.05)", borderRadius: 8, border: "1px solid rgba(163,45,45,.15)" }}>
+              ⚠️ {isFR ? "Ce changement est effectif immédiatement." : "This change takes effect immediately."}
+            </p>
+
+            <div style={{ display: "flex", gap: ".75rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setUpgradeModal(null)}
+                disabled={!!upgradeLoading}
+                style={{ ...btnOutline, border: "1.5px solid rgba(61,43,31,.2)", color: "#3D2B1F" }}
+              >
+                {isFR ? "Annuler" : "Cancel"}
+              </button>
+              <button
+                onClick={() => handleUpgrade(upgradeModal.newPlan)}
+                disabled={!!upgradeLoading}
+                style={{ ...btnPrimary, opacity: upgradeLoading ? .7 : 1 }}
+              >
+                {upgradeLoading
+                  ? (isFR ? "Mise à jour…" : "Updating…")
+                  : (isFR ? "Confirmer et payer →" : "Confirm & pay →")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -610,11 +701,11 @@ export default function SettingsPage() {
                         {/* Option Digital si pas déjà dessus au même cycle */}
                         {!(plan === "digital" && currentInterval === (isAnnual ? "year" : "month")) && (
                           <button
-                            onClick={() => handleUpgrade(upgradeDigital)}
-                            disabled={!!upgradeLoading}
-                            style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, opacity: upgradeLoading ? .7 : 1 }}
+                            onClick={() => handleUpgradeWithPreview(upgradeDigital)}
+                            disabled={!!upgradeLoading || !!upgradePreviewLoading}
+                            style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, opacity: (upgradeLoading || upgradePreviewLoading) ? .7 : 1 }}
                           >
-                            {upgradeLoading === upgradeDigital ? (isFR ? "Mise à jour…" : "Updating…") : (
+                            {upgradePreviewLoading === upgradeDigital ? (isFR ? "Calcul…" : "Calculating…") : upgradeLoading === upgradeDigital ? (isFR ? "Mise à jour…" : "Updating…") : (
                               isFR
                                 ? `Premium Digital — ${priceDigital}${isAnnual ? "/an" : "/mois"}${priceDigitalSub ? ` (${priceDigitalSub})` : ""}`
                                 : `Premium Digital — ${priceDigital}${isAnnual ? "/yr" : "/mo"}${priceDigitalSub ? ` (${priceDigitalSub})` : ""}`
@@ -625,11 +716,11 @@ export default function SettingsPage() {
                         {/* Option Print si pas déjà dessus au même cycle */}
                         {!(plan === "print" && currentInterval === (isAnnual ? "year" : "month")) && (
                           <button
-                            onClick={() => handleUpgrade(upgradePrint)}
-                            disabled={!!upgradeLoading}
-                            style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, background: "rgba(61,43,31,.04)", opacity: upgradeLoading ? .7 : 1 }}
+                            onClick={() => handleUpgradeWithPreview(upgradePrint)}
+                            disabled={!!upgradeLoading || !!upgradePreviewLoading}
+                            style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, background: "rgba(61,43,31,.04)", opacity: (upgradeLoading || upgradePreviewLoading) ? .7 : 1 }}
                           >
-                            {upgradeLoading === upgradePrint ? (isFR ? "Mise à jour…" : "Updating…") : (
+                            {upgradePreviewLoading === upgradePrint ? (isFR ? "Calcul…" : "Calculating…") : upgradeLoading === upgradePrint ? (isFR ? "Mise à jour…" : "Updating…") : (
                               isFR
                                 ? `Premium Print — ${pricePrint}${isAnnual ? "/an" : "/mois"}${pricePrintSub ? ` (${pricePrintSub})` : ""}`
                                 : `Premium Print — ${pricePrint}${isAnnual ? "/yr" : "/mo"}${pricePrintSub ? ` (${pricePrintSub})` : ""}`
