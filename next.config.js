@@ -18,7 +18,7 @@ const securityHeaders = [
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
       "connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.stripe.com",
-      "frame-src https://js.stripe.com",
+      "frame-src https://js.stripe.com https://checkout.stripe.com",
     ].join("; "),
   },
 ];

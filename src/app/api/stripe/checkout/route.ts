@@ -17,6 +17,12 @@ export async function POST(req: Request) {
 
   const { plan = "digital" } = await req.json().catch(() => ({}));
 
+  // Explicit allowlist — PRICE_MAP also has print_monthly but that plan is not offered (3-plan system)
+  const ALLOWED_PLANS = ["digital", "digital_annual", "print_annual"];
+  if (!ALLOWED_PLANS.includes(plan)) {
+    return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+  }
+
   const h = await headers();
   const country = h.get("x-vercel-ip-country");
   const currency = getCurrencyFromCountry(country);
