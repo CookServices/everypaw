@@ -1371,4 +1371,21 @@ Files audited this round (no changes required):
 
 **Full API surface is now reviewed across 8 rounds. Codebase is production-ready from a security standpoint.**
 
-*Dernière mise à jour : 2026-06-05 (session 34 — Security Round 8)*
+### ✅ Session 35 — Security Round 9 (2026-06-05)
+
+**Commit** : `abec9d4`
+
+**Findings corrigés :**
+
+- **`checkout/upgrade/upgrade-preview` plan allowlist** (M1) : `PRICE_MAP` contient encore `print_monthly` (legacy) — les 3 routes acceptaient n'importe quelle clé de la map, permettant à un utilisateur de souscrire directement au plan mensuel Print via API directe, contournant la simplification 3 plans. Fix : `ALLOWED_PLANS = ["digital", "digital_annual", "print_annual"]` validé avant toute logique dans les 3 routes.
+- **CSP `frame-src` incomplet** (L1) : seulement `https://js.stripe.com` — les flux 3D Secure Stripe utilisent aussi `https://checkout.stripe.com`. Fix : ajouté à `frame-src` dans `next.config.js`.
+
+**Fichiers revus sans finding :**
+- `stripe/webhook/route.ts` — signature `constructEvent`, idempotence, garde annuelle crédits, tous corrects ✅
+- `stripe/cancel/route.ts`, `stripe/reactivate/route.ts`, `stripe/subscription/route.ts`, `stripe/invoices/route.ts` — clean ✅
+- `lib/auth.ts` (`verifyBearer` + `validateRedirectTo`) — clean ✅
+- `auth/callback/route.ts` — redirect guard correct (startsWith("/") + !startsWith("//")) ✅
+- `api/contact/route.ts` — rate limit + escapeHtml + SUBJECT_ROUTING whitelist ✅
+- `next.config.js` — headers HSTS/CSP/X-Frame-Options corrects (hors frame-src) ✅
+
+*Dernière mise à jour : 2026-06-05 (session 35 — Security Round 9)*
