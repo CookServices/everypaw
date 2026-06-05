@@ -500,7 +500,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const labelColor = isMemorial ? "rgba(247,242,234,.4)" : "#7A5C44";
   const accentColor = isMemorial ? "#8B6B4A" : "#C8813A";
   const extraBookPrice = calcGelatoBookPrice(estimatedPages);
-  const extraBookPriceLabel = `${extraBookPrice.toFixed(2).replace(".", ",")} €`;
+  const extraBookPriceLabel = `${extraBookPrice} €`;
   const price = isMemorial ? t.memorial.order_price : extraBookPriceLabel;
   const productName = isMemorial
     ? (petName ? t.memorial.order_tribute.replace("{name}", petName) : "…")

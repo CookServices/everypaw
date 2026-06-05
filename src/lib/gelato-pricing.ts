@@ -11,5 +11,5 @@ const MARGIN = 12; // fixed margin in EUR/USD
 export function calcGelatoBookPrice(pageCount: number): number {
   const extraPairs = Math.max(0, (pageCount - 30) / 2);
   const gelatoCost = 15.46 + extraPairs * 0.395;
-  return Math.round((gelatoCost + MARGIN) * 100) / 100;
+  return Math.ceil(gelatoCost + MARGIN);
 }
