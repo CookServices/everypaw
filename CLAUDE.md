@@ -1344,4 +1344,16 @@ Tous les comptes A–E ✅ PASS après round 2.
 **Règle critique ajoutée**
 - **Partage Stripe** : tout `PRICE_MAP` et toute résolution de subscription ID doivent passer par `src/lib/stripe-helpers.ts`. Ne jamais dupliquer inline.
 
-*Dernière mise à jour : 2026-06-05 (session 32 — Security Round 6 + stripe-helpers refacto)*
+### ✅ Session 33 — Security Round 7 (2026-06-05)
+
+**Commit** : `82c5b94`
+
+**Findings corrigés :**
+
+- **`generate/route.ts` (H)** : `detail: insertError.message` retiré de la réponse JSON → loggé côté serveur uniquement (règle : ne jamais exposer les erreurs internes)
+- **`book-checkout/route.ts` (H)** : `petId` validé UUID_REGEX avant usage dans les URLs de redirect Stripe (prévient la manipulation de chemin) + `pageCount` borné ≤ 500 (prévient les commandes abusives)
+- **`account/delete/route.ts` (H)** : `book_configs` supprimé explicitement avant `profiles` (violation FK potentielle si contrainte `user_id → profiles.id` sans CASCADE)
+- **`gift/redeem/route.ts` (M)** : remplace `STRIPE_PRICE_ID_PRINT` / `STRIPE_PRICE_ID_DIGITAL` (env vars non documentées, probablement absentes en prod) par `PRICE_MAP` + `getCurrencyFromCountry` — cohérent avec le reste du codebase + gère EUR/USD
+- **`gift/create/route.ts` (M)** : metadata Stripe `plan: "print"` → `"print_annual"` (cohérence 3 plans)
+
+*Dernière mise à jour : 2026-06-05 (session 33 — Security Round 7)*
