@@ -1286,4 +1286,12 @@ Tous les comptes A–E ✅ PASS après round 2.
 
 ---
 
-*Dernière mise à jour : 2026-06-05 (session 31 — abonnements annuels, réactivation, factures)*
+**Modal confirmation upgrade** (`settings/page.tsx` + `src/app/api/stripe/upgrade-preview/route.ts`) — commit `2e9361f`
+- Clic bouton upgrade → `handleUpgradeWithPreview(plan)` → `GET /api/stripe/upgrade-preview?newPlan=`
+- Route preview : `stripe.invoices.retrieveUpcoming()` (prorata exact) + `stripe.customers.retrieve(expand: invoice_settings.default_payment_method)` (last4 + brand)
+- Modal : montant TTC · carte "Visa ····4242" · warning "⚠️ Ce changement est effectif immédiatement."
+- "Confirmer et payer →" → `handleUpgrade()` (existant) → upgrade effectif + fermeture modal
+- Spinner "Calcul…" pendant le fetch preview, boutons désactivés pendant upgrade
+- État `upgradePreviewLoading` distinct de `upgradeLoading` pour feedback précis
+
+*Dernière mise à jour : 2026-06-05 (session 31 — modal confirmation upgrade prorata)*
