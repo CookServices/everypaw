@@ -698,12 +698,12 @@ export default function SettingsPage() {
                           {inv.number && <div style={{ fontSize: ".68rem", color: "#9A8070", marginTop: ".1rem", fontFamily: "monospace" }}>{inv.number}</div>}
                         </div>
                         <div style={{ display: "flex", gap: ".5rem", flexShrink: 0 }}>
-                          {inv.invoice_pdf && (
+                          {inv.invoice_pdf?.startsWith("https://") && (
                             <a href={inv.invoice_pdf} target="_blank" rel="noopener noreferrer" style={{ fontSize: ".75rem", color: "#C8813A", textDecoration: "none", border: "1px solid rgba(200,129,58,.3)", borderRadius: 100, padding: ".3rem .75rem", whiteSpace: "nowrap" }}>
                               PDF
                             </a>
                           )}
-                          {inv.hosted_invoice_url && (
+                          {inv.hosted_invoice_url?.startsWith("https://") && (
                             <a href={inv.hosted_invoice_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: ".75rem", color: "#7A5C44", textDecoration: "none", border: "1px solid rgba(61,43,31,.15)", borderRadius: 100, padding: ".3rem .75rem", whiteSpace: "nowrap" }}>
                               {isFR ? "Voir" : "View"}
                             </a>

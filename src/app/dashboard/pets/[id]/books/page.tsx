@@ -190,7 +190,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
         </div>
 
         {/* Shipment tracking */}
-        {shipment?.trackingUrl && (
+        {shipment?.trackingUrl?.startsWith("https://") && (
           <a
             href={shipment.trackingUrl}
             target="_blank"
