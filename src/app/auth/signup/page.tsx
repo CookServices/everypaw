@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 import { getSignupError } from "@/lib/auth-errors";
 import PublicFooter from "@/components/PublicFooter";
+import PasswordStrength from "@/components/PasswordStrength";
 
 export const dynamic = "force-dynamic";
 
@@ -292,6 +293,7 @@ export default function SignupPage() {
                   )}
                 </button>
               </div>
+              <PasswordStrength password={password} isFR={isFR} />
               {passwordError && (
                 <p style={{ fontSize: ".78rem", color: "#991B1B", margin: "0 0 0 .25rem" }}>{passwordError}</p>
               )}

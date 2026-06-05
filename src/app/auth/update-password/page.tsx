@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 import PublicFooter from "@/components/PublicFooter";
+import PasswordStrength from "@/components/PasswordStrength";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,7 @@ export default function UpdatePasswordPage() {
                   onChange={e => setPassword(e.target.value)}
                   style={{ padding: ".75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none" }}
                 />
+                <PasswordStrength password={password} isFR={isFR} />
                 <input
                   type="password"
                   placeholder={isFR ? "Confirmer le mot de passe" : "Confirm password"}

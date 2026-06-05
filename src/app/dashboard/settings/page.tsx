@@ -6,6 +6,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { useRouter } from "next/navigation";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { fmtDateOrdinal } from "@/lib/date";
+import PasswordStrength from "@/components/PasswordStrength";
 
 export const dynamic = "force-dynamic";
 
@@ -606,7 +607,8 @@ export default function SettingsPage() {
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
                   <input type="password" placeholder={isFR ? "Mot de passe actuel" : "Current password"} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} style={inputStyle} />
-                  <input type="password" placeholder={isFR ? "Nouveau mot de passe" : "New password"} value={newPassword} onChange={e => setNewPassword(e.target.value)} style={inputStyle} />
+                  <input type="password" placeholder={isFR ? "Nouveau mot de passe (min. 8 caractères)" : "New password (min. 8 characters)"} value={newPassword} onChange={e => setNewPassword(e.target.value)} style={inputStyle} />
+                  <PasswordStrength password={newPassword} isFR={isFR} />
                   <input type="password" placeholder={isFR ? "Confirmer le mot de passe" : "Confirm password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={inputStyle} />
                   {passwordError && <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>{passwordError}</p>}
                   <button onClick={handlePasswordChange} disabled={passwordStatus === "saving"} style={{ ...btnOutline, opacity: passwordStatus === "saving" ? .7 : 1 }}>
