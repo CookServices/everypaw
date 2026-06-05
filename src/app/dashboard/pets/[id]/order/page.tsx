@@ -143,12 +143,18 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
       Promise.all([
-        supabase.from("pets").select("id, name, birthdate, created_at").eq("id", id).single(),
+        supabase.from("pets").select("id, name, birthdate, created_at, user_id").eq("id", id).single(),
         supabase.from("stories").select("id, title, content, period_start, period_end, created_at").eq("pet_id", id).order("created_at", { ascending: true }),
         supabase.from("entries").select("id, photo_urls, entry_date").eq("pet_id", id).order("entry_date", { ascending: true }),
         supabase.from("profiles").select("plan, book_credits, subscription_renewal_date").eq("id", user.id).single(),
       ]).then(([{ data: petData }, { data: storiesData }, { data: entriesData }, { data: profileData }]) => {
-        if (petData) setPet(petData);
+        if (petData) {
+          if ((petData as typeof petData & { user_id?: string }).user_id !== user.id) {
+            window.location.href = "/dashboard";
+            return;
+          }
+          setPet(petData);
+        }
         if (storiesData) setStories(storiesData);
         if (entriesData) setEntries(entriesData);
         if (profileData) {
@@ -296,10 +302,18 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           layouts: storyLayouts,
         }),
       });
-      const html = await res.text();
-      setPreviewHtml(html);
+      if (!res.ok) {
+        const msg = locale === "fr"
+          ? "Impossible de générer l'aperçu. Vérifiez votre connexion et réessayez."
+          : "Could not generate the preview. Check your connection and try again.";
+        alert(msg);
+      } else {
+        const html = await res.text();
+        setPreviewHtml(html);
+      }
     } catch (err) {
       console.error("Preview error:", err);
+      alert(locale === "fr" ? "Une erreur est survenue." : "An error occurred.");
     } finally {
       setPreviewLoading(false);
     }
