@@ -327,15 +327,15 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       });
       const data = await res.json();
       if (data.url) {
-        const a = document.createElement("a");
-        a.href = data.url;
-        a.download = data.filename ?? "Everypaw.pdf";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        window.location.href = data.url;
+      } else {
+        alert(locale === "fr"
+          ? "Impossible de générer le PDF. Vérifiez votre abonnement et réessayez."
+          : "Could not generate the PDF. Check your subscription and try again.");
       }
     } catch (err) {
       console.error("Download error:", err);
+      alert(locale === "fr" ? "Une erreur est survenue." : "An error occurred.");
     } finally {
       setDownloadLoading(false);
     }
