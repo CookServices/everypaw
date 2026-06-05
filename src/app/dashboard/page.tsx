@@ -109,7 +109,7 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  const handleSubscribe = async (plan: "digital" | "print_monthly" = "digital") => {
+  const handleSubscribe = async (plan: "digital" | "print_annual" = "digital") => {
     setSubscribing(true);
     setSubscribeError(false);
     try {
@@ -413,7 +413,7 @@ export default function DashboardPage() {
                   {isFR ? "Tout Digital + livre relié annuel livré chez vous" : "All Digital + annual hardcover book delivered"}
                 </p>
                 <button
-                  onClick={() => handleSubscribe("print_monthly")}
+                  onClick={() => handleSubscribe("print_annual")}
                   disabled={subscribing}
                   style={{ marginTop: "auto", padding: ".5rem .875rem", borderRadius: 100, border: "1.5px solid #C8813A", background: "transparent", color: "#C8813A", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: subscribing ? "wait" : "pointer", opacity: subscribing ? .7 : 1 }}
                 >

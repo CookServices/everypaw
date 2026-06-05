@@ -65,7 +65,7 @@ export default function FrHome() {
     ["3", t.landing.s3_title, t.landing.s3_desc],
   ];
 
-  const [pricingCycle, setPricingCycle] = useState<"monthly" | "annual">("monthly");
+  // Digital = mensuel, Print = annuel — pas de toggle
   const [currency, setCurrency] = useState<Currency>("EUR");
   const [isFrance, setIsFrance] = useState(true);
 
@@ -408,32 +408,7 @@ export default function FrHome() {
         </h2>
         <p style={{ fontSize: "1rem", color: "#7A5C44", fontWeight: 300, marginBottom: "2rem" }}>{t.landing.pricing_desc}</p>
 
-        {/* Monthly / Annual toggle */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "2.5rem" }}>
-          <div style={{ display: "inline-flex", background: "#FDFAF5", borderRadius: 100, border: "1px solid rgba(61,43,31,.1)", padding: "4px" }}>
-            {(["monthly", "annual"] as const).map(cycle => (
-              <button
-                key={cycle}
-                onClick={() => setPricingCycle(cycle)}
-                style={{
-                  padding: ".4rem 1.25rem", borderRadius: 100, border: "none",
-                  background: pricingCycle === cycle ? "#3D2B1F" : "transparent",
-                  color: pricingCycle === cycle ? "#F7F2EA" : "#7A5C44",
-                  fontFamily: "inherit", fontSize: ".875rem",
-                  fontWeight: pricingCycle === cycle ? 600 : 400,
-                  cursor: "pointer", display: "flex", alignItems: "center", gap: ".5rem",
-                }}
-              >
-                {cycle === "monthly" ? t.landing.pricing_monthly : t.landing.pricing_annual}
-                {cycle === "annual" && (
-                  <span style={{ fontSize: ".68rem", background: "#C8813A", color: "#FDFAF5", padding: ".15rem .45rem", borderRadius: 100, fontWeight: 600 }}>
-                    −34 %
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Digital = mensuel, Print = annuel — pas de toggle */}
 
         <div style={{ display: "flex", gap: "1.25rem", justifyContent: "center", flexWrap: "wrap", maxWidth: 960, margin: "0 auto" }}>
 
@@ -458,12 +433,10 @@ export default function FrHome() {
           <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem 2rem", flex: 1, minWidth: 240, maxWidth: 300, textAlign: "left", border: "1.5px solid rgba(200,129,58,.25)", display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".1em", textTransform: "uppercase", color: "#C8813A", marginBottom: ".75rem" }}>{t.landing.premium_label}</div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem" }}>
-              {pricingCycle === "annual" ? formatPrice(currency, "digitalAnnualMonthly") : formatPrice(currency, "digital")}
+              {formatPrice(currency, "digital")}
             </div>
             <div style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginBottom: "1.5rem" }}>
-              {pricingCycle === "annual"
-                ? `facturé ${formatPrice(currency, "digitalAnnual")}/an`
-                : t.landing.premium_period}
+              {t.landing.premium_period}
             </div>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: ".6rem", marginBottom: "1.75rem", padding: 0, flex: 1 }}>
               {digitalFeatures.map(f => (
@@ -472,7 +445,7 @@ export default function FrHome() {
                 </li>
               ))}
             </ul>
-            <Link href={`/auth/signup?plan=${pricingCycle === "annual" ? "digital_annual" : "digital"}`} style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, background: "rgba(200,129,58,.12)", border: "1.5px solid rgba(200,129,58,.3)", color: "#C8813A", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+            <Link href="/auth/signup?plan=digital" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, background: "rgba(200,129,58,.12)", border: "1.5px solid rgba(200,129,58,.3)", color: "#C8813A", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
               {t.landing.premium_cta}
             </Link>
           </div>
@@ -484,12 +457,10 @@ export default function FrHome() {
             </div>
             <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".1em", textTransform: "uppercase", color: "#E8A96A", marginBottom: ".75rem" }}>{t.landing.print_label}</div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1, marginBottom: ".25rem", color: "#F7F2EA" }}>
-              {pricingCycle === "annual" ? formatPrice(currency, "printAnnual") : formatPrice(currency, "print")}
+              {formatPrice(currency, "printAnnual")}
             </div>
             <div style={{ fontSize: ".8rem", color: "rgba(247,242,234,.6)", fontWeight: 300, marginBottom: "1.5rem" }}>
-              {pricingCycle === "annual"
-                ? `par an · économisez ${currency === "EUR" ? "40 €" : "$40"}`
-                : t.landing.print_period_monthly}
+              par an · livre relié inclus
             </div>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: ".6rem", marginBottom: "1.75rem", padding: 0, flex: 1 }}>
               {printFeatures.map(f => (
@@ -498,7 +469,7 @@ export default function FrHome() {
                 </li>
               ))}
             </ul>
-            <Link href={`/auth/signup?plan=${pricingCycle === "annual" ? "print_annual" : "print"}`} style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 600, background: "#C8813A", border: "1.5px solid #C8813A", color: "#FDFAF5", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+            <Link href="/auth/signup?plan=print_annual" style={{ display: "block", width: "100%", padding: ".75rem", borderRadius: "100px", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 600, background: "#C8813A", border: "1.5px solid #C8813A", color: "#FDFAF5", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
               {t.landing.print_cta}
             </Link>
           </div>

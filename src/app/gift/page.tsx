@@ -13,7 +13,7 @@ export default function GiftPage() {
   const isFR = locale === "fr";
 
   const [selectedPlan, setSelectedPlan] = useState<"digital" | "print">("digital");
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
+  // Digital = monthly only, Print = annual only — no billing toggle needed
   const [step, setStep] = useState<"form" | "confirm">("form");
   const [form, setForm] = useState({
     recipientEmail: "",
@@ -49,7 +49,6 @@ export default function GiftPage() {
         scheduledDate:  parsed.scheduledDate  ?? "",
       });
       if (parsed.selectedPlan) setSelectedPlan(parsed.selectedPlan as "digital" | "print");
-      if (parsed.billingCycle) setBillingCycle(parsed.billingCycle as "monthly" | "annual");
       sessionStorage.removeItem("gift_form");
     } catch {}
   }, []);
@@ -69,7 +68,7 @@ export default function GiftPage() {
     if (!user) {
       // Save form so it can be restored after login
       try {
-        sessionStorage.setItem("gift_form", JSON.stringify({ ...form, selectedPlan, billingCycle }));
+        sessionStorage.setItem("gift_form", JSON.stringify({ ...form, selectedPlan }));
       } catch {}
       window.location.href = "/auth/login?redirect=/gift";
       return;
@@ -119,17 +118,13 @@ export default function GiftPage() {
     ? new Date(form.scheduledDate + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })
     : "";
 
-  const isAnnual = billingCycle === "annual";
+  // Digital = monthly, Print = annual
   const planLabel = selectedPlan === "digital" ? "Premium Digital" : "Premium Print";
-  const planPriceKey = selectedPlan === "digital"
-    ? (isAnnual ? "digitalAnnual" : "digital")
-    : (isAnnual ? "printAnnual" : "print");
-  const planPricePeriod = isAnnual ? (isFR ? "an" : "yr") : (isFR ? "mois" : "mo");
+  const planPriceKey = selectedPlan === "digital" ? "digital" : "printAnnual";
+  const planPricePeriod = selectedPlan === "digital" ? (isFR ? "mois" : "mo") : (isFR ? "an" : "yr");
   const planPrice = `${formatPrice(currency, planPriceKey)}/${planPricePeriod}`;
   // Clé transmise au checkout
-  const planApiKey = selectedPlan === "digital"
-    ? (isAnnual ? "digital_annual" : "digital")
-    : (isAnnual ? "print_annual" : "print");
+  const planApiKey = selectedPlan === "digital" ? "digital" : "print_annual";
 
   // ── Success screen ────────────────────────────────────────────────────────
   if (status === "success") return (
@@ -291,24 +286,7 @@ export default function GiftPage() {
                 {isFR ? "Choisir la formule" : "Choose a plan"}
               </p>
 
-              {/* Billing cycle toggle */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem", marginBottom: "1rem" }}>
-                <button
-                  onClick={() => setBillingCycle("monthly")}
-                  style={{ padding: ".35rem .9rem", borderRadius: 100, border: "none", background: billingCycle === "monthly" ? "#3D2B1F" : "transparent", color: billingCycle === "monthly" ? "#FDFAF5" : "#7A5C44", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", transition: "all .15s" }}
-                >
-                  {isFR ? "Mensuel" : "Monthly"}
-                </button>
-                <div style={{ background: "rgba(61,43,31,.1)", borderRadius: 100, padding: "3px" }}>
-                  <button
-                    onClick={() => setBillingCycle("annual")}
-                    style={{ padding: ".35rem .9rem", borderRadius: 100, border: "none", background: billingCycle === "annual" ? "#3D2B1F" : "transparent", color: billingCycle === "annual" ? "#FDFAF5" : "#7A5C44", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", transition: "all .15s", display: "flex", alignItems: "center", gap: ".35rem" }}
-                  >
-                    {isFR ? "Annuel" : "Annual"}
-                    <span style={{ background: "#9C6420", color: "#FDFAF5", fontSize: ".75rem", fontWeight: 700, borderRadius: 100, padding: "3px 8px", letterSpacing: ".02em", whiteSpace: "nowrap" }}>−34 %</span>
-                  </button>
-                </div>
-              </div>
+              {/* Digital = mensuel, Print = annuel — pas de toggle */}
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".625rem", marginBottom: ".75rem" }}>
 
@@ -319,18 +297,13 @@ export default function GiftPage() {
                 >
                   <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Digital</p>
                   <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .15rem" }}>
-                    {formatPrice(currency, isAnnual ? "digitalAnnual" : "digital")}
-                    <span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? (isAnnual ? "an" : "mois") : (isAnnual ? "yr" : "mo")}</span>
+                    {formatPrice(currency, "digital")}
+                    <span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span>
                   </p>
-                  {isAnnual && (
-                    <p style={{ fontSize: ".68rem", color: "#C8813A", fontWeight: 500, margin: "0 0 .4rem" }}>
-                      {isFR ? "économisez 24 €" : "save $24"}
-                    </p>
-                  )}
                   <ul style={{ margin: 0, padding: "0 0 0 .9rem", display: "flex", flexDirection: "column", gap: ".2rem" }}>
                     {(isFR
-                      ? ["Entrées illimitées", "Histoires générées par l'IA", "Export PDF"]
-                      : ["Unlimited journal entries", "AI-generated stories", "PDF export"]
+                      ? ["Entrées illimitées", "Histoires générées par l'IA", "Téléchargement PDF"]
+                      : ["Unlimited journal entries", "AI-generated stories", "PDF download"]
                     ).map(f => (
                       <li key={f} style={{ fontSize: ".72rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.4 }}>{f}</li>
                     ))}
@@ -347,14 +320,9 @@ export default function GiftPage() {
                   </div>
                   <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Print</p>
                   <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .15rem" }}>
-                    {formatPrice(currency, isAnnual ? "printAnnual" : "print")}
-                    <span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? (isAnnual ? "an" : "mois") : (isAnnual ? "yr" : "mo")}</span>
+                    {formatPrice(currency, "printAnnual")}
+                    <span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "an" : "yr"}</span>
                   </p>
-                  {isAnnual && (
-                    <p style={{ fontSize: ".68rem", color: "#C8813A", fontWeight: 500, margin: "0 0 .4rem" }}>
-                      {isFR ? "économisez 40 €" : "save $40"}
-                    </p>
-                  )}
                   <ul style={{ margin: 0, padding: "0 0 0 .9rem", display: "flex", flexDirection: "column", gap: ".2rem" }}>
                     {(isFR
                       ? ["Tout le plan Digital", "Livre relié inclus chaque année", "Livraison offerte"]
