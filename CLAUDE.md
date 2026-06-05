@@ -1172,9 +1172,9 @@ Tous les comptes A–E ✅ PASS après round 2.
 - **L1** crons (`streak-alert`, `birthday-check`, `daily-prompts`, `on-this-day`) : `unsubscribe_token` null-guardé → fallback `/dashboard`
 - **L2** `book-configs DELETE` : vérifie `count` après delete → 404 si aucune ligne affectée
 
-### ✅ Session 31 — Memorial + OG social + LT1/LT2/LT3 + pricing (2026-06-05)
+### ✅ Session 31 — Memorial + OG social + LT1/LT2/LT3 + pricing + coach marks (2026-06-05)
 
-**Commits** : `accd141`, `6858ec1`, `ca22206`, `0a05387`, `430bb60`, `245667a`, `cdd0515`, `a018d14`
+**Commits** : `accd141`, `6858ec1`, `ca22206`, `0a05387`, `430bb60`, `245667a`, `cdd0515`, `a018d14`, `82f647a`, `2a544af`
 
 **Page `/memorial/[id]`** — était déjà implémentée (165 lignes). Complétée :
 - `generateMetadata()` : OG (`og:title`, `og:description`, `og:image`) + Twitter card — partage social Facebook/LinkedIn/WhatsApp/Slack/Discord/Twitter ✅
@@ -1207,6 +1207,16 @@ Tous les comptes A–E ✅ PASS après round 2.
 - `Math.ceil` au lieu de `Math.round` → prix toujours entier (ex: 27,46 → 28 €)
 - Cohérent affichage + charge Stripe (même fonction)
 - Prix abonnements `currency.ts` inchangés (contrôlés par Stripe)
+
+**Coach marks contextuels** (`src/components/CoachMark.tsx`) — commits `82f647a`, `2a544af`
+- Composant toast bottom-right, slide-in animé, dismissible (× / "OK compris" / CTA)
+- Affiché une seule fois par clé `localStorage` (`ep_cm_*`)
+- 3 instances dans `pets/[id]/page.tsx` :
+  1. `entries>=1 && stories=0` → push génération histoire IA (délai 1,5s)
+  2. `stories>=1` → push création livre (délai 2s)
+  3. `plan=print && book_credits>0` → rappel livre offert (délai 2,5s)
+- "Réinitialiser le guide" dans Settings efface aussi les 3 clés `localStorage`
+- Profile query étendue avec `book_credits`
 
 ---
 
