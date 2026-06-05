@@ -204,7 +204,11 @@ export default function BooksPage({ params }: { params: { id: string } }) {
         {/* Actions */}
         <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
           <Link
-            href={`/dashboard/pets/${petId}/order?configId=${config.id}`}
+            href={
+              isOrdered
+                ? `/dashboard/pets/${petId}/order?configId=${config.id}&startStep=address`
+                : `/dashboard/pets/${petId}/order?configId=${config.id}`
+            }
             style={{
               padding: ".5rem 1rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500,
               background: accentColor, color: "#FDFAF5", textDecoration: "none",

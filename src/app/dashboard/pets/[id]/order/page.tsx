@@ -87,6 +87,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams();
   const isMemorial = searchParams.get("memorial") === "true";
   const configIdParam = searchParams.get("configId");
+  const startStepParam = searchParams.get("startStep") as Step | null;
 
   const [pet, setPet] = useState<Pet | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
@@ -189,6 +190,11 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         if (cfg.cover_photo_url !== undefined) setCoverPhotoUrl(cfg.cover_photo_url ?? null);
         if (cfg.story_layouts) setStoryLayouts(cfg.story_layouts as Record<string, LayoutType>);
         if (cfg.dedication_text !== undefined) setDedicationText(cfg.dedication_text ?? "");
+        // Jump to requested step after config is loaded (e.g. ?startStep=address for reorder)
+        const validSteps: Step[] = ["preview", "address", "confirm", "success"];
+        if (startStepParam && validSteps.includes(startStepParam)) {
+          setStep(startStepParam);
+        }
       })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
