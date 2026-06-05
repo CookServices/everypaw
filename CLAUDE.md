@@ -1294,4 +1294,38 @@ Tous les comptes A–E ✅ PASS après round 2.
 - Spinner "Calcul…" pendant le fetch preview, boutons désactivés pendant upgrade
 - État `upgradePreviewLoading` distinct de `upgradeLoading` pour feedback précis
 
-*Dernière mise à jour : 2026-06-05 (session 31 — modal confirmation upgrade prorata)*
+---
+
+### ✅ Session 32 — 3 plans, PDF download, garde annuelle (2026-06-05)
+
+**Commits** : `35f4ba4` (modal upgrade), `b96747f` (3 plans simplification)
+
+**Simplification à 3 plans** (Digital mensuel + Print annuel + Free)
+- Suppression du plan Print mensuel (vecteur d'abus : subscribe→commande livre offert→annule→recommence chaque mois)
+- `src/app/dashboard/settings/page.tsx` : toggle billing cycle supprimé du bloc abonnement — `handleCheckout` accepte `"digital" | "print_annual"` uniquement
+- `src/app/dashboard/upgrade/page.tsx` : toggle annuel/mensuel supprimé (déjà simplifié en session 31)
+- `src/app/dashboard/page.tsx` : `handleSubscribe("print_monthly")` → `handleSubscribe("print_annual")`
+- `src/app/page.tsx` (landing EN) + `src/app/fr/page.tsx` (landing FR) : toggle billing cycle supprimé, prix fixes Digital `formatPrice(currency,"digital")` + Print `formatPrice(currency,"printAnnual")` · "per year · hardcover book included" / "par an · livre relié inclus" · CTA `/auth/signup?plan=digital` et `/auth/signup?plan=print_annual`
+- `src/app/gift/page.tsx` : toggle mensuel/annuel supprimé, Digital = `formatPrice(currency,"digital")`/mois, Print = `formatPrice(currency,"printAnnual")`/an, `planApiKey` = `"digital"` | `"print_annual"` uniquement
+
+**Guard annuelle crédits livre** (`src/app/api/stripe/webhook/route.ts`)
+- `last_book_credit_at timestamptz` colonne sur `profiles` (migration à appliquer : `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_book_credit_at timestamptz;` — déjà appliquée)
+- Avant tout incrément `increment_book_credits` dans `invoice.payment_succeeded` : calcul `daysSinceLast` depuis `last_book_credit_at` → skip si < 365j
+- Après incrément : `last_book_credit_at: new Date().toISOString()` écrit en DB
+- Protection même si l'utilisateur annule+resouscrit : l'horloge repart de la dernière attribution
+
+**Téléchargement PDF réel** (Digital + Print, page order uniquement)
+- `src/app/api/book-pdf-link/route.ts` — NEW : `POST` auth + plan check (`digital`|`print`) + ownership pet + `generatePdfToken(petId)` → URL signée avec `?download=1`, retourne `{ url, filename: "Everypaw-{name}.pdf" }`
+- `src/app/api/book-pdf/route.tsx` — modifié : `?download=1` → `Content-Disposition: attachment; filename="Everypaw-{name}.pdf"` (vs `inline` pour Gelato)
+- `src/app/dashboard/pets/[id]/order/page.tsx` — modifié : bouton "📄 Télécharger le PDF" / "📄 Download PDF" dans le step aperçu ; `handleDownloadPdf()` POST → `window.location.href` ou anchor click
+
+**Pagination factures** (`src/app/dashboard/settings/page.tsx`)
+- `invoicesVisible` state (init 3) + `.slice(0, invoicesVisible)` sur la liste
+- Bouton "Voir plus (N restantes)" → `+6` par clic
+- Container scrollable `maxHeight: 380px, overflowY: "auto"` quand > 3 factures
+
+**Modal confirmation upgrade** (`settings/page.tsx` + `src/app/api/stripe/upgrade-preview/route.ts`)
+- `GET /api/stripe/upgrade-preview?newPlan=` : prorata via `stripe.invoices.retrieveUpcoming()` + carte via `stripe.customers.retrieve(expand: invoice_settings.default_payment_method)`
+- Modal : montant TTC · carte "Visa ····XXXX" · warning immédiat · boutons Annuler / "Confirmer et payer" (`flex: 1` pour égalité de largeur)
+
+*Dernière mise à jour : 2026-06-05 (session 32 — 3 plans, PDF download, garde annuelle, pagination factures)*
