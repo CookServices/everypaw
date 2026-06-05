@@ -454,12 +454,15 @@ export default function DashboardNav() {
   useEffect(() => {
     const supabase = createClient();
     const since = new Date(Date.now() - 30 * 864e5).toISOString();
-    Promise.all([
-      supabase.from("pets").select("id, name, species, breed, photo_url").order("name", { ascending: true }),
-      supabase.from("stories").select("pet_id").gte("created_at", since),
-    ]).then(([{ data: petsData }, { data: storiesData }]) => {
-      if (petsData && petsData.length > 0) setPets(petsData as PetOption[]);
-      if (storiesData) setNewChapterPetIds(new Set(storiesData.map((s: { pet_id: string }) => s.pet_id)));
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      Promise.all([
+        supabase.from("pets").select("id, name, species, breed, photo_url").eq("user_id", user.id).order("name", { ascending: true }),
+        supabase.from("stories").select("pet_id").gte("created_at", since),
+      ]).then(([{ data: petsData }, { data: storiesData }]) => {
+        if (petsData && petsData.length > 0) setPets(petsData as PetOption[]);
+        if (storiesData) setNewChapterPetIds(new Set(storiesData.map((s: { pet_id: string }) => s.pet_id)));
+      });
     });
   }, []);
 
