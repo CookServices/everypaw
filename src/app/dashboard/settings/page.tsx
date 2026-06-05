@@ -52,6 +52,7 @@ export default function SettingsPage() {
   const [settingsBilling, setSettingsBilling] = useState<"monthly" | "annual">("monthly");
   const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null); // plan being upgraded to
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [reactivateLoading, setReactivateLoading] = useState(false);
   const [cancelledAt, setCancelledAt] = useState<number | null>(null);
   const [profileRenewalDate, setProfileRenewalDate] = useState<number | null>(null);
   const [bookCredits, setBookCredits] = useState(0);
@@ -251,6 +252,27 @@ export default function SettingsPage() {
       showToast(isFR ? "Erreur réseau." : "Network error.", "error");
     }
     setCancelLoading(false);
+  };
+
+  const handleReactivate = async () => {
+    setReactivateLoading(true);
+    try {
+      const res = await fetch("/api/stripe/reactivate", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setCancelledAt(null);
+        setSubscription(prev => prev ? { ...prev, cancel_at_period_end: false, cancel_at: null } : null);
+        showToast(
+          isFR ? "Abonnement réactivé avec succès." : "Subscription reactivated successfully.",
+          "success"
+        );
+      } else {
+        showToast(data.error ?? (isFR ? "Erreur lors de la réactivation." : "Reactivation failed."), "error");
+      }
+    } catch {
+      showToast(isFR ? "Erreur réseau." : "Network error.", "error");
+    }
+    setReactivateLoading(false);
   };
 
   const handleDeleteAccount = async () => {
@@ -504,12 +526,21 @@ export default function SettingsPage() {
 
                     {/* Annulation en cours */}
                     {cancelledAt && (
-                      <div style={{ background: "rgba(163,45,45,.05)", border: "1px solid rgba(163,45,45,.2)", borderRadius: 10, padding: ".75rem 1rem", marginBottom: "1rem" }}>
+                      <div style={{ background: "rgba(163,45,45,.05)", border: "1px solid rgba(163,45,45,.2)", borderRadius: 10, padding: ".75rem 1rem", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
                         <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>
                           {isFR
                             ? `Votre abonnement sera annulé le ${formatDate(cancelledAt)}. Vous gardez l'accès jusqu'à cette date.`
                             : `Your subscription will be cancelled on ${formatDate(cancelledAt)}. You keep access until then.`}
                         </p>
+                        <button
+                          onClick={handleReactivate}
+                          disabled={reactivateLoading}
+                          style={{ background: "none", border: "1px solid rgba(163,45,45,.4)", borderRadius: 100, cursor: "pointer", color: "#A32D2D", fontSize: ".75rem", fontFamily: "inherit", padding: ".3rem .875rem", whiteSpace: "nowrap", opacity: reactivateLoading ? .6 : 1, flexShrink: 0 }}
+                        >
+                          {reactivateLoading
+                            ? (isFR ? "Réactivation…" : "Reactivating…")
+                            : (isFR ? "Annuler ma résiliation" : "Keep my subscription")}
+                        </button>
                       </div>
                     )}
 
