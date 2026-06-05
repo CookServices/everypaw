@@ -55,6 +55,8 @@ export default function DashboardPage() {
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
@@ -68,13 +70,13 @@ export default function DashboardPage() {
         { data: allEntriesMeta },
         { data: recentStories },
       ] = await Promise.all([
-        supabase.from("pets").select("*").order("created_at", { ascending: false }),
-        supabase.from("entries").select("*").order("entry_date", { ascending: false }).limit(5),
+        supabase.from("pets").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("entries").select("*").eq("user_id", user.id).order("entry_date", { ascending: false }).limit(5),
         supabase.from("profiles").select("is_premium, onboarding_completed, book_credits, subscription_renewal_date").single(),
-        supabase.from("stories").select("id").limit(1),
-        supabase.from("entries").select("*", { count: "exact", head: true }).gte("entry_date", monthStart).lte("entry_date", monthEnd),
-        supabase.from("entries").select("pet_id, entry_date").order("entry_date", { ascending: false }),
-        supabase.from("stories").select("pet_id").gte("created_at", new Date(Date.now() - 30 * 864e5).toISOString()),
+        supabase.from("stories").select("id").eq("user_id", user.id).limit(1),
+        supabase.from("entries").select("*", { count: "exact", head: true }).eq("user_id", user.id).gte("entry_date", monthStart).lte("entry_date", monthEnd),
+        supabase.from("entries").select("pet_id, entry_date").eq("user_id", user.id).order("entry_date", { ascending: false }),
+        supabase.from("stories").select("pet_id").eq("user_id", user.id).gte("created_at", new Date(Date.now() - 30 * 864e5).toISOString()),
       ]);
 
       setPets(petsData || []);
