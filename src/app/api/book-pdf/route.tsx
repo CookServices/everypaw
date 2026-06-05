@@ -634,10 +634,16 @@ export async function GET(req: Request) {
       />,
     );
 
+    const isDownload = url.searchParams.get("download") === "1";
+    const petName = pet?.name ? pet.name.replace(/[^a-z0-9\-_]/gi, "-") : petId;
+    const disposition = isDownload
+      ? `attachment; filename="Everypaw-${petName}.pdf"`
+      : `inline; filename="book-${petId}.pdf"`;
+
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="book-${petId}.pdf"`,
+        "Content-Disposition": disposition,
       },
     });
   } catch (error) {

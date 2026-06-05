@@ -109,6 +109,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [previewStale, setPreviewStale] = useState(false);
+  const [downloadLoading, setDownloadLoading] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
   const [renewalDate, setRenewalDate] = useState<string | null>(null);
   const [currentConfigId, setCurrentConfigId] = useState<string | null>(null);
@@ -305,6 +306,40 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   };
 
   const closePreview = () => { setPreviewHtml(null); setPreviewStale(false); };
+
+  const handleDownloadPdf = async () => {
+    setDownloadLoading(true);
+    try {
+      const res = await fetch("/api/book-pdf-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          petId: id,
+          lang: locale,
+          storyIds: selectedStoryIds,
+          dedication: dedicationText.trim() || undefined,
+          year: yearFilter ?? undefined,
+          coverPhoto: coverPhotoUrl ?? undefined,
+          theme: coverTheme,
+          customTitle: customTitle.trim() || undefined,
+          layouts: storyLayouts,
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        const a = document.createElement("a");
+        a.href = data.url;
+        a.download = data.filename ?? "Everypaw.pdf";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (err) {
+      console.error("Download error:", err);
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
 
   // Mark preview stale when config changes (if preview is open, auto-refresh after 1.5s)
   useEffect(() => {
@@ -1172,6 +1207,20 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           }}
         >
           <span>{previewLoading ? "…" : previewLabel}</span>
+        </button>
+        <button
+          onClick={handleDownloadPdf}
+          disabled={downloadLoading}
+          style={{
+            width: "100%", padding: ".75rem 1rem", borderRadius: 100,
+            border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
+            background: "transparent", fontFamily: "inherit", fontSize: ".875rem",
+            color: textPrimary, cursor: downloadLoading ? "wait" : "pointer",
+            opacity: downloadLoading ? .6 : 1,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem", minHeight: 44,
+          }}
+        >
+          <span>{downloadLoading ? "…" : (locale === "fr" ? "📄 Télécharger le PDF" : "📄 Download PDF")}</span>
         </button>
         <button
           onClick={() => handleSave()}
