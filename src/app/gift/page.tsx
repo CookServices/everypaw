@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
-import { createClient } from "@/lib/supabase/client";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
@@ -30,7 +29,6 @@ export default function GiftPage() {
   const [currency, setCurrency] = useState<Currency>("USD");
 
   const todayStr = new Date().toISOString().split("T")[0];
-  const supabase = createClient();
 
   useEffect(() => {
     fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
@@ -61,24 +59,14 @@ export default function GiftPage() {
     } catch {}
   }, []);
 
-  // Step 1 : validate form, check auth, then go to confirm screen
-  const handleGoToConfirm = async () => {
+  // Step 1 : validate form, then go to confirm screen (no auth required)
+  const handleGoToConfirm = () => {
     if (!form.recipientEmail || !form.recipientName || !form.senderName) {
       alert(t.gift.required_fields);
       return;
     }
     if (form.scheduledDate && form.scheduledDate <= todayStr) {
       alert(t.gift.send_date_future_error);
-      return;
-    }
-    // Guard: must be logged in before reaching the confirm step
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      // Save form so it can be restored after login
-      try {
-        sessionStorage.setItem("gift_form", JSON.stringify({ ...form, selectedPlan }));
-      } catch {}
-      window.location.href = "/auth/login?redirect=/gift";
       return;
     }
     setStatus("idle");
