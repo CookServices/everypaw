@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Resend } from "resend";
-import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { escapeHtml } from "@/lib/html";
 
@@ -66,10 +65,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const body = await req.json();
   const { recipientEmail, recipientName, senderName, message, scheduledDate, locale, plan } = body;
 
@@ -129,7 +124,6 @@ export async function POST(req: Request) {
     const emailPayload: Parameters<typeof resend.emails.send>[0] = {
       from: "Everypaw <hello@everypaw.app>",
       to: recipientEmail,
-      reply_to: user.email ?? undefined,
       subject: c.subject(senderName),
       html: buildEmailHtml({
         locale: emailLocale,
