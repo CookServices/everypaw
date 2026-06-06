@@ -166,6 +166,9 @@ export default function GiftPage() {
               {copied ? "✓" : "📋"}
             </button>
           </div>
+          <p style={{ fontSize: ".75rem", color: "#9A8070", margin: "0 0 1.5rem", fontWeight: 300 }}>
+            {t.gift.code_validity}
+          </p>
           <Link href="/" style={{ background: "#C8813A", color: "#FDFAF5", padding: ".75rem 2rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
             {t.gift.back}
           </Link>
