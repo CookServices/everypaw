@@ -81,10 +81,7 @@ export default function SettingsPage() {
   // ── Upgrade confirmation modal ────────────────────────────────────────────────
   const [upgradeModal, setUpgradeModal] = useState<{
     newPlan: string;
-    amountDue: number;
-    currency: string;
-    cardLast4: string | null;
-    cardBrand: string | null;
+    scheduledDate: number;
   } | null>(null);
   const [upgradePreviewLoading, setUpgradePreviewLoading] = useState<string | null>(null);
 
@@ -245,9 +242,14 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setPlan(data.plan);
         setUpgradeModal(null);
-        showToast(isFR ? "Plan mis à jour avec succès." : "Plan updated successfully.", "success");
+        const dateStr = data.scheduledAt ? formatDate(data.scheduledAt) : "";
+        showToast(
+          isFR
+            ? `Changement planifié${dateStr ? ` pour le ${dateStr}` : ""}.`
+            : `Change scheduled${dateStr ? ` for ${dateStr}` : ""}.`,
+          "success"
+        );
       } else {
         showToast(data.error ?? (isFR ? "Erreur lors du changement de plan." : "Plan change failed."), "error");
       }
@@ -263,9 +265,9 @@ export default function SettingsPage() {
       const res = await fetch(`/api/stripe/upgrade-preview?newPlan=${encodeURIComponent(newPlan)}`);
       const data = await res.json();
       if (!res.ok || data.error) {
-        showToast(data.error ?? (isFR ? "Impossible de calculer le montant." : "Could not calculate amount."), "error");
+        showToast(data.error ?? (isFR ? "Impossible de récupérer la date." : "Could not fetch scheduled date."), "error");
       } else {
-        setUpgradeModal({ newPlan, ...data });
+        setUpgradeModal({ newPlan, scheduledDate: data.scheduledDate });
       }
     } catch {
       showToast(isFR ? "Erreur réseau." : "Network error.", "error");
@@ -431,39 +433,20 @@ export default function SettingsPage() {
               {isFR ? "Confirmer le changement de plan" : "Confirm plan change"}
             </h3>
 
-            {/* Amount */}
-            <div style={{ background: "#F7F2EA", borderRadius: 12, padding: "1rem 1.25rem", marginBottom: ".875rem" }}>
+            {/* Scheduled date */}
+            <div style={{ background: "#F7F2EA", borderRadius: 12, padding: "1rem 1.25rem", marginBottom: "1.25rem" }}>
               <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: "0 0 .25rem", fontWeight: 300 }}>
-                {isFR ? "Montant débité immédiatement" : "Amount charged immediately"}
+                {isFR ? "Changement effectif le" : "Change takes effect on"}
               </p>
-              <p style={{ fontSize: "1.5rem", fontFamily: "Georgia, serif", fontWeight: 700, color: "#3D2B1F", margin: 0 }}>
-                {(upgradeModal.amountDue / 100).toLocaleString(isFR ? "fr-FR" : "en-US", {
-                  style: "currency",
-                  currency: upgradeModal.currency.toUpperCase(),
-                  minimumFractionDigits: 2,
-                })}
+              <p style={{ fontSize: "1.15rem", fontFamily: "Georgia, serif", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>
+                {formatDate(upgradeModal.scheduledDate)}
               </p>
-              <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".25rem 0 0", fontWeight: 300 }}>
-                {isFR ? "Prorata pour la fin de la période en cours." : "Prorated for the remainder of the current period."}
+              <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".4rem 0 0", fontWeight: 300 }}>
+                {isFR
+                  ? "Vous conservez votre abonnement actuel jusqu'à cette date. Aucun paiement immédiat."
+                  : "Your current plan continues until that date. No charge today."}
               </p>
             </div>
-
-            {/* Card */}
-            {upgradeModal.cardLast4 && (
-              <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: ".875rem", padding: ".75rem 1.25rem", background: "#F7F2EA", borderRadius: 12 }}>
-                <span style={{ fontSize: "1rem" }}>💳</span>
-                <span style={{ fontSize: ".875rem", color: "#3D2B1F" }}>
-                  {upgradeModal.cardBrand
-                    ? `${upgradeModal.cardBrand.charAt(0).toUpperCase()}${upgradeModal.cardBrand.slice(1)} ····${upgradeModal.cardLast4}`
-                    : `····${upgradeModal.cardLast4}`}
-                </span>
-              </div>
-            )}
-
-            {/* Warning */}
-            <p style={{ fontSize: ".78rem", color: "#A32D2D", margin: "0 0 1.5rem", padding: ".625rem 1rem", background: "rgba(163,45,45,.05)", borderRadius: 8, border: "1px solid rgba(163,45,45,.15)" }}>
-              ⚠️ {isFR ? "Ce changement est effectif immédiatement." : "This change takes effect immediately."}
-            </p>
 
             <div style={{ display: "flex", gap: ".75rem" }}>
               <button
@@ -479,8 +462,8 @@ export default function SettingsPage() {
                 style={{ ...btnPrimary, opacity: upgradeLoading ? .7 : 1, flex: 1 }}
               >
                 {upgradeLoading
-                  ? (isFR ? "Mise à jour…" : "Updating…")
-                  : (isFR ? "Confirmer et payer" : "Confirm & pay")}
+                  ? (isFR ? "Planification…" : "Scheduling…")
+                  : (isFR ? "Confirmer" : "Confirm")}
               </button>
             </div>
           </div>

@@ -38,8 +38,8 @@ export async function POST(req: Request) {
 
   try {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    const itemId = subscription.items.data[0]?.id;
-    if (!itemId) return NextResponse.json({ error: "Subscription item not found" }, { status: 400 });
+    const currentPriceId = subscription.items.data[0]?.price.id;
+    if (!currentPriceId) return NextResponse.json({ error: "Subscription item not found" }, { status: 400 });
 
     // Use the subscription's existing currency so EUR/USD stays consistent throughout the lifecycle
     const subCurrency = (subscription.currency?.toUpperCase() ?? "USD") as Currency;
@@ -50,26 +50,51 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing price ID for this plan/currency combination" }, { status: 400 });
     }
 
-    await stripe.subscriptions.update(subscriptionId, {
-      items: [{ id: itemId, price: newPriceId }],
-      proration_behavior: "always_invoice",
-    });
-
-    // Map plan key to valid DB plan value ("digital_annual" → "digital", etc.)
-    const dbPlan = newPlan.startsWith("digital") ? "digital" : "print";
-
-    // Stripe succeeded — update DB. If this fails, the webhook will reconcile.
-    const { error: dbError } = await supabase
-      .from("profiles")
-      .update({ plan: dbPlan, is_premium: true })
-      .eq("id", user.id);
-
-    if (dbError) {
-      console.error("[stripe/upgrade] DB update failed after Stripe success — webhook will reconcile:", dbError);
+    if (currentPriceId === newPriceId) {
+      return NextResponse.json({ error: "Already on this plan" }, { status: 400 });
     }
 
-    console.log(`[stripe/upgrade] user ${user.id} → plan: ${newPlan} (${subCurrency})`);
-    return NextResponse.json({ success: true, plan: newPlan });
+    const periodEnd = subscription.current_period_end;
+
+    // Schedule the plan change at end of current billing period via subscription schedules.
+    // This avoids any proration charge and any $0 invoice — the new price applies cleanly
+    // at the next renewal, as if the user had subscribed to the new plan from day one.
+    const existingScheduleId = typeof subscription.schedule === "string"
+      ? subscription.schedule
+      : (subscription.schedule as Stripe.SubscriptionSchedule | null)?.id ?? null;
+
+    let schedule: Stripe.SubscriptionSchedule;
+
+    if (existingScheduleId) {
+      schedule = await stripe.subscriptionSchedules.retrieve(existingScheduleId);
+    } else {
+      schedule = await stripe.subscriptionSchedules.create({
+        from_subscription: subscriptionId,
+      });
+    }
+
+    // Phase 1: keep current plan until end of billing period (no change, no proration)
+    // Phase 2: switch to new plan — charged at full price on next renewal
+    await stripe.subscriptionSchedules.update(schedule.id, {
+      end_behavior: "release",
+      phases: [
+        {
+          start_date: schedule.phases[0].start_date,
+          end_date: periodEnd,
+          items: [{ price: currentPriceId, quantity: 1 }],
+          proration_behavior: "none",
+        },
+        {
+          items: [{ price: newPriceId, quantity: 1 }],
+          proration_behavior: "none",
+        },
+      ],
+    });
+
+    // DB plan is NOT updated here — the webhook customer.subscription.updated will fire
+    // when phase 2 starts (new price kicks in) and reconcile the DB at that point.
+    console.log(`[stripe/upgrade] user ${user.id} → plan: ${newPlan} (${subCurrency}) scheduled at ${new Date(periodEnd * 1000).toISOString()}`);
+    return NextResponse.json({ success: true, scheduledAt: periodEnd });
   } catch (err) {
     console.error("[stripe/upgrade] Error:", err);
     return NextResponse.json({ error: "Upgrade failed" }, { status: 500 });
