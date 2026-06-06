@@ -1476,4 +1476,11 @@ Files audited this round (no changes required):
 - `upgrade-preview/route.ts` : ne calcule plus de prorata — retourne uniquement `{ scheduledDate: current_period_end }`.
 - `settings/page.tsx` : modal de confirmation revu — affiche la date effective, "Aucun paiement immédiat", bouton "Confirmer" (plus "Confirmer et payer"). Toast de succès : "Changement planifié pour le [date]".
 
-*Dernière mise à jour : 2026-06-06 (session 40 — Plan change deferral)*
+### ✅ Session 40 (suite) — Code cadeau dans les paramètres (2026-06-06)
+
+**PR #68**
+
+- `src/app/api/gift/redeem/route.ts` : détecte si l'utilisateur a un abonnement actif. Si oui → crée/met à jour une `SubscriptionSchedule` (phase 2 = plan cadeau + coupon 100% off, `proration_behavior: "none"`) → retourne `{ scheduled: true, activatesAt, plan }`. Si non (plan free) → flow checkout Stripe existant inchangé.
+- `src/app/dashboard/settings/page.tsx` : section "Vous avez un code cadeau ?" dans le bloc abonnement — input monospace + bouton "Activer" ; état succès inline avec la date d'activation et le plan cadeau ; erreurs traduits FR/EN ; touche Entrée déclenche l'activation.
+
+*Dernière mise à jour : 2026-06-06 (session 40 — Gift code in settings)*
