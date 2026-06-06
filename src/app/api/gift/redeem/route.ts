@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
-import { PRICE_MAP } from "@/lib/stripe-helpers";
+import { PRICE_MAP, resolveSubscriptionId } from "@/lib/stripe-helpers";
 import { getCurrencyFromCountry } from "@/lib/currency";
 
 export async function POST(req: Request) {
@@ -57,6 +57,75 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Gift service not configured" }, { status: 500 });
     }
 
+    // Check if user has an active paid subscription
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("stripe_subscription_id, stripe_customer_id, plan")
+      .eq("id", user.id)
+      .single();
+
+    const hasPaidSub = profile?.plan !== "free" && !!profile?.stripe_subscription_id;
+
+    if (hasPaidSub) {
+      // User already has a paid subscription → schedule the gift to activate at period end
+      // via a subscription schedule (same mechanism as plan-change deferral).
+      // No checkout redirect needed — the change is applied server-side.
+      const subscriptionId = await resolveSubscriptionId(
+        stripe, user.id,
+        profile.stripe_subscription_id ?? null,
+        profile.stripe_customer_id ?? null,
+      );
+
+      if (!subscriptionId) {
+        return NextResponse.json({ error: "No active subscription found" }, { status: 400 });
+      }
+
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const currentPriceId = subscription.items.data[0]?.price.id;
+      if (!currentPriceId) {
+        return NextResponse.json({ error: "Subscription item not found" }, { status: 400 });
+      }
+
+      const periodEnd = subscription.current_period_end;
+
+      // Create or retrieve an existing schedule for this subscription
+      const existingScheduleId = typeof subscription.schedule === "string"
+        ? subscription.schedule
+        : (subscription.schedule as Stripe.SubscriptionSchedule | null)?.id ?? null;
+
+      let schedule: Stripe.SubscriptionSchedule;
+      if (existingScheduleId) {
+        schedule = await stripe.subscriptionSchedules.retrieve(existingScheduleId);
+      } else {
+        schedule = await stripe.subscriptionSchedules.create({
+          from_subscription: subscriptionId,
+        });
+      }
+
+      // Phase 1: current plan unchanged until period end
+      // Phase 2: gift plan with 100% off coupon, starting at renewal
+      await stripe.subscriptionSchedules.update(schedule.id, {
+        end_behavior: "release",
+        phases: [
+          {
+            start_date: schedule.phases[0].start_date,
+            end_date: periodEnd,
+            items: [{ price: currentPriceId, quantity: 1 }],
+            proration_behavior: "none",
+          },
+          {
+            items: [{ price: priceId, quantity: 1 }],
+            discounts: [{ coupon: giftCouponId }],
+            proration_behavior: "none",
+          },
+        ],
+      });
+
+      console.log(`[gift/redeem] user ${user.id} → gift ${planKey} scheduled for ${new Date(periodEnd * 1000).toISOString()}`);
+      return NextResponse.json({ scheduled: true, activatesAt: periodEnd, plan: planKey });
+    }
+
+    // No active subscription → create a Stripe checkout session (free, 100% coupon)
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],

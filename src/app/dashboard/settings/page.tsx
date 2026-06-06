@@ -58,6 +58,12 @@ export default function SettingsPage() {
   const [bookCredits, setBookCredits] = useState(0);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
+  // ── Gift code state ──────────────────────────────────────────────────────────
+  const [giftCode, setGiftCode] = useState("");
+  const [giftStatus, setGiftStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [giftError, setGiftError] = useState("");
+  const [giftResult, setGiftResult] = useState<{ activatesAt?: number; plan?: string } | null>(null);
+
   // ── Currency ─────────────────────────────────────────────────────────────────
   const [currency, setCurrency] = useState<Currency>("USD");
 
@@ -230,6 +236,45 @@ export default function SettingsPage() {
       showToast(isFR ? "Erreur réseau." : "Network error.", "error");
     }
     setCheckoutLoading(null);
+  };
+
+  const handleRedeemGift = async () => {
+    const trimmed = giftCode.trim().toUpperCase();
+    if (!trimmed) {
+      setGiftError(isFR ? "Entrez votre code cadeau." : "Enter your gift code.");
+      return;
+    }
+    setGiftStatus("loading");
+    setGiftError("");
+    try {
+      const res = await fetch("/api/gift/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: trimmed }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      if (data.scheduled) {
+        setGiftResult({ activatesAt: data.activatesAt, plan: data.plan });
+        setGiftStatus("success");
+        setGiftCode("");
+      } else {
+        const msg = data.error ?? (isFR ? "Code invalide." : "Invalid code.");
+        const translated = msg === "This gift code is not for your account"
+          ? (isFR ? "Ce code cadeau n'est pas destiné à votre compte." : "This gift code is not for your account.")
+          : msg === "Invalid or already used code"
+            ? (isFR ? "Code invalide ou déjà utilisé." : "Invalid or already used code.")
+            : msg;
+        setGiftError(translated);
+        setGiftStatus("error");
+      }
+    } catch {
+      setGiftError(isFR ? "Erreur réseau." : "Network error.");
+      setGiftStatus("error");
+    }
   };
 
   const handleUpgrade = async (newPlan: string) => {
@@ -651,6 +696,51 @@ export default function SettingsPage() {
                   </button>
                 </div>
               )}
+              {/* ── Code cadeau ── */}
+              <div style={{ marginTop: "1.25rem", paddingTop: "1.25rem", borderTop: "0.5px solid rgba(61,43,31,.08)" }}>
+                <p style={{ fontSize: ".8rem", color: "#9A8070", margin: "0 0 .625rem", fontWeight: 300 }}>
+                  {isFR ? "Vous avez un code cadeau ?" : "Have a gift code?"}
+                </p>
+
+                {giftStatus === "success" && giftResult ? (
+                  <div style={{ background: "rgba(107,123,94,.08)", border: "1px solid rgba(107,123,94,.25)", borderRadius: 12, padding: ".875rem 1rem", display: "flex", alignItems: "flex-start", gap: ".625rem" }}>
+                    <span style={{ fontSize: "1.1rem", flexShrink: 0 }}>🎁</span>
+                    <div>
+                      <p style={{ fontSize: ".875rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .2rem" }}>
+                        {isFR ? "Code cadeau activé !" : "Gift code activated!"}
+                      </p>
+                      <p style={{ fontSize: ".8rem", color: "#6B7B5E", margin: 0, fontWeight: 300 }}>
+                        {isFR
+                          ? `Votre plan ${giftResult.plan === "print_annual" ? "Premium Print" : "Premium Digital"} s'activera le ${giftResult.activatesAt ? formatDate(giftResult.activatesAt) : "—"}.`
+                          : `Your ${giftResult.plan === "print_annual" ? "Premium Print" : "Premium Digital"} plan activates on ${giftResult.activatesAt ? formatDate(giftResult.activatesAt) : "—"}.`}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", gap: ".5rem" }}>
+                    <input
+                      type="text"
+                      value={giftCode}
+                      onChange={e => { setGiftCode(e.target.value.toUpperCase()); if (giftStatus === "error") { setGiftStatus("idle"); setGiftError(""); } }}
+                      placeholder={isFR ? "Ex : GIFT-XXXXXX" : "E.g. GIFT-XXXXXX"}
+                      style={{ ...inputStyle, flex: 1, fontFamily: "monospace", letterSpacing: ".08em", textTransform: "uppercase" }}
+                      onKeyDown={e => { if (e.key === "Enter") handleRedeemGift(); }}
+                    />
+                    <button
+                      onClick={handleRedeemGift}
+                      disabled={giftStatus === "loading"}
+                      style={{ ...btnPrimary, whiteSpace: "nowrap" as const, opacity: giftStatus === "loading" ? .7 : 1, flexShrink: 0 }}
+                    >
+                      {giftStatus === "loading" ? "…" : (isFR ? "Activer" : "Activate")}
+                    </button>
+                  </div>
+                )}
+
+                {giftStatus === "error" && giftError && (
+                  <p style={{ fontSize: ".78rem", color: "#A32D2D", margin: ".4rem 0 0" }}>{giftError}</p>
+                )}
+              </div>
+
             </>
           )}
         </div>
