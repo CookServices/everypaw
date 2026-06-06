@@ -329,7 +329,8 @@
     "step3_desc": "They click the link, create their account, and their Premium is immediately active.",
     "send_date_label": "Send date (optional)",
     "send_date_hint": "Leave empty to send immediately. Perfect for a birthday or Christmas.",
-    "send_date_future_error": "The send date must be in the future."
+    "send_date_future_error": "The send date must be in the future.",
+    "code_validity": "Code valid for 12 months · Single use"
   },
   "redeem": {
     "title": "Activate your gift",

@@ -329,7 +329,8 @@
     "step3_desc": "Il clique sur le lien, crée son compte, et son abonnement Premium est immédiatement actif.",
     "send_date_label": "Date d'envoi (facultatif)",
     "send_date_hint": "Laissez vide pour envoyer maintenant. Idéal pour un anniversaire ou Noël.",
-    "send_date_future_error": "La date d'envoi doit être dans le futur."
+    "send_date_future_error": "La date d'envoi doit être dans le futur.",
+    "code_validity": "Code valable 12 mois · Usage unique"
   },
   "redeem": {
     "title": "Activer votre cadeau",

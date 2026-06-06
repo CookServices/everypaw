@@ -12,7 +12,7 @@ const copy = {
       `<strong>${sender}</strong> vous offre 12 mois d'Everypaw Premium , le journal IA qui transforme les moments du quotidien de votre animal en un beau livre imprimé.`,
     codeLabel: "Votre code cadeau :",
     cta: "Activer mon cadeau →",
-    footer: "Ce cadeau vous donne 12 mois d'Everypaw Premium gratuitement. Aucune carte bancaire requise pour l'activer.",
+    footer: "Code valable 12 mois · Usage unique. Aucune carte bancaire requise pour l'activer.",
   },
   en: {
     subject: (_sender: string) => `🎁 You've received an Everypaw gift!`,
@@ -21,7 +21,7 @@ const copy = {
       `<strong>${sender}</strong> gifted you 12 months of Everypaw Premium , the AI journal that turns your pet's daily moments into a beautiful printed book.`,
     codeLabel: "Your gift code:",
     cta: "Activate my gift →",
-    footer: "This gift gives you 12 months of Everypaw Premium for free. No credit card required to redeem.",
+    footer: "Code valid for 12 months · Single use. No credit card required to redeem.",
   },
 };
 
@@ -107,9 +107,12 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Code expires 12 months from purchase, single-use
+    const expiresAt = Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60;
     const promotionCode = await stripe.promotionCodes.create({
       coupon: giftCouponId,
       max_redemptions: 1,
+      expires_at: expiresAt,
       metadata: {
         recipient_email: recipientEmail,
         recipient_name: recipientName,
