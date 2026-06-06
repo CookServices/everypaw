@@ -1343,6 +1343,7 @@ Tous les comptes A–E ✅ PASS après round 2.
 
 **Règle critique ajoutée**
 - **Partage Stripe** : tout `PRICE_MAP` et toute résolution de subscription ID doivent passer par `src/lib/stripe-helpers.ts`. Ne jamais dupliquer inline.
+- **Changement de plan** : toujours différer via `SubscriptionSchedules` (2 phases, `proration_behavior: "none"`) — jamais de mise à jour directe des items avec proration. La DB est réconciliée par le webhook `customer.subscription.updated` au démarrage de la phase 2, pas avant.
 
 ### ✅ Session 33 — Security Round 7 (2026-06-05)
 
@@ -1463,4 +1464,16 @@ Files audited this round (no changes required):
 
 **Couverture complète :** 37 fichiers API + 8 pages dashboard + 8 pages auth/public. Codebase production-ready.
 
-*Dernière mise à jour : 2026-06-05 (session 39 — Security Round 13)*
+### ✅ Session 40 — Changement de plan en fin de période (2026-06-06)
+
+**Commit** : `5656b77` — PR #66
+
+**Problème** : `upgrade/route.ts` utilisait `proration_behavior: "always_invoice"` → factures au prorata immédiates, parfois à 0 €, et DB mise à jour avant le renouvellement effectif.
+
+**Solution** : les changements de plan passent désormais par les **Stripe SubscriptionSchedules** avec `proration_behavior: "none"` — le nouveau plan démarre proprement au prochain renouvellement.
+
+- `upgrade/route.ts` : crée (ou met à jour) un `SubscriptionSchedule` en 2 phases — Phase 1 : plan actuel jusqu'à `current_period_end` ; Phase 2 : nouveau plan à partir du renouvellement. La DB n'est plus mise à jour immédiatement — le webhook `customer.subscription.updated` réconcilie au changement de phase.
+- `upgrade-preview/route.ts` : ne calcule plus de prorata — retourne uniquement `{ scheduledDate: current_period_end }`.
+- `settings/page.tsx` : modal de confirmation revu — affiche la date effective, "Aucun paiement immédiat", bouton "Confirmer" (plus "Confirmer et payer"). Toast de succès : "Changement planifié pour le [date]".
+
+*Dernière mise à jour : 2026-06-06 (session 40 — Plan change deferral)*
