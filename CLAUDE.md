@@ -1483,4 +1483,34 @@ Files audited this round (no changes required):
 - `src/app/api/gift/redeem/route.ts` : détecte si l'utilisateur a un abonnement actif. Si oui → crée/met à jour une `SubscriptionSchedule` (phase 2 = plan cadeau + coupon 100% off, `proration_behavior: "none"`) → retourne `{ scheduled: true, activatesAt, plan }`. Si non (plan free) → flow checkout Stripe existant inchangé.
 - `src/app/dashboard/settings/page.tsx` : section "Vous avez un code cadeau ?" dans le bloc abonnement — input monospace + bouton "Activer" ; état succès inline avec la date d'activation et le plan cadeau ; erreurs traduits FR/EN ; touche Entrée déclenche l'activation.
 
-*Dernière mise à jour : 2026-06-06 (session 40 — Gift code in settings)*
+### ✅ Session 41 — Fixes UX order page, dashboard, gift page (2026-06-06)
+
+**Order page (`/dashboard/pets/[id]/order`)**
+- Bouton "Retour au profil" supprimé, picto 📄 retiré du bouton PDF, bloc "Commander un exemplaire supplémentaire" supprimé
+- Fix `handleDownloadPdf` : `a.click()` après `await fetch()` perdait le contexte geste → `window.location.href = data.url`
+- Fix `handleFullPreview` : `res.ok` vérifié avant `res.text()`, `alert()` si échec
+
+**Dashboard — pets d'autres utilisateurs visibles**
+- Cause : `pets_public_read` RLS retourne toutes les lignes ; requêtes dashboard sans filtre `user_id`
+- `DashboardNav.tsx` + `dashboard/page.tsx` : ajout `getUser()` + `.eq("user_id", user.id)` sur toutes les requêtes pets/stories/entries
+
+**Landing — section features**
+- Bouton "Offrir un abonnement" / "Give a subscription" ajouté dans la feature f6 (cadeau)
+- Style identique au CTA hero — appliqué sur `page.tsx` (EN) et `fr/page.tsx` (FR)
+
+**Gift page (`/gift`) — mobile layout**
+- Cause : CSS global `display: inline-flex` sur `<button>` en mobile écrase le layout interne
+- Fix : `display: "block"` + `flexDirection: "column"` hardcodé sur le container des cartes de plan
+
+**Gift flow — suppression de l'obligation de connexion**
+- `api/gift/create/route.ts` : guard `getUser()` + 401 supprimé — achat cadeau sans compte requis
+- `gift/page.tsx` : `handleGoToConfirm` synchrone, redirect login supprimée
+
+**Gift — validité du code cadeau (12 mois · usage unique)**
+- `api/gift/create/route.ts` : `expires_at = now + 365 jours` sur `promotionCodes.create` Stripe
+- Email footer + page succès : "Code valable 12 mois · Usage unique" (clé i18n `gift.code_validity`)
+
+**Convention ajoutée**
+- `display: "block"` obligatoire sur les `<button>` avec contenu structuré (labels, prix, listes)
+
+*Dernière mise à jour : 2026-06-06 (session 41 — Fixes UX order/dashboard/gift)*
