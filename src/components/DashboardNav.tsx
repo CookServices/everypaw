@@ -517,11 +517,11 @@ export default function DashboardNav() {
   const isSettingsPage = pathname.startsWith("/dashboard/settings");
   const isDashboard  = !isPetPage && !isOrderPage && !isBooksPage && !isSettingsPage;
 
-  const petLink        = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal`    : "/dashboard";
-  const storiesLink    = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=stories`    : "/dashboard";
-  const milestonesLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=milestones` : "/dashboard";
-  const orderLink      = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/order`           : "/dashboard";
-  const booksLink      = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/books`           : "/dashboard";
+  const petLink        = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal`    : "/dashboard/pets/new";
+  const storiesLink    = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=stories`    : "/dashboard/pets/new";
+  const milestonesLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=milestones` : "/dashboard/pets/new";
+  const orderLink      = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/order`           : "/dashboard/pets/new";
+  const booksLink      = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/books`           : "/dashboard/pets/new";
   const addMomentLink  = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=journal`    : "/dashboard/pets/new";
 
   const isFR = locale === "fr";
