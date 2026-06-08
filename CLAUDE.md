@@ -1513,4 +1513,20 @@ Files audited this round (no changes required):
 **Convention ajoutée**
 - `display: "block"` obligatoire sur les `<button>` avec contenu structuré (labels, prix, listes)
 
-*Dernière mise à jour : 2026-06-06 (session 41 — Fixes UX order/dashboard/gift)*
+### ✅ Session 42 — Fix gift sans paiement + nav sans animal (2026-06-08)
+
+**Commits** : `3e1ae06`, `18ef79c`
+
+**Bug critique — Gift généré sans paiement**
+- `/api/gift/create` créait le coupon Stripe sans aucun paiement → supprimé
+- Nouveau flow deux étapes :
+  1. `/api/gift/checkout` : crée une Stripe Checkout session one-time avec les données du formulaire en metadata → retourne `{ url }`
+  2. `/api/gift/complete` : vérifie `session.payment_status === "paid"`, crée le promo code (idempotent via `idempotencyKey: gift-complete-{sessionId}`), envoie l'email
+- `gift/page.tsx` : `handleConfirm` redirige vers Stripe ; `useEffect` au mount détecte `?session_id=` et appelle `complete`
+- 4 nouvelles env vars Vercel : `STRIPE_GIFT_PRICE_ID_DIGITAL_EUR/USD` + `STRIPE_GIFT_PRICE_ID_PRINT_EUR/USD` (one-time prices Stripe)
+
+**Bug nav — liens inaccessibles sans animal**
+- Sans pet, tous les liens pet-spécifiques (Journal, Histoires IA, Étapes, Livre, Bibliothèque) pointaient vers `/dashboard`
+- Fix : fallback vers `/dashboard/pets/new` au lieu de `/dashboard`
+
+*Dernière mise à jour : 2026-06-08 (session 42 — Fix gift sans paiement + nav sans animal)*
