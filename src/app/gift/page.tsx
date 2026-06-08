@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
@@ -10,6 +11,7 @@ import PublicFooter from "@/components/PublicFooter";
 export default function GiftPage() {
   const { t, locale } = useLocale();
   const isFR = locale === "fr";
+  const searchParams = useSearchParams();
 
   const [selectedPlan, setSelectedPlan] = useState<"digital" | "print">("digital");
   const [isMobile, setIsMobile] = useState(false);
@@ -39,6 +41,29 @@ export default function GiftPage() {
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // After Stripe redirect, complete the gift (verify payment + create promo code + send email)
+  useEffect(() => {
+    const sessionId = searchParams.get("session_id");
+    if (!sessionId) return;
+    setStatus("loading");
+    fetch("/api/gift/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setCode(data.code);
+          setStatus("success");
+        } else {
+          setStatus("error");
+        }
+      })
+      .catch(() => setStatus("error"));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Restore form saved before login redirect
@@ -74,24 +99,18 @@ export default function GiftPage() {
     setStep("confirm");
   };
 
-  // Step 2 : actually call the API
+  // Step 2 : redirect to Stripe Checkout
   const handleConfirm = async () => {
     setStatus("loading");
     setAuthError(false);
-    const res = await fetch("/api/gift/create", {
+    const res = await fetch("/api/gift/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, locale, plan: planApiKey }),
     });
-    if (res.status === 401) {
-      setAuthError(true);
-      setStatus("error");
-      return;
-    }
     const data = await res.json();
-    if (data.success) {
-      setCode(data.code);
-      setStatus("success");
+    if (data.url) {
+      window.location.href = data.url;
     } else {
       setStatus("error");
     }
