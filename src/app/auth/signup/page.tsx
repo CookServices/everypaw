@@ -373,7 +373,7 @@ export default function SignupPage() {
             <button
               onClick={handleSignup}
               disabled={status === "loading"}
-              style={{ padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: status === "loading" ? "not-allowed" : "pointer", opacity: status === "loading" ? .5 : 1, transition: "opacity .15s", width: "100%", textAlign: "center" }}
+              style={{ padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: status === "loading" ? "not-allowed" : "pointer", opacity: status === "loading" ? .5 : 1, transition: "opacity .15s", width: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
             >
               {status === "loading"
                 ? (isFR ? "Création du compte…" : "Creating account…")

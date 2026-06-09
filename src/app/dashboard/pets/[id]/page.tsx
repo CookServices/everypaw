@@ -1336,20 +1336,20 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 : (nextDay === 1 ? "1st" : nextDay === 2 ? "2nd" : nextDay === 3 ? "3rd" : `${nextDay}th`);
               const nextDate = isFR ? `${ordinal} ${nextMonthName}` : `${nextMonthName} ${ordinal}`;
               return (
-                <div style={{ background: hasThisMonthStory ? "rgba(61,43,31,.04)" : "rgba(200,129,58,.06)", borderRadius: 12, padding: ".625rem 1rem", border: `1px solid ${hasThisMonthStory ? "rgba(61,43,31,.08)" : "rgba(200,129,58,.2)"}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".5rem", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: ".8rem", color: hasThisMonthStory ? "#7A5C44" : "#C8813A", fontWeight: hasThisMonthStory ? 300 : 500 }}>
-                    {hasThisMonthStory
-                      ? (isFR ? `✓ Chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })} généré` : `✓ ${now.toLocaleDateString(dateLocale, { month: "long" })} chapter generated`)
-                      : (isFR ? `✨ Générez le chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })}` : `✨ Generate ${now.toLocaleDateString(dateLocale, { month: "long" })}'s chapter`)}
-                  </span>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: ".1rem" }}>
-                    <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300 }}>
+                <div style={{ background: hasThisMonthStory ? "rgba(61,43,31,.04)" : "rgba(200,129,58,.06)", borderRadius: 12, padding: ".625rem 1rem", border: `1px solid ${hasThisMonthStory ? "rgba(61,43,31,.08)" : "rgba(200,129,58,.2)"}`, display: "flex", flexDirection: "column", gap: ".35rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".5rem", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: ".8rem", color: hasThisMonthStory ? "#7A5C44" : "#C8813A", fontWeight: hasThisMonthStory ? 300 : 500 }}>
+                      {hasThisMonthStory
+                        ? (isFR ? `✓ Chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })} généré` : `✓ ${now.toLocaleDateString(dateLocale, { month: "long" })} chapter generated`)
+                        : (isFR ? `✨ Générez le chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })}` : `✨ Generate ${now.toLocaleDateString(dateLocale, { month: "long" })}'s chapter`)}
+                    </span>
+                    <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300, flexShrink: 0 }}>
                       {isFR ? `Prochain : ${nextDate} (dans ${daysUntil}j)` : `Next: ${nextDate} (in ${daysUntil}d)`}
                     </span>
-                    <span style={{ fontSize: ".68rem", color: "#B8A090", fontWeight: 300 }}>
-                      {isFR ? "Généré automatiquement" : "Auto-generated"}
-                    </span>
                   </div>
+                  <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300 }}>
+                    {isFR ? "Généré automatiquement" : "Auto-generated"}
+                  </span>
                 </div>
               );
             })()}
