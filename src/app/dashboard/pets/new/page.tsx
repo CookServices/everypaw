@@ -235,12 +235,12 @@ export default function NewPetPage() {
 
           {/* Text fields */}
           {[
-            { label: t.pet.name, value: name, setter: setName, placeholder: "Luna, Biscuit, Mochi…", type: "text", max: undefined, maxLength: 40 },
-            { label: t.pet.breed, value: breed, setter: setBreed, placeholder: "Golden Retriever, Siamese…", type: "text", max: undefined, maxLength: 50 },
-            { label: t.pet.birthday, value: birthdate, setter: setBirthdate, placeholder: "", type: "date", max: new Date().toISOString().split("T")[0], maxLength: undefined },
+            { label: t.pet.name, value: name, setter: setName, placeholder: "Luna, Biscuit, Mochi…", type: "text", max: undefined, maxLength: 40, required: true },
+            { label: t.pet.breed, value: breed, setter: setBreed, placeholder: "Golden Retriever, Siamese…", type: "text", max: undefined, maxLength: 50, required: false },
+            { label: t.pet.birthday, value: birthdate, setter: setBirthdate, placeholder: "", type: "date", max: new Date().toISOString().split("T")[0], maxLength: undefined, required: true },
           ].map(field => (
             <div key={field.label} style={{ marginBottom: "1.25rem" }}>
-              <label style={labelStyle}>{field.label}</label>
+              <label style={labelStyle}>{field.label}{field.required && <span style={{ color: "#A32D2D", marginLeft: ".2rem" }}>*</span>}</label>
               <input type={field.type} value={field.value} onChange={e => field.setter(e.target.value)} placeholder={field.placeholder} max={field.max} maxLength={field.maxLength} style={inputStyle} />
               {field.maxLength !== undefined && (
                 <div style={{ fontSize: ".7rem", textAlign: "right", marginTop: ".3rem", color: field.value.length >= field.maxLength * 0.9 ? "#A32D2D" : "#9A8070" }}>

@@ -531,7 +531,26 @@ export default function PetPage({ params }: { params: { id: string } }) {
       </div>
     </div>
   );
-  if (!pet) return <div className="ep-page-centered">{t.pet.not_found}</div>;
+  if (!pet) return (
+    <div className="ep-page-centered" style={{ flexDirection: "column", gap: "1.25rem", textAlign: "center" }}>
+      <p style={{ color: "#7A5C44", fontSize: "1rem" }}>{t.pet.not_found}</p>
+      <a
+        href="https://everypaw.app/dashboard/pets/new"
+        style={{
+          display: "inline-block",
+          padding: ".65rem 1.5rem",
+          background: "var(--ep-brand)",
+          color: "#fff",
+          borderRadius: "var(--ep-radius-pill, 100px)",
+          fontWeight: 600,
+          fontSize: ".95rem",
+          textDecoration: "none",
+        }}
+      >
+        {t.pet.create_profile_cta}
+      </a>
+    </div>
+  );
 
   const loadMoreEntries = async () => {
     setLoadingMore(true);
@@ -566,7 +585,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
   const tabs = [
     { key: "journal" as const, label: t.pet.tab_journal },
-    { key: "stories" as const, label: isFR ? "Histoires IA" : "AI Stories" },
+    { key: "stories" as const, label: t.pet.tab_stories },
     { key: "milestones" as const, label: t.pet.tab_milestones },
   ];
 
