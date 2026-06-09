@@ -68,7 +68,9 @@ export async function POST(req: Request) {
 
   let session: Stripe.Checkout.Session;
   try {
-    session = await stripe.checkout.sessions.retrieve(sessionId);
+    session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["payment_intent"],
+    });
   } catch {
     return NextResponse.json({ error: "Invalid session" }, { status: 400 });
   }
@@ -79,6 +81,12 @@ export async function POST(req: Request) {
 
   if (session.metadata?.gift !== "true") {
     return NextResponse.json({ error: "Invalid session type" }, { status: 400 });
+  }
+
+  // Idempotency: mark the payment intent after sending to prevent duplicate emails on repeated calls
+  const pi = session.payment_intent as Stripe.PaymentIntent | null;
+  if (pi?.metadata?.gift_email_sent === "true") {
+    return NextResponse.json({ success: true });
   }
 
   const { recipient_email, recipient_name, sender_name, message, scheduled_date, locale, plan } = session.metadata!;
@@ -128,6 +136,13 @@ export async function POST(req: Request) {
   };
 
   await resend.emails.send(emailPayload);
+
+  // Mark the payment intent so repeated calls skip the email
+  if (pi?.id) {
+    await stripe.paymentIntents.update(pi.id, {
+      metadata: { ...pi.metadata, gift_email_sent: "true" },
+    });
+  }
 
   return NextResponse.json({ success: true, code: promotionCode.code });
 }
