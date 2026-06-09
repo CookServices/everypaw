@@ -1,21 +1,15 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
-import { verifyBearer } from "@/lib/auth";
+import { verifyCronRoute } from "@/lib/auth";
+import { getResendClient } from "@/lib/resend";
 
 export async function GET(req: Request) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret || cronSecret.length < 32) {
-    console.error("CRON_SECRET is not set or too short (min 32 chars)");
-    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
-  }
-  if (!verifyBearer(req.headers.get("authorization"), cronSecret)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authError = verifyCronRoute(req);
+  if (authError) return authError;
 
   const supabase = getServiceSupabase();
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  const resend = getResendClient();
 
   const today = new Date();
   const currentYear = today.getFullYear();

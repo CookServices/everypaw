@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Resend } from "resend";
 import { escapeHtml } from "@/lib/html";
+import { getServiceSupabase } from "@/lib/plan";
 
 const copy = {
   fr: {
@@ -81,6 +82,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid session type" }, { status: 400 });
   }
 
+  // Idempotency: skip if this session was already completed (prevents duplicate emails)
+  const supabase = getServiceSupabase();
+  const { data: existing } = await supabase
+    .from("events_log")
+    .select("id")
+    .eq("event_type", "gift_complete")
+    .contains("metadata", { checkout_session_id: sessionId })
+    .maybeSingle();
+  if (existing) {
+    return NextResponse.json({ success: true });
+  }
+
   const { recipient_email, recipient_name, sender_name, message, scheduled_date, locale, plan } = session.metadata!;
 
   const giftCouponId = process.env.STRIPE_GIFT_COUPON_ID;
@@ -128,6 +141,11 @@ export async function POST(req: Request) {
   };
 
   await resend.emails.send(emailPayload);
+
+  await supabase.from("events_log").insert({
+    event_type: "gift_complete",
+    metadata: { checkout_session_id: sessionId, recipient_email, plan },
+  });
 
   return NextResponse.json({ success: true, code: promotionCode.code });
 }
