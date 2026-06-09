@@ -93,7 +93,7 @@
     "min_entries_alert": "Add at least 3 journal entries before generating a story.",
     "generation_failed": "Generation failed. Please try again.",
     "entry_required": "Write something to continue",
-    "month_progress_days": "{count} moments this month · Next chapter in {days}d",
+    "month_progress_days": "{count} moments this month · Next chapter in {days}d, auto-generated",
     "month_progress_tomorrow": "{count} moments this month · Next chapter tomorrow",
     "month_progress_soon": "{count} moments this month · Generating soon",
     "month_progress_done": "{count} moments this month · Chapter generated ✓"

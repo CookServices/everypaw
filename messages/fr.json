@@ -93,7 +93,7 @@
     "min_entries_alert": "Ajoutez au moins 3 entrées de journal avant de générer une histoire.",
     "generation_failed": "La génération a échoué. Veuillez réessayer.",
     "entry_required": "Écrivez quelque chose pour continuer",
-    "month_progress_days": "{count} moments ce mois · Prochain chapitre dans {days}j",
+    "month_progress_days": "{count} moments ce mois · Prochain chapitre dans {days}j généré automatiquement",
     "month_progress_tomorrow": "{count} moments ce mois · Prochain chapitre demain",
     "month_progress_soon": "{count} moments ce mois · Génération imminente",
     "month_progress_done": "{count} moments ce mois · Chapitre généré ✓"
