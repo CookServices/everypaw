@@ -312,13 +312,16 @@ export default function DashboardPage() {
               <p style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem", lineHeight: 1.2 }}>
                 {chapterLabel}
               </p>
-              <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: "0 0 .5rem", fontWeight: 300 }}>
+              <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: "0 0 .15rem", fontWeight: 300 }}>
                 {(() => {
                   const d = firstOfNextMonth.getDate();
                   const m = firstOfNextMonth.toLocaleDateString(dateLocale, { month: "long" });
                   const ord = isFR ? (d === 1 ? "1er" : `${d}`) : (d === 1 ? "1st" : d === 2 ? "2nd" : d === 3 ? "3rd" : `${d}th`);
                   return isFR ? `${ord} ${m}` : `${m} ${ord}`;
                 })()}
+              </p>
+              <p style={{ fontSize: ".68rem", color: "#9A8070", margin: "0 0 .5rem", fontWeight: 300 }}>
+                {isFR ? "Généré automatiquement" : "Auto-generated"}
               </p>
               {hasStories && (
                 <Link
