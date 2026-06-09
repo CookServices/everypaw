@@ -1529,4 +1529,44 @@ Files audited this round (no changes required):
 - Sans pet, tous les liens pet-spécifiques (Journal, Histoires IA, Étapes, Livre, Bibliothèque) pointaient vers `/dashboard`
 - Fix : fallback vers `/dashboard/pets/new` au lieu de `/dashboard`
 
-*Dernière mise à jour : 2026-06-08 (session 42 — Fix gift sans paiement + nav sans animal)*
+### ✅ Session 43 — UI fixes + tests impression + factures livres (2026-06-09)
+
+**Commits** : `8feefc4`, `e29e0cd`, `629d8d0`, `b59c4e2`, `dc42048`, `6070716`, `03c8deb`, `90d452f`
+
+**Renommages UI**
+- Onglet "Histoires IA" / "AI Stories" → "Histoires" / "Stories" (i18n + `pets/[id]/page.tsx` + `DashboardNav.tsx`)
+- Bouton "Animal introuvable" → CTA "Créer le profil de votre animal" lien `/dashboard/pets/new` (avec texte `not_found` conservé au-dessus)
+
+**Fixes mobile — centrage boutons**
+- Cause racine : `globals.css` ligne 174 — `display: inline-flex` sur tous les `<button>` en mobile écrase `textAlign`
+- Fix systématique : `display: flex + justifyContent: center` sur signup "Créer un compte", `planCard` upgrade, `btnPrimary` + `btnOutline` settings
+- Bouton "Offrir un abonnement" landing : `display: block + textAlign: center` (pleine largeur)
+- Bouton "Activer" code cadeau : `width: auto` override (était cassé par `width: 100%` de `btnPrimary`)
+
+**Labels "Généré automatiquement"**
+- Dashboard home tuile "prochain chapitre" : sous la date du prochain chapitre
+- Pet page onglet Histoires : dans la pill progress `month_progress_days` (i18n)
+- Pet page onglet Histoires : sous la date dans la tuile "Prochain chapitre" (layout column)
+
+**Champs obligatoires pets/new**
+- Nom : `*` retiré du JSON (était dupliqué — le code l'ajoute), label propre
+- Date de naissance : ajout validation `if (!birthdate)` dans `handleCreate`, clé i18n `birthday_error`
+- Bouton "Créer le profil" : `textAlign: center`
+
+**Gate livre trop court**
+- `order/page.tsx` : extraction `rawPages` avant `Math.max(28, ...)` → `tooFewContent = rounded < 28`
+- Bannière rouge + bouton commander désactivé si `tooFewContent`
+- Seuil effectif : < 28 stories selectionées produisant < 28 pages de contenu réel
+
+**Factures livres commandés** (`books/page.tsx`)
+- Migration : `stripe_receipt_url text`, `stripe_amount_paid integer`, `stripe_currency text` sur `book_configs` (appliquée en prod)
+- `book-checkout/route.ts` : `success_url` append `&session_id={CHECKOUT_SESSION_ID}`
+- `order/page.tsx` : `stripeSessionId` passé à `/api/gelato/order` au retour Stripe
+- `gelato/order/route.ts` : si `stripeSessionId` → `stripe.checkout.sessions.retrieve` (expand `payment_intent.latest_charge`) → `receipt_url` + `amount_total` + `currency` stockés dans `book_config`
+- `books/page.tsx` : pour les livres ordered — lien "Voir la facture" + montant si `stripe_receipt_url` ; sinon "Inclus dans votre abonnement Print"
+
+**Scripts SQL de test**
+- `supabase/purge_test_data.sql` : purge les 5 comptes yopmail (conserve les comptes auth)
+- `supabase/seed_print_multi.sql` : seed ciblé `test-print-multi` — 60 entrées Coco, 24 stories, 3 book_configs (draft Classic/Forest + ordered Ocean)
+
+*Dernière mise à jour : 2026-06-09 (session 43 — UI fixes + tests impression + factures livres)*
