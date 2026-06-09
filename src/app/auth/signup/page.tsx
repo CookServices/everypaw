@@ -63,6 +63,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [termsError, setTermsError] = useState(false);
@@ -304,19 +305,32 @@ export default function SignupPage() {
 
             {/* Confirm password */}
             <div style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
-              <input
-                type="password"
-                placeholder={isFR ? "Confirmer le mot de passe" : "Confirm password"}
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleSignup()}
-                style={{
-                  width: "100%", boxSizing: "border-box",
-                  padding: ".75rem 1rem", borderRadius: 12,
-                  border: "1.5px solid rgba(61,43,31,.15)",
-                  background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none",
-                }}
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder={isFR ? "Confirmer le mot de passe" : "Confirm password"}
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleSignup()}
+                  style={{
+                    width: "100%", boxSizing: "border-box",
+                    padding: ".75rem 2.75rem .75rem 1rem", borderRadius: 12,
+                    border: "1.5px solid rgba(61,43,31,.15)",
+                    background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(v => !v)}
+                  style={{ position: "absolute", right: ".75rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9A8070", padding: 0, display: "flex", alignItems: "center" }}
+                >
+                  {showConfirmPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22" /></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* CGU checkbox */}
@@ -359,7 +373,7 @@ export default function SignupPage() {
             <button
               onClick={handleSignup}
               disabled={status === "loading"}
-              style={{ padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: status === "loading" ? "not-allowed" : "pointer", opacity: status === "loading" ? .5 : 1, transition: "opacity .15s" }}
+              style={{ padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: status === "loading" ? "not-allowed" : "pointer", opacity: status === "loading" ? .5 : 1, transition: "opacity .15s", width: "100%", textAlign: "center" }}
             >
               {status === "loading"
                 ? (isFR ? "Création du compte…" : "Creating account…")

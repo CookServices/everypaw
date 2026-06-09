@@ -1342,9 +1342,14 @@ export default function PetPage({ params }: { params: { id: string } }) {
                       ? (isFR ? `✓ Chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })} généré` : `✓ ${now.toLocaleDateString(dateLocale, { month: "long" })} chapter generated`)
                       : (isFR ? `✨ Générez le chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })}` : `✨ Generate ${now.toLocaleDateString(dateLocale, { month: "long" })}'s chapter`)}
                   </span>
-                  <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300, flexShrink: 0 }}>
-                    {isFR ? `Prochain : ${nextDate} (dans ${daysUntil}j)` : `Next: ${nextDate} (in ${daysUntil}d)`}
-                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: ".1rem" }}>
+                    <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300 }}>
+                      {isFR ? `Prochain : ${nextDate} (dans ${daysUntil}j)` : `Next: ${nextDate} (in ${daysUntil}d)`}
+                    </span>
+                    <span style={{ fontSize: ".68rem", color: "#B8A090", fontWeight: 300 }}>
+                      {isFR ? "Généré automatiquement" : "Auto-generated"}
+                    </span>
+                  </div>
                 </div>
               );
             })()}

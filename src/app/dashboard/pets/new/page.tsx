@@ -109,6 +109,7 @@ export default function NewPetPage() {
 
   const handleCreate = async () => {
     if (!name.trim()) { setError(t.pet.name_error); return; }
+    if (!birthdate) { setError(t.pet.birthday_error); return; }
     setStatus("loading");
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -261,7 +262,7 @@ export default function NewPetPage() {
 
           {error && <p style={{ fontSize: ".8rem", color: "#A32D2D", marginBottom: "1rem" }}>{error}</p>}
 
-          <button onClick={handleCreate} disabled={status === "loading"} style={{ width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "loading" ? .7 : 1 }}>
+          <button onClick={handleCreate} disabled={status === "loading"} style={{ width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: status === "loading" ? .7 : 1, textAlign: "center" }}>
             {status === "loading" ? t.pet.creating : t.pet.create}
           </button>
         </div>

@@ -172,6 +172,7 @@ export default function UpgradePage() {
           fontWeight: onCta ? 600 : 400,
           cursor: onCta && !disabled ? "pointer" : "default",
           opacity: disabled ? .5 : 1,
+          textAlign: "center",
         }}
       >
         {cta}

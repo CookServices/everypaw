@@ -711,8 +711,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           </h3>
           <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto 1rem" }}>
             {locale === "fr"
-              ? "La commande d'un livre imprimé est réservée aux abonnés Premium Print. Passez à l'abonnement Print pour recevoir un livre chaque année."
-              : "Ordering a printed book is available to Premium Print subscribers. Upgrade to Print to receive a book every year."}
+              ? "La commande d'un livre imprimé gratuit est réservée aux abonnés Premium Print. Passez à l'abonnement Print pour recevoir un livre gratuitement chaque année."
+              : "Ordering a free printed book is available to Premium Print subscribers. Upgrade to Print to receive a book for free every year."}
           </p>
           <a
             href="/dashboard/settings"

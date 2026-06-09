@@ -144,7 +144,7 @@
   "pet": {
     "add_title": "Ajouter un animal",
     "species": "Espèce",
-    "name": "Nom *",
+    "name": "Nom",
     "breed": "Race",
     "birthday": "Date de naissance",
     "bio": "Un peu à leur sujet",
@@ -152,6 +152,7 @@
     "create": "Créer le profil",
     "creating": "Création…",
     "name_error": "Donnez un nom à votre animal !",
+    "birthday_error": "La date de naissance est obligatoire.",
     "born": "Né(e) en",
     "not_found": "Animal introuvable.",
     "create_profile_cta": "Créer le profil de votre animal",

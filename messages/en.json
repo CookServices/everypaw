@@ -144,7 +144,7 @@
   "pet": {
     "add_title": "Add a pet",
     "species": "Species",
-    "name": "Name *",
+    "name": "Name",
     "breed": "Breed",
     "birthday": "Birthday",
     "bio": "A little about them",
@@ -152,6 +152,7 @@
     "create": "Create profile",
     "creating": "Creating…",
     "name_error": "Give your pet a name!",
+    "birthday_error": "Date of birth is required.",
     "born": "Born",
     "not_found": "Pet not found.",
     "create_profile_cta": "Create your pet's profile",
