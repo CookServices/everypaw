@@ -390,7 +390,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   // Estimated content page count (no dedication — filled at address step).
   // Matches calcPageCount: content only, multiple of 4, min 28.
   // Total PDF pages = estimatedPages + 3 structural (cover, endpaper, back cover).
-  const estimatedPages = (() => {
+  const { estimatedPages, tooFewContent } = (() => {
     const selected = visibleStories.filter(s => selectedStoryIds.includes(s.id));
     const hasOrphanPhotos = filteredEntries.some(e => {
       if (!e.photo_urls?.length) return false;
@@ -403,7 +403,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     });
     const contentPages = Math.max(selected.length, 1) + (hasOrphanPhotos ? 1 : 0);
     const rounded = Math.ceil(contentPages / 4) * 4;
-    return Math.max(28, rounded);
+    return { estimatedPages: Math.max(28, rounded), tooFewContent: rounded < 28 };
   })();
 
   // Cover photo picker uses the same year filter as the rest of the preview
@@ -1170,18 +1170,25 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           {locale === "fr" ? "Sélectionnez au moins un chapitre pour continuer." : "Select at least one chapter to continue."}
         </div>
       )}
+      {tooFewContent && selectedStoryIds.length > 0 && (
+        <div style={{ background: "rgba(163,45,45,.06)", border: "1px solid rgba(163,45,45,.25)", borderRadius: 12, padding: ".75rem 1rem", marginBottom: ".25rem", fontSize: ".8rem", color: "#A32D2D", fontFamily: "sans-serif" }}>
+          {locale === "fr"
+            ? "Pas assez de chapitres pour imprimer un livre (minimum 7 chapitres requis)."
+            : "Not enough chapters to print a book (minimum 7 chapters required)."}
+        </div>
+      )}
       <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
         {/* Hide main CTA when user has no credits, except free plan (show disabled so user understands the gate) */}
         {((profile?.book_credits ?? 0) > 0 || profile?.plan === "free") && <button
           onClick={() => {
             setStep("address");
           }}
-          disabled={(visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading || profile?.plan === "free"}
+          disabled={(visibleStories.length > 0 && selectedStoryIds.length === 0) || tooFewContent || checkoutLoading || profile?.plan === "free"}
           style={{
             width: "100%", padding: ".875rem 1rem", borderRadius: 100, border: "none",
             background: accentColor, color: "#FDFAF5", fontFamily: "inherit",
-            fontSize: ".9rem", fontWeight: 600, cursor: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading || profile?.plan === "free" ? "not-allowed" : "pointer",
-            opacity: (visibleStories.length > 0 && selectedStoryIds.length === 0) || checkoutLoading || profile?.plan === "free" ? .5 : 1,
+            fontSize: ".9rem", fontWeight: 600, cursor: (visibleStories.length > 0 && selectedStoryIds.length === 0) || tooFewContent || checkoutLoading || profile?.plan === "free" ? "not-allowed" : "pointer",
+            opacity: (visibleStories.length > 0 && selectedStoryIds.length === 0) || tooFewContent || checkoutLoading || profile?.plan === "free" ? .5 : 1,
             display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", minHeight: 48,
           }}
         >
