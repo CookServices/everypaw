@@ -508,6 +508,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           customTitle: customTitle.trim() || null,
           storyLayouts,
           bookConfigId: currentConfigId ?? undefined,
+          stripeSessionId: searchParams.get("session_id") ?? undefined,
         }),
       });
       const data = await res.json();

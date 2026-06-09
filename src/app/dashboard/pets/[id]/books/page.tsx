@@ -22,6 +22,9 @@ interface BookConfig {
   gelato_order_id: string | null;
   ordered_at: string | null;
   page_count: number | null;
+  stripe_receipt_url: string | null;
+  stripe_amount_paid: number | null;
+  stripe_currency: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -199,6 +202,29 @@ export default function BooksPage({ params }: { params: { id: string } }) {
           >
             🚚 {isFR ? "Suivre ma commande" : "Track my order"} ({shipment.carrier})
           </a>
+        )}
+
+        {/* Invoice */}
+        {isOrdered && (
+          config.stripe_receipt_url ? (
+            <a
+              href={config.stripe_receipt_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: ".78rem", color: "#5880B8", fontFamily: "sans-serif", display: "inline-flex", alignItems: "center", gap: ".3rem" }}
+            >
+              🧾 {isFR ? "Voir la facture" : "View receipt"}
+              {config.stripe_amount_paid != null && config.stripe_currency && (
+                <span style={{ color: "#9A8070" }}>
+                  · {(config.stripe_amount_paid / 100).toFixed(2)} {config.stripe_currency.toUpperCase()}
+                </span>
+              )}
+            </a>
+          ) : (
+            <p style={{ fontSize: ".78rem", color: "#9A8070", fontFamily: "sans-serif", margin: 0 }}>
+              🧾 {isFR ? "Inclus dans votre abonnement Print" : "Included in your Print subscription"}
+            </p>
+          )
         )}
 
         {/* Actions */}

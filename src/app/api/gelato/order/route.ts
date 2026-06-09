@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getCurrencyFromCountry } from "@/lib/currency";
 import { getServiceSupabase } from "@/lib/plan";
 import { generatePdfToken } from "@/lib/pdf-token";
 import { calcPageCount } from "@/lib/book";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const GELATO_PRODUCT_UID = "photobooks-hardcover_pf_200x200-mm-8x8-inch_pt_170-gsm-65lb-coated-silk_cl_4-4_ccl_4-4_bt_glued-left_ct_matt-lamination_prt_1-0_cpt_130-gsm-65-lb-cover-coated-silk_ver";
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -26,6 +29,7 @@ export async function POST(req: Request) {
     coverTheme,
     customTitle,
     storyLayouts,
+    stripeSessionId,
   } = body;
 
   // Validate selectedStoryIds format to prevent injection into URL params
@@ -273,6 +277,23 @@ export async function POST(req: Request) {
         .eq("user_id", user.id);
     }
 
+    // Fetch Stripe receipt if this was a paid extra-book order
+    let stripeReceiptUrl: string | null = null;
+    let stripeAmountPaid: number | null = null;
+    let stripeCurrency: string | null = null;
+    if (typeof stripeSessionId === "string" && stripeSessionId.startsWith("cs_")) {
+      try {
+        const session = await stripe.checkout.sessions.retrieve(stripeSessionId, {
+          expand: ["payment_intent.latest_charge"],
+        });
+        const charge = (session.payment_intent as Stripe.PaymentIntent)
+          ?.latest_charge as Stripe.Charge | undefined;
+        stripeReceiptUrl = charge?.receipt_url ?? null;
+        stripeAmountPaid = session.amount_total ?? null;
+        stripeCurrency = session.currency ?? null;
+      } catch { /* non-blocking */ }
+    }
+
     // Save or update book_config as ordered
     const configPayload = {
       user_id: user.id,
@@ -291,6 +312,9 @@ export async function POST(req: Request) {
       gelato_order_id: data.id,
       ordered_at: new Date().toISOString(),
       page_count: pageCount,
+      stripe_receipt_url: stripeReceiptUrl,
+      stripe_amount_paid: stripeAmountPaid,
+      stripe_currency: stripeCurrency,
     };
     const bookConfigId = body.bookConfigId;
     if (bookConfigId && /^[0-9a-f-]{36}$/i.test(bookConfigId)) {
