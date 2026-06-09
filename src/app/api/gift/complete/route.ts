@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Resend } from "resend";
 import { escapeHtml } from "@/lib/html";
-import { getServiceSupabase } from "@/lib/plan";
 
 const copy = {
   fr: {
@@ -69,7 +68,9 @@ export async function POST(req: Request) {
 
   let session: Stripe.Checkout.Session;
   try {
-    session = await stripe.checkout.sessions.retrieve(sessionId);
+    session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["payment_intent"],
+    });
   } catch {
     return NextResponse.json({ error: "Invalid session" }, { status: 400 });
   }
@@ -82,15 +83,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid session type" }, { status: 400 });
   }
 
-  // Idempotency: skip if this session was already completed (prevents duplicate emails)
-  const supabase = getServiceSupabase();
-  const { data: existing } = await supabase
-    .from("events_log")
-    .select("id")
-    .eq("event_type", "gift_complete")
-    .contains("metadata", { checkout_session_id: sessionId })
-    .maybeSingle();
-  if (existing) {
+  // Idempotency: mark the payment intent after sending to prevent duplicate emails on repeated calls
+  const pi = session.payment_intent as Stripe.PaymentIntent | null;
+  if (pi?.metadata?.gift_email_sent === "true") {
     return NextResponse.json({ success: true });
   }
 
@@ -142,10 +137,12 @@ export async function POST(req: Request) {
 
   await resend.emails.send(emailPayload);
 
-  await supabase.from("events_log").insert({
-    event_type: "gift_complete",
-    metadata: { checkout_session_id: sessionId, recipient_email, plan },
-  });
+  // Mark the payment intent so repeated calls skip the email
+  if (pi?.id) {
+    await stripe.paymentIntents.update(pi.id, {
+      metadata: { ...pi.metadata, gift_email_sent: "true" },
+    });
+  }
 
   return NextResponse.json({ success: true, code: promotionCode.code });
 }
