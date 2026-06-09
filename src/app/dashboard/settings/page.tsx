@@ -731,7 +731,7 @@ export default function SettingsPage() {
                     <button
                       onClick={handleRedeemGift}
                       disabled={giftStatus === "loading"}
-                      style={{ ...btnPrimary, whiteSpace: "nowrap" as const, opacity: giftStatus === "loading" ? .7 : 1, flexShrink: 0 }}
+                      style={{ ...btnPrimary, whiteSpace: "nowrap" as const, opacity: giftStatus === "loading" ? .7 : 1, flexShrink: 0, width: "auto" }}
                     >
                       {giftStatus === "loading" ? "…" : (isFR ? "Activer" : "Activate")}
                     </button>
