@@ -181,6 +181,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [bioExpanded, setBioExpanded] = useState(false);
   const [sharingStoryId, setSharingStoryId] = useState<string | null>(null);
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
+  const [shareCardStory, setShareCardStory] = useState<Story | null>(null);
+  const [shareCardFormat, setShareCardFormat] = useState<"square" | "story">("square");
+  const [shareCardLoading, setShareCardLoading] = useState(false);
+  const [shareCardError, setShareCardError] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [userPlan, setUserPlan] = useState<string>("free");
   const [bookCredits, setBookCredits] = useState(0);
@@ -420,6 +424,37 @@ export default function PetPage({ params }: { params: { id: string } }) {
       alert(t.stories.share_error);
     }
     setSharingStoryId(null);
+  };
+
+  const openShareCard = (story: Story) => {
+    setShareCardStory(story);
+    setShareCardFormat("square");
+    setShareCardError(false);
+  };
+
+  const downloadShareCard = async () => {
+    if (!shareCardStory) return;
+    setShareCardLoading(true);
+    setShareCardError(false);
+    try {
+      const url = `/api/share-card?story_id=${shareCardStory.id}&format=${shareCardFormat}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("failed");
+      const blob = await res.blob();
+      const filename = `everypaw-${shareCardFormat}.png`;
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: "image/png" })] })) {
+        await navigator.share({ files: [new File([blob], filename, { type: "image/png" })] });
+      } else {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+    } catch {
+      setShareCardError(true);
+    }
+    setShareCardLoading(false);
   };
 
   const deletePet = async () => {
@@ -745,6 +780,92 @@ export default function PetPage({ params }: { params: { id: string } }) {
               </Link>
               <button onClick={() => setShowUpsellModal(false)} style={{ padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer" }}>
                 {t.dashboard.upsell_later}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share card modal */}
+      {shareCardStory && (
+        <div onClick={() => setShareCardStory(null)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.6)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 24, padding: "1.75rem", maxWidth: 420, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,.22)" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 1.25rem", textAlign: "center" }}>
+              {t.stories.share_card_modal_title}
+            </h2>
+            {/* Format picker */}
+            <div style={{ display: "flex", gap: ".625rem", marginBottom: "1.25rem" }}>
+              {(["square", "story"] as const).map(fmt => (
+                <button
+                  key={fmt}
+                  onClick={() => setShareCardFormat(fmt)}
+                  style={{
+                    flex: 1, padding: ".625rem .5rem",
+                    borderRadius: 12,
+                    border: `1.5px solid ${shareCardFormat === fmt ? "#C8813A" : "rgba(61,43,31,.15)"}`,
+                    background: shareCardFormat === fmt ? "rgba(200,129,58,.08)" : "transparent",
+                    color: shareCardFormat === fmt ? "#C8813A" : "#7A5C44",
+                    fontSize: ".78rem", fontWeight: shareCardFormat === fmt ? 600 : 400,
+                    cursor: "pointer", fontFamily: "inherit",
+                    transition: "all .15s",
+                  }}
+                >
+                  {fmt === "square" ? t.stories.share_card_format_square : t.stories.share_card_format_story}
+                </button>
+              ))}
+            </div>
+            {/* Preview thumbnail */}
+            <div style={{
+              background: "#FAF6F0",
+              borderRadius: 14,
+              marginBottom: "1.25rem",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              aspectRatio: shareCardFormat === "story" ? "9/16" : "1/1",
+              border: "1px solid rgba(61,43,31,.08)",
+              maxHeight: 240,
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/api/share-card?story_id=${shareCardStory.id}&format=${shareCardFormat}`}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                onError={() => setShareCardError(true)}
+              />
+            </div>
+            {shareCardError && (
+              <p style={{ fontSize: ".78rem", color: "#C0392B", textAlign: "center", margin: "0 0 1rem" }}>
+                {t.stories.share_error}
+              </p>
+            )}
+            {/* Actions */}
+            <div style={{ display: "flex", gap: ".625rem" }}>
+              <button
+                onClick={downloadShareCard}
+                disabled={shareCardLoading}
+                style={{
+                  flex: 1, padding: ".75rem", borderRadius: 100,
+                  background: "#C8813A", color: "#FDFAF5",
+                  border: "none", fontSize: ".875rem", fontWeight: 500,
+                  cursor: shareCardLoading ? "wait" : "pointer",
+                  fontFamily: "inherit", opacity: shareCardLoading ? .65 : 1,
+                  transition: "opacity .15s",
+                }}
+              >
+                {shareCardLoading ? t.stories.share_generating : t.stories.share_card_share}
+              </button>
+              <button
+                onClick={() => setShareCardStory(null)}
+                style={{
+                  padding: ".75rem 1.25rem", borderRadius: 100,
+                  border: "1.5px solid rgba(61,43,31,.15)",
+                  background: "transparent", color: "#7A5C44",
+                  fontSize: ".875rem", cursor: "pointer", fontFamily: "inherit",
+                }}
+              >
+                {t.stories.share_card_close}
               </button>
             </div>
           </div>
@@ -1421,7 +1542,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                     .map((para, i) => <p key={i} style={{ margin: i === 0 ? "0 0 1rem" : "0 0 1rem" }}>{para}</p>)
                   }
                 </div>
-                <div style={{ borderTop: "1px solid rgba(61,43,31,.06)", paddingTop: "1rem" }}>
+                <div style={{ borderTop: "1px solid rgba(61,43,31,.06)", paddingTop: "1rem", display: "flex", gap: ".625rem", flexWrap: "wrap" }}>
                   <button
                     onClick={() => handleShare(story)}
                     disabled={sharingStoryId === story.id}
@@ -1452,6 +1573,27 @@ export default function PetPage({ params }: { params: { id: string } }) {
                         {t.stories.share_chapter}
                       </>
                     )}
+                  </button>
+                  <button
+                    onClick={() => openShareCard(story)}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: ".5rem",
+                      background: "transparent",
+                      border: "1.5px solid rgba(61,43,31,.18)",
+                      color: "#7A5C44",
+                      borderRadius: 100, padding: ".5rem 1.125rem",
+                      fontSize: ".8rem", fontWeight: 500, cursor: "pointer",
+                      fontFamily: "inherit",
+                      transition: "background .15s", minHeight: 36,
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.05)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    {t.stories.share_card_open}
                   </button>
                 </div>
               </div>

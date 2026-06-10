@@ -6,9 +6,11 @@ import { Pet, Entry } from "@/types";
 import Link from "next/link";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
 import GettingStartedChecklist from "@/components/onboarding/GettingStartedChecklist";
+import BookProgressWidget from "@/components/BookProgressWidget";
 import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { fmtDateOrdinal } from "@/lib/date";
+import type { Plan } from "@/lib/plan";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,7 @@ export default function DashboardPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
+  const [plan, setPlan] = useState<Plan>("free");
   const [bookCredits, setBookCredits] = useState(0);
   const [subscriptionRenewalDate, setSubscriptionRenewalDate] = useState<number | null>(null);
   const [subscribing, setSubscribing] = useState(false);
@@ -72,7 +75,7 @@ export default function DashboardPage() {
       ] = await Promise.all([
         supabase.from("pets").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("entries").select("*").eq("user_id", user.id).order("entry_date", { ascending: false }).limit(5),
-        supabase.from("profiles").select("is_premium, onboarding_completed, book_credits, subscription_renewal_date").single(),
+        supabase.from("profiles").select("is_premium, onboarding_completed, book_credits, subscription_renewal_date, plan").single(),
         supabase.from("stories").select("id").eq("user_id", user.id).limit(1),
         supabase.from("entries").select("*", { count: "exact", head: true }).eq("user_id", user.id).gte("entry_date", monthStart).lte("entry_date", monthEnd),
         supabase.from("entries").select("pet_id, entry_date").eq("user_id", user.id).order("entry_date", { ascending: false }),
@@ -82,6 +85,7 @@ export default function DashboardPage() {
       setPets(petsData || []);
       setEntries(entriesData || []);
       setIsPremium(profile?.is_premium || false);
+      setPlan((profile?.plan ?? "free") as Plan);
       setBookCredits(profile?.book_credits ?? 0);
       if (profile?.subscription_renewal_date) setSubscriptionRenewalDate(profile.subscription_renewal_date);
       setShowOnboarding(!profile?.onboarding_completed);
@@ -374,6 +378,20 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+
+        {/* ── Zone B.5 — Book progress widget ─────────────────────────── */}
+        {pets.length > 0 && resolvedPetId && (() => {
+          const resolvedPet = pets.find(p => p.id === resolvedPetId);
+          if (!resolvedPet) return null;
+          return (
+            <div style={{ marginBottom: "1.5rem" }}>
+              <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
+                {isFR ? `Votre livre ${year}` : `Your ${year} book`}
+              </p>
+              <BookProgressWidget pet={resolvedPet} plan={plan} />
+            </div>
+          );
+        })()}
 
         {/* Premium upsell — 2 cartes */}
         {!isPremium && (

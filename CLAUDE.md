@@ -255,6 +255,7 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/api/gelato/status/[orderId]` | Proxy statut commande Gelato — ownership vérifié via `book_configs.gelato_order_id` |
 | `/api/book-configs` | GET (liste par petId) + POST (create/update, max 15 drafts) |
 | `/api/book-configs/[id]` | DELETE (owner-only) |
+| `/api/share-card` | Génération image PNG partage Instagram — edge runtime, auth session + ownership, `?story_id=&format=square\|story` |
 | `/api/cron/monthly-story` | Auto-génération histoires mensuelles |
 | `/api/cron/weekly-reminder` | Rappels email via Resend |
 | `/api/gift/create`, `/api/gift/redeem` | Flow carte cadeau |
@@ -294,7 +295,8 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
     { "path": "/api/cron/on-this-day",     "schedule": "0 9 * * *" },
     { "path": "/api/cron/streak-alert",    "schedule": "0 17 * * *" },
     { "path": "/api/cron/birthday-check",  "schedule": "0 8 * * *" },
-    { "path": "/api/cron/daily-prompts",   "schedule": "0 7 * * *" }
+    { "path": "/api/cron/daily-prompts",     "schedule": "0 7 * * *" },
+    { "path": "/api/cron/retention-emails", "schedule": "0 9 * * *" }
   ]
 }
 ```
@@ -1601,4 +1603,133 @@ Files audited this round (no changes required):
 - `signup.*` : `reassurance_mobile`, `value_title`, `value_bullet_1/2/3/3_print`
 - `nav.*` : `how`, `pricing`, `faq`
 
-*Dernière mise à jour : 2026-06-10 (session 44 — SEO + nav ancres + gift email preview)*
+### ✅ Session 45 — Cron monthly-story (2026-06-10)
+
+**Implémentation complète `/api/cron/monthly-story`**
+- `src/lib/story.ts` : logique Anthropic partagée — `buildStoryPrompt()` + `generateAndSaveStory()` (retourne `null` sur violation unique constraint = race silencieuse)
+- `supabase/migrations/add_month_key_to_stories_2026_06_10.sql` : `stories.month_key TEXT NULL` + index unique partiel `(pet_id, month_key) WHERE month_key IS NOT NULL` (idempotence cron)
+- Route cron : plan gate digital/print, `deceased_at IS NULL`, `email_reminders = true`, ≥ 3 entries dans le mois précédent, `month_key` idempotence
+- Email par pet : titre du chapitre + extrait 2 premières phrases + CTA bouton amber → `?tab=stories`, lien désinscription tokenisé, locale EN/FR via `getProfileLocaleById`
+- Retourne `{ processed, generated, skipped, errors, monthKey }`
+- Migration appliquée en prod ✓
+
+**Tests à exécuter**
+
+```powershell
+# Récupérer CRON_SECRET depuis Vercel > Settings > Environment Variables
+$env:CRON_SECRET = "valeur_depuis_vercel"
+
+# 1. Sans token → 401
+curl https://everypaw.app/api/cron/monthly-story
+
+# 2. Avec token → 200 + JSON { processed, generated, skipped, errors, monthKey }
+curl https://everypaw.app/api/cron/monthly-story `
+  -H "Authorization: Bearer $env:CRON_SECRET"
+
+# 3. Idempotence — 2ème appel → generated: 0
+curl https://everypaw.app/api/cron/monthly-story `
+  -H "Authorization: Bearer $env:CRON_SECRET"
+```
+
+Données de test en prod (Supabase Table Editor) :
+- `test-free@yopmail.com` → skipped (plan free, filtré par la query)
+- `test-digital@yopmail.com` avec 2 entries mai 2026 sur un pet → skipped (< 3 entries)
+- `test-digital@yopmail.com` avec ≥ 3 entries mai 2026 → generated++
+- Idempotence : vérifier `SELECT pet_id, month_key FROM stories WHERE month_key = '2026-05'` — une seule ligne par pet
+
+Note : le cron calcule `month_key = mois précédent`. En juin 2026, `monthKey = "2026-05"`, les entries doivent avoir `entry_date` entre `2026-05-01` et `2026-05-31`.
+
+### ✅ Session 46 — Retention emails D1/D7/D30 (2026-06-10)
+
+**Implémentation `/api/cron/retention-emails` (daily 09:00 UTC)**
+- 3 paliers : J+1 (nudge onboarding), J+7 (premier chapitre ou meilleure entrée photo), J+30 (récap free + upsell doux, ou estimation pages pour payants)
+- Idempotence via `events_log` (event_types : `retention_d1`, `retention_d7`, `retention_d30`) — même pattern que le webhook Stripe : vérification avant envoi, insertion après succès Resend uniquement
+- Échec Resend → pas d'insertion → retry automatique le lendemain
+- `estimateBookPages()` réutilisé dans les chemins D7 (story existante) et D30 (payant)
+- Index partiel `idx_events_log_retention` sur `events_log` (migration appliquée en prod ✓)
+- `BookProgressWidget` : carte book progress visible pour tous les plans sur le dashboard
+- `book.ts` : `estimateBookPages(petId)` ajouté après `calcPageCount()`
+- i18n : section `retention_emails` dans `messages/en.json` + `messages/fr.json`
+- Retourne `{ d1: {sent, skipped, errors}, d7: {...}, d30: {...} }`
+
+**Fenêtres de temps (cron à 09:00 UTC)**
+
+| Palier | Window `created_at` |
+|---|---|
+| D1 | `[now-48h, now-24h)` |
+| D7 | `[now-8d, now-7d)` |
+| D30 | `[now-31d, now-30d)` |
+
+**Tests à réaliser**
+
+```powershell
+# Récupérer CRON_SECRET depuis Vercel > Settings > Environment Variables
+$env:CRON_SECRET = "valeur_depuis_vercel"
+
+# 1. Premier appel → envoie les emails pour les users dans les fenêtres
+curl https://everypaw.app/api/cron/retention-emails `
+  -H "Authorization: Bearer $env:CRON_SECRET"
+# → { d1: {sent:N, skipped:0, errors:0}, ... }
+
+# 2. Idempotence — 2ème appel immédiat → 0 doublon (events_log bloque)
+curl https://everypaw.app/api/cron/retention-emails `
+  -H "Authorization: Bearer $env:CRON_SECRET"
+# → { d1: {sent:0, skipped:N, errors:0}, ... }
+
+# 3. Opt-out : créer un profil test avec email_reminders=false dans la fenêtre D1
+# → skipped (jamais envoyé)
+
+# 4. Simulation échec Resend : couper temporairement RESEND_API_KEY dans Vercel
+# → errors++ mais pas d'insertion events_log → retry le lendemain
+
+# 5. Vérifier en Supabase SQL Editor
+SELECT user_id, event_type, created_at, metadata
+FROM events_log
+WHERE event_type LIKE 'retention_%'
+ORDER BY created_at DESC;
+```
+
+Pour créer un utilisateur de test dans la fenêtre D1 (signup simulé il y a ~30h) :
+insérer directement dans `profiles` avec `created_at = now() - interval '30 hours'` via Supabase Table Editor.
+
+### ✅ Session 47 — Share card Instagram (2026-06-10)
+
+**Route `/api/share-card` (edge runtime)**
+- `@vercel/og` ^0.11.1 installé
+- Auth : `createServerClient` + cookies request — fail-closed 401 si pas de session
+- Ownership : `stories.user_id === userId` — 403 sinon
+- 2 formats : `square` (1080×1080) et `story` (1080×1920) via `?format=`
+- Photo pet fetchée + convertie en data URL base64 (boucle byte-by-byte, edge-safe, pas de `Buffer`)
+- Design : fond `#FAF6F0`, photo ronde avec bordure amber, titre chapitre, extrait 200 chars en italique, coins décoratifs, branding 🐾 everypaw discret en bas
+- `Cache-Control: no-store`
+
+**UI `pets/[id]/page.tsx`**
+- Nouveau bouton "Partager ce moment" / "Share this moment" dans la section actions de chaque story card (à côté de l'existant "Partager ce chapitre")
+- 4 nouveaux états : `shareCardStory`, `shareCardFormat`, `shareCardLoading`, `shareCardError`
+- Fonctions : `openShareCard(story)` + `downloadShareCard()` — Web Share API avec fichier PNG si disponible, sinon anchor download
+- Modal : format picker (square/story), preview live `<img>` vers la route, bouton Partager/Télécharger + Fermer
+
+**i18n** — 7 nouvelles clés dans `stories.*` (EN + FR) : `share_card_open`, `share_card_modal_title`, `share_card_format_square`, `share_card_format_story`, `share_card_download`, `share_card_share`, `share_card_close`
+
+**Tests à réaliser**
+
+```powershell
+# 1. Sans session → 401
+curl https://everypaw.app/api/share-card?story_id=<uuid>
+
+# 2. Avec session cookie valide, story appartenant à l'user → PNG 200
+# Tester dans le navigateur : aller sur /dashboard/pets/[id]?tab=stories
+# → clic "Partager ce moment" → modal s'ouvre + preview visible
+
+# 3. Format story (9:16)
+curl "https://everypaw.app/api/share-card?story_id=<uuid>&format=story" --cookie "..."
+# → image 1080×1920
+
+# 4. Story d'un autre user → 403
+# Récupérer un story_id d'un autre compte test et tester avec session A
+
+# 5. Web Share API (mobile) — bouton "Partager" → share sheet natif avec PNG
+# 6. Desktop — bouton "Partager" → téléchargement PNG
+```
+
+*Dernière mise à jour : 2026-06-10 (session 47 — share card Instagram)*
