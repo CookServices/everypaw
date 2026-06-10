@@ -651,5 +651,9 @@
     "cta_digital": "Print this book",
     "cta_free_prefix": "Included with",
     "cta_free_plan": "Premium"
+  },
+  "birthday": {
+    "letter_cta": "Read {petName}'s letter →",
+    "letter_excerpt_label": "A birthday letter from {petName}"
   }
 }
