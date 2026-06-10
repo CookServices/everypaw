@@ -29,6 +29,7 @@ export default function GiftPage() {
   const [code, setCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [currency, setCurrency] = useState<Currency>("USD");
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
 
   const todayStr = new Date().toISOString().split("T")[0];
 
@@ -136,8 +137,6 @@ export default function GiftPage() {
   // Digital = monthly, Print = annual
   const planLabel = selectedPlan === "digital" ? "Premium Digital" : "Premium Print";
   const planPriceKey = selectedPlan === "digital" ? "digital" : "printAnnual";
-  const planPricePeriod = selectedPlan === "digital" ? (isFR ? "mois" : "mo") : (isFR ? "an" : "yr");
-  const planPrice = `${formatPrice(currency, planPriceKey)}/${planPricePeriod}`;
   // Clé transmise au checkout
   const planApiKey = selectedPlan === "digital" ? "digital" : "print_annual";
 
@@ -220,7 +219,7 @@ export default function GiftPage() {
             {([
               { icon: t.gift.step1_icon, title: t.gift.step1_title, desc: t.gift.step1_desc },
               { icon: t.gift.step2_icon, title: t.gift.step2_title, desc: t.gift.step2_desc },
-              { icon: t.gift.step3_icon, title: t.gift.step3_title, desc: t.gift.step3_desc },
+              { icon: t.gift.step3_icon, title: selectedPlan === "digital" ? t.gift.step3_title_digital : t.gift.step3_title_print, desc: selectedPlan === "digital" ? t.gift.step3_desc_digital : t.gift.step3_desc_print },
             ] as { icon: string; title: string; desc: string }[]).map((s, i, arr) => (
               <div key={i} style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
@@ -252,7 +251,7 @@ export default function GiftPage() {
 
               <div style={{ display: "flex", flexDirection: "column", marginBottom: "1.5rem" }}>
                 {([
-                  [isFR ? "Formule" : "Plan", `${planLabel} · ${planPrice}`],
+                  [isFR ? "Formule" : "Plan", `${planLabel} · ${formatPrice(currency, planPriceKey)}`],
                   [isFR ? "Destinataire" : "Recipient", form.recipientName],
                   ["Email", form.recipientEmail],
                   ...(form.message ? [[isFR ? "Message" : "Message", form.message]] : []),
@@ -263,6 +262,16 @@ export default function GiftPage() {
                     <span style={{ fontSize: ".82rem", color: "#3D2B1F", fontWeight: 500, textAlign: "right", wordBreak: "break-word" }}>{value}</span>
                   </div>
                 ))}
+              </div>
+
+              <div style={{ display: "flex", gap: ".5rem", alignItems: "flex-start", background: "#F7F2EA", borderRadius: 8, padding: "10px 14px", marginBottom: "1rem", fontSize: "13px", color: "#7A5C44", fontWeight: 400, lineHeight: 1.5 }}>
+                <span style={{ flexShrink: 0 }}>ℹ️</span>
+                <span>
+                  {t.gift.one_time_note
+                    .replace("{price}", formatPrice(currency, planPriceKey))
+                    .replace("{recipient}", form.recipientName || (isFR ? "le destinataire" : "the recipient"))
+                    .replace("{duration}", selectedPlan === "digital" ? (isFR ? "1 mois" : "1 month") : (isFR ? "1 an" : "1 year"))}
+                </span>
               </div>
 
               <div style={{ display: "flex", gap: ".75rem" }}>
@@ -314,9 +323,11 @@ export default function GiftPage() {
                   style={{ display: "block", width: "100%", padding: "1rem", borderRadius: 14, border: `1.5px solid ${selectedPlan === "digital" ? "#C8813A" : "rgba(61,43,31,.15)"}`, background: selectedPlan === "digital" ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .12s" }}
                 >
                   <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Digital</p>
-                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .15rem" }}>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .1rem" }}>
                     {formatPrice(currency, "digital")}
-                    <span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span>
+                  </p>
+                  <p style={{ fontSize: ".7rem", color: "#7A5C44", fontWeight: 300, margin: "0 0 .4rem" }}>
+                    {t.gift.price_sublabel_digital}
                   </p>
                   <ul style={{ margin: 0, padding: "0 0 0 .9rem", display: "flex", flexDirection: "column", gap: ".2rem" }}>
                     {(isFR
@@ -337,9 +348,11 @@ export default function GiftPage() {
                     {isFR ? "Meilleure valeur" : "Best value"}
                   </div>
                   <p style={{ fontSize: ".75rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .3rem", textTransform: "uppercase", letterSpacing: ".05em" }}>Print</p>
-                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .15rem" }}>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .1rem" }}>
                     {formatPrice(currency, "printAnnual")}
-                    <span style={{ fontSize: ".7rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "an" : "yr"}</span>
+                  </p>
+                  <p style={{ fontSize: ".7rem", color: "#7A5C44", fontWeight: 300, margin: "0 0 .4rem" }}>
+                    {t.gift.price_sublabel_print}
                   </p>
                   <ul style={{ margin: 0, padding: "0 0 0 .9rem", display: "flex", flexDirection: "column", gap: ".2rem" }}>
                     {(isFR
@@ -358,7 +371,7 @@ export default function GiftPage() {
                   {isFR ? "Formule sélectionnée" : "Selected plan"}
                 </span>
                 <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#C8813A" }}>
-                  {planPrice}
+                  {formatPrice(currency, planPriceKey)}
                 </span>
               </div>
 
@@ -413,17 +426,93 @@ export default function GiftPage() {
               >
                 {t.gift.send}
               </button>
-              <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".625rem 0 0", lineHeight: 1.5, fontWeight: 300, textAlign: "center" }}>
+              <p style={{ fontSize: "12px", color: "#9A8070", margin: ".625rem 0 .25rem", fontWeight: 300, textAlign: "center" }}>
+                <button
+                  onClick={() => setShowEmailPreview(true)}
+                  style={{ background: "none", border: "none", fontFamily: "inherit", fontSize: "inherit", color: "#9A8070", cursor: "pointer", padding: 0, textDecoration: "underline dotted", fontWeight: 300 }}
+                >
+                  {t.gift.preview_button}
+                </button>
+                {" · "}
+                {t.gift.no_recurring}
+              </p>
+              <p style={{ fontSize: ".72rem", color: "#9A8070", margin: 0, lineHeight: 1.5, fontWeight: 300, textAlign: "center" }}>
                 {isFR ? (
-                  <>En continuant, vous acceptez les <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>CGV</a>.</>
+                  <>En continuant, vous acceptez les <a href="/legal/terms" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>CGV</a>.</>
                 ) : (
-                  <>By continuing, you agree to our <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Terms of Service</a>.</>
+                  <>By continuing, you agree to our <a href="/legal/terms" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Terms of Sale</a>.</>
                 )}
               </p>
             </>
           )}
         </div>
       </main>
+
+      {showEmailPreview && (
+        <div
+          onClick={() => setShowEmailPreview(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: "#fff", borderRadius: 16, maxWidth: 560, width: "100%", overflow: "hidden", fontFamily: "'DM Sans', sans-serif" }}
+          >
+            {/* Email preview header */}
+            <div style={{ background: "#3D2B1F", padding: "1.25rem 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#F7F2EA", display: "flex", alignItems: "center", gap: ".4rem" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
+                Everypaw 🐾
+              </div>
+              <button
+                onClick={() => setShowEmailPreview(false)}
+                style={{ background: "none", border: "none", color: "#F7F2EA", fontSize: "1.25rem", cursor: "pointer", padding: "0 .25rem", lineHeight: 1 }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Email preview body */}
+            <div style={{ padding: "1.5rem", background: "#F7F2EA" }}>
+              <p style={{ fontSize: ".75rem", color: "#9A8070", fontWeight: 300, margin: "0 0 1rem" }}>
+                {t.gift.preview_title}
+              </p>
+              <div style={{ background: "#fff", borderRadius: 12, padding: "1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: ".5rem", marginBottom: "1rem" }}>
+                  <p style={{ fontSize: ".78rem", color: "#7A5C44", margin: 0 }}>
+                    <strong>{t.gift.preview_to}:</strong> {form.recipientName || "—"} {form.recipientEmail ? `<${form.recipientEmail}>` : ""}
+                  </p>
+                  <p style={{ fontSize: ".78rem", color: "#7A5C44", margin: 0 }}>
+                    <strong>{t.gift.preview_from}:</strong> {form.senderName || "—"}
+                  </p>
+                  <p style={{ fontSize: ".78rem", color: "#7A5C44", margin: 0 }}>
+                    <strong>{t.gift.preview_plan}:</strong> {planLabel} · {formatPrice(currency, planPriceKey)}
+                  </p>
+                  <p style={{ fontSize: ".78rem", color: "#7A5C44", margin: 0 }}>
+                    <strong>{t.gift.preview_sends}:</strong> {scheduledDateFormatted || t.gift.preview_sends_now}
+                  </p>
+                </div>
+                {form.message && (
+                  <div style={{ borderTop: "1px solid rgba(61,43,31,.08)", paddingTop: ".75rem" }}>
+                    <p style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", margin: "0 0 .4rem" }}>
+                      {t.gift.preview_message_label}
+                    </p>
+                    <p style={{ fontSize: ".875rem", color: "#3D2B1F", fontFamily: "Georgia, serif", lineHeight: 1.6, margin: 0, fontStyle: "italic" }}>
+                      "{form.message}"
+                    </p>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setShowEmailPreview(false)}
+                style={{ marginTop: "1rem", width: "100%", padding: ".625rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#3D2B1F", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer" }}
+              >
+                {t.gift.preview_close}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <PublicFooter variant="minimal" />
     </div>
   );

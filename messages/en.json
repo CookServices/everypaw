@@ -7,7 +7,10 @@
     "dashboard": "Dashboard",
     "settings": "Settings",
     "sign_out": "Sign out",
-    "share_profile": "Share profile"
+    "share_profile": "Share profile",
+    "how": "How it works",
+    "pricing": "Pricing",
+    "faq": "FAQ"
   },
   "dashboard": {
     "title": "Your pets",
@@ -96,7 +99,9 @@
     "month_progress_days": "{count} moments this month · Next chapter in {days}d, auto-generated",
     "month_progress_tomorrow": "{count} moments this month · Next chapter tomorrow",
     "month_progress_soon": "{count} moments this month · Generating soon",
-    "month_progress_done": "{count} moments this month · Chapter generated ✓"
+    "month_progress_done": "{count} moments this month · Chapter generated ✓",
+    "entry_counter": "{count}/10 entries used",
+    "upgrade_unlimited": "Upgrade for unlimited →"
   },
   "stories": {
     "preview_book": "📖 Preview my book",
@@ -106,7 +111,18 @@
     "generating_preview": "Generating preview…",
     "share_chapter": "Share this chapter",
     "share_generating": "Creating card…",
-    "share_error": "Could not create the card. Please try again."
+    "share_error": "Could not create the card. Please try again.",
+    "free_upsell_text": "That was Chapter 1. Premium writes the next one every month — and prints it.",
+    "free_upsell_cta": "See plans →",
+    "free_upsell_refresh": "Already upgraded? Refresh the page."
+  },
+  "signup": {
+    "reassurance_mobile": "Free · No credit card · Your pet's story in minutes",
+    "value_title": "Every moment remembered.",
+    "value_bullet_1": "✓ Free to start · No credit card",
+    "value_bullet_2": "✓ AI writes the story",
+    "value_bullet_3": "✓ Printed hardcover each year",
+    "value_bullet_3_print": "✓ 1 hardcover book included per year"
   },
   "milestones": {
     "title": "Milestones",
@@ -332,7 +348,24 @@
     "send_date_label": "Send date (optional)",
     "send_date_hint": "Leave empty to send immediately. Perfect for a birthday or Christmas.",
     "send_date_future_error": "The send date must be in the future.",
-    "code_validity": "Code valid for 12 months · Single use"
+    "code_validity": "Code valid for 12 months · Single use",
+    "price_sublabel_digital": "one-time · 1 month of Digital",
+    "price_sublabel_print": "one-time · 1 year of Print + hardcover book",
+    "step3_title_digital": "1 month of Premium activated",
+    "step3_title_print": "1 year of Premium activated",
+    "step3_desc_digital": "Their 1 month of Premium starts immediately. After that, they can choose to continue on their own.",
+    "step3_desc_print": "Their 1 year of Premium starts immediately. After that, they can choose to continue on their own.",
+    "one_time_note": "You'll be charged {price} once. {recipient} will be free to renew after {duration}.",
+    "no_recurring": "One-time payment. No recurring charge to you.",
+    "preview_button": "Preview the gift email →",
+    "preview_title": "Gift email preview",
+    "preview_from": "From",
+    "preview_to": "To",
+    "preview_plan": "Plan",
+    "preview_sends": "Sends",
+    "preview_message_label": "Message",
+    "preview_sends_now": "Immediately",
+    "preview_close": "Close"
   },
   "redeem": {
     "title": "Activate your gift",

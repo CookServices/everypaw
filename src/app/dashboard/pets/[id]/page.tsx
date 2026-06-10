@@ -1154,6 +1154,17 @@ export default function PetPage({ params }: { params: { id: string } }) {
               </div>
             )}
 
+            {userPlan === "free" && allEntryDates.length >= 5 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".5rem", background: allEntryDates.length >= 9 ? "#C8813A" : "#FFF3E0", border: `1px solid ${allEntryDates.length >= 9 ? "#C8813A" : "#F7C27A"}`, borderRadius: 8, padding: "8px 12px", marginBottom: "1rem" }}>
+                <span style={{ fontSize: "13px", color: allEntryDates.length >= 9 ? "#fff" : "#7A5C44", fontWeight: 400 }}>
+                  {t.journal.entry_counter.replace("{count}", String(allEntryDates.length))}
+                </span>
+                <Link href="/dashboard/settings" style={{ fontSize: "13px", color: allEntryDates.length >= 9 ? "#fff" : "#C8813A", fontWeight: 500, textDecoration: "none" }}>
+                  {t.journal.upgrade_unlimited}
+                </Link>
+              </div>
+            )}
+
             <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.25rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
               <textarea
                 value={newEntry}
@@ -1377,7 +1388,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 <p style={{ color: "#7A5C44", fontFamily: "Georgia, serif", fontSize: "1rem" }}>{t.stories.no_stories.replace("{name}", pet.name)}</p>
               </div>
             ) : stories.map(story => (
-              <div key={story.id} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
+              <div key={story.id}>
+              <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1rem", gap: ".75rem" }}>
                   <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>{story.title || `${pet.name}'s Story`}</h3>
                   <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300, flexShrink: 0 }}>{fmtDateOrdinal(new Date(story.created_at), isFR, { month: "short", year: "numeric" })}</span>
@@ -1442,6 +1454,23 @@ export default function PetPage({ params }: { params: { id: string } }) {
                     )}
                   </button>
                 </div>
+              </div>
+              {userPlan === "free" && (
+                <div style={{ background: "#FFF3E0", borderRadius: 12, padding: "20px", border: "1px solid rgba(200,129,58,.2)" }}>
+                  <p style={{ fontSize: ".875rem", color: "#3D2B1F", lineHeight: 1.6, margin: "0 0 1rem", fontFamily: "Georgia, serif" }}>
+                    {t.stories.free_upsell_text}
+                  </p>
+                  <Link
+                    href="/dashboard/settings"
+                    style={{ display: "inline-block", padding: ".625rem 1.25rem", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}
+                  >
+                    {t.stories.free_upsell_cta}
+                  </Link>
+                  <p style={{ fontSize: ".75rem", color: "#9A8070", margin: ".75rem 0 0", fontWeight: 300 }}>
+                    {t.stories.free_upsell_refresh}
+                  </p>
+                </div>
+              )}
               </div>
             ))}
 

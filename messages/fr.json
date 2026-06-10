@@ -7,7 +7,10 @@
     "dashboard": "Tableau de bord",
     "settings": "Paramètres",
     "sign_out": "Déconnexion",
-    "share_profile": "Partager le profil"
+    "share_profile": "Partager le profil",
+    "how": "Comment ça marche",
+    "pricing": "Tarifs",
+    "faq": "FAQ"
   },
   "dashboard": {
     "title": "Vos animaux",
@@ -96,7 +99,9 @@
     "month_progress_days": "{count} moments ce mois · Prochain chapitre dans {days}j généré automatiquement",
     "month_progress_tomorrow": "{count} moments ce mois · Prochain chapitre demain",
     "month_progress_soon": "{count} moments ce mois · Génération imminente",
-    "month_progress_done": "{count} moments ce mois · Chapitre généré ✓"
+    "month_progress_done": "{count} moments ce mois · Chapitre généré ✓",
+    "entry_counter": "{count}/10 entrées utilisées",
+    "upgrade_unlimited": "Passer à Premium →"
   },
   "stories": {
     "preview_book": "📖 Aperçu de mon livre",
@@ -106,7 +111,18 @@
     "generating_preview": "Génération de l'aperçu…",
     "share_chapter": "Partager ce chapitre",
     "share_generating": "Génération de la carte…",
-    "share_error": "Impossible de créer la carte. Veuillez réessayer."
+    "share_error": "Impossible de créer la carte. Veuillez réessayer.",
+    "free_upsell_text": "C'était le Chapitre 1. Premium écrit le suivant chaque mois — et l'imprime.",
+    "free_upsell_cta": "Voir les plans →",
+    "free_upsell_refresh": "Déjà passé à Premium ? Rafraîchis la page."
+  },
+  "signup": {
+    "reassurance_mobile": "Gratuit · Sans carte bancaire · L'histoire de votre animal en quelques minutes",
+    "value_title": "Chaque moment gravé.",
+    "value_bullet_1": "✓ Gratuit pour commencer · Sans carte bancaire",
+    "value_bullet_2": "✓ L'IA écrit l'histoire",
+    "value_bullet_3": "✓ Livre relié imprimé chaque année",
+    "value_bullet_3_print": "✓ 1 livre relié inclus par an"
   },
   "milestones": {
     "title": "Étapes importantes",
@@ -332,7 +348,24 @@
     "send_date_label": "Date d'envoi (facultatif)",
     "send_date_hint": "Laissez vide pour envoyer maintenant. Idéal pour un anniversaire ou Noël.",
     "send_date_future_error": "La date d'envoi doit être dans le futur.",
-    "code_validity": "Code valable 12 mois · Usage unique"
+    "code_validity": "Code valable 12 mois · Usage unique",
+    "price_sublabel_digital": "paiement unique · 1 mois Digital",
+    "price_sublabel_print": "paiement unique · 1 an Print + livre relié",
+    "step3_title_digital": "1 mois Premium activé",
+    "step3_title_print": "1 an Premium activé",
+    "step3_desc_digital": "Leur 1 mois Premium commence immédiatement. Ensuite, c'est eux qui décident de continuer.",
+    "step3_desc_print": "Leur 1 an Premium commence immédiatement. Ensuite, c'est eux qui décident de continuer.",
+    "one_time_note": "Vous serez facturé {price} une seule fois. {recipient} sera libre de renouveler après {duration}.",
+    "no_recurring": "Paiement unique. Aucun prélèvement récurrent à votre charge.",
+    "preview_button": "Aperçu de l'email cadeau →",
+    "preview_title": "Aperçu de l'email cadeau",
+    "preview_from": "De",
+    "preview_to": "Pour",
+    "preview_plan": "Formule",
+    "preview_sends": "Envoi",
+    "preview_message_label": "Message",
+    "preview_sends_now": "Immédiatement",
+    "preview_close": "Fermer"
   },
   "redeem": {
     "title": "Activer votre cadeau",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignupPage() {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const isFR = locale === "fr";
 
   // Plan banner
@@ -59,6 +59,14 @@ export default function SignupPage() {
     }
     return "/dashboard";
   };
+
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -187,10 +195,13 @@ export default function SignupPage() {
     );
   }
 
+  const valueBullet3 = selectedPlan === "print_annual" ? t.signup.value_bullet_3_print : t.signup.value_bullet_3;
+
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1rem" }}>
-      <div style={{ width: "100%", maxWidth: 420 }}>
+      <div style={isDesktop ? { display: "flex", gap: "2rem", alignItems: "flex-start", maxWidth: 860, width: "100%" } : { width: "100%", maxWidth: 420 }}>
+      <div style={{ flex: 1, minWidth: 0, maxWidth: 420 }}>
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
           <Link href="/" style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", fontWeight: 600, color: "#3D2B1F", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: ".4rem" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
@@ -211,6 +222,12 @@ export default function SignupPage() {
                 {planInfo.perks}
               </p>
             </div>
+          )}
+
+          {!isDesktop && (
+            <p style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, textAlign: "center", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+              {t.signup.reassurance_mobile}
+            </p>
           )}
 
           <button onClick={handleGoogle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: ".75rem", padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", cursor: "pointer", marginBottom: "1.5rem" }}>
@@ -393,6 +410,24 @@ export default function SignupPage() {
             {isFR ? "Retour à l'accueil" : "Back to home"}
           </Link>
         </p>
+      </div>
+
+      {isDesktop && (
+        <div style={{ flex: "0 0 300px", background: "#EDE5D4", borderRadius: 16, padding: "32px", alignSelf: "flex-start", marginTop: "3.5rem" }}>
+          <div style={{ fontSize: 80, marginBottom: "1.25rem", lineHeight: 1 }}>📖</div>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 1.25rem", lineHeight: 1.3 }}>
+            {t.signup.value_title}
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+            {[t.signup.value_bullet_1, t.signup.value_bullet_2, valueBullet3].map(bullet => (
+              <p key={bullet} style={{ fontSize: ".875rem", color: "#3D2B1F", margin: 0, fontWeight: 400, lineHeight: 1.5 }}>
+                {bullet}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
       </div>
       </div>
       <PublicFooter />

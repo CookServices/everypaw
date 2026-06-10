@@ -32,9 +32,9 @@ export default function PublicFooter({ variant = "minimal" }: PublicFooterProps)
 
   // "full" variant
   const links = [
-    { label: t.landing.legal_cgv,      href: "/legal/cgv" },
-    { label: t.landing.legal_privacy,  href: "/legal/confidentialite" },
-    { label: t.landing.legal_mentions, href: "/legal/mentions" },
+    { label: t.landing.legal_cgv,      href: "/legal/terms" },
+    { label: t.landing.legal_privacy,  href: "/legal/privacy" },
+    { label: t.landing.legal_mentions, href: "/legal/notices" },
     { label: t.landing.legal_contact,  href: "/contact" },
   ];
 

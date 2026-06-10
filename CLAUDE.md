@@ -1569,4 +1569,36 @@ Files audited this round (no changes required):
 - `supabase/purge_test_data.sql` : purge les 5 comptes yopmail (conserve les comptes auth)
 - `supabase/seed_print_multi.sql` : seed ciblé `test-print-multi` — 60 entrées Coco, 24 stories, 3 book_configs (draft Classic/Forest + ordered Ocean)
 
-*Dernière mise à jour : 2026-06-09 (session 43 — UI fixes + tests impression + factures livres)*
+### ✅ Session 44 — SEO crédibilité + nav ancres + préview email cadeau (2026-06-10)
+
+**Corrections 1–9 (multi-sessions) — récapitulatif final**
+
+**C2 — og:image** : `layout.tsx` + `fr/layout.tsx` — `openGraph.images` + `twitter.images` → `/og-image.png` 1200×630
+
+**C3 — Slugs légaux EN + redirects** :
+- `next.config.js` : 3 redirects 301 (`/legal/cgv` → `/terms`, `/legal/confidentialite` → `/privacy`, `/legal/mentions` → `/notices`)
+- `src/app/legal/terms/page.tsx`, `privacy/page.tsx`, `notices/page.tsx` : pages EN créées
+- `PublicFooter.tsx` : liens légaux mis à jour vers `/legal/terms|privacy|notices`
+
+**C1 — Cadeau paiement unique** : `gift/page.tsx` — suppression `/{period}` sur les prix, sublabels "Accès 1 mois / 1 an inclus", note ℹ️ sur l'écran de confirmation, `no_recurring` sous bouton, step 3 réactif selon plan
+
+**C4 — Signup 2 colonnes desktop** : `auth/signup/page.tsx` — `isDesktop` state, layout flex 860px, panel droit 300px avec bullets valeur, ligne reassurance mobile
+
+**C5 — Compteur entrées free** : `pets/[id]/page.tsx` — pill `{count}/10 entries used` visible à partir de 5 entrées, couleur orange à 9+, lien upgrade
+
+**C6 — Upsell post-story free** : `pets/[id]/page.tsx` — bloc `#FFF3E0` après chaque story card pour les users free
+
+**C7 — Stats sourcées** : `page.tsx` — tableau stats restructuré avec champ `src` par stat. EN : "APPA NPOS, 2023–24" sous chaque stat. FR : "FACCO / Kantar, 2023". Note globale FR supprimée.
+
+**C8 — Liens ancre header desktop** : `PublicNav.tsx` — `isDesktop` state, 3 ancres How/Pricing/FAQ entre logo et CTA (DM Sans 400 14px, hover #C8813A, transition 150ms, gap 24px). `page.tsx` : `id="how"`, `id="pricing"`, `id="faq"` sur les 3 sections correspondantes.
+
+**C9 — Préview email cadeau** : `gift/page.tsx` — `showEmailPreview` state, bouton "Preview email" (dotted underline) inline avec `no_recurring`. Modal overlay `rgba(0,0,0,0.4)`, carte blanche `border-radius: 16px`, header `#3D2B1F` + 🐾, récapitulatif To/From/Plan/Sends + bloc message, bouton fermer.
+
+**Nouvelles clés i18n** (EN + FR) :
+- `gift.*` : `price_sublabel_digital/print`, `step3_title/desc_digital/print`, `one_time_note`, `no_recurring`, `preview_button`, `preview_title`, `preview_from/to/plan/sends/message_label/sends_now/close`
+- `journal.*` : `entry_counter`, `upgrade_unlimited`
+- `stories.*` : `free_upsell_text/cta/refresh`
+- `signup.*` : `reassurance_mobile`, `value_title`, `value_bullet_1/2/3/3_print`
+- `nav.*` : `how`, `pricing`, `faq`
+
+*Dernière mise à jour : 2026-06-10 (session 44 — SEO + nav ancres + gift email preview)*

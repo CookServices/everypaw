@@ -18,11 +18,13 @@ export const metadata: Metadata = {
     siteName: "Everypaw",
     type: "website",
     locale: "fr_FR",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Everypaw — La vie de votre animal, racontée et imprimée" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Everypaw , La vie de votre animal, racontée et imprimée",
     description: "Chaque moment de la vie de votre animal devient une histoire magnifique, imprimée en livre chaque année.",
+    images: ["/og-image.png"],
   },
 };
 

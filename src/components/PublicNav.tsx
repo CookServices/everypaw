@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useLocale } from "@/hooks/useLocale";
 
 interface PublicNavProps {
@@ -12,6 +13,13 @@ interface PublicNavProps {
 
 export default function PublicNav({ variant = "simple", fixed = false }: PublicNavProps) {
   const { t } = useLocale();
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const navStyle: React.CSSProperties = {
     display: "flex",
@@ -55,7 +63,26 @@ export default function PublicNav({ variant = "simple", fixed = false }: PublicN
       </Link>
 
       {variant === "full" && (
-        <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isDesktop ? "1.5rem" : ".5rem" }}>
+          {isDesktop && (
+            <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+              <a href="#how" style={{ fontSize: "14px", color: "#3D2B1F", textDecoration: "none", fontWeight: 400, transition: "color 150ms" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "#C8813A")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#3D2B1F")}>
+                {t.nav.how}
+              </a>
+              <a href="#pricing" style={{ fontSize: "14px", color: "#3D2B1F", textDecoration: "none", fontWeight: 400, transition: "color 150ms" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "#C8813A")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#3D2B1F")}>
+                {t.nav.pricing}
+              </a>
+              <a href="#faq" style={{ fontSize: "14px", color: "#3D2B1F", textDecoration: "none", fontWeight: 400, transition: "color 150ms" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "#C8813A")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#3D2B1F")}>
+                {t.nav.faq}
+              </a>
+            </div>
+          )}
           <Link href="/gift" className="ep-nav-secondary" style={{ fontSize: ".875rem", color: "#7A5C44", textDecoration: "none", fontWeight: 400, padding: ".4rem .5rem", whiteSpace: "nowrap" }}>
             {t.nav.give_gift}
           </Link>

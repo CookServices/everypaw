@@ -399,21 +399,17 @@ export default function Home() {
       <section style={{ padding: "4rem 2rem", textAlign: "center", background: "#EDE5D4" }}>
         <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "1rem" }}>
           {[
-            [isFrance ? "20,3M" : "94M", isFrance ? tFR.landing.stats_pets : tEN.landing.stats_pets],
-            ["69%", t.landing.stats_millennials],
-            ["12", t.landing.stats_memories],
-          ].map(([num, lbl]) => (
+            { num: isFrance ? "20,3M" : "94M", lbl: isFrance ? tFR.landing.stats_pets : tEN.landing.stats_pets, src: isFrance ? "FACCO / Kantar, 2023" : "APPA NPOS, 2023–24" },
+            { num: "69%", lbl: t.landing.stats_millennials, src: isFrance ? "FACCO / Kantar, 2023" : "APPA NPOS, 2023–24" },
+            { num: "12", lbl: t.landing.stats_memories, src: isFrance ? "FACCO / Kantar, 2023" : "APPA NPOS, 2023–24" },
+          ].map(({ num, lbl, src }) => (
             <div key={num} style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", margin: "0 1.25rem", minWidth: 0 }}>
               <span style={{ fontFamily: "Georgia, serif", fontSize: "3rem", fontWeight: 600, color: "#C8813A" }}>{num}</span>
               <span style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, marginTop: ".25rem", textAlign: "center", maxWidth: 160, lineHeight: 1.4 }}>{lbl}</span>
+              <span style={{ fontSize: ".65rem", color: "#9A8070", fontWeight: 300, marginTop: ".25rem" }}>{src}</span>
             </div>
           ))}
         </div>
-        {isFrance && (
-          <p style={{ fontSize: ".7rem", color: "#9A8070", fontWeight: 300, marginTop: "1.5rem", margin: "1.5rem 0 0" }}>
-            Source : FACCO / Kantar, 2023
-          </p>
-        )}
       </section>
 
       {/* FEATURES */}
@@ -445,7 +441,7 @@ export default function Home() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section style={{ padding: "6rem 2rem", background: "#3D2B1F", color: "#F7F2EA" }}>
+      <section id="how" style={{ padding: "6rem 2rem", background: "#3D2B1F", color: "#F7F2EA" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
           <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".12em", textTransform: "uppercase", color: "#E8A96A", marginBottom: "1rem" }}>{t.landing.how_tag}</div>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 600, marginBottom: "3.5rem", color: "#F7F2EA" }}>
@@ -548,7 +544,7 @@ export default function Home() {
       </section>
 
       {/* PRICING */}
-      <section style={{ padding: "6rem 2rem", background: "#F7F2EA", textAlign: "center" }}>
+      <section id="pricing" style={{ padding: "6rem 2rem", background: "#F7F2EA", textAlign: "center" }}>
         <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".12em", textTransform: "uppercase", color: "#C8813A", marginBottom: "1rem" }}>{t.landing.pricing_tag}</div>
         <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 600, marginBottom: ".75rem" }}>
           {t.landing.pricing_title}
@@ -663,7 +659,7 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <section style={{ padding: "6rem 2rem", background: "#F7F2EA" }}>
+      <section id="faq" style={{ padding: "6rem 2rem", background: "#F7F2EA" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "3rem" }}>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.6rem, 3vw, 2.25rem)", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>
