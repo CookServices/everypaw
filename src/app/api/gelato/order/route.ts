@@ -30,6 +30,7 @@ export async function POST(req: Request) {
     customTitle,
     storyLayouts,
     stripeSessionId,
+    includeTributes,
   } = body;
 
   // Validate selectedStoryIds format to prevent injection into URL params
@@ -147,7 +148,7 @@ export async function POST(req: Request) {
 
   const hasDedication = !!(dedicationText && dedicationText.trim().length > 0);
   const storyCount = activeStories.length;
-  const pageCount = calcPageCount(storyCount, hasOrphanPhotos, hasDedication);
+  const pageCount = calcPageCount(storyCount, hasOrphanPhotos, hasDedication, !!includeTributes);
 
   // Cover dimensions: call Gelato API, fallback to formula.
   // Interior pages = pageCount (content) + 2 (endpapers). Spine empirically ~0.38mm/page for 170gsm coated silk hardcover.
@@ -199,6 +200,9 @@ export async function POST(req: Request) {
   pdfUrl.searchParams.set("coverHeightMm", String(coverHeightMm));
   if (typeof customTitle === "string" && customTitle.trim().length > 0) {
     pdfUrl.searchParams.set("customTitle", encodeURIComponent(customTitle.trim().slice(0, 60)));
+  }
+  if (includeTributes) {
+    pdfUrl.searchParams.set("includeTributes", "1");
   }
   const VALID_LAYOUT_VALUES = ["classic", "photo_hero", "split", "text_only"];
   const UUID_REGEX_LOCAL = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

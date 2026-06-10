@@ -140,8 +140,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawTab = searchParams.get("tab");
-  const tab: "journal" | "stories" | "milestones" =
-    rawTab === "stories" ? "stories" : rawTab === "milestones" ? "milestones" : "journal";
+  const tab: "journal" | "stories" | "milestones" | "tributes" =
+    rawTab === "stories" ? "stories" : rawTab === "milestones" ? "milestones" : rawTab === "tributes" ? "tributes" : "journal";
   const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
 
   const [pet, setPet] = useState<Pet | null>(null);
@@ -188,6 +188,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [isPremium, setIsPremium] = useState(false);
   const [userPlan, setUserPlan] = useState<string>("free");
   const [bookCredits, setBookCredits] = useState(0);
+  const [pendingTributes, setPendingTributes] = useState<{ id: string; author_name: string; message: string; created_at: string }[]>([]);
+  const [tributesLoaded, setTributesLoaded] = useState(false);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const [entryMenuId, setEntryMenuId] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
@@ -271,6 +273,20 @@ export default function PetPage({ params }: { params: { id: string } }) {
       openMemorialModal();
     }
   }, [pet, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load pending tributes when tributes tab is active
+  useEffect(() => {
+    if (tab !== "tributes" || tributesLoaded || !pet?.deceased_at) return;
+    const load = async () => {
+      const res = await fetch(`/api/memorial/tributes?petId=${id}&status=pending`);
+      if (res.ok) {
+        const data = await res.json();
+        setPendingTributes(data.tributes ?? []);
+      }
+      setTributesLoaded(true);
+    };
+    load();
+  }, [tab, tributesLoaded, pet, id]);
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -618,10 +634,11 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const orphanMilestoneCount = milestones.filter(m => !definedMilestoneKeys.has(m.type)).length;
   const totalMilestoneCount = (milestoneDefinitions.length || MILESTONE_TYPES.length) + orphanMilestoneCount;
 
-  const tabs = [
-    { key: "journal" as const, label: t.pet.tab_journal },
-    { key: "stories" as const, label: t.pet.tab_stories },
-    { key: "milestones" as const, label: t.pet.tab_milestones },
+  const tabs: { key: "journal" | "stories" | "milestones" | "tributes"; label: string }[] = [
+    { key: "journal", label: t.pet.tab_journal },
+    { key: "stories", label: t.pet.tab_stories },
+    { key: "milestones", label: t.pet.tab_milestones },
+    ...(pet?.deceased_at ? [{ key: "tributes" as const, label: isFR ? "Hommages" : "Tributes" }] : []),
   ];
 
   return (
@@ -1730,6 +1747,67 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 </div>
               );
             })()}
+          </div>
+        )}
+
+        {/* ── Tributes moderation (deceased pets only) ──────────────────── */}
+        {tab === "tributes" && pet?.deceased_at && (
+          <div>
+            <div style={{ background: "rgba(200,129,58,.06)", borderRadius: 14, padding: ".875rem 1rem", marginBottom: "1.25rem", border: "1px solid rgba(200,129,58,.2)", display: "flex", gap: ".625rem", alignItems: "flex-start" }}>
+              <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: ".05rem" }}>🕊️</span>
+              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, lineHeight: 1.55 }}>
+                {isFR
+                  ? "Les hommages soumis par les proches apparaissent ici avant publication. Approuvez ceux que vous souhaitez afficher sur la page mémorial."
+                  : "Tributes submitted by family and friends appear here before publishing. Approve the ones you want to display on the memorial page."}
+              </p>
+            </div>
+
+            {!tributesLoaded ? (
+              <p style={{ fontSize: ".85rem", color: "#9A8070", fontStyle: "italic" }}>{isFR ? "Chargement…" : "Loading…"}</p>
+            ) : pendingTributes.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#9A8070", fontSize: ".9rem" }}>
+                <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>🕊️</div>
+                <p style={{ margin: 0, fontStyle: "italic" }}>
+                  {isFR ? "Aucun hommage en attente de validation." : "No tributes pending review."}
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                {pendingTributes.map(tribute => (
+                  <div key={tribute.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1.125rem 1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: ".5rem" }}>
+                      <span style={{ fontSize: ".9rem", fontWeight: 600, color: "#3D2B1F" }}>{tribute.author_name}</span>
+                      <span style={{ fontSize: ".72rem", color: "#9A8070" }}>
+                        {new Date(tribute.created_at).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: ".875rem", color: "#7A5C44", lineHeight: 1.65, margin: "0 0 1rem", fontStyle: "italic" }}>
+                      {tribute.message}
+                    </p>
+                    <div style={{ display: "flex", gap: ".625rem" }}>
+                      <button
+                        onClick={async () => {
+                          const res = await fetch(`/api/memorial/tributes/${tribute.id}/approve`, { method: "POST" });
+                          if (res.ok) setPendingTributes(prev => prev.filter(t => t.id !== tribute.id));
+                        }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".5rem 1rem", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", border: "none", cursor: "pointer", fontSize: ".8rem", fontWeight: 500, fontFamily: "inherit" }}
+                      >
+                        ✓ {isFR ? "Approuver" : "Approve"}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const res = await fetch(`/api/memorial/tributes/${tribute.id}/reject`, { method: "POST" });
+                          if (res.ok) setPendingTributes(prev => prev.filter(t => t.id !== tribute.id));
+                        }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".5rem 1rem", borderRadius: 100, background: "transparent", color: "#9A8070", border: "1.5px solid rgba(61,43,31,.12)", cursor: "pointer", fontSize: ".8rem", fontFamily: "inherit" }}
+                      >
+                        {isFR ? "Rejeter" : "Reject"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>

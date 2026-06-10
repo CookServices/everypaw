@@ -19,9 +19,9 @@ import { getServiceSupabase } from "@/lib/plan";
  *   - minimum 28 content pages
  *   - total PDF pages = declared + 3 structural
  */
-export function calcPageCount(storiesCount: number, hasOrphanPhotos: boolean, hasDedication: boolean): number {
+export function calcPageCount(storiesCount: number, hasOrphanPhotos: boolean, hasDedication: boolean, hasTributes?: boolean): number {
   const storyPages = Math.max(storiesCount, 1);
-  const contentPages = (hasDedication ? 1 : 0) + storyPages + (hasOrphanPhotos ? 1 : 0);
+  const contentPages = (hasDedication ? 1 : 0) + storyPages + (hasOrphanPhotos ? 1 : 0) + (hasTributes ? 1 : 0);
   const rounded = Math.ceil(contentPages / 4) * 4;
   return Math.max(28, rounded);
 }
