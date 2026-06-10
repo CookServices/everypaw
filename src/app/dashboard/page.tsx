@@ -12,6 +12,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { fmtDateOrdinal } from "@/lib/date";
 import type { Plan } from "@/lib/plan";
+import { getWeeklyQuestion, currentISOWeekBounds } from "@/lib/interview";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,11 @@ export default function DashboardPage() {
   const [originsSkipped, setOriginsSkipped] = useState(false);
   const [monthlyEntryCount, setMonthlyEntryCount] = useState(0);
   const [resolvedPetId, setResolvedPetId] = useState<string | null>(null);
+  const [interviewAnswer, setInterviewAnswer] = useState("");
+  const [interviewDone, setInterviewDone] = useState(false);
+  const [interviewAnsweredContent, setInterviewAnsweredContent] = useState("");
+  const [interviewSubmitting, setInterviewSubmitting] = useState(false);
+  const [totalEntriesCount, setTotalEntriesCount] = useState(0);
   const [petMetadata, setPetMetadata] = useState<Record<string, {
     lastEntry: string | null;
     monthlyCount: number;
@@ -68,6 +74,8 @@ export default function DashboardPage() {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
 
+      const { start: weekStart, end: weekEnd } = currentISOWeekBounds();
+
       const [
         { data: petsData },
         { data: entriesData },
@@ -77,6 +85,8 @@ export default function DashboardPage() {
         { data: allEntriesMeta },
         { data: recentStories },
         { count: originsCount },
+        { data: interviewEntry },
+        { count: totalEntries },
       ] = await Promise.all([
         supabase.from("pets").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("entries").select("*").eq("user_id", user.id).order("entry_date", { ascending: false }).limit(5),
@@ -86,6 +96,8 @@ export default function DashboardPage() {
         supabase.from("entries").select("pet_id, entry_date").eq("user_id", user.id).order("entry_date", { ascending: false }),
         supabase.from("stories").select("pet_id").eq("user_id", user.id).gte("created_at", new Date(Date.now() - 30 * 864e5).toISOString()),
         supabase.from("stories").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("story_type", "origins"),
+        supabase.from("entries").select("content").eq("user_id", user.id).contains("tags", ["interview"]).gte("entry_date", weekStart).lte("entry_date", weekEnd).limit(1).maybeSingle(),
+        supabase.from("entries").select("*", { count: "exact", head: true }).eq("user_id", user.id),
       ]);
 
       setPets(petsData || []);
@@ -98,6 +110,9 @@ export default function DashboardPage() {
       setHasStories((storiesData?.length || 0) > 0);
       setHasOrigins((originsCount ?? 0) > 0);
       setMonthlyEntryCount(monthlyCount ?? 0);
+      setInterviewDone(!!interviewEntry);
+      if (interviewEntry?.content) setInterviewAnsweredContent(interviewEntry.content);
+      setTotalEntriesCount(totalEntries ?? 0);
 
       const meta: Record<string, { lastEntry: string | null; monthlyCount: number; hasNewChapter: boolean }> = {};
       for (const e of (allEntriesMeta || []) as { pet_id: string; entry_date: string }[]) {
@@ -143,6 +158,34 @@ export default function DashboardPage() {
       console.error("[subscribe] Fetch error:", err);
       setSubscribeError(true);
       setSubscribing(false);
+    }
+  };
+
+  const handleInterviewSubmit = async () => {
+    if (!interviewAnswer.trim() || !resolvedPetId) return;
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const resolvedPet = pets.find(p => p.id === resolvedPetId);
+    const petName = resolvedPet?.name ?? "";
+    const question = getWeeklyQuestion(locale).replace("{petName}", petName);
+    const content = `Q: ${question}\n${interviewAnswer.trim()}`;
+    const today = new Date().toISOString().slice(0, 10);
+
+    setInterviewSubmitting(true);
+    const { error } = await supabase.from("entries").insert({
+      pet_id: resolvedPetId,
+      user_id: user.id,
+      content,
+      entry_date: today,
+      tags: ["interview"],
+    });
+    setInterviewSubmitting(false);
+    if (!error) {
+      setInterviewDone(true);
+      setInterviewAnsweredContent(content);
+      setInterviewAnswer("");
     }
   };
 
@@ -450,6 +493,74 @@ export default function DashboardPage() {
                 {isFR ? `Votre livre ${year}` : `Your ${year} book`}
               </p>
               <BookProgressWidget pet={resolvedPet} plan={plan} />
+            </div>
+          );
+        })()}
+
+        {/* ── Weekly interview card ────────────────────────────────────── */}
+        {pets.length > 0 && resolvedPetId && (() => {
+          const resolvedPet = pets.find(p => p.id === resolvedPetId);
+          const petName = resolvedPet?.name ?? "";
+          const question = getWeeklyQuestion(locale).replace("{petName}", petName);
+          const isEntryLimitReached = plan === "free" && totalEntriesCount >= 10;
+
+          return (
+            <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1.25rem 1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.07)" }}>
+              <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem", fontFamily: "sans-serif" }}>
+                {t.dashboard.interview_title}
+              </p>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 400, color: "#3D2B1F", lineHeight: 1.6, margin: "0 0 .875rem", fontStyle: "italic" }}>
+                {question}
+              </p>
+              {interviewDone ? (
+                <div>
+                  <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: "0 0 .35rem", fontWeight: 300, lineHeight: 1.5, whiteSpace: "pre-line" }}>
+                    {interviewAnsweredContent.split("\n").slice(1).join("\n")}
+                  </p>
+                  <p style={{ fontSize: ".75rem", color: "#9A8070", margin: 0, fontWeight: 300 }}>
+                    {t.dashboard.interview_done}
+                  </p>
+                </div>
+              ) : isEntryLimitReached ? (
+                <p style={{ fontSize: ".8rem", color: "#C8813A", margin: 0, fontWeight: 400 }}>
+                  {t.dashboard.interview_upgrade_hint}{" "}
+                  <Link href="/dashboard/settings" style={{ color: "#C8813A", fontWeight: 500 }}>
+                    {locale === "fr" ? "Passer Premium →" : "Upgrade →"}
+                  </Link>
+                </p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+                  <textarea
+                    value={interviewAnswer}
+                    onChange={e => setInterviewAnswer(e.target.value)}
+                    placeholder={t.dashboard.interview_placeholder}
+                    rows={3}
+                    style={{
+                      width: "100%", boxSizing: "border-box",
+                      padding: ".625rem .75rem", borderRadius: 10,
+                      border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA",
+                      fontFamily: "'DM Sans', sans-serif", fontSize: ".875rem",
+                      color: "#3D2B1F", resize: "vertical", outline: "none",
+                    }}
+                    onFocus={e => (e.currentTarget.style.borderColor = "#C8813A")}
+                    onBlur={e => (e.currentTarget.style.borderColor = "rgba(61,43,31,.15)")}
+                  />
+                  <button
+                    onClick={handleInterviewSubmit}
+                    disabled={interviewSubmitting || !interviewAnswer.trim()}
+                    style={{
+                      alignSelf: "flex-start", padding: ".45rem 1.1rem", borderRadius: 100,
+                      border: "none", background: "#C8813A", color: "#FDFAF5",
+                      fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500,
+                      cursor: interviewSubmitting || !interviewAnswer.trim() ? "not-allowed" : "pointer",
+                      opacity: interviewSubmitting || !interviewAnswer.trim() ? .55 : 1,
+                      transition: "opacity .15s",
+                    }}
+                  >
+                    {interviewSubmitting ? t.dashboard.interview_submitting : t.dashboard.interview_cta}
+                  </button>
+                </div>
+              )}
             </div>
           );
         })()}
