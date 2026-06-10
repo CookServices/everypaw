@@ -6,6 +6,7 @@ import { Pet, Entry } from "@/types";
 import Link from "next/link";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
 import GettingStartedChecklist from "@/components/onboarding/GettingStartedChecklist";
+import OriginsFlow from "@/components/onboarding/OriginsFlow";
 import BookProgressWidget from "@/components/BookProgressWidget";
 import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
@@ -42,6 +43,8 @@ export default function DashboardPage() {
   const [currency, setCurrency] = useState<Currency>("USD");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [hasStories, setHasStories] = useState(false);
+  const [hasOrigins, setHasOrigins] = useState(false);
+  const [originsSkipped, setOriginsSkipped] = useState(false);
   const [monthlyEntryCount, setMonthlyEntryCount] = useState(0);
   const [resolvedPetId, setResolvedPetId] = useState<string | null>(null);
   const [petMetadata, setPetMetadata] = useState<Record<string, {
@@ -52,6 +55,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     try { setResolvedPetId(localStorage.getItem(LAST_PET_KEY)); } catch {}
+    try { setOriginsSkipped(localStorage.getItem("ep_origins_skipped") === "1"); } catch {}
     fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
   }, []);
 
@@ -72,6 +76,7 @@ export default function DashboardPage() {
         { count: monthlyCount },
         { data: allEntriesMeta },
         { data: recentStories },
+        { count: originsCount },
       ] = await Promise.all([
         supabase.from("pets").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("entries").select("*").eq("user_id", user.id).order("entry_date", { ascending: false }).limit(5),
@@ -80,6 +85,7 @@ export default function DashboardPage() {
         supabase.from("entries").select("*", { count: "exact", head: true }).eq("user_id", user.id).gte("entry_date", monthStart).lte("entry_date", monthEnd),
         supabase.from("entries").select("pet_id, entry_date").eq("user_id", user.id).order("entry_date", { ascending: false }),
         supabase.from("stories").select("pet_id").eq("user_id", user.id).gte("created_at", new Date(Date.now() - 30 * 864e5).toISOString()),
+        supabase.from("stories").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("story_type", "origins"),
       ]);
 
       setPets(petsData || []);
@@ -90,6 +96,7 @@ export default function DashboardPage() {
       if (profile?.subscription_renewal_date) setSubscriptionRenewalDate(profile.subscription_renewal_date);
       setShowOnboarding(!profile?.onboarding_completed);
       setHasStories((storiesData?.length || 0) > 0);
+      setHasOrigins((originsCount ?? 0) > 0);
       setMonthlyEntryCount(monthlyCount ?? 0);
 
       const meta: Record<string, { lastEntry: string | null; monthlyCount: number; hasNewChapter: boolean }> = {};
@@ -203,9 +210,31 @@ export default function DashboardPage() {
     <div style={{ minHeight: "100dvh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
 
-        {showOnboarding && (
+        {showOnboarding && !pets.length && (
           <OnboardingModal
-            hasPets={pets.length > 0}
+            hasPets={false}
+            hasEntries={entries.length > 0}
+            hasStories={hasStories}
+            onComplete={() => setShowOnboarding(false)}
+          />
+        )}
+        {showOnboarding && pets.length > 0 && !hasOrigins && !originsSkipped && (
+          <OriginsFlow
+            pet={pets[0]}
+            onComplete={() => {
+              setHasOrigins(true);
+              try { localStorage.removeItem("ep_origins_skipped"); } catch {}
+              window.location.href = `/dashboard/pets/${pets[0].id}?tab=stories`;
+            }}
+            onSkip={() => {
+              try { localStorage.setItem("ep_origins_skipped", "1"); } catch {}
+              setOriginsSkipped(true);
+            }}
+          />
+        )}
+        {showOnboarding && (pets.length > 0 ? (hasOrigins || originsSkipped) : false) && (
+          <OnboardingModal
+            hasPets={true}
             hasEntries={entries.length > 0}
             hasStories={hasStories}
             onComplete={() => setShowOnboarding(false)}
@@ -378,6 +407,38 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+
+        {/* ── Origins waiting card ─────────────────────────────────────── */}
+        {pets.length > 0 && !hasOrigins && originsSkipped && (
+          <div style={{
+            background: "rgba(200,129,58,.06)", border: "1.5px solid rgba(200,129,58,.25)",
+            borderRadius: 16, padding: "1.25rem 1.5rem", marginBottom: "1.5rem",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem",
+          }}>
+            <div>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .25rem" }}>
+                {(t.onboarding.origins_dashboard_title as string).replace("{petName}", pets[0]?.name || "")}
+              </p>
+              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>
+                {t.onboarding.origins_dashboard_desc as string}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                try { localStorage.removeItem("ep_origins_skipped"); } catch {}
+                setOriginsSkipped(false);
+              }}
+              style={{
+                flexShrink: 0, padding: ".5rem 1rem", borderRadius: 100, border: "none",
+                background: "#C8813A", color: "#FDFAF5",
+                fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {t.onboarding.origins_dashboard_cta as string}
+            </button>
+          </div>
+        )}
 
         {/* ── Zone B.5 — Book progress widget ─────────────────────────── */}
         {pets.length > 0 && resolvedPetId && (() => {

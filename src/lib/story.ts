@@ -84,6 +84,58 @@ export interface GeneratedStory {
  * Returns null on unique constraint violation (duplicate month_key for this pet) so callers
  * can skip gracefully.
  */
+export function buildOriginsPrompt(
+  pet: StoryPet,
+  answer1: string,
+  answer2: string,
+  answer3: string,
+  lang: "French" | "English",
+): string {
+  const petName = escapeXml(pet.name);
+  const petSpecies = escapeXml(pet.species || "");
+  const petBio = escapeXml(pet.bio || "Not provided");
+  const a1 = escapeXml(answer1);
+  const a2 = answer2.trim() ? escapeXml(answer2) : null;
+  const a3 = answer3.trim() ? escapeXml(answer3) : null;
+
+  const titleEN = "Chapter 1 — How it all began";
+  const titleFR = "Chapitre 1 — Comment tout a commencé";
+  const fixedTitle = lang === "French" ? titleFR : titleEN;
+
+  return `You are writing a warm, emotional, first-person narrative story for a pet journal called Everypaw.
+
+IMPORTANT: Write this story entirely in ${lang}. Do not use any other language.
+
+This is a special ORIGINS story — the very first chapter of ${petName}'s life with their family.
+The title is fixed: "${fixedTitle}"
+
+<pet_details>
+  <name>${petName}</name>
+  <species>${petSpecies}</species>
+  <bio>${petBio}</bio>
+</pet_details>
+
+<origins_answers>
+  <arrival>${a1}</arrival>${a2 ? `\n  <first_memory>${a2}</first_memory>` : ""}${a3 ? `\n  <what_makes_unique>${a3}</what_makes_unique>` : ""}
+</origins_answers>
+
+Write a beautiful narrative retrospective story of 350-450 words. The pet is the narrator (first-person voice).
+Structure:
+- Opening paragraph: how I arrived, the first moments with my family — paint the scene with sensory details
+- Middle paragraphs (1-2): early memories, first mischief or milestone, what makes me unique
+- Closing paragraph: a tender, warm note — what home means to me now. End with one resonant sentence.
+
+Style rules:
+- First-person voice throughout (I, me, my)
+- Use ${petName} as a self-reference at least once naturally
+- Warm, intimate, slightly poetic — like a letter to the reader
+- Do NOT list facts — transform them into narrative
+- Target 350-450 words
+
+You MUST respond with valid JSON only, no other text:
+{"title": "${fixedTitle}", "story": "..."}`;
+}
+
 export async function generateAndSaveStory(
   supabase: SupabaseClient,
   userId: string,
@@ -92,6 +144,7 @@ export async function generateAndSaveStory(
   lang: "French" | "English",
   style: StoryStyle = "classic",
   monthKey: string | null = null,
+  storyType: string = "monthly",
 ): Promise<GeneratedStory | null> {
   const prompt = buildStoryPrompt(pet, entries, lang, style);
 
@@ -141,6 +194,7 @@ export async function generateAndSaveStory(
       period_end: periodEnd,
       status: "published",
       ...(monthKey ? { month_key: monthKey } : {}),
+      story_type: storyType,
     })
     .select("id")
     .single();
