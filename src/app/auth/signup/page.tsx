@@ -53,7 +53,7 @@ export default function SignupPage() {
     const p = new URLSearchParams(window.location.search);
     const redirect = p.get("redirect");
     const code = p.get("code");
-    // Only allow relative paths — prevent open redirect to external sites
+    // Only allow relative paths, prevent open redirect to external sites
     if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
       return code ? `${redirect}?code=${code}` : redirect;
     }
@@ -219,7 +219,7 @@ export default function SignupPage() {
           {planInfo && (
             <div style={{ background: "#FFF3E0", border: "1px solid #F7C27A", borderRadius: 14, padding: "12px 16px", marginBottom: "1.25rem" }}>
               <p style={{ margin: 0, fontSize: ".875rem", color: "#3D2B1F", fontWeight: 600, lineHeight: 1.4 }}>
-                🐾 {isFR ? "Plan sélectionné" : "Selected plan"} : {planInfo.name} , {planInfo.price}
+                🐾 {isFR ? "Plan sélectionné" : "Selected plan"} : {planInfo.name}, {planInfo.price}
               </p>
               <p style={{ margin: "4px 0 0", fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.4 }}>
                 {planInfo.perks}

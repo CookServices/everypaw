@@ -114,7 +114,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
   const handleReorder = async (config: BookConfig) => {
     // Mark as draft so the order page can reuse it
     setReorderingId(config.id);
-    // Navigate to order page with configId — the order page will load the config
+    // Navigate to order page with configId, the order page will load the config
     window.location.href = `/dashboard/pets/${petId}/order?configId=${config.id}`;
   };
 
@@ -327,7 +327,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
           <section>
             <h2 style={{ fontSize: ".75rem", fontWeight: 600, color: textMuted, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: "1rem", fontFamily: "sans-serif", display: "flex", justifyContent: "space-between" }}>
               <span>{isFR ? "Brouillons" : "Drafts"}</span>
-              <span style={{ fontWeight: 400 }}>{drafts.length}/15</span>
+              <span style={{ fontWeight: 400 }}>{drafts.length}/15 {isFR ? "brouillons maximums" : "drafts maximum"}</span>
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: ".875rem" }}>
               {drafts.map(c => <ConfigCard key={c.id} config={c} />)}

@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * PasswordStrength — inline strength indicator
+ * PasswordStrength, inline strength indicator
  *
  * Levels (password must be ≥ 8 chars to show anything):
- *   1 — Faible  / Weak   : only 1 character-type class present
- *   2 — Moyen   / Medium : 2 character-type classes present
- *   3 — Fort    / Strong : ≥ 3 character-type classes OR length ≥ 14
+ *   1, Faible  / Weak   : only 1 character-type class present
+ *   2, Moyen   / Medium : 2 character-type classes present
+ *   3, Fort    / Strong : ≥ 3 character-type classes OR length ≥ 14
  *
  * Character-type classes: lowercase, uppercase, digit, special
  */
@@ -30,9 +30,9 @@ function getLevel(pwd: string): 0 | 1 | 2 | 3 {
 }
 
 const COLORS: Record<1 | 2 | 3, string> = {
-  1: "#A32D2D",   // red   — Faible / Weak
-  2: "#C8813A",   // amber — Moyen  / Medium
-  3: "#6B7B5E",   // sage  — Fort   / Strong
+  1: "#A32D2D",   // red, Faible / Weak
+  2: "#C8813A",   // amber, Moyen  / Medium
+  3: "#6B7B5E",   // sage, Fort   / Strong
 };
 
 const LABELS_FR: Record<1 | 2 | 3, string> = {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getUserPlan, canGenerateStory } from "@/lib/plan";
 import { escapeXml } from "@/lib/html";
+import { stripEmDash } from "@/lib/story";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid style" }, { status: 400 });
   }
 
-  // Re-fetch all data from DB — never trust client-supplied pet details or entry content
+  // Re-fetch all data from DB, never trust client-supplied pet details or entry content
   const [{ data: pet }, { data: profile }] = await Promise.all([
     supabase.from("pets").select("id, user_id, name, species, bio").eq("id", petId).single(),
     supabase.from("profiles").select("language").eq("id", user.id).single(),
@@ -106,10 +107,10 @@ export async function POST(req: Request) {
 
   const STYLE_DESCRIPTIONS: Record<string, string> = {
     poetic:   "Write in a poetic, lyrical style with rich metaphors and emotional imagery. Use beautiful language.",
-    humorous: "Write with humor and wit — light, playful, full of amusing observations and gentle self-deprecating comedy.",
-    classic:  "Write in a classic, clean narrative style — sober, well-structured, timeless.",
+    humorous: "Write with humor and wit, light, playful, full of amusing observations and gentle self-deprecating comedy.",
+    classic:  "Write in a classic, clean narrative style, sober, well-structured, timeless.",
     epic:     "Write in an epic, adventurous, dramatic style. Make everyday moments feel heroic.",
-    tender:   "Write like a love letter — deeply warm, intimate, soft, full of tenderness and affection.",
+    tender:   "Write like a love letter, deeply warm, intimate, soft, full of tenderness and affection.",
   };
 
   const prompt = `You are writing a warm, emotional, first-person narrative story for a pet journal called Everypaw.
@@ -129,19 +130,20 @@ ${escapeXml(entriesText)}
 
 Write a beautiful narrative story of 400-500 words, structured in exactly 3 paragraphs. Separate each paragraph with a blank line. Do NOT include any section labels or headers (no "INTRO", "DÉVELOPPEMENT", "CHUTE", or similar):
 
-Paragraph 1: Set the mood of the period — evoke atmosphere, season, daily rhythm. Do NOT list events; paint a feeling.
+Paragraph 1: Set the mood of the period, evoke atmosphere, season, daily rhythm. Do NOT list events; paint a feeling.
 
-Paragraphs 2-3: Bring to life the key moments from the journal entries. Use sensory details (smells, textures, sounds). Weave entries into a flowing narrative — never list them. Show emotion through action and sensation.
+Paragraphs 2-3: Bring to life the key moments from the journal entries. Use sensory details (smells, textures, sounds). Weave entries into a flowing narrative, never list them. Show emotion through action and sensation.
 
-Paragraph 4: End with a tender, introspective note from the pet's point of view — a small reflection or realization. Close with a single memorable, resonant sentence.
+Paragraph 4: End with a tender, introspective note from the pet's point of view, a small reflection or realization. Close with a single memorable, resonant sentence.
 
 Style rules (follow strictly):
 - First-person voice: the pet is the narrator throughout
 - Use the pet's name (from pet_details) at least 3 times naturally in the text
 - Reference the species (from pet_details) or breed at least once
-- Do NOT mechanically list journal entries — transform them into narrative
-- Tone: warm, intimate, slightly poetic — like a letter to the reader
+- Do NOT mechanically list journal entries, transform them into narrative
+- Tone: warm, intimate, slightly poetic, like a letter to the reader
 - Target exactly 400-500 words (count carefully)
+- NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
 
 Also generate a short evocative title (5 words max).
 
@@ -186,10 +188,11 @@ You MUST respond with valid JSON only, no other text:
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    const { title, story } = parsed;
+    const title = stripEmDash(parsed.title);
+    const story = stripEmDash(parsed.story);
     console.log("[generate] parsed title:", title, "| story length:", story?.length);
 
-    // Compute period dates (must be YYYY-MM-DD) — entries sorted ASC so [0]=oldest, [last]=most recent
+    // Compute period dates (must be YYYY-MM-DD), entries sorted ASC so [0]=oldest, [last]=most recent
     const today = new Date().toISOString().split("T")[0];
     const firstEntry: string | undefined = entries[0]?.entry_date;
     const lastEntry: string | undefined = entries[entries.length - 1]?.entry_date;

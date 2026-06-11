@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // Honour redirect param — must be a relative path (no protocol-relative or absolute URLs)
+  // Honour redirect param, must be a relative path (no protocol-relative or absolute URLs)
   const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
   return NextResponse.redirect(`${origin}${destination}`);
 }

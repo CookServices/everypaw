@@ -35,8 +35,8 @@ export async function POST(req: Request) {
 
   const productName =
     currency === "EUR"
-      ? `Livre Everypaw — ${pageCount} pages`
-      : `Everypaw Book — ${pageCount} pages`;
+      ? `Livre Everypaw, ${pageCount} pages`
+      : `Everypaw Book, ${pageCount} pages`;
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],

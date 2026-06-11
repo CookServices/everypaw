@@ -93,8 +93,7 @@ export async function GET(req: Request) {
         <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>
         <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 12px;">Ça fait ${daysSince} jours…</h1>
         <p style="font-size: 15px; line-height: 1.7; color: #7A5C44; margin: 0 0 24px;">
-          ${petName} a vécu plein de choses depuis votre dernière entrée. Pas besoin d'un grand moment —
-          une phrase ou une photo, et le souvenir est sauvé pour toujours.
+          ${petName} a vécu plein de choses depuis votre dernière entrée. Pas besoin d'un grand moment, une phrase ou une photo, et le souvenir est sauvé pour toujours.
         </p>
         <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
           Ajouter un moment →
@@ -108,8 +107,7 @@ export async function GET(req: Request) {
         <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>
         <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 12px;">It's been ${daysSince} days…</h1>
         <p style="font-size: 15px; line-height: 1.7; color: #7A5C44; margin: 0 0 24px;">
-          ${petName} has been up to so much since your last entry. It doesn't need to be big —
-          one sentence or a quick photo, and the memory is saved forever.
+          ${petName} has been up to so much since your last entry. It doesn't need to be big, one sentence or a quick photo, and the memory is saved forever.
         </p>
         <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
           Add a moment →

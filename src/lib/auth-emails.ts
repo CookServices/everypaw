@@ -44,7 +44,7 @@ function ctaButton(href: string, label: string): string {
 export function buildConfirmSignupEmail(lang: "fr" | "en", confirmUrl: string): { subject: string; html: string } {
   if (lang === "fr") {
     return {
-      subject: "🐾 Confirmez votre adresse email — Everypaw",
+      subject: "🐾 Confirmez votre adresse email, Everypaw",
       html: baseLayout(`
         <h1 style="font-family:Georgia,serif;font-size:1.4rem;font-weight:600;color:${BRAND.text};margin:0 0 12px;">Bienvenue sur Everypaw !</h1>
         <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 8px;">Vous êtes à un clic de commencer à capturer les plus beaux moments de votre animal.</p>
@@ -55,7 +55,7 @@ export function buildConfirmSignupEmail(lang: "fr" | "en", confirmUrl: string): 
     };
   }
   return {
-    subject: "🐾 Confirm your email address — Everypaw",
+    subject: "🐾 Confirm your email address, Everypaw",
     html: baseLayout(`
       <h1 style="font-family:Georgia,serif;font-size:1.4rem;font-weight:600;color:${BRAND.text};margin:0 0 12px;">Welcome to Everypaw!</h1>
       <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 8px;">You're one click away from starting to capture your pet's most beautiful moments.</p>
@@ -69,22 +69,22 @@ export function buildConfirmSignupEmail(lang: "fr" | "en", confirmUrl: string): 
 export function buildResetPasswordEmail(lang: "fr" | "en", resetUrl: string): { subject: string; html: string } {
   if (lang === "fr") {
     return {
-      subject: "🔑 Réinitialisez votre mot de passe — Everypaw",
+      subject: "🔑 Réinitialisez votre mot de passe, Everypaw",
       html: baseLayout(`
         <h1 style="font-family:Georgia,serif;font-size:1.4rem;font-weight:600;color:${BRAND.text};margin:0 0 12px;">Réinitialisation du mot de passe</h1>
         <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 24px;">Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe :</p>
         ${ctaButton(resetUrl, "Réinitialiser mon mot de passe →")}
-        <p style="font-size:.78rem;color:#9A8070;margin:16px 0 0;line-height:1.5;">Ce lien expire dans 1 heure. Si vous n'avez pas demandé cette réinitialisation, ignorez cet email — votre mot de passe reste inchangé.</p>
+        <p style="font-size:.78rem;color:#9A8070;margin:16px 0 0;line-height:1.5;">Ce lien expire dans 1 heure. Si vous n'avez pas demandé cette réinitialisation, ignorez cet email, votre mot de passe reste inchangé.</p>
       `),
     };
   }
   return {
-    subject: "🔑 Reset your password — Everypaw",
+    subject: "🔑 Reset your password, Everypaw",
     html: baseLayout(`
       <h1 style="font-family:Georgia,serif;font-size:1.4rem;font-weight:600;color:${BRAND.text};margin:0 0 12px;">Password reset</h1>
       <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 24px;">You requested to reset your password. Click the button below to choose a new password:</p>
       ${ctaButton(resetUrl, "Reset my password →")}
-      <p style="font-size:.78rem;color:#9A8070;margin:16px 0 0;line-height:1.5;">This link expires in 1 hour. If you didn't request this reset, please ignore this email — your password remains unchanged.</p>
+      <p style="font-size:.78rem;color:#9A8070;margin:16px 0 0;line-height:1.5;">This link expires in 1 hour. If you didn't request this reset, please ignore this email, your password remains unchanged.</p>
     `),
   };
 }
@@ -117,7 +117,7 @@ export function buildPaymentFailedEmail(lang: "fr" | "en", billingPortalUrl: str
 export function buildChangeEmailEmail(lang: "fr" | "en", confirmUrl: string, newEmail: string): { subject: string; html: string } {
   if (lang === "fr") {
     return {
-      subject: "📧 Confirmez votre nouvelle adresse email — Everypaw",
+      subject: "📧 Confirmez votre nouvelle adresse email, Everypaw",
       html: baseLayout(`
         <h1 style="font-family:Georgia,serif;font-size:1.4rem;font-weight:600;color:${BRAND.text};margin:0 0 12px;">Changement d'adresse email</h1>
         <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 8px;">Vous avez demandé à changer votre adresse email vers :</p>
@@ -129,7 +129,7 @@ export function buildChangeEmailEmail(lang: "fr" | "en", confirmUrl: string, new
     };
   }
   return {
-    subject: "📧 Confirm your new email address — Everypaw",
+    subject: "📧 Confirm your new email address, Everypaw",
     html: baseLayout(`
       <h1 style="font-family:Georgia,serif;font-size:1.4rem;font-weight:600;color:${BRAND.text};margin:0 0 12px;">Email address change</h1>
       <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 8px;">You requested to change your email address to:</p>

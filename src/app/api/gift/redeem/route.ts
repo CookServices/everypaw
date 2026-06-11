@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     console.log("[gift/redeem] plan:", planKey, "currency:", currency, "priceId:", priceId ?? "(not set)");
 
     if (!priceId) {
-      console.error(`[gift/redeem] Missing price ID for plan ${planKey} / currency ${currency} — check PRICE_MAP env vars`);
+      console.error(`[gift/redeem] Missing price ID for plan ${planKey} / currency ${currency}, check PRICE_MAP env vars`);
       return NextResponse.json({ error: "Gift service not configured" }, { status: 500 });
     }
 
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     if (hasPaidSub) {
       // User already has a paid subscription → schedule the gift to activate at period end
       // via a subscription schedule (same mechanism as plan-change deferral).
-      // No checkout redirect needed — the change is applied server-side.
+      // No checkout redirect needed, the change is applied server-side.
       const subscriptionId = await resolveSubscriptionId(
         stripe, user.id,
         profile.stripe_subscription_id ?? null,

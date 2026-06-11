@@ -50,7 +50,7 @@ interface Milestone {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmtDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return ", ";
   return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
 }
 
@@ -99,7 +99,7 @@ function buildHtml(params: {
 
     const milestonesHtml = petMilestones.length === 0
       ? `<p class="empty">Aucune étape.</p>`
-      : `<ul class="milestones">${petMilestones.map((m) => `<li><strong>${escapeHtml(m.title)}</strong>${m.achieved_at ? ` — ${escapeHtml(fmtDate(m.achieved_at))}` : ""}</li>`).join("")}</ul>`;
+      : `<ul class="milestones">${petMilestones.map((m) => `<li><strong>${escapeHtml(m.title)}</strong>${m.achieved_at ? `, ${escapeHtml(fmtDate(m.achieved_at))}` : ""}</li>`).join("")}</ul>`;
 
     return `
     <section class="pet-section">
@@ -133,7 +133,7 @@ function buildHtml(params: {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mes données Everypaw — ${escapeHtml(fmtDate(exportedAt))}</title>
+  <title>Mes données Everypaw, ${escapeHtml(fmtDate(exportedAt))}</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -217,8 +217,8 @@ function buildHtml(params: {
 
   <div class="profile-card">
     <h2>Mon profil</h2>
-    <div class="profile-row"><span class="profile-label">Email</span><span>${escapeHtml(String(profile?.email ?? "—"))}</span></div>
-    <div class="profile-row"><span class="profile-label">Nom</span><span>${escapeHtml(String(profile?.full_name ?? "—"))}</span></div>
+    <div class="profile-row"><span class="profile-label">Email</span><span>${escapeHtml(String(profile?.email ?? ", "))}</span></div>
+    <div class="profile-row"><span class="profile-label">Nom</span><span>${escapeHtml(String(profile?.full_name ?? ", "))}</span></div>
     <div class="profile-row"><span class="profile-label">Plan</span><span>${escapeHtml(String(profile?.plan ?? "free"))}</span></div>
     <div class="profile-row"><span class="profile-label">Membre depuis</span><span>${escapeHtml(fmtDate(String(profile?.created_at ?? "")))}</span></div>
   </div>

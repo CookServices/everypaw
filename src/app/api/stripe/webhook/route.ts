@@ -67,7 +67,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // Subscription checkout — determine plan from line items
+    // Subscription checkout, determine plan from line items
     if (session.mode === "subscription") {
       // Dedup: check if this subscription was already activated via stripe_customer_id
       const { data: profile } = await supabase
@@ -189,13 +189,13 @@ export async function POST(req: Request) {
         "cancel_at:", subscription.cancel_at,
         "event:", event.id,
       );
-      // is_premium stays true — customer.subscription.deleted handles the actual downgrade
+      // is_premium stays true, customer.subscription.deleted handles the actual downgrade
     }
   }
 
   // ── invoice.payment_succeeded ─────────────────────────────────────────────
   // Awards 1 book credit to Print subscribers on first payment and renewals.
-  // Single source of truth for Print book credits — checkout.session.completed no longer awards them.
+  // Single source of truth for Print book credits, checkout.session.completed no longer awards them.
   if (event.type === "invoice.payment_succeeded") {
     const invoice = event.data.object as Stripe.Invoice;
     const billingReason = invoice.billing_reason;
@@ -279,7 +279,7 @@ export async function POST(req: Request) {
       if (profileForCredit?.last_book_credit_at) {
         const daysSinceLast = (Date.now() - new Date(profileForCredit.last_book_credit_at).getTime()) / (1000 * 60 * 60 * 24);
         if (daysSinceLast < 365) {
-          console.log(`[webhook] book credit skipped — last credit was ${Math.floor(daysSinceLast)}d ago (< 365d), user: ${userId}`);
+          console.log(`[webhook] book credit skipped, last credit was ${Math.floor(daysSinceLast)}d ago (< 365d), user: ${userId}`);
           return NextResponse.json({ received: true });
         }
       }
@@ -315,7 +315,7 @@ export async function POST(req: Request) {
   }
 
   // ── invoice.payment_failed ────────────────────────────────────────────────
-  // Sets payment_past_due flag + sends email. Does NOT downgrade — Stripe retries,
+  // Sets payment_past_due flag + sends email. Does NOT downgrade, Stripe retries,
   // customer.subscription.deleted handles the final downgrade.
   if (event.type === "invoice.payment_failed") {
     const invoice = event.data.object as Stripe.Invoice;
@@ -360,7 +360,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // Email only on the first failed attempt — Stripe retries on its own schedule,
+    // Email only on the first failed attempt, Stripe retries on its own schedule,
     // one email per attempt would spam the user. Flag stays set until payment succeeds.
     const attemptCount = invoice.attempt_count ?? 1;
     if (userEmail && attemptCount <= 1) {

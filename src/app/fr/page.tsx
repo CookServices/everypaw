@@ -17,10 +17,10 @@ const FAQ_JSONLD_FR = {
   "@type": "FAQPage",
   mainEntity: [
     { "@type": "Question", name: "Comment fonctionne l'IA ?", acceptedAnswer: { "@type": "Answer", text: "Notre IA transforme vos entrées de journal en un chapitre narratif chaleureux, rédigé à la première personne, comme si votre animal racontait lui-même sa vie. Quelques moments suffisent pour créer une histoire touchante, et vous générez quand vous êtes prêt." } },
-    { "@type": "Question", name: "Que se passe-t-il si mon animal nous quitte ?", acceptedAnswer: { "@type": "Answer", text: "Tous vos souvenirs restent accessibles pour toujours. Vous pouvez créer une page mémorial dédiée, partager son profil avec vos proches, et commander un livre relié commémoratif qui rassemble chaque histoire et chaque moment de sa vie , un objet précieux à conserver." } },
-    { "@type": "Question", name: "Puis-je personnaliser le livre ?", acceptedAnswer: { "@type": "Answer", text: "Oui. Lors de la commande, vous choisissez le thème de couverture parmi 5 styles (Classic, Noir, Forest, Ocean, Rose), ajoutez un titre personnalisé, sélectionnez les chapitres à inclure, filtrez par année et ajoutez une page de dédicace. La photo de couverture est personnalisable également , choisissez une photo de votre journal ou téléchargez-en une." } },
+    { "@type": "Question", name: "Que se passe-t-il si mon animal nous quitte ?", acceptedAnswer: { "@type": "Answer", text: "Tous vos souvenirs restent accessibles pour toujours. Vous pouvez créer une page mémorial dédiée, partager son profil avec vos proches, et commander un livre relié commémoratif qui rassemble chaque histoire et chaque moment de sa vie, un objet précieux à conserver." } },
+    { "@type": "Question", name: "Puis-je personnaliser le livre ?", acceptedAnswer: { "@type": "Answer", text: "Oui. Lors de la commande, vous choisissez le thème de couverture parmi 5 styles (Classic, Noir, Forest, Ocean, Rose), ajoutez un titre personnalisé, sélectionnez les chapitres à inclure, filtrez par année et ajoutez une page de dédicace. La photo de couverture est personnalisable également, choisissez une photo de votre journal ou téléchargez-en une." } },
     { "@type": "Question", name: "Quelle est la qualité d'impression ?", acceptedAnswer: { "@type": "Answer", text: "Nos livres sont imprimés sur papier couché satiné 170 g/m² avec une couverture rigide et une plastification mate. Format 20×20 cm, reliure parfaite. Qualité professionnelle, comparable aux meilleurs livres photo des studios spécialisés." } },
-    { "@type": "Question", name: "Le plan gratuit est-il vraiment gratuit ?", acceptedAnswer: { "@type": "Answer", text: "Oui, complètement et sans conditions. Vous pouvez créer un profil d'animal, ajouter jusqu'à 10 entrées de journal et générer un chapitre d'histoire IA , entièrement gratuit. Aucune carte bancaire requise pour commencer." } },
+    { "@type": "Question", name: "Le plan gratuit est-il vraiment gratuit ?", acceptedAnswer: { "@type": "Answer", text: "Oui, complètement et sans conditions. Vous pouvez créer un profil d'animal, ajouter jusqu'à 10 entrées de journal et générer un chapitre d'histoire IA, entièrement gratuit. Aucune carte bancaire requise pour commencer." } },
     { "@type": "Question", name: "Comment annuler mon abonnement ?", acceptedAnswer: { "@type": "Answer", text: "Depuis les paramètres de votre compte, en un clic. Sans engagement, sans frais d'annulation. Vous conservez l'accès à toutes vos histoires, entrées et données même après l'annulation." } },
   ],
 };
@@ -64,7 +64,7 @@ export default function FrHome() {
     ["3", t.landing.s3_title, t.landing.s3_desc],
   ];
 
-  // Digital = mensuel, Print = annuel — pas de toggle
+  // Digital = mensuel, Print = annuel, pas de toggle
   const [currency, setCurrency] = useState<Currency>("EUR");
   const [isFrance, setIsFrance] = useState(true);
 
@@ -129,7 +129,7 @@ export default function FrHome() {
       }}>
         <div className="ep-hero-inner" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4rem", maxWidth: 1100, width: "100%", flexWrap: "wrap" }}>
 
-          {/* LEFT , copy */}
+          {/* LEFT, copy */}
           <div className="ep-hero-text" style={{ flex: "1 1 380px", maxWidth: 540, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 0 }}>
             <span style={{
               display: "inline-flex", alignItems: "center", gap: ".5rem",
@@ -174,7 +174,7 @@ export default function FrHome() {
             </p>
           </div>
 
-          {/* RIGHT , product demo */}
+          {/* RIGHT, product demo */}
           <div className="ep-hero-demo" style={{ flex: "0 1 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
             {/* Phone frame */}
             <div style={{
@@ -211,10 +211,10 @@ export default function FrHome() {
                 {/* Slide area */}
                 <div style={{ flex: 1, position: "relative", overflow: "hidden", background: "#F7F2EA" }}>
 
-                  {/* Slide 0 , Journal */}
+                  {/* Slide 0, Journal */}
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 0 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                     {[
-                      { icon: "🚶", text: "Promenade au parc , 2h de course !", when: "il y a 2 jours" },
+                      { icon: "🚶", text: "Promenade au parc, 2h de course !", when: "il y a 2 jours" },
                       { icon: "🍽️", text: "Refusé ses croquettes... encore.", when: "hier" },
                     ].map((e, i) => (
                       <div key={i} style={{ background: "#FDFAF5", borderRadius: 12, padding: "9px 11px", border: "1px solid rgba(61,43,31,.07)", animation: demoSlide === 0 ? `ep-fade-up .4s ease ${i * .12}s both` : "none" }}>
@@ -232,7 +232,7 @@ export default function FrHome() {
                         <div style={{ fontSize: 10, color: "#7A5C44", fontWeight: 300, marginBottom: 4 }}>{"Aujourd'hui"}</div>
                         <div style={{ display: "flex", alignItems: "center" }}>
                           <span style={{ fontSize: 10.5, color: "#3D2B1F", overflow: "hidden", whiteSpace: "nowrap", display: "inline-block", animation: "ep-typing 2.2s steps(30, end) .8s both" }}>
-                            {"Premier bain , pas content ! 🛁"}
+                            {"Premier bain, pas content ! 🛁"}
                           </span>
                           <span style={{ width: 1.5, height: 12, background: "#C8813A", display: "inline-block", animation: "ep-blink 1s step-end infinite", marginLeft: 1, flexShrink: 0 }} />
                         </div>
@@ -244,7 +244,7 @@ export default function FrHome() {
                     </div>
                   </div>
 
-                  {/* Slide 1 , AI story generation */}
+                  {/* Slide 1, AI story generation */}
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 1 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
                     <div style={{ animation: demoSlide === 1 ? "ep-fade-up .4s ease both" : "none" }}>
                       <div style={{ fontSize: 11, color: "#C8813A", fontWeight: 500, marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
@@ -266,7 +266,7 @@ export default function FrHome() {
                     </div>
                   </div>
 
-                  {/* Slide 2 , Book preview */}
+                  {/* Slide 2, Book preview */}
                   <div style={{ position: "absolute", inset: 0, opacity: demoSlide === 2 ? 1 : 0, transition: "opacity .5s ease", padding: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
                     <div style={{
                       width: 120, height: 160,
@@ -349,7 +349,7 @@ export default function FrHome() {
                 <p style={{ fontSize: ".875rem", color: "#7A5C44", lineHeight: 1.6, fontWeight: 300 }}>{desc}</p>
               </div>
             ))}
-            {/* Gift card — standalone with CTA */}
+            {/* Gift card, standalone with CTA */}
             <div style={{ background: "#F7F2EA", borderRadius: 20, padding: "1.75rem", display: "flex", flexDirection: "column" }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", marginBottom: "1rem" }}>🎁</div>
               <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, marginBottom: ".5rem" }}>{t.landing.f6_title}</h3>
@@ -390,7 +390,7 @@ export default function FrHome() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.25rem" }}>
             {reviews.map(([quote, author]) => {
               const authorStr = author as string;
-              const parts = authorStr.split(" , ");
+              const parts = authorStr.split(", ");
               const name = parts[0];
               const meta = parts.slice(1).join(", ");
               return (
@@ -416,7 +416,7 @@ export default function FrHome() {
         </h2>
         <p style={{ fontSize: "1rem", color: "#7A5C44", fontWeight: 300, marginBottom: "2rem" }}>{t.landing.pricing_desc}</p>
 
-        {/* Digital = mensuel, Print = annuel — pas de toggle */}
+        {/* Digital = mensuel, Print = annuel, pas de toggle */}
 
         <div style={{ display: "flex", gap: "1.25rem", justifyContent: "center", flexWrap: "wrap", maxWidth: 960, margin: "0 auto" }}>
 

@@ -65,7 +65,7 @@ export async function GET(req: Request) {
       ? `🎂 C'est l'anniversaire de ${petName} !`
       : `🎂 It's ${petName}'s birthday!`;
 
-    // ── Birthday letter (idempotent — one per pet per year) ───────────────────
+    // ── Birthday letter (idempotent, one per pet per year) ───────────────────
     let letterExcerpt: string | null = null;
     let storyId: string | null = null;
 
@@ -138,11 +138,11 @@ export async function GET(req: Request) {
       <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
         <p style="font-size: 36px; margin: 0 0 8px;">🎂</p>
         <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 12px;">
-          Joyeux anniversaire, ${petName}${ageLabel ? ` — ${ageLabel}` : ""} !
+          Joyeux anniversaire, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !
         </h1>
         <p style="font-size: 15px; line-height: 1.7; color: #7A5C44; margin: 0 0 24px;">
           C'est une belle occasion de noter ce moment dans son journal. Décrivez comment ${petName} est aujourd'hui,
-          ce qu'il ou elle aime, ce qui a changé cette année — dans quelques ans, vous serez heureux de l'avoir noté.
+          ce qu'il ou elle aime, ce qui a changé cette année, dans quelques ans, vous serez heureux de l'avoir noté.
         </p>
         ${letterBlock}
         <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
@@ -156,11 +156,11 @@ export async function GET(req: Request) {
       <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
         <p style="font-size: 36px; margin: 0 0 8px;">🎂</p>
         <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 12px;">
-          Happy birthday, ${petName}${ageLabel ? ` — ${ageLabel}` : ""} !
+          Happy birthday, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !
         </h1>
         <p style="font-size: 15px; line-height: 1.7; color: #7A5C44; margin: 0 0 24px;">
           Today is a perfect day to add a birthday entry to ${petName}'s journal. Describe how they are right now,
-          what they love, what's changed this year — you'll be so glad you wrote it down.
+          what they love, what's changed this year, you'll be so glad you wrote it down.
         </p>
         ${letterBlock}
         <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">

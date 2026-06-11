@@ -501,7 +501,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   };
 
   // Prefetch the card image into a blob so the share/download triggers
-  // synchronously on click — awaiting a fetch first would drop the transient
+  // synchronously on click, awaiting a fetch first would drop the transient
   // user activation that navigator.share() requires (silent failure on mobile).
   useEffect(() => {
     if (!shareCardStory) { setShareCardBlob(null); return; }
@@ -1191,7 +1191,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
         {/* Pet header */}
         <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.25rem 1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)", position: "relative" }}>
 
-          {/* Kebab — absolute top-right */}
+          {/* Kebab, absolute top-right */}
           <div ref={kebabRef} style={{ position: "absolute", top: "1rem", right: "1rem", zIndex: 10 }}>
             <button
               onClick={() => { setShowKebabMenu(v => !v); setShowDeleteConfirm(false); }}
@@ -1249,7 +1249,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-          {/* Milestone badge — inline pill below name */}
+          {/* Milestone badge, inline pill below name */}
           {milestones.length > 0 && (
             <div style={{ display: "inline-flex", alignItems: "center", gap: ".5rem", marginTop: ".875rem", background: "rgba(200,129,58,.1)", borderRadius: 100, padding: ".35rem .875rem" }}>
               <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length} / {totalMilestoneCount}</span>
@@ -1261,7 +1261,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             </div>
           )}
 
-          {/* Bio — full width */}
+          {/* Bio, full width */}
           {pet.bio && (
             <div style={{ marginTop: ".875rem" }}>
               <p style={{
@@ -1276,7 +1276,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             </div>
           )}
 
-          {/* Memorial links — full width */}
+          {/* Memorial links, full width */}
           {pet.deceased_at && (
             <div style={{ display: "flex", gap: ".75rem", marginTop: ".875rem", flexWrap: "wrap" }}>
               <Link href={`/memorial/${id}`} style={{ fontSize: ".8rem", color: "#8B6B4A", textDecoration: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".375rem .875rem" }}>
@@ -1314,7 +1314,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "journal" && (
           <>
-            {/* Mo17 — monthly progress pill */}
+            {/* Mo17, monthly progress pill */}
             {(() => {
               const now = new Date();
               const monthPrefix = now.toISOString().slice(0, 7);
@@ -1489,7 +1489,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
                   {group.entries.map(entry => (
-                    <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(61,43,31,.06)" }}>
+                    <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, border: "1px solid rgba(61,43,31,.06)" }}>
                       <div style={{ padding: ".875rem 1rem" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: entry.content.trim() ? ".5rem" : 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
@@ -1523,7 +1523,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                         {entry.content.trim() && <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.65, margin: 0 }}>{entry.content}</p>}
                       </div>
                       {entry.photo_urls && entry.photo_urls.length > 0 && (
-                        <div style={{ display: "grid", gridTemplateColumns: entry.photo_urls.length === 1 ? "1fr" : entry.photo_urls.length === 2 ? "1fr 1fr" : "1fr 1fr 1fr", gap: "2px" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: entry.photo_urls.length === 1 ? "1fr" : entry.photo_urls.length === 2 ? "1fr 1fr" : "1fr 1fr 1fr", gap: "2px", borderRadius: "0 0 16px 16px", overflow: "hidden" }}>
                           {entry.photo_urls.slice(0, 3).map((url: string, i: number) => (
                             <div key={i} style={{ position: "relative" }}>
                               <img src={url} alt="" onClick={() => setLightboxUrl(url)}
@@ -1578,7 +1578,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 </div>
               );
             })()}
-            {/* Generate button — mirrors journal tab CTA */}
+            {/* Generate button, mirrors journal tab CTA */}
             {(() => {
               const generatingMessages = pet ? [
                 t.journal.generating_1.replace("{name}", pet.name),
@@ -1908,7 +1908,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
               </div>
             )}
 
-            {/* Invite form — for paid plan owners */}
+            {/* Invite form, for paid plan owners */}
             {(userPlan === "digital" || userPlan === "print") && (
               <div style={{ background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 14, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
                 <label style={{ display: "block", fontSize: ".8rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".5rem" }}>
@@ -1938,6 +1938,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                         setInviteResult({ success: true, resent: data.resent });
                         setInviteEmail("");
                         setMembersLoaded(false); // reload list
+                        setTimeout(() => setInviteResult(null), 10000);
                       } else {
                         const errKey = data.error as string;
                         const errMsg =
@@ -1948,6 +1949,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                           errKey === "Invalid email" ? t.members.error_invalid_email :
                           t.members.error_generic;
                         setInviteResult({ error: errMsg });
+                        setTimeout(() => setInviteResult(null), 10000);
                       }
                     }}
                     style={{ padding: "10px 18px", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", border: "none", cursor: inviteLoading || !inviteEmail.trim() ? "not-allowed" : "pointer", fontWeight: 600, fontSize: ".85rem", fontFamily: "inherit", opacity: inviteLoading || !inviteEmail.trim() ? .6 : 1, flexShrink: 0 }}
@@ -2062,8 +2064,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
           id="book_credit"
           title={isFR ? "🎁 Tu as un livre offert !" : "🎁 You have a free book!"}
           body={isFR
-            ? "Ton abonnement Print inclut un livre offert par an. Il t'attend — commence ta configuration."
-            : "Your Print plan includes one free book per year. It's waiting for you — start your configuration."}
+            ? "Ton abonnement Print inclut un livre offert par an. Il t'attend, commence ta configuration."
+            : "Your Print plan includes one free book per year. It's waiting for you, start your configuration."}
           cta={isFR ? "Configurer mon livre" : "Configure my book"}
           ctaHref={`/dashboard/pets/${id}/order`}
           delay={2500}

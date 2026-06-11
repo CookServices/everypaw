@@ -126,7 +126,7 @@ export default function BookProgressWidget({ pet, plan, refreshKey = 0 }: Props)
           {title}
         </p>
 
-        {/* Status — not shown for memorial */}
+        {/* Status, not shown for memorial */}
         {!isMemorial && pages !== null && (
           <p style={{ fontSize: ".7rem", color: "#7A5C44", margin: "0 0 .6rem", fontWeight: 300, lineHeight: 1.4 }}>
             {bw.pages_status
@@ -136,7 +136,7 @@ export default function BookProgressWidget({ pet, plan, refreshKey = 0 }: Props)
           </p>
         )}
 
-        {/* Progress bar — not for memorial */}
+        {/* Progress bar, not for memorial */}
         {!isMemorial && pages !== null && (
           <>
             <div

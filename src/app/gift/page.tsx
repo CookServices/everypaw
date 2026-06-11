@@ -15,7 +15,7 @@ export default function GiftPage() {
 
   const [selectedPlan, setSelectedPlan] = useState<"digital" | "print">("digital");
   const [isMobile, setIsMobile] = useState(false);
-  // Digital = monthly only, Print = annual only — no billing toggle needed
+  // Digital = monthly only, Print = annual only, no billing toggle needed
   const [step, setStep] = useState<"form" | "confirm">("form");
   const [form, setForm] = useState({
     recipientEmail: "",
@@ -313,7 +313,7 @@ export default function GiftPage() {
                 {isFR ? "Choisir la formule" : "Choose a plan"}
               </p>
 
-              {/* Digital = mensuel, Print = annuel — pas de toggle */}
+              {/* Digital = mensuel, Print = annuel, pas de toggle */}
 
               <div style={{ display: "flex", flexDirection: "column", gap: ".625rem", marginBottom: ".75rem" }}>
 
@@ -421,19 +421,18 @@ export default function GiftPage() {
               </div>
 
               <button
+                onClick={() => setShowEmailPreview(true)}
+                style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(200,129,58,.4)", background: "transparent", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", boxSizing: "border-box" }}
+              >
+                {t.gift.preview_button}
+              </button>
+              <button
                 onClick={handleGoToConfirm}
-                style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer" }}
+                style={{ marginTop: ".625rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer" }}
               >
                 {t.gift.send}
               </button>
               <p style={{ fontSize: "12px", color: "#9A8070", margin: ".625rem 0 .25rem", fontWeight: 300, textAlign: "center" }}>
-                <button
-                  onClick={() => setShowEmailPreview(true)}
-                  style={{ background: "none", border: "none", fontFamily: "inherit", fontSize: "inherit", color: "#9A8070", cursor: "pointer", padding: 0, textDecoration: "underline dotted", fontWeight: 300 }}
-                >
-                  {t.gift.preview_button}
-                </button>
-                {" · "}
                 {t.gift.no_recurring}
               </p>
               <p style={{ fontSize: ".72rem", color: "#9A8070", margin: 0, lineHeight: 1.5, fontWeight: 300, textAlign: "center" }}>
@@ -479,10 +478,10 @@ export default function GiftPage() {
               <div style={{ background: "#fff", borderRadius: 12, padding: "1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: ".5rem", marginBottom: "1rem" }}>
                   <p style={{ fontSize: ".78rem", color: "#7A5C44", margin: 0 }}>
-                    <strong>{t.gift.preview_to}:</strong> {form.recipientName || "—"} {form.recipientEmail ? `<${form.recipientEmail}>` : ""}
+                    <strong>{t.gift.preview_to}:</strong> {form.recipientName || ", "} {form.recipientEmail ? `<${form.recipientEmail}>` : ""}
                   </p>
                   <p style={{ fontSize: ".78rem", color: "#7A5C44", margin: 0 }}>
-                    <strong>{t.gift.preview_from}:</strong> {form.senderName || "—"}
+                    <strong>{t.gift.preview_from}:</strong> {form.senderName || ", "}
                   </p>
                   <p style={{ fontSize: ".78rem", color: "#7A5C44", margin: 0 }}>
                     <strong>{t.gift.preview_plan}:</strong> {planLabel} · {formatPrice(currency, planPriceKey)}

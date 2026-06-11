@@ -41,7 +41,7 @@ export async function GET(req: Request) {
     const petName = firstPet.name;
     const petNameHtml = escapeHtml(petName);
 
-    // Weekly question — same question for every user this week
+    // Weekly question, same question for every user this week
     const rawQuestion = getWeeklyQuestion(locale);
     const question = rawQuestion.replace("{petName}", petName);
     const questionHtml = escapeHtml(question);
@@ -67,11 +67,11 @@ export async function GET(req: Request) {
     const ctaLabel = isFrench ? `Répondre pour ${petNameHtml} →` : `Answer for ${petNameHtml} →`;
     const weekNote = isFrench
       ? (entriesCount > 0
-        ? `Tu as déjà ajouté ${entriesCount} moment${entriesCount > 1 ? "s" : ""} cette semaine — continue !`
-        : "Aucun moment ajouté cette semaine — chaque détail compte.")
+        ? `Tu as déjà ajouté ${entriesCount} moment${entriesCount > 1 ? "s" : ""} cette semaine, continue !`
+        : "Aucun moment ajouté cette semaine, chaque détail compte.")
       : (entriesCount > 0
-        ? `You've already added ${entriesCount} moment${entriesCount > 1 ? "s" : ""} this week — keep going!`
-        : "No moments added this week — every small detail matters.");
+        ? `You've already added ${entriesCount} moment${entriesCount > 1 ? "s" : ""} this week, keep going!`
+        : "No moments added this week, every small detail matters.");
     const unsubLabel = isFrench ? "Se désabonner des rappels hebdomadaires" : "Unsubscribe from weekly reminders";
 
     const html = `

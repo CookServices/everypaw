@@ -2,7 +2,7 @@ import Link from "next/link";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
-export const metadata = { title: "Page introuvable , Everypaw" };
+export const metadata = { title: "Page introuvable, Everypaw" };
 
 export default function NotFound() {
   return (

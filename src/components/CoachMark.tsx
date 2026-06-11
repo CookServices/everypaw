@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 interface Props {
-  /** Unique key stored in localStorage — set once, never shown again */
+  /** Unique key stored in localStorage, set once, never shown again */
   id: string;
   title: string;
   body: string;

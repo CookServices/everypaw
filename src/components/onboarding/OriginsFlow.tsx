@@ -128,7 +128,7 @@ export default function OriginsFlow({ pet, onComplete, onSkip }: Props) {
       const data = await res.json();
       if (!res.ok) {
         if (data.error === "origins_exists") {
-          // Already generated — navigate to journal
+          // Already generated, navigate to journal
           onComplete();
           return;
         }
@@ -185,7 +185,7 @@ export default function OriginsFlow({ pet, onComplete, onSkip }: Props) {
     );
   }
 
-  // ── Success phase — full-screen chapter display ──────────────────────────
+  // ── Success phase, full-screen chapter display ──────────────────────────
   if (phase === "success" && generatedStory) {
     return (
       <div style={{
@@ -281,7 +281,7 @@ export default function OriginsFlow({ pet, onComplete, onSkip }: Props) {
           </p>
         </div>
 
-        {/* Q1 — required */}
+        {/* Q1, required */}
         <div style={{ marginBottom: "1.25rem" }}>
           <label style={labelStyle}>
             {question1}
@@ -302,7 +302,7 @@ export default function OriginsFlow({ pet, onComplete, onSkip }: Props) {
           )}
         </div>
 
-        {/* Q2 — optional */}
+        {/* Q2, optional */}
         <div style={{ marginBottom: "1.25rem" }}>
           <label style={labelStyle}>{question2}</label>
           <textarea
@@ -315,7 +315,7 @@ export default function OriginsFlow({ pet, onComplete, onSkip }: Props) {
           />
         </div>
 
-        {/* Q3 — optional */}
+        {/* Q3, optional */}
         <div style={{ marginBottom: "1.25rem" }}>
           <label style={labelStyle}>{question3}</label>
           <textarea

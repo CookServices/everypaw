@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 // GET /api/gelato/status/[orderId]
-// Proxies Gelato order status — requires user to own a book_config with that orderId
+// Proxies Gelato order status, requires user to own a book_config with that orderId
 export async function GET(_req: Request, { params }: { params: { orderId: string } }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -13,7 +13,7 @@ export async function GET(_req: Request, { params }: { params: { orderId: string
     return NextResponse.json({ error: "Invalid orderId" }, { status: 400 });
   }
 
-  // Verify ownership — user must own a book_config with this Gelato order ID
+  // Verify ownership, user must own a book_config with this Gelato order ID
   const { data: config } = await supabase
     .from("book_configs")
     .select("id")

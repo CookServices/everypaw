@@ -16,9 +16,9 @@ export const dynamic = "force-dynamic";
 
 // Dimensions in points (1mm = 2.83465pt)
 const MM = 2.83465;
-const TRIM = 200 * MM;         // 566.93pt — 200mm trim area
-const BLEED_INT = 3 * MM;      // 8.504pt  — 3mm interior bleed each side
-const WRAP_BLEED = 23 * MM;    // 65.2pt   — 23mm wraparound bleed each side
+const TRIM = 200 * MM;         // 566.93pt, 200mm trim area
+const BLEED_INT = 3 * MM;      // 8.504pt, 3mm interior bleed each side
+const WRAP_BLEED = 23 * MM;    // 65.2pt, 23mm wraparound bleed each side
 
 // Interior page size (with bleed)
 const PW_INNER = TRIM + 2 * BLEED_INT; // 583.94pt = 206mm
@@ -325,7 +325,7 @@ function ChapterPage({
     );
   }
 
-  // classic — text then photos at bottom
+  // classic, text then photos at bottom
   const photoW = photoUrls.length === 1 ? CONTENT_W : (CONTENT_W - 8) / 2;
   const safePhotoUrls = photoUrls.filter(safeUrl);
   return (
@@ -529,7 +529,7 @@ function BookDocument({
 
 // ── GET handler ───────────────────────────────────────────────────────────────
 
-// Embed real TTF fonts (Gelato/PDF-X requires all fonts embedded — the base-14
+// Embed real TTF fonts (Gelato/PDF-X requires all fonts embedded, the base-14
 // standard fonts Helvetica/Times are referenced but NOT embedded by react-pdf).
 // Tinos is a metric-compatible Times clone; Lato replaces Helvetica for labels.
 let fontsRegistered = false;

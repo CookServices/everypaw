@@ -309,7 +309,7 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* ── Zone A — Header with pet chips ────────────────────────────── */}
+        {/* ── Zone A, Header with pet chips ────────────────────────────── */}
         <div style={{ marginBottom: "2rem" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".75rem", marginBottom: "1rem" }}>
             <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>
@@ -365,12 +365,12 @@ export default function DashboardPage() {
           {/* Subtitle: this month */}
           <p style={{ fontSize: ".8rem", color: "#9A8070", margin: ".625rem 0 0", fontWeight: 300 }}>
             {monthlyEntryCount > 0
-              ? `${monthlyEntryCount} ${isFR ? "moments ce mois" : "moments this month"} · ${isFR ? "prochain chapitre dans" : "next chapter in"} ${daysUntilChapter}j`
-              : (isFR ? "Aucun moment ajouté ce mois — commencez votre premier ✨" : "No moments this month — start your first one ✨")}
+              ? `${monthlyEntryCount} ${isFR ? "moment(s) ce mois" : "moments this month"} · ${isFR ? "prochain chapitre dans" : "next chapter in"} ${daysUntilChapter}j`
+              : (isFR ? "Aucun moment ajouté ce mois, commencez votre premier ✨" : "No moments this month, start your first one ✨")}
           </p>
         </div>
 
-        {/* ── Zone B — KPI cards ────────────────────────────────────────── */}
+        {/* ── Zone B, KPI cards ────────────────────────────────────────── */}
         <div style={{ marginBottom: "1.5rem" }}>
           <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
             {t.dashboard.month_title}
@@ -427,7 +427,7 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Book card — Premium only */}
+            {/* Book card, Premium only */}
             {isPremium && (
               <div style={{ background: "linear-gradient(135deg, rgba(200,129,58,.1) 0%, rgba(200,129,58,.05) 100%)", borderRadius: 16, padding: "1rem 1.1rem", border: "1px solid rgba(200,129,58,.2)", gridColumn: "1 / -1" }}>
                 <p style={{ fontSize: ".68rem", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: ".07em", margin: "0 0 .4rem", fontFamily: "sans-serif" }}>
@@ -439,7 +439,7 @@ export default function DashboardPage() {
                 <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: "0 0 .25rem", fontWeight: 300 }}>
                   {monthlyEntryCount > 0
                     ? `${monthlyEntryCount} ${monthlyEntryCount === 1 ? (isFR ? "entrée ajoutée" : "entry added") : (isFR ? "entrées ajoutées" : "entries added")}`
-                    : (isFR ? "Aucune entrée ce mois — ajoutez des moments ✨" : "No entries this month — add some moments ✨")}
+                    : (isFR ? "Aucune entrée ce mois, ajoutez des moments ✨" : "No entries this month, add some moments ✨")}
                 </p>
                 <p style={{ fontSize: ".72rem", color: bookCredits > 0 ? "#C8813A" : "#9A8070", margin: "0 0 .625rem", fontWeight: 300 }}>
                   {bookCredits > 0
@@ -499,7 +499,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── Zone B.5 — Book progress widget ─────────────────────────── */}
+        {/* ── Zone B.5, Book progress widget ─────────────────────────── */}
         {pets.length > 0 && resolvedPetId && (() => {
           const resolvedPet = pets.find(p => p.id === resolvedPetId);
           if (!resolvedPet) return null;
@@ -581,7 +581,7 @@ export default function DashboardPage() {
           );
         })()}
 
-        {/* Premium upsell — 2 cartes */}
+        {/* Premium upsell, 2 cartes */}
         {!isPremium && (
           <div style={{ marginBottom: "1.5rem" }}>
             <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
@@ -642,7 +642,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Empty state — no pets */}
+        {/* Empty state, no pets */}
         {pets.length === 0 && (
           <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "3rem 2rem", textAlign: "center", border: "1.5px dashed rgba(61,43,31,.15)", marginBottom: "2.5rem" }}>
             <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🐾</div>
@@ -654,7 +654,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── Zone C — Recent moments feed ─────────────────────────────── */}
+        {/* ── Zone C, Recent moments feed ─────────────────────────────── */}
         {entries.length > 0 && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>

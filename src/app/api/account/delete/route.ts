@@ -42,7 +42,7 @@ export async function POST() {
       // Also list sub-folders (pet-specific folders like {userId}/{petId}/)
       for (const file of files) {
         if (!file.id) {
-          // It's a folder prefix — list contents
+          // It's a folder prefix, list contents
           const { data: subFiles } = await adminSupabase.storage
             .from("pet-photos")
             .list(`${user.id}/${file.name}`, { limit: 1000 });
@@ -56,7 +56,7 @@ export async function POST() {
     console.log(`[account/delete] Storage cleaned for user: ${user.id}`);
   } catch (err) {
     console.warn("[account/delete] Storage cleanup warning:", err);
-    // Non-fatal — continue with DB deletion
+    // Non-fatal, continue with DB deletion
   }
 
   // 4. Delete DB records in cascade order

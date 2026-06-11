@@ -3,7 +3,7 @@ import { LEGAL_LAST_UPDATE } from "@/lib/legal";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
-export const metadata = { title: "Mentions légales , Everypaw" };
+export const metadata = { title: "Mentions légales, Everypaw" };
 
 export default function Mentions() {
   return (

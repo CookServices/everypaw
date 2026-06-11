@@ -71,7 +71,7 @@ export default async function MemorialPage({ params, searchParams }: { params: {
   const t = getTranslations(locale);
   const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
 
-  // Anon key is sufficient here — RLS allows public reads on pets/stories.
+  // Anon key is sufficient here, RLS allows public reads on pets/stories.
   // Never use the service role key in public server components.
   const supabase = anonClient();
 

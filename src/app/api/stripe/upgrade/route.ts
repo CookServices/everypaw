@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
   const { newPlan } = await req.json();
 
-  // Explicit allowlist — PRICE_MAP also has print_monthly but that plan is not offered (3-plan system)
+  // Explicit allowlist, PRICE_MAP also has print_monthly but that plan is not offered (3-plan system)
   const ALLOWED_PLANS = ["digital", "digital_annual", "print_annual"];
   if (!newPlan || !ALLOWED_PLANS.includes(newPlan) || !PRICE_MAP[newPlan]) {
     return NextResponse.json({ error: "Invalid plan or missing price ID" }, { status: 400 });
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     const periodEnd = subscription.current_period_end;
 
     // Schedule the plan change at end of current billing period via subscription schedules.
-    // This avoids any proration charge and any $0 invoice — the new price applies cleanly
+    // This avoids any proration charge and any $0 invoice, the new price applies cleanly
     // at the next renewal, as if the user had subscribed to the new plan from day one.
     const existingScheduleId = typeof subscription.schedule === "string"
       ? subscription.schedule
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     }
 
     // Phase 1: keep current plan until end of billing period (no change, no proration)
-    // Phase 2: switch to new plan — charged at full price on next renewal
+    // Phase 2: switch to new plan, charged at full price on next renewal
     await stripe.subscriptionSchedules.update(schedule.id, {
       end_behavior: "release",
       phases: [
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
       ],
     });
 
-    // DB plan is NOT updated here — the webhook customer.subscription.updated will fire
+    // DB plan is NOT updated here, the webhook customer.subscription.updated will fire
     // when phase 2 starts (new price kicks in) and reconcile the DB at that point.
     console.log(`[stripe/upgrade] user ${user.id} → plan: ${newPlan} (${subCurrency}) scheduled at ${new Date(periodEnd * 1000).toISOString()}`);
     return NextResponse.json({ success: true, scheduledAt: periodEnd });

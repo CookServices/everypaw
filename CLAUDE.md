@@ -1835,4 +1835,27 @@ curl "https://everypaw.app/api/share-card?story_id=<uuid>&format=story" --cookie
 
 **TODO email (note Julien 2026-06-11)** : améliorer les rendus visuels des emails transactionnels/crons (templates HTML inline actuels basiques).
 
-*Dernière mise à jour : 2026-06-11 (session 49 — Gelato + CRON_SECRET + RLS recursion + share-card + profiles.language)*
+### ✅ Session 50 — Fixes UI/UX + typographie em-dash (2026-06-11)
+
+**Invitation membre — auto-clear message** (`pets/[id]/page.tsx`) — le message "✓ Invitation envoyée !" (et les erreurs) restaient affichés indéfiniment. Ajout `setTimeout(() => setInviteResult(null), 10000)` après succès ET après erreur → disparaît au bout de 10s.
+
+**Bug visuel menu journal coupé** (`pets/[id]/page.tsx`) — la carte entry avait `overflow: hidden` (pour arrondir les photos) → coupait le dropdown "Modifier/Supprimer" qui déborde sous la carte. Fix : `overflow: hidden` retiré de la carte, déplacé sur la grille photos (`borderRadius: "0 0 16px 16px"` + `overflow: hidden`). Le header est toujours au-dessus des photos donc seul l'arrondi bas est nécessaire.
+
+**Dashboard pluriel** (`dashboard/page.tsx`) — "X moments ce mois" → "X moment(s) ce mois".
+
+**Gate livre incohérent** (`pets/[id]/order/page.tsx`) — message "minimum 7 chapitres requis" mais `tooFewContent` testait `rounded < 28` pages (≈1 page/chapitre) → 24 chapitres = 24 pages < 28 → bloqué à tort. Fix : `tooFewContent: selected.length < 7` (aligné sur le message). `estimatedPages` garde son floor 28 pour le pricing.
+
+**Compteur suggestion** (`DashboardNav.tsx`) — modal suggestion : ajout décompte `{n} / 2000` sous la textarea (rouge à 2000). Max serveur = 2000 chars (`api/suggestion/route.ts`, déjà en place).
+
+**Label brouillons** (`pets/[id]/books/page.tsx`) — "2/15" → "2/15 brouillons maximums" (EN "drafts maximum").
+
+**🔤 Typographie globale — espace avant virgule** — 63 occurrences ` ,` (espace-virgule) supprimées sur 13 fichiers (messages fr/en + pages/layouts/legal/api). Piège géré : `r*_author` utilisait ` , ` comme séparateur pour le split nom/rôle des témoignages → format devenu `"Camille D., Maman…, Lyon"` et `authorStr.split(" , ")` → `split(", ")` (page.tsx + fr/page.tsx). Noms intacts.
+
+**🔤 Typographie globale — em-dash (—)** — sur demande Julien : bannir le caractère `—` (tell IA).
+- **Texte humain (UI/emails/landing)** : 216 em-dashes remplacés par virgule sur 65 fichiers (regex `\s*—\s*` → `, `). messages fr/en = 0 em-dash restant.
+- **Texte généré par l'IA (histoires)** : (1) règle ajoutée aux 4 prompts (`NEVER use the em dash character (—)…`), (2) titres fixes origins → virgule, (3) **garantie béton** : helper `stripEmDash()` exporté depuis `src/lib/story.ts`, appliqué sur `title`+`story` à chaque save IA (monthly `generateAndSaveStory`, birthday `generateAndSaveBirthdayLetter`, origins `api/generate-origins`, user `api/generate`). Même si le modèle dérape, l'em-dash est strippé avant insertion DB.
+- Pattern : pour bannir un caractère du contenu IA, ne pas se fier au prompt seul — sanitize la sortie avant persistance.
+
+**Gift — bouton aperçu email** (`gift/page.tsx`) — "Aperçu de l'email cadeau →" → " →" retiré (fr+en), passé d'un lien dotted-underline à un **bouton pill outline** (transparent, `#C8813A`, border `rgba(200,129,58,.4)`, radius 100, full-width) placé **au-dessus** du bouton "Envoyer le cadeau". `no_recurring` reste sous le bouton Envoyer.
+
+*Dernière mise à jour : 2026-06-11 (session 50 — UI fixes + bannissement em-dash humain & IA)*

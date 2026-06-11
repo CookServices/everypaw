@@ -29,7 +29,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ configs: data ?? [] });
 }
 
-// POST /api/book-configs — create or update (pass id to update)
+// POST /api/book-configs, create or update (pass id to update)
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
   };
 
   if (id) {
-    // Update — verify ownership
+    // Update, verify ownership
     const { data, error } = await supabase
       .from("book_configs")
       .update(payload)

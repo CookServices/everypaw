@@ -266,7 +266,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       ? stories
       : stories.filter(s => new Date(s.period_start ?? s.created_at).getFullYear() === year);
     setSelectedStoryIds(visible.map(s => s.id));
-    // Reset cover photo — it may no longer exist in the new year's entries
+    // Reset cover photo, it may no longer exist in the new year's entries
     setCoverPhotoUrl(null);
   };
 
@@ -400,7 +400,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const photoEntries = filteredEntries.filter(e => e.photo_urls?.length > 0);
   const photoCount = Math.min(photoEntries.flatMap(e => e.photo_urls).length, 6);
 
-  // Estimated content page count (no dedication — filled at address step).
+  // Estimated content page count (no dedication, filled at address step).
   // Matches calcPageCount: content only, multiple of 4, min 28.
   // Total PDF pages = estimatedPages + 3 structural (cover, endpaper, back cover).
   const { estimatedPages, tooFewContent } = (() => {
@@ -416,7 +416,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     });
     const contentPages = Math.max(selected.length, 1) + (hasOrphanPhotos ? 1 : 0);
     const rounded = Math.ceil(contentPages / 4) * 4;
-    return { estimatedPages: Math.max(28, rounded), tooFewContent: rounded < 28 };
+    return { estimatedPages: Math.max(28, rounded), tooFewContent: selected.length < 7 };
   })();
 
   // Cover photo picker uses the same year filter as the rest of the preview
@@ -630,7 +630,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             {closeLabel} ✕
           </button>
         </div>
-        {/* iframe via srcdoc — evite les restrictions blob: URL / CSP */}
+        {/* iframe via srcdoc, evite les restrictions blob: URL / CSP */}
         <iframe
           srcDoc={previewHtml!}
           style={{ flex: 1, border: "none", background: "#F7F2EA" }}
@@ -687,7 +687,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
   const renderUpsellBanners = () => (
     <>
-      {/* No-credits upsell — Print plan */}
+      {/* No-credits upsell, Print plan */}
       {profile !== null && profile.book_credits === 0 && profile.plan === "print" && step === "preview" && (
         <div style={{
           background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
@@ -712,7 +712,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* Gate — Free plan */}
+      {/* Gate, Free plan */}
       {profile !== null && profile.plan === "free" && step === "preview" && (
         <div style={{
           background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
@@ -743,7 +743,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* No-credits upsell — non-Print plans */}
+      {/* No-credits upsell, non-Print plans */}
       {profile !== null && profile.book_credits === 0 && profile.plan !== "free" && profile.plan !== "print" && step === "preview" && (
         <div style={{
           background: isMemorial ? "rgba(247,242,234,.04)" : "#FFF3E0",
@@ -775,7 +775,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
               }}
             >
-              {t.order.no_credits_cta} — {extraBookPriceLabel} {locale === "fr" ? "+ livraison" : "+ shipping"}
+              {t.order.no_credits_cta}, {extraBookPriceLabel} {locale === "fr" ? "+ livraison" : "+ shipping"}
             </button>
             <a
               href="/dashboard/settings#plan"
@@ -811,7 +811,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         {t.order.preview_title}
       </h2>
 
-      {/* Year filter — shown as soon as there is data (Point 9) */}
+      {/* Year filter, shown as soon as there is data (Point 9) */}
       {availableYears.length >= 1 && (
         <div style={{ marginBottom: "1.25rem" }}>
           <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>
@@ -832,7 +832,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* Customization — theme + title */}
+      {/* Customization, theme + title */}
       {!isMemorial && (
         <div style={{ marginBottom: "1.25rem", background: cardBg, border: cardBorder, borderRadius: 14, padding: "1rem 1.25rem" }}>
           <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
@@ -921,7 +921,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* Cover photo picker (Point 10) — always visible */}
+      {/* Cover photo picker (Point 10), always visible */}
       <div style={{ marginBottom: "1.25rem" }}>
         <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
           {coverPhotoLabel}
@@ -1117,7 +1117,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                       {story.content.slice(0, 160).trim()}
                       {story.content.length > 160 ? "…" : ""}
                     </div>
-                    {/* Layout selector — stop click propagation so it doesn't toggle selection */}
+                    {/* Layout selector, stop click propagation so it doesn't toggle selection */}
                     <div
                       onClick={e => e.stopPropagation()}
                       style={{ borderTop: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.06)"}`, paddingTop: ".75rem" }}

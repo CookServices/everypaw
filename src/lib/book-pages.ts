@@ -17,7 +17,7 @@
  *   - minimum 28 content pages
  *   - total PDF pages = declared + 3 structural
  *
- * Pure helper — no server-only deps, so client components can import it.
+ * Pure helper, no server-only deps, so client components can import it.
  */
 export function calcPageCount(storiesCount: number, hasOrphanPhotos: boolean, hasDedication: boolean, hasTributes?: boolean): number {
   const storyPages = Math.max(storiesCount, 1);

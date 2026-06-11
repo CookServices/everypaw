@@ -52,7 +52,7 @@ export async function GET(req: Request) {
 
   const now = new Date();
 
-  // Time windows — [start, end) so a profile is targeted exactly once per palier
+  // Time windows, [start, end) so a profile is targeted exactly once per palier
   const ms = (h: number) => h * 3_600_000;
   const d1Start  = new Date(now.getTime() - ms(48)).toISOString();
   const d1End    = new Date(now.getTime() - ms(24)).toISOString();
@@ -109,7 +109,7 @@ export async function GET(req: Request) {
 
     try {
       if (alivePets.length === 0) {
-        // No pet yet — encourage creation
+        // No pet yet, encourage creation
         subject = re.d1_subject_no_pet;
         body = wrap(
           h1(re.d1_no_pet_title) +
@@ -146,7 +146,7 @@ export async function GET(req: Request) {
             `<p style="font-size:28px;margin:0 0 8px;">🐾</p>` +
             h1(re.d1_entry_title.replace("{remaining}", String(remaining))) +
             `<p style="font-size:16px;line-height:1.6;color:#7A5C44;margin:0 0 24px;">` +
-              `${escapeHtml(re.d1_entry_body)} — <strong>${escapeHtml(petNameSafe)}</strong>` +
+              `${escapeHtml(re.d1_entry_body)}, <strong>${escapeHtml(petNameSafe)}</strong>` +
             `</p>` +
             btn(`https://everypaw.app/dashboard/pets/${firstPet.id}`, re.d1_entry_cta),
             unsubscribeUrl, re.unsubscribe,
@@ -346,7 +346,7 @@ export async function GET(req: Request) {
       let body = "";
 
       if (!isPaid) {
-        // Free user — recap + soft upsell
+        // Free user, recap + soft upsell
         const { count: entryCount } = await supabase
           .from("entries")
           .select("*", { count: "exact", head: true })
@@ -378,7 +378,7 @@ export async function GET(req: Request) {
           unsubscribeUrl, re.unsubscribe,
         );
       } else {
-        // Paid user — pages estimate + upcoming chapter date
+        // Paid user, pages estimate + upcoming chapter date
         const pages = await estimateBookPages(firstPet.id);
 
         const nextFirst = new Date(now.getFullYear(), now.getMonth() + 1, 1);

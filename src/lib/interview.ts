@@ -12,7 +12,7 @@ function getISOWeek(date: Date): number {
 /**
  * Returns the question for the current ISO week.
  * Deterministic: same question for every user the same calendar week.
- * {petName} placeholder is left in — callers must replace it.
+ * {petName} placeholder is left in, callers must replace it.
  */
 export function getWeeklyQuestion(locale: string): string {
   const week = getISOWeek(new Date());

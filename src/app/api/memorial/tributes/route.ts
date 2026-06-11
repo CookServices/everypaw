@@ -7,7 +7,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// GET /api/memorial/tributes?petId=xxx[&status=pending] — owner only for pending/rejected
+// GET /api/memorial/tributes?petId=xxx[&status=pending], owner only for pending/rejected
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const petId = searchParams.get("petId");
@@ -53,7 +53,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ tributes: data ?? [] });
 }
 
-// POST /api/memorial/tributes — public submission
+// POST /api/memorial/tributes, public submission
 export async function POST(req: Request) {
   // Rate limit: 3 per hour per IP
   const ip = getClientIp(req);
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "insert_failed" }, { status: 500 });
   }
 
-  // Notify owner — max 1 email per 24h per pet
+  // Notify owner, max 1 email per 24h per pet
   try {
     const eventKey = `memorial_tribute_notif_${petId}`;
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

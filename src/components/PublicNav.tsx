@@ -7,7 +7,7 @@ import { useLocale } from "@/hooks/useLocale";
 interface PublicNavProps {
   /** "full" shows logo + auth links; "simple" shows logo only */
   variant?: "full" | "simple";
-  /** Fixed position (floating over content) — used on the landing page */
+  /** Fixed position (floating over content), used on the landing page */
   fixed?: boolean;
 }
 

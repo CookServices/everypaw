@@ -641,14 +641,14 @@ export default function SettingsPage() {
                     disabled={!!checkoutLoading}
                     style={{ ...btnPrimary, opacity: checkoutLoading ? .7 : 1 }}
                   >
-                    {checkoutLoading === "digital" ? "…" : (isFR ? `Premium Digital — ${formatPrice(currency, "digital")}/mois` : `Premium Digital — ${formatPrice(currency, "digital")}/mo`)}
+                    {checkoutLoading === "digital" ? "…" : (isFR ? `Premium Digital, ${formatPrice(currency, "digital")}/mois` : `Premium Digital, ${formatPrice(currency, "digital")}/mo`)}
                   </button>
                   <button
                     onClick={() => handleCheckout("print_annual")}
                     disabled={!!checkoutLoading}
                     style={{ ...btnPrimary, background: "#3D2B1F", opacity: checkoutLoading ? .7 : 1 }}
                   >
-                    {checkoutLoading === "print_annual" ? "…" : (isFR ? `Premium Print — ${formatPrice(currency, "printAnnual")}/an` : `Premium Print — ${formatPrice(currency, "printAnnual")}/yr`)}
+                    {checkoutLoading === "print_annual" ? "…" : (isFR ? `Premium Print, ${formatPrice(currency, "printAnnual")}/an` : `Premium Print, ${formatPrice(currency, "printAnnual")}/yr`)}
                   </button>
                   <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".25rem 0 0", lineHeight: 1.5, fontWeight: 300, textAlign: "center" as const }}>
                     {isFR ? (<>En continuant, vous acceptez les <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>CGV</a>.</>) : (<>By continuing, you agree to our <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Terms of Service</a>.</>)}
@@ -671,7 +671,7 @@ export default function SettingsPage() {
                       style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, background: "rgba(61,43,31,.04)", opacity: (upgradeLoading || upgradePreviewLoading) ? .7 : 1 }}
                     >
                       {upgradePreviewLoading === "print_annual" ? (isFR ? "Calcul…" : "Calculating…") : upgradeLoading === "print_annual" ? (isFR ? "Mise à jour…" : "Updating…") : (
-                        isFR ? `Premium Print — ${formatPrice(currency, "printAnnual")}/an` : `Premium Print — ${formatPrice(currency, "printAnnual")}/yr`
+                        isFR ? `Premium Print, ${formatPrice(currency, "printAnnual")}/an` : `Premium Print, ${formatPrice(currency, "printAnnual")}/yr`
                       )}
                     </button>
                   )}
@@ -684,7 +684,7 @@ export default function SettingsPage() {
                       style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, opacity: (upgradeLoading || upgradePreviewLoading) ? .7 : 1 }}
                     >
                       {upgradePreviewLoading === "digital" ? (isFR ? "Calcul…" : "Calculating…") : upgradeLoading === "digital" ? (isFR ? "Mise à jour…" : "Updating…") : (
-                        isFR ? `Premium Digital — ${formatPrice(currency, "digital")}/mois` : `Premium Digital — ${formatPrice(currency, "digital")}/mo`
+                        isFR ? `Premium Digital, ${formatPrice(currency, "digital")}/mois` : `Premium Digital, ${formatPrice(currency, "digital")}/mo`
                       )}
                     </button>
                   )}
@@ -713,8 +713,8 @@ export default function SettingsPage() {
                       </p>
                       <p style={{ fontSize: ".8rem", color: "#6B7B5E", margin: 0, fontWeight: 300 }}>
                         {isFR
-                          ? `Votre plan ${giftResult.plan === "print_annual" ? "Premium Print" : "Premium Digital"} s'activera le ${giftResult.activatesAt ? formatDate(giftResult.activatesAt) : "—"}.`
-                          : `Your ${giftResult.plan === "print_annual" ? "Premium Print" : "Premium Digital"} plan activates on ${giftResult.activatesAt ? formatDate(giftResult.activatesAt) : "—"}.`}
+                          ? `Votre plan ${giftResult.plan === "print_annual" ? "Premium Print" : "Premium Digital"} s'activera le ${giftResult.activatesAt ? formatDate(giftResult.activatesAt) : ", "}.`
+                          : `Your ${giftResult.plan === "print_annual" ? "Premium Print" : "Premium Digital"} plan activates on ${giftResult.activatesAt ? formatDate(giftResult.activatesAt) : ", "}.`}
                       </p>
                     </div>
                   </div>
@@ -904,7 +904,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* ── RGPD — data export ───────────────────────────────────────────── */}
+        {/* ── RGPD, data export ───────────────────────────────────────────── */}
         {!loading && (
           <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>
             <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".5rem" }}>
@@ -938,7 +938,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* ── Danger zone — delete account ─────────────────────────────────── */}
+        {/* ── Danger zone, delete account ─────────────────────────────────── */}
         {!loading && (
           <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(163,45,45,.15)", marginBottom: "2rem" }}>
             <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#A32D2D", marginBottom: ".5rem" }}>

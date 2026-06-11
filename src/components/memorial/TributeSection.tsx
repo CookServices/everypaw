@@ -28,7 +28,7 @@ const STRINGS = {
     message_placeholder: "Share a memory or a few words…",
     submit: "Send",
     submitting: "Sending…",
-    thank_you: "Thank you — your tribute has been submitted for review.",
+    thank_you: "Thank you, your tribute has been submitted for review.",
     name_error: "Please enter your name (max 100 characters).",
     message_error: "Please enter a message (max 1000 characters).",
     chars_remaining: "{n} characters remaining",
@@ -44,7 +44,7 @@ const STRINGS = {
     message_placeholder: "Partagez un souvenir ou quelques mots…",
     submit: "Envoyer",
     submitting: "Envoi…",
-    thank_you: "Merci — votre hommage a été soumis pour validation.",
+    thank_you: "Merci, votre hommage a été soumis pour validation.",
     name_error: "Veuillez indiquer votre prénom (100 caractères max).",
     message_error: "Veuillez saisir un message (1000 caractères max).",
     chars_remaining: "{n} caractères restants",
@@ -150,7 +150,7 @@ export default function TributeSection({ petId, petName: _petName, initialTribut
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: ".875rem" }}>
-            {/* Honeypot — must remain invisible */}
+            {/* Honeypot, must remain invisible */}
             <input
               type="text"
               name="website"

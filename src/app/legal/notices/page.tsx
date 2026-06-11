@@ -22,7 +22,7 @@ export default function Notices() {
         {[
           ["Publisher", "Everypaw\nEmail: hello@everypaw.app\nWebsite: www.everypaw.app"],
           ["Hosting", "This site is hosted by Vercel Inc., 340 Pine Street, Suite 701, San Francisco, CA 94104, United States.\nData is stored via Supabase, whose servers are located in the European Union (eu-west-1 region)."],
-          ["Intellectual property", "All content on this site (text, graphics, logos, icons, images) is the exclusive property of Everypaw and is protected by applicable intellectual property laws. Any reproduction, representation, modification, publication, or adaptation — in whole or in part — is prohibited without prior written consent."],
+          ["Intellectual property", "All content on this site (text, graphics, logos, icons, images) is the exclusive property of Everypaw and is protected by applicable intellectual property laws. Any reproduction, representation, modification, publication, or adaptation, in whole or in part, is prohibited without prior written consent."],
           ["User content", "Journal entries, photos, and stories created by users remain their property. By publishing them on Everypaw, you grant Everypaw a limited license to store and use them solely to provide the service (AI story generation, book printing)."],
           ["Limitation of liability", "Everypaw takes all reasonable measures to ensure service availability and security, but cannot be held liable for service interruptions, data loss, or indirect damages resulting from use of the site."],
           ["Applicable law", "These legal notices are governed by French law. In the event of a dispute, French courts shall have exclusive jurisdiction."],

@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
-  // Plan check — only digital/print can invite members
+  // Plan check, only digital/print can invite members
   const allowed = await canInviteMembers(user.id);
   if (!allowed) {
     return NextResponse.json({ error: "upgrade_required" }, { status: 403 });

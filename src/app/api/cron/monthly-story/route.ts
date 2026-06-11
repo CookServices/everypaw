@@ -54,7 +54,7 @@ export async function GET(req: Request) {
   let skipped = 0;
   let errors = 0;
 
-  // Sequential loop with max 2 concurrent Anthropic calls — enforced by awaiting each
+  // Sequential loop with max 2 concurrent Anthropic calls, enforced by awaiting each
   // pet before the next. For true p-limit concurrency increase this loop can be batched,
   // but sequential is safe and avoids adding a dependency.
   for (const pet of candidates ?? []) {
@@ -120,14 +120,14 @@ export async function GET(req: Request) {
       );
 
       if (!result) {
-        // Unique constraint race — already inserted by a concurrent run
+        // Unique constraint race, already inserted by a concurrent run
         skipped++;
         continue;
       }
 
       generated++;
 
-      // Build email — individual per pet, with chapter title + 2-sentence extract
+      // Build email, individual per pet, with chapter title + 2-sentence extract
       const petNameSafe = escapeHtml(pet.name);
       const titleSafe = escapeHtml(result.title);
       const firstParagraph = result.story.split(/\n\n/)[0] ?? result.story;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { buildOriginsPrompt } from "@/lib/story";
+import { buildOriginsPrompt, stripEmDash } from "@/lib/story";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -76,8 +76,8 @@ export async function POST(req: Request) {
   const prompt = buildOriginsPrompt(pet, answer1.trim(), answer2.trim(), answer3.trim(), lang);
 
   const fixedTitle = lang === "French"
-    ? "Chapitre 1 — Comment tout a commencé"
-    : "Chapter 1 — How it all began";
+    ? "Chapitre 1, Comment tout a commencé"
+    : "Chapter 1, How it all began";
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: "Generation unavailable" }, { status: 503 });
@@ -110,7 +110,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid response format" }, { status: 500 });
     }
 
-    const { story } = JSON.parse(jsonMatch[0]) as { title: string; story: string };
+    const parsed = JSON.parse(jsonMatch[0]) as { title: string; story: string };
+    const story = stripEmDash(parsed.story);
 
     const { data: saved, error: insertError } = await supabase
       .from("stories")

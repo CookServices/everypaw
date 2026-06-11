@@ -1,5 +1,5 @@
 /**
- * In-memory rate limiter — NOT reliable on Vercel serverless.
+ * In-memory rate limiter, NOT reliable on Vercel serverless.
  * State is lost on every cold start and is not shared across concurrent instances.
  * This provides a light deterrent only; it must NOT be relied upon for security-sensitive limits.
  * For enforceable limits use DB-based counting (see /api/generate) or Upstash Redis.

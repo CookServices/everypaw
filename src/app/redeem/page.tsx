@@ -67,7 +67,7 @@ export default function RedeemPage() {
             {t.redeem.subtitle}
           </p>
 
-          {/* Not logged in — show auth prompt */}
+          {/* Not logged in, show auth prompt */}
           {authChecked && !isLoggedIn ? (
             <div>
               <div style={{ background: "rgba(200,129,58,.07)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
@@ -93,7 +93,7 @@ export default function RedeemPage() {
               </div>
             </div>
           ) : authChecked ? (
-            /* Logged in — show redeem form */
+            /* Logged in, show redeem form */
             <>
               <input
                 type="text"

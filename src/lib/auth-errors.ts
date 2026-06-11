@@ -1,7 +1,7 @@
 /**
  * Maps Supabase Auth error messages to user-friendly localized strings.
  * Centralised here so signup, login, and reset-password forms all share
- * the same translations — add new mappings once, they apply everywhere.
+ * the same translations, add new mappings once, they apply everywhere.
  */
 
 /** Errors returned by supabase.auth.signUp() */

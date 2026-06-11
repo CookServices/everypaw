@@ -1,6 +1,6 @@
 /**
  * Generates a 1080×1080px social-share card using the Canvas API.
- * No server, no external deps — purely client-side.
+ * No server, no external deps, purely client-side.
  */
 
 interface ShareCardParams {
@@ -48,7 +48,7 @@ function wrapText(
     const test = line ? `${line} ${word}` : word;
     if (ctx.measureText(test).width > maxWidth && line) {
       if (linesDrawn === maxLines - 1) {
-        // Last allowed line — truncate with ellipsis
+        // Last allowed line, truncate with ellipsis
         let truncated = line;
         while (ctx.measureText(truncated + "…").width > maxWidth && truncated.length > 0) {
           truncated = truncated.slice(0, -1);
@@ -187,7 +187,7 @@ export async function generateShareCard(params: ShareCardParams): Promise<Blob> 
       ctx.restore();
       photoLoaded = true;
     } catch {
-      // CORS or load error — fall through to emoji
+      // CORS or load error, fall through to emoji
     }
   }
 

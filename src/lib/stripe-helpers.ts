@@ -1,5 +1,5 @@
 /**
- * Shared Stripe helpers — single source of truth for PRICE_MAP and subscription utilities.
+ * Shared Stripe helpers, single source of truth for PRICE_MAP and subscription utilities.
  * Import from here in all /api/stripe/* routes to avoid drift between copies.
  */
 

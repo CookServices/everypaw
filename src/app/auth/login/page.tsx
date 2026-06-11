@@ -18,7 +18,7 @@ export default function LoginPage() {
     const p = new URLSearchParams(window.location.search);
     const redirect = p.get("redirect");
     const code = p.get("code");
-    // Only allow relative paths — prevent open redirect to external sites
+    // Only allow relative paths, prevent open redirect to external sites
     if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
       return code ? `${redirect}?code=${code}` : redirect;
     }

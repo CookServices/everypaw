@@ -22,7 +22,7 @@ export const MILESTONE_TYPES = [
   { type: "first_friend", title: "First dog friend 🐕",       titleFR: "Premier ami à 4 pattes 🐕",    icon: "🐕", keywords: ["friend", "ami", "play", "joue", "copain", "buddy", "met a dog", "other dog"] },
   { type: "first_swim",   title: "First swim 🏊",             titleFR: "Premier bain de mer/piscine 🏊", icon: "🏊", keywords: ["swim", "nage", "pool", "piscine", "lake", "lac", "mer", "sea", "ocean"] },
   { type: "birthday",     title: "Birthday 🎂",               titleFR: "Anniversaire 🎂",               icon: "🎂", keywords: ["birthday", "anniversaire", "born", "naissance", "1 year", "1 an", "2 year", "2 ans"] },
-  // Special memorial milestone — set when a pet is marked as deceased
+  // Special memorial milestone, set when a pet is marked as deceased
   { type: "in_memory",    title: "In memory 🕊️",              titleFR: "À la mémoire 🕊️",              icon: "🕊️", keywords: [] },
 ];
 

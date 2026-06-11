@@ -121,7 +121,7 @@ export default function ExitIntentPopup({ isFR = false }: Props) {
             <p style={{ fontSize: ".875rem", color: "#7A5C44", lineHeight: 1.6, margin: 0 }}>
               {isFR
                 ? "Vous recevrez bientôt un exemple de livre Everypaw dans votre boîte mail."
-                : "Check your inbox — a sample Everypaw book is on its way."}
+                : "Check your inbox, a sample Everypaw book is on its way."}
             </p>
           </div>
         ) : (
@@ -138,8 +138,8 @@ export default function ExitIntentPopup({ isFR = false }: Props) {
               </h2>
               <p style={{ fontSize: ".875rem", color: "#7A5C44", lineHeight: 1.6, margin: 0 }}>
                 {isFR
-                  ? "Avant de partir — voyez à quoi ressemble un livre imprimé à partir d'un journal IA."
-                  : "Before you go — see what a printed book from an AI journal looks like."}
+                  ? "Avant de partir, voyez à quoi ressemble un livre imprimé à partir d'un journal IA."
+                  : "Before you go, see what a printed book from an AI journal looks like."}
               </p>
             </div>
 

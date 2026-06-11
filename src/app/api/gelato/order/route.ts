@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // Validate coverPhotoUrl protocol — only https URLs accepted
+  // Validate coverPhotoUrl protocol, only https URLs accepted
   if (coverPhotoUrl !== undefined && coverPhotoUrl !== null && coverPhotoUrl !== "") {
     try {
       const parsed = new URL(coverPhotoUrl);
@@ -53,14 +53,14 @@ export async function POST(req: Request) {
     }
   }
 
-  // Validate yearFilter — must be an integer in [2000, 2100]
+  // Validate yearFilter, must be an integer in [2000, 2100]
   if (yearFilter !== undefined && yearFilter !== null) {
     if (!Number.isInteger(yearFilter) || yearFilter < 2000 || yearFilter > 2100) {
       return NextResponse.json({ error: "Invalid yearFilter" }, { status: 400 });
     }
   }
 
-  // Validate dedicationText — max 500 chars
+  // Validate dedicationText, max 500 chars
   const MAX_DEDICATION = 500;
   if (dedicationText !== undefined && dedicationText !== null) {
     if (typeof dedicationText !== "string" || dedicationText.length > MAX_DEDICATION) {
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // Validate shippingAddress fields — presence + max length
+  // Validate shippingAddress fields, presence + max length
   const ADDR_MAX = 100;
   if (!shippingAddress ||
       typeof shippingAddress.firstName !== "string" || shippingAddress.firstName.length > ADDR_MAX ||
@@ -268,7 +268,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Order failed" }, { status: 400 });
     }
 
-    // Update selected stories as ordered — always filter by user_id to prevent IDOR
+    // Update selected stories as ordered, always filter by user_id to prevent IDOR
     if (Array.isArray(selectedStoryIds) && selectedStoryIds.length > 0) {
       await supabase.from("stories")
         .update({ status: "ordered" })

@@ -70,7 +70,7 @@ export function canAddEntry(plan: Plan, totalEntries: number): string | null {
  * Returns null if allowed, or an error string if blocked.
  * Pass current story count for the user (across all pets).
  * IMPORTANT: callers must exclude story_type IN ('origins', 'birthday') from the
- * count — those special stories are always free and must not burn the quota.
+ * count, those special stories are always free and must not burn the quota.
  */
 export function canGenerateStory(plan: Plan, totalStories: number): string | null {
   if (plan === "free" && totalStories >= 1) return "story_limit";
@@ -106,10 +106,10 @@ export function priceIdToPlan(priceId: string): Plan | null {
     // USD variants
     [process.env.STRIPE_PRICE_ID_DIGITAL_USD,         "digital"],
     [process.env.STRIPE_PRICE_ID_PRINT_USD,           "print"],
-    // Annual — digital
+    // Annual, digital
     [process.env.STRIPE_PRICE_ID_DIGITAL_ANNUAL_EUR,  "digital"],
     [process.env.STRIPE_PRICE_ID_DIGITAL_ANNUAL_USD,  "digital"],
-    // Annual — print
+    // Annual, print
     [process.env.STRIPE_PRICE_PRINT_ANNUAL,           "print"],
     [process.env.STRIPE_PRICE_PRINT_ANNUAL_EUR,       "print"],
     [process.env.STRIPE_PRICE_PRINT_ANNUAL_USD,       "print"],

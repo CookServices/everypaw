@@ -1,14 +1,19 @@
 import { escapeXml } from "@/lib/html";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+/** Strip the em dash (—) from AI-generated text. The model is told never to use it; this guarantees it. */
+export function stripEmDash(s: string): string {
+  return s.replace(/\s*—\s*/g, ", ");
+}
+
 export type StoryStyle = "poetic" | "humorous" | "classic" | "epic" | "tender";
 
 const STYLE_DESCRIPTIONS: Record<StoryStyle, string> = {
   poetic:   "Write in a poetic, lyrical style with rich metaphors and emotional imagery. Use beautiful language.",
-  humorous: "Write with humor and wit — light, playful, full of amusing observations and gentle self-deprecating comedy.",
-  classic:  "Write in a classic, clean narrative style — sober, well-structured, timeless.",
+  humorous: "Write with humor and wit, light, playful, full of amusing observations and gentle self-deprecating comedy.",
+  classic:  "Write in a classic, clean narrative style, sober, well-structured, timeless.",
   epic:     "Write in an epic, adventurous, dramatic style. Make everyday moments feel heroic.",
-  tender:   "Write like a love letter — deeply warm, intimate, soft, full of tenderness and affection.",
+  tender:   "Write like a love letter, deeply warm, intimate, soft, full of tenderness and affection.",
 };
 
 interface StoryPet {
@@ -51,19 +56,20 @@ ${escapeXml(entriesText)}
 
 Write a beautiful narrative story of 400-500 words, structured in exactly 3 paragraphs. Separate each paragraph with a blank line. Do NOT include any section labels or headers (no "INTRO", "DÉVELOPPEMENT", "CHUTE", or similar):
 
-Paragraph 1: Set the mood of the period — evoke atmosphere, season, daily rhythm. Do NOT list events; paint a feeling.
+Paragraph 1: Set the mood of the period, evoke atmosphere, season, daily rhythm. Do NOT list events; paint a feeling.
 
-Paragraphs 2-3: Bring to life the key moments from the journal entries. Use sensory details (smells, textures, sounds). Weave entries into a flowing narrative — never list them. Show emotion through action and sensation.
+Paragraphs 2-3: Bring to life the key moments from the journal entries. Use sensory details (smells, textures, sounds). Weave entries into a flowing narrative, never list them. Show emotion through action and sensation.
 
-Paragraph 4: End with a tender, introspective note from the pet's point of view — a small reflection or realization. Close with a single memorable, resonant sentence.
+Paragraph 4: End with a tender, introspective note from the pet's point of view, a small reflection or realization. Close with a single memorable, resonant sentence.
 
 Style rules (follow strictly):
 - First-person voice: the pet is the narrator throughout
 - Use the pet's name (from pet_details) at least 3 times naturally in the text
 - Reference the species (from pet_details) or breed at least once
-- Do NOT mechanically list journal entries — transform them into narrative
-- Tone: warm, intimate, slightly poetic — like a letter to the reader
+- Do NOT mechanically list journal entries, transform them into narrative
+- Tone: warm, intimate, slightly poetic, like a letter to the reader
 - Target exactly 400-500 words (count carefully)
+- NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
 
 Also generate a short evocative title (5 words max).
 
@@ -98,15 +104,15 @@ export function buildOriginsPrompt(
   const a2 = answer2.trim() ? escapeXml(answer2) : null;
   const a3 = answer3.trim() ? escapeXml(answer3) : null;
 
-  const titleEN = "Chapter 1 — How it all began";
-  const titleFR = "Chapitre 1 — Comment tout a commencé";
+  const titleEN = "Chapter 1, How it all began";
+  const titleFR = "Chapitre 1, Comment tout a commencé";
   const fixedTitle = lang === "French" ? titleFR : titleEN;
 
   return `You are writing a warm, emotional, first-person narrative story for a pet journal called Everypaw.
 
 IMPORTANT: Write this story entirely in ${lang}. Do not use any other language.
 
-This is a special ORIGINS story — the very first chapter of ${petName}'s life with their family.
+This is a special ORIGINS story, the very first chapter of ${petName}'s life with their family.
 The title is fixed: "${fixedTitle}"
 
 <pet_details>
@@ -121,16 +127,17 @@ The title is fixed: "${fixedTitle}"
 
 Write a beautiful narrative retrospective story of 350-450 words. The pet is the narrator (first-person voice).
 Structure:
-- Opening paragraph: how I arrived, the first moments with my family — paint the scene with sensory details
+- Opening paragraph: how I arrived, the first moments with my family, paint the scene with sensory details
 - Middle paragraphs (1-2): early memories, first mischief or milestone, what makes me unique
-- Closing paragraph: a tender, warm note — what home means to me now. End with one resonant sentence.
+- Closing paragraph: a tender, warm note, what home means to me now. End with one resonant sentence.
 
 Style rules:
 - First-person voice throughout (I, me, my)
 - Use ${petName} as a self-reference at least once naturally
-- Warm, intimate, slightly poetic — like a letter to the reader
-- Do NOT list facts — transform them into narrative
+- Warm, intimate, slightly poetic, like a letter to the reader
+- Do NOT list facts, transform them into narrative
 - Target 350-450 words
+- NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
 
 You MUST respond with valid JSON only, no other text:
 {"title": "${fixedTitle}", "story": "..."}`;
@@ -161,7 +168,7 @@ export function buildBirthdayLetterPrompt(
 
 IMPORTANT: Write this letter entirely in ${lang}. Do not use any other language.
 
-The pet is writing to their human family on their birthday${ageStr ? ` — turning ${ageStr}` : ""}.
+The pet is writing to their human family on their birthday${ageStr ? `, turning ${ageStr}` : ""}.
 
 <pet_details>
   <name>${petName}</name>
@@ -178,6 +185,7 @@ ${entries.length > 0
     : "- Write warmly based on the pet's species and name"}
 - Tone: tender, slightly playful, full of love
 - End with a warm closing sentence addressed to the human family
+- NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
 
 The title is fixed: "${fixedTitle}"
 
@@ -222,7 +230,9 @@ export async function generateAndSaveBirthdayLetter(
     throw new Error(`No JSON in Anthropic birthday response: ${text.slice(0, 200)}`);
   }
 
-  const { title, story } = JSON.parse(jsonMatch[0]) as { title: string; story: string };
+  const parsed = JSON.parse(jsonMatch[0]) as { title: string; story: string };
+  const title = stripEmDash(parsed.title);
+  const story = stripEmDash(parsed.story);
 
   const { data: saved, error: insertError } = await supabase
     .from("stories")
@@ -287,7 +297,9 @@ export async function generateAndSaveStory(
     throw new Error(`No JSON in Anthropic response: ${text.slice(0, 200)}`);
   }
 
-  const { title, story } = JSON.parse(jsonMatch[0]) as { title: string; story: string };
+  const parsed = JSON.parse(jsonMatch[0]) as { title: string; story: string };
+  const title = stripEmDash(parsed.title);
+  const story = stripEmDash(parsed.story);
 
   const today = new Date().toISOString().split("T")[0];
   const firstEntry = entries[0]?.entry_date;
@@ -313,7 +325,7 @@ export async function generateAndSaveStory(
     .single();
 
   if (insertError) {
-    // 23505 = unique_violation — race condition on (pet_id, month_key), skip silently
+    // 23505 = unique_violation, race condition on (pet_id, month_key), skip silently
     if (insertError.code === "23505") return null;
     throw new Error(`Supabase INSERT error: ${insertError.message}`);
   }

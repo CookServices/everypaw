@@ -1,10 +1,10 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
-const TTL_MS = 48 * 60 * 60 * 1000; // 48h — Gelato may retry delivery
+const TTL_MS = 48 * 60 * 60 * 1000; // 48h, Gelato may retry delivery
 
 function getSecret(): string {
   if (!process.env.PDF_ACCESS_SECRET) {
-    console.warn("[pdf-token] PDF_ACCESS_SECRET not set — falling back to SUPABASE_SERVICE_ROLE_KEY. Add PDF_ACCESS_SECRET to env vars.");
+    console.warn("[pdf-token] PDF_ACCESS_SECRET not set, falling back to SUPABASE_SERVICE_ROLE_KEY. Add PDF_ACCESS_SECRET to env vars.");
   }
   const s = process.env.PDF_ACCESS_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!s) throw new Error("PDF_ACCESS_SECRET not configured");

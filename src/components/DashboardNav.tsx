@@ -88,6 +88,9 @@ function SuggestionModal({ isFR, onClose }: { isFR: boolean; onClose: () => void
                 fontFamily: "inherit", outline: "none",
               }}
             />
+            <p style={{ fontSize: ".75rem", color: message.length >= 2000 ? "#c0392b" : "#9A8070", margin: ".375rem 0 0", textAlign: "right" }}>
+              {message.length} / 2000
+            </p>
             {status === "error" && (
               <p style={{ color: "#c0392b", fontSize: ".8rem", margin: ".5rem 0 0" }}>
                 {isFR ? "Erreur lors de l'envoi. Réessaie." : "Something went wrong. Please try again."}
@@ -599,7 +602,7 @@ export default function DashboardNav() {
         ))}
       </nav>
 
-      {/* CTA — Suggestion */}
+      {/* CTA, Suggestion */}
       <div style={{ padding: "0 .75rem .875rem" }}>
         <button
           onClick={() => setSuggestionOpen(true)}

@@ -5,8 +5,8 @@ import { useLocale } from "@/hooks/useLocale";
 
 interface PublicFooterProps {
   /**
-   * "full"    — logo + copyright text + legal links (landing)
-   * "minimal" — just "© 2025 Everypaw" (legal, contact, gift…)
+   * "full", logo + copyright text + legal links (landing)
+   * "minimal", just "© 2025 Everypaw" (legal, contact, gift…)
    */
   variant?: "full" | "minimal";
 }

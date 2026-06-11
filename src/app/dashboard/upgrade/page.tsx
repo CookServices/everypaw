@@ -55,7 +55,7 @@ export default function UpgradePage() {
 
   const t = {
     title:       isFR ? "Choisissez votre formule" : "Choose your plan",
-    subtitle:    isFR ? "Commencez gratuitement — évoluez quand vous êtes prêt." : "Start free — upgrade when you're ready.",
+    subtitle:    isFR ? "Commencez gratuitement, évoluez quand vous êtes prêt." : "Start free, upgrade when you're ready.",
     cta_loading: isFR ? "Redirection…" : "Redirecting…",
     cancel:      isFR ? "Sans engagement pour Digital · Engagement annuel pour Print" : "Cancel anytime for Digital · Annual commitment for Print",
 
@@ -195,7 +195,7 @@ export default function UpgradePage() {
           <p style={{ fontSize: "1rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.7 }}>{t.subtitle}</p>
         </div>
 
-        {/* Plan grid — 3 plans fixes */}
+        {/* Plan grid, 3 plans fixes */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.25rem", marginBottom: "2.5rem" }}>
 
           {planCard(
@@ -236,7 +236,7 @@ export default function UpgradePage() {
 
         </div>
 
-        {/* Book à la carte — visible only for digital/print subscribers */}
+        {/* Book à la carte, visible only for digital/print subscribers */}
         {(userPlan === "digital" || userPlan === "print") && (
           <div style={{ background: "#FDFAF5", borderRadius: 20, border: "1px solid rgba(61,43,31,.08)", padding: "1.5rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1.25rem" }}>
             <div>

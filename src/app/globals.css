@@ -209,7 +209,7 @@ img {
   }
 }
 
-/* ── Public nav — hide secondary links on mobile ────────────────────────── */
+/* ── Public nav, hide secondary links on mobile ────────────────────────── */
 @media (max-width: 640px) {
   .ep-nav-secondary {
     display: none !important;
@@ -303,7 +303,7 @@ img {
   font-family: 'DM Sans', sans-serif;
 }
 
-/* ── Toast — clear bottom nav on mobile ─────────────────────────────────── */
+/* ── Toast, clear bottom nav on mobile ─────────────────────────────────── */
 .ep-toast {
   position: fixed;
   bottom: 2rem;

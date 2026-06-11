@@ -12,7 +12,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://everypaw.app";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
 export async function POST(req: Request) {
-  // Verify Supabase hook HMAC signature — fail-closed (no secret = reject all)
+  // Verify Supabase hook HMAC signature, fail-closed (no secret = reject all)
   const secret = (process.env.SUPABASE_HOOK_SECRET ?? "").trim();
   if (!secret) {
     console.error("[auth-hook] SUPABASE_HOOK_SECRET is not configured");
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   // Supabase Auth Hooks follow the Standard Webhooks spec:
   //   - Headers: webhook-id, webhook-timestamp, webhook-signature
   //   - Signed content: "<webhook-id>.<webhook-timestamp>.<raw-body>"
-  //   - Secret format: "v1,whsec_<base64>" — strip prefix, then base64-decode to get HMAC key
+  //   - Secret format: "v1,whsec_<base64>", strip prefix, then base64-decode to get HMAC key
   //   - Algorithm: HMAC-SHA256, output base64-encoded, prefixed with "v1,"
   //   - Ref: https://supabase.com/docs/guides/auth/auth-hooks/send-email-hook
   const webhookId        = req.headers.get("webhook-id");
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
   });
 
   if (!valid) {
-    console.error("[auth-hook] Signature mismatch — check SUPABASE_HOOK_SECRET in Vercel.");
+    console.error("[auth-hook] Signature mismatch, check SUPABASE_HOOK_SECRET in Vercel.");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
