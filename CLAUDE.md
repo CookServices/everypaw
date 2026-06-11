@@ -1812,4 +1812,15 @@ curl "https://everypaw.app/api/share-card?story_id=<uuid>&format=story" --cookie
 - **Quota Free contributeur** : le trigger `enforce_free_entry_limit` exclut les entrées sur les animaux d'autrui — ne pas réintroduire l'ancienne version.
 - **Legacy ALL policies** : les policies nommées `"Users can/manage own …"` sont toutes supprimées. Utiliser exclusivement les policies granulaires par commande (SELECT/INSERT/UPDATE/DELETE).
 
-*Dernière mise à jour : 2026-06-11 (session 48 — origins/tributes/household members)*
+### ✅ Session 49 — Fix fonts Gelato + CRON_SECRET prod cassé (2026-06-11)
+
+**Fonts PDF embarquées** (commit `14ba0e7`) — Gelato refusait : "Font not embedded". @react-pdf/renderer référençait les polices base-14 (`Times-Bold/Italic`, `Helvetica/-Bold`) sans les embarquer (viole PDF/X). Fix : TTF clones métriques `public/fonts/` (`Tinos`=Times, `Lato`=sans), `Font.register` via URL `${origin}/fonts/*.ttf` dans `book-pdf/route.tsx`. Commande Gelato acceptée ✓.
+
+**Fix build** (commit `db662d6`) — `BookProgressWidget` (client) importait `calcPageCount` depuis `book.ts` → chaîne statique vers `supabase/server.ts` (`next/headers`) → build cassé. `calcPageCount` extrait dans `src/lib/book-pages.ts` (pur). Pattern : un composant client ne doit jamais importer un module dont la chaîne statique touche `next/headers`.
+
+**CRON_SECRET vide en prod (bug critique 35j)** — `CRON_SECRET=""` dans Vercel prod → `verifyCronRoute` (exige ≥32 chars) renvoyait `500` → **les 4 crons planifiés échouaient à chaque exécution**. Fix : secret hex 48 chars set en Production + Preview, redeploy. Tests validés :
+- `monthly-story` : 401 sans token / 200 `{generated:1}` / idempotence `generated:0` ✓
+- `retention-emails` : 200 / 401 / idempotence ✓ (fenêtres D1/D7/D30 vides au moment du test)
+- ⚠️ Posé en `--no-sensitive` pour les tests — repasser en sensitive dans le dashboard Vercel quand voulu (reste valide).
+
+*Dernière mise à jour : 2026-06-11 (session 49 — fonts Gelato + CRON_SECRET prod)*
