@@ -655,5 +655,34 @@
   "birthday": {
     "letter_cta": "Lire la lettre de {petName} →",
     "letter_excerpt_label": "Une lettre d'anniversaire de {petName}"
+  },
+  "members": {
+    "tab": "Foyer",
+    "title": "Membres du foyer",
+    "subtitle": "Invite ton partenaire ou ta famille à contribuer à ce journal.",
+    "invite_label": "Inviter par email",
+    "invite_placeholder": "partenaire@exemple.com",
+    "invite_cta": "Envoyer l'invitation",
+    "invite_sending": "Envoi…",
+    "invite_success": "Invitation envoyée !",
+    "invite_resent": "Invitation renvoyée.",
+    "error_invalid_email": "Adresse email invalide.",
+    "error_cannot_invite_self": "Tu ne peux pas t'inviter toi-même.",
+    "error_already_member": "Cette personne est déjà membre.",
+    "error_member_limit": "Tu as atteint la limite de 5 membres.",
+    "error_upgrade_required": "Inviter des membres est disponible avec les plans Digital et Print.",
+    "error_generic": "Une erreur est survenue. Réessaie.",
+    "status_pending": "En attente",
+    "status_accepted": "Actif",
+    "revoke_cta": "Retirer",
+    "revoke_confirm": "Retirer ce membre ?",
+    "revoke_yes": "Oui, retirer",
+    "revoke_no": "Annuler",
+    "empty": "Aucun membre pour l'instant. Invite quelqu'un pour collaborer.",
+    "upgrade_title": "Partage ce journal",
+    "upgrade_desc": "Passe au plan Digital ou Print pour inviter ta famille ou ton partenaire à contribuer à ce journal.",
+    "upgrade_cta": "Passer à Premium",
+    "added_by": "Ajouté par {name}",
+    "max_members": "5 membres max par animal"
   }
 }

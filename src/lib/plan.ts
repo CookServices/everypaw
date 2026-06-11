@@ -78,6 +78,15 @@ export function canGenerateStory(plan: Plan, totalStories: number): string | nul
 }
 
 /**
+ * Returns true if the user can invite household members.
+ * Requires digital or print plan.
+ */
+export async function canInviteMembers(userId: string): Promise<boolean> {
+  const { plan } = await getUserPlanById(userId);
+  return plan === "digital" || plan === "print";
+}
+
+/**
  * Returns null if allowed, or an error string if blocked.
  * bookCredits: user's current credit balance.
  */

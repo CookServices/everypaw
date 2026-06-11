@@ -655,5 +655,34 @@
   "birthday": {
     "letter_cta": "Read {petName}'s letter →",
     "letter_excerpt_label": "A birthday letter from {petName}"
+  },
+  "members": {
+    "tab": "Household",
+    "title": "Household members",
+    "subtitle": "Invite family or a partner to contribute to this journal.",
+    "invite_label": "Invite by email",
+    "invite_placeholder": "partner@example.com",
+    "invite_cta": "Send invitation",
+    "invite_sending": "Sending…",
+    "invite_success": "Invitation sent!",
+    "invite_resent": "Invitation re-sent.",
+    "error_invalid_email": "Invalid email address.",
+    "error_cannot_invite_self": "You can't invite yourself.",
+    "error_already_member": "This person is already a member.",
+    "error_member_limit": "You've reached the 5-member limit.",
+    "error_upgrade_required": "Inviting members is available on Digital and Print plans.",
+    "error_generic": "Something went wrong. Please try again.",
+    "status_pending": "Pending",
+    "status_accepted": "Active",
+    "revoke_cta": "Remove",
+    "revoke_confirm": "Remove this member?",
+    "revoke_yes": "Yes, remove",
+    "revoke_no": "Cancel",
+    "empty": "No members yet. Invite someone to collaborate.",
+    "upgrade_title": "Share this journal",
+    "upgrade_desc": "Upgrade to Digital or Print to invite family or a partner to contribute to this journal.",
+    "upgrade_cta": "Upgrade",
+    "added_by": "Added by {name}",
+    "max_members": "Max 5 members per pet"
   }
 }

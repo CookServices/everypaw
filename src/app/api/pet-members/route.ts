@@ -1,0 +1,209 @@
+import { NextResponse } from "next/server";
+import { createClient as createServerClient } from "@/lib/supabase/server";
+import { getServiceSupabase, canInviteMembers } from "@/lib/plan";
+import { getResendClient } from "@/lib/resend";
+import { escapeHtml } from "@/lib/html";
+import crypto from "node:crypto";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const MAX_MEMBERS = 5;
+const INVITE_TTL_DAYS = 7;
+
+export async function GET(req: Request) {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const url = new URL(req.url);
+  const petId = url.searchParams.get("petId");
+  if (!petId || !UUID_REGEX.test(petId)) {
+    return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
+  }
+
+  const db = getServiceSupabase();
+
+  // Verify ownership
+  const { data: pet } = await db.from("pets").select("id, name, user_id").eq("id", petId).single();
+  if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { data: members } = await db
+    .from("pet_members")
+    .select("id, invited_email, user_id, status, role, accepted_at, created_at")
+    .eq("pet_id", petId)
+    .neq("status", "revoked")
+    .order("created_at");
+
+  // Resolve display names for accepted members
+  const acceptedUserIds = (members ?? [])
+    .filter(m => m.user_id)
+    .map(m => m.user_id as string);
+
+  let profileMap: Record<string, string> = {};
+  if (acceptedUserIds.length > 0) {
+    const { data: profiles } = await db
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", acceptedUserIds);
+    if (profiles) {
+      for (const p of profiles) {
+        profileMap[p.id] = p.full_name || p.email || p.id;
+      }
+    }
+  }
+
+  const result = (members ?? []).map(m => ({
+    id: m.id,
+    invited_email: m.invited_email,
+    status: m.status,
+    role: m.role,
+    display_name: m.user_id ? (profileMap[m.user_id] ?? m.invited_email) : m.invited_email,
+    accepted_at: m.accepted_at,
+    created_at: m.created_at,
+  }));
+
+  return NextResponse.json({ members: result });
+}
+
+export async function POST(req: Request) {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await req.json();
+  const { petId, email } = body;
+
+  if (!petId || !UUID_REGEX.test(petId)) {
+    return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
+  }
+  if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email) || email.length > 254) {
+    return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+  }
+
+  // Plan check — only digital/print can invite members
+  const allowed = await canInviteMembers(user.id);
+  if (!allowed) {
+    return NextResponse.json({ error: "upgrade_required" }, { status: 403 });
+  }
+
+  const db = getServiceSupabase();
+
+  // Verify pet ownership
+  const { data: pet } = await db.from("pets").select("id, name, user_id").eq("id", petId).single();
+  if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  // Cannot invite yourself
+  const { data: ownerProfile } = await db.from("profiles").select("email").eq("id", user.id).single();
+  if (ownerProfile?.email?.toLowerCase() === email.toLowerCase()) {
+    return NextResponse.json({ error: "cannot_invite_self" }, { status: 400 });
+  }
+
+  // Check member count
+  const { count } = await db
+    .from("pet_members")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", petId)
+    .neq("status", "revoked");
+  if ((count ?? 0) >= MAX_MEMBERS) {
+    return NextResponse.json({ error: "member_limit" }, { status: 400 });
+  }
+
+  // Check if already invited (pending or accepted)
+  const { data: existing } = await db
+    .from("pet_members")
+    .select("id, status")
+    .eq("pet_id", petId)
+    .ilike("invited_email", email)
+    .neq("status", "revoked")
+    .maybeSingle();
+
+  if (existing) {
+    if (existing.status === "accepted") {
+      return NextResponse.json({ error: "already_member" }, { status: 409 });
+    }
+    // Re-send invite for pending
+    const newToken = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + INVITE_TTL_DAYS * 86400 * 1000).toISOString();
+    await db.from("pet_members").update({
+      invite_token: newToken,
+      invite_token_expires_at: expires,
+    }).eq("id", existing.id);
+    await sendInviteEmail(email, newToken, pet.name, ownerProfile?.email ?? "your partner", user.id);
+    return NextResponse.json({ success: true, resent: true });
+  }
+
+  // Create new invite
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 86400 * 1000).toISOString();
+
+  const { error: insertError } = await db.from("pet_members").insert({
+    pet_id: petId,
+    invited_email: email.toLowerCase(),
+    invited_by: user.id,
+    invite_token: token,
+    invite_token_expires_at: expiresAt,
+  });
+
+  if (insertError) {
+    console.error("[pet-members] insert error:", insertError.message);
+    return NextResponse.json({ error: "Failed to create invite" }, { status: 500 });
+  }
+
+  await sendInviteEmail(email, token, pet.name, ownerProfile?.email ?? "your partner", user.id);
+
+  return NextResponse.json({ success: true });
+}
+
+async function sendInviteEmail(
+  toEmail: string,
+  token: string,
+  petName: string,
+  ownerEmail: string,
+  ownerId: string,
+) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://everypaw.app";
+  const inviteUrl = `${appUrl}/invite/${token}`;
+  const safeEmail = escapeHtml(ownerEmail);
+  const safePet = escapeHtml(petName);
+
+  let resend;
+  try { resend = getResendClient(); } catch { return; }
+
+  try {
+    await resend.emails.send({
+      from: "Everypaw <hello@everypaw.app>",
+      to: toEmail,
+      subject: `You're invited to join ${petName}'s journal on Everypaw`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:'DM Sans',Arial,sans-serif;background:#F7F2EA;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#FDFAF5;border-radius:16px;overflow:hidden;border:1px solid #EDE5D4">
+    <div style="background:#3D2B1F;padding:24px 32px">
+      <div style="color:#F7F2EA;font-size:1.25rem;font-weight:600">🐾 everypaw</div>
+    </div>
+    <div style="padding:32px">
+      <h1 style="color:#3D2B1F;font-size:1.4rem;margin:0 0 12px">You've been invited to join ${safePet}'s journal</h1>
+      <p style="color:#7A5C44;line-height:1.65;margin:0 0 24px">
+        <strong style="color:#3D2B1F">${safeEmail}</strong> invited you to contribute to
+        <strong style="color:#3D2B1F">${safePet}'s</strong> Everypaw journal &mdash;
+        add memories, photos, and special moments together.
+      </p>
+      <a href="${inviteUrl}" style="display:inline-block;background:#C8813A;color:#FDFAF5;text-decoration:none;padding:14px 28px;border-radius:100px;font-weight:600;font-size:1rem">
+        Accept invitation →
+      </a>
+      <p style="color:#9A8070;font-size:.8rem;margin:24px 0 0">
+        This invitation expires in ${INVITE_TTL_DAYS} days. If you didn't expect this email, you can safely ignore it.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`,
+    });
+  } catch (e) {
+    console.error("[pet-members] email send error:", e);
+  }
+}
