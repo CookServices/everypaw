@@ -513,10 +513,11 @@ export default function PetPage({ params }: { params: { id: string } }) {
         await navigator.share({ files: [new File([blob], filename, { type: "image/png" })] });
       } else {
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
+        const objectUrl = URL.createObjectURL(blob);
+        a.href = objectUrl;
         a.download = filename;
         a.click();
-        URL.revokeObjectURL(a.href);
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
       }
     } catch {
       setShareCardError(true);
