@@ -4,7 +4,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getCurrencyFromCountry } from "@/lib/currency";
 import { getServiceSupabase } from "@/lib/plan";
 import { generatePdfToken } from "@/lib/pdf-token";
-import { calcPageCount } from "@/lib/book";
+import { calcPageCount } from "@/lib/book-pages";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { calcPageCount } from "@/lib/book";
+import { calcPageCount } from "@/lib/book-pages";
 import { useLocale } from "@/hooks/useLocale";
 import type { Plan } from "@/lib/plan";
 import type { Pet } from "@/types";
