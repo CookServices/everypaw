@@ -145,6 +145,21 @@ milestone_definitions: id, key (unique), name_fr, name_en, keywords text[], icon
 -- RLS : SELECT public, pas d'écriture client
 -- Utilisée en priorité par detectMilestones() et translateMilestone() ; fallback sur MILESTONE_TYPES hardcodé
 -- Clé spéciale "first_memory" : déclenche sur existingEntries.length === 0
+
+-- memorial_tributes (hommages publics sur pages mémorial)
+memorial_tributes: id, pet_id, author_name (1–100), message (1–1000),
+                   status ('pending'|'approved'|'rejected'), created_at
+-- RLS : tributes_public_read (approved + pet décédé), tributes_owner_read (owner voit tout)
+-- Écriture client uniquement pour POST (route API avec rate limit + honeypot)
+
+-- pet_members (journal partagé foyer)
+pet_members: id, pet_id, user_id (null jusqu'à acceptation), invited_email,
+             invited_by, role ('contributor'), status ('pending'|'accepted'|'revoked'),
+             invite_token (64 hex, unique), invite_token_expires_at, accepted_at, created_at
+-- RLS : pet_members_owner_select (owner voit ses membres), pet_members_self_select (membre voit sa propre ligne)
+-- Aucun INSERT/UPDATE/DELETE client — service role uniquement via routes API
+-- Max 5 membres non-révoqués par animal (enforced API)
+-- Token TTL 7 jours, re-invitation idempotente (nouveau token sur re-send)
 ```
 
 SQL migrations dans `supabase/migrations/`. Toujours utiliser `IF NOT EXISTS` et blocs `DO $$ … $$` pour rester idempotent.
@@ -1732,4 +1747,76 @@ curl "https://everypaw.app/api/share-card?story_id=<uuid>&format=story" --cookie
 # 6. Desktop — bouton "Partager" → téléchargement PNG
 ```
 
-*Dernière mise à jour : 2026-06-10 (session 47 — share card Instagram)*
+### ✅ Session 48 — Origins onboarding + Weekly interview + Memorial tributes + Household members (2026-06-11)
+
+**PR #72 (squash merge → main)**
+
+---
+
+**Origins onboarding** (`src/components/onboarding/OriginsFlow.tsx`, `/api/generate-origins`)
+- Overlay 3 questions après onboarding si animal adulte sans chapitre existant : "Comment vous êtes-vous rencontré·e·s ?", "Souvenir marquant ?", "En quelques mots, qui est {nom} ?"
+- Génère un chapitre "Comment tout a commencé" avec `story_type = 'origins'` — **ne consomme pas le quota Free**
+- Dashboard card "Raconter ses débuts" si le flow a été sauté
+- Migration : `add_story_type_2026_06_10.sql` — colonne `story_type` + contrainte unique `(pet_id, story_type) WHERE story_type IS NOT NULL`
+
+**Weekly interview question** (`src/lib/interview.ts`, dashboard card)
+- 52 questions rotatives (ISO week) EN+FR — `getWeeklyQuestion(locale)`
+- Dashboard card avec textarea inline → entrée taguée `interview`
+- Email weekly-reminder : question comme objet + corps centré
+
+---
+
+**Memorial tributes** (`/api/memorial/tributes`, `/api/memorial/tributes/[id]/approve|reject`)
+- Table `memorial_tributes` (id, pet_id, author_name 1–100, message 1–1000, status pending/approved/rejected)
+- GET public (approved + pet décédé) / GET owner (tous statuts) / POST public (rate limit 3/h IP, honeypot)
+- Notification email owner max 1/24h/pet via `events_log`
+- Onglet "Hommages" dans la page animal (owner: approve/reject) ; composant `TributeSection` sur `/memorial/[id]`
+- **Intégration livre** : `calcPageCount(..., hasTributes?)` → `book-pdf` + `preview-pdf` + `gelato/order` acceptent `includeTributes`
+- Migration : `add_memorial_tributes_2026_06_10.sql`
+
+---
+
+**Household Members — Shared journal** (`/api/pet-members`, `/api/invite/[token]`, `/invite/[token]`)
+- Table `pet_members` (pending/accepted/revoked, token 64 hex, TTL 7j)
+- **Plan gate** : `canInviteMembers(userId)` — digital/print uniquement
+- **Max 5 membres** par animal, re-invitation idempotente
+- Email invite via Resend avec lien `https://everypaw.app/invite/{token}`
+- Page `/invite/[token]` — tous les états : auth_required → sign-in/signup avec `?next=`; email_mismatch; expired; revoked; already_accepted; accepted + redirect
+- Onglet "Foyer / Household" dans la page animal (owners only) : liste membres + statuts + invite form + revoke-avec-confirm + upsell pour free
+- Pill "Ajouté par {nom}" sur les entrées contributeurs dans le journal
+- **RLS mis à jour** (voir tableau ci-dessous)
+- Migration : `add_pet_members_2026_06_11.sql`
+
+**Diff RLS (session 48)**
+
+| Table | Policy supprimée | Policy ajoutée | Justification |
+|---|---|---|---|
+| `pets` | `pets_public_read` (`USING true`) | `pets_owner_or_member_select` | Pages publiques → service role ; dashboard → owner + membres acceptés |
+| `entries` SELECT | `entries_owner_read` (`auth.uid() = user_id`) | `entries_owner_or_member_read` | Owner voit toutes les entrées ; contributeurs voient le journal |
+| `entries` INSERT | `entries_owner_insert` | `entries_owner_or_member_insert` | Contributeurs peuvent ajouter (user_id = auth.uid() obligatoire) |
+| `entries` UPDATE | `entries_owner_update` | `entries_owner_or_pet_owner_update` | Owner peut éditer n'importe quelle entrée (modération) |
+| `entries` DELETE | `entries_owner_delete` | `entries_owner_or_pet_owner_delete` | Owner peut supprimer n'importe quelle entrée |
+| `stories` | `stories_public_read` (`USING true`) | `stories_owner_or_member_select` | Pages publiques → service role ; contributeurs lisent les histoires |
+| `milestones` | inchangé | inchangé | Spec : aucune modification |
+
+**Trigger `enforce_free_entry_limit` mis à jour** : si `pet.user_id ≠ entry.user_id` (entrée contributeur) → pas de vérification de quota. Le quota Free ne s'applique qu'aux entrées sur ses propres animaux.
+
+---
+
+**Conventions de code mises à jour**
+- **`canInviteMembers(userId)`** dans `src/lib/plan.ts` — digital/print uniquement. Toujours appeler avant tout INSERT dans `pet_members`.
+- **`pet_members`** : aucun INSERT/UPDATE/DELETE client direct. Toutes les mutations via routes serveur utilisant `getServiceSupabase()`.
+- **RLS stories/pets** : plus de `USING (true)` — les pages publiques utilisent toujours `getServiceSupabase()`.
+- **Quota Free contributeur** : le trigger `enforce_free_entry_limit` est mis à jour pour exclure les entrées sur les animaux d'autrui — ne pas réintroduire l'ancienne version.
+
+---
+
+**Scripts SQL à appliquer en prod (session 48)**
+
+```
+supabase/migrations/add_story_type_2026_06_10.sql      -- story_type colonne + unique constraint
+supabase/migrations/add_memorial_tributes_2026_06_10.sql -- memorial_tributes table + RLS
+supabase/migrations/add_pet_members_2026_06_11.sql     -- pet_members table + RLS narrowing
+```
+
+*Dernière mise à jour : 2026-06-11 (session 48 — origins/tributes/household members)*
