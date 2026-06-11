@@ -998,8 +998,8 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 - [ ] Mettre à jour `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET` en mode Live
 - [x] Publier l'application Google OAuth (retirer le mode Test) ✅
 - [ ] Tester le webhook Stripe en mode Live avec un vrai paiement
-- [ ] Vérifier que le cron weekly-reminder envoie bien les emails
-- [ ] Vérifier que Gelato est configuré avec une carte de paiement valide
+- [x] Vérifier que le cron weekly-reminder envoie bien les emails ✅ (sent:1 + email FR reçu, après fix `profiles.language` commit `c50bffc`)
+- [x] Vérifier que Gelato est configuré avec une carte de paiement valide ✅
 - [x] Exécuter `round2_security_fixes_2026_05_23.sql` + `round3_security_fixes_2026_05_26.sql` dans Supabase ✅
 - [x] Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` + `STRIPE_PRICE_BOOK_ONCE_USD` dans Vercel ✅
 - [x] Exécuter `fix_book_credits_print_plan_2026_05_27.sql` dans Supabase ✅
@@ -1831,4 +1831,8 @@ curl "https://everypaw.app/api/share-card?story_id=<uuid>&format=story" --cookie
 
 **share-card — tests live (Chrome, seed test-print-multi)** : sans session → 401 ✓ ; preview square (1:1) ✓ ; story (9:16) ✓ ; story d'un autre user → 403 ✓ ; download desktop → PNG 1080×1080 rendu correct ✓. Branche `navigator.share` non testable en automatisation (pas de vraie user-activation desktop) mais code corrigé.
 
-*Dernière mise à jour : 2026-06-11 (session 49 — fonts Gelato + CRON_SECRET + RLS recursion + share-card complet)*
+**🔴 Colonne `profiles.language` inexistante (bug critique, commit `c50bffc`)** — `profiles.language` ET `profiles.locale` n'existaient nulle part en prod (aucune migration), pourtant ~11 chemins serveur faisaient `.select("locale, language")` → PostgREST 400 → résultat null → **tous les emails localisés cassés** : 6 crons (weekly-reminder, birthday-check, daily-prompts, on-this-day, streak-alert, retention-emails) renvoyaient `sent:0` à chaque run, + langue email dunning Stripe en fallback. Fix : migration `add_profiles_language_2026_06_11.sql` (`profiles.language text` nullable, appliquée prod ✓), retrait de `locale` des 11 selects (langue basée sur `profiles.language` seul), signup écrit la langue dans `user_metadata`, `/auth/callback` la persiste sur le profil (si null). Testé live : weekly-reminder `sent:1` + email FR reçu yopmail ✓. Pattern : ne jamais `.select()` une colonne non garantie en prod — PostgREST échoue toute la requête.
+
+**TODO email (note Julien 2026-06-11)** : améliorer les rendus visuels des emails transactionnels/crons (templates HTML inline actuels basiques).
+
+*Dernière mise à jour : 2026-06-11 (session 49 — Gelato + CRON_SECRET + RLS recursion + share-card + profiles.language)*
