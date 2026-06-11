@@ -185,6 +185,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [shareCardFormat, setShareCardFormat] = useState<"square" | "story">("square");
   const [shareCardLoading, setShareCardLoading] = useState(false);
   const [shareCardError, setShareCardError] = useState(false);
+  const [shareCardBlob, setShareCardBlob] = useState<Blob | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [userPlan, setUserPlan] = useState<string>("free");
   const [bookCredits, setBookCredits] = useState(0);
@@ -499,30 +500,46 @@ export default function PetPage({ params }: { params: { id: string } }) {
     setShareCardError(false);
   };
 
-  const downloadShareCard = async () => {
-    if (!shareCardStory) return;
+  // Prefetch the card image into a blob so the share/download triggers
+  // synchronously on click — awaiting a fetch first would drop the transient
+  // user activation that navigator.share() requires (silent failure on mobile).
+  useEffect(() => {
+    if (!shareCardStory) { setShareCardBlob(null); return; }
+    let cancelled = false;
+    setShareCardBlob(null);
     setShareCardLoading(true);
     setShareCardError(false);
-    try {
-      const url = `/api/share-card?story_id=${shareCardStory.id}&format=${shareCardFormat}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("failed");
-      const blob = await res.blob();
-      const filename = `everypaw-${shareCardFormat}.png`;
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: "image/png" })] })) {
-        await navigator.share({ files: [new File([blob], filename, { type: "image/png" })] });
-      } else {
-        const a = document.createElement("a");
-        const objectUrl = URL.createObjectURL(blob);
-        a.href = objectUrl;
-        a.download = filename;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    (async () => {
+      try {
+        const res = await fetch(`/api/share-card?story_id=${shareCardStory.id}&format=${shareCardFormat}`);
+        if (!res.ok) throw new Error("failed");
+        const blob = await res.blob();
+        if (!cancelled) setShareCardBlob(blob);
+      } catch {
+        if (!cancelled) setShareCardError(true);
+      } finally {
+        if (!cancelled) setShareCardLoading(false);
       }
-    } catch {
-      setShareCardError(true);
+    })();
+    return () => { cancelled = true; };
+  }, [shareCardStory, shareCardFormat]);
+
+  const downloadShareCard = () => {
+    if (!shareCardStory || !shareCardBlob) return;
+    setShareCardError(false);
+    const filename = `everypaw-${shareCardFormat}.png`;
+    const file = new File([shareCardBlob], filename, { type: "image/png" });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      // Fire synchronously to keep the user activation; ignore user-cancel.
+      navigator.share({ files: [file] }).catch(() => {});
+    } else {
+      const a = document.createElement("a");
+      const objectUrl = URL.createObjectURL(shareCardBlob);
+      a.href = objectUrl;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     }
-    setShareCardLoading(false);
   };
 
   const deletePet = async () => {
@@ -915,13 +932,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
             <div style={{ display: "flex", gap: ".625rem" }}>
               <button
                 onClick={downloadShareCard}
-                disabled={shareCardLoading}
+                disabled={shareCardLoading || !shareCardBlob}
                 style={{
                   flex: 1, padding: ".75rem", borderRadius: 100,
                   background: "#C8813A", color: "#FDFAF5",
                   border: "none", fontSize: ".875rem", fontWeight: 500,
                   cursor: shareCardLoading ? "wait" : "pointer",
-                  fontFamily: "inherit", opacity: shareCardLoading ? .65 : 1,
+                  fontFamily: "inherit", opacity: (shareCardLoading || !shareCardBlob) ? .65 : 1,
                   transition: "opacity .15s",
                 }}
               >
