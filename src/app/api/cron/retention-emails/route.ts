@@ -36,8 +36,8 @@ interface PalierStats { sent: number; skipped: number; errors: number }
 
 // ── Locale helper ─────────────────────────────────────────────────────────────
 
-function profileLocale(locale: string | null, language: string | null): Locale {
-  if (locale?.startsWith("en") || language?.startsWith("en")) return "en";
+function profileLocale(language: string | null): Locale {
+  if (language?.startsWith("en")) return "en";
   return "fr";
 }
 
@@ -69,7 +69,7 @@ export async function GET(req: Request) {
 
   const { data: d1Profiles } = await supabase
     .from("profiles")
-    .select("id, email, unsubscribe_token, plan, locale, language")
+    .select("id, email, unsubscribe_token, plan, language")
     .gte("created_at", d1Start)
     .lt("created_at", d1End)
     .eq("email_reminders", true);
@@ -96,7 +96,7 @@ export async function GET(req: Request) {
     const alivePets = (pets ?? []).filter(p => !p.deceased_at);
     if ((pets ?? []).length > 0 && alivePets.length === 0) { d1Stats.skipped++; continue; }
 
-    const locale = profileLocale(profile.locale, profile.language);
+    const locale = profileLocale(profile.language);
     const t = getTranslations(locale).retention_emails;
     const re = getTranslations(locale).retention_emails;
 
@@ -178,7 +178,7 @@ export async function GET(req: Request) {
 
   const { data: d7Profiles } = await supabase
     .from("profiles")
-    .select("id, email, unsubscribe_token, plan, locale, language")
+    .select("id, email, unsubscribe_token, plan, language")
     .gte("created_at", d7Start)
     .lt("created_at", d7End)
     .eq("email_reminders", true);
@@ -204,7 +204,7 @@ export async function GET(req: Request) {
     const alivePets = (pets ?? []).filter(p => !p.deceased_at);
     if (alivePets.length === 0) { d7Stats.skipped++; continue; }
 
-    const locale = profileLocale(profile.locale, profile.language);
+    const locale = profileLocale(profile.language);
     const re = getTranslations(locale).retention_emails;
 
     const unsubscribeUrl = profile.unsubscribe_token
@@ -305,7 +305,7 @@ export async function GET(req: Request) {
 
   const { data: d30Profiles } = await supabase
     .from("profiles")
-    .select("id, email, unsubscribe_token, plan, locale, language")
+    .select("id, email, unsubscribe_token, plan, language")
     .gte("created_at", d30Start)
     .lt("created_at", d30End)
     .eq("email_reminders", true);
@@ -331,7 +331,7 @@ export async function GET(req: Request) {
     const alivePets = (pets ?? []).filter(p => !p.deceased_at);
     if (alivePets.length === 0) { d30Stats.skipped++; continue; }
 
-    const locale = profileLocale(profile.locale, profile.language);
+    const locale = profileLocale(profile.language);
     const re = getTranslations(locale).retention_emails;
 
     const unsubscribeUrl = profile.unsubscribe_token

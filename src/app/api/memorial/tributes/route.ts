@@ -133,12 +133,12 @@ export async function POST(req: Request) {
     if (!recentNotif) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("email, locale, language")
+        .select("email, language")
         .eq("id", pet.user_id)
         .single();
 
       if (profile?.email) {
-        const locale = (profile.locale ?? profile.language ?? "en").toLowerCase();
+        const locale = (profile.language ?? "en").toLowerCase();
         const isFR = locale.startsWith("fr");
         const petNameEsc = escapeHtml(pet.name);
 

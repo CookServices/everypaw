@@ -338,7 +338,7 @@ export async function POST(req: Request) {
       .from("profiles")
       .update({ payment_past_due: true })
       .eq("stripe_customer_id", customerId)
-      .select("id, email, locale, language")
+      .select("id, email, language")
       .single();
 
     if (!failedProfile?.id) {
@@ -366,7 +366,6 @@ export async function POST(req: Request) {
     if (userEmail && attemptCount <= 1) {
       try {
         const lang: "fr" | "en" =
-          (failedProfile.locale as string | undefined)?.startsWith("en") ||
           (failedProfile.language as string | undefined)?.startsWith("en")
             ? "en"
             : "fr";

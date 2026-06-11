@@ -102,7 +102,7 @@ export async function GET(req: Request) {
   // Fetch profiles with reminders on
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, email, locale, language, unsubscribe_token")
+    .select("id, email, language, unsubscribe_token")
     .eq("email_reminders", true);
 
   if (!profiles || profiles.length === 0) return NextResponse.json({ sent: 0 });
@@ -139,7 +139,7 @@ export async function GET(req: Request) {
 
     if (!count || count === 0) continue;
 
-    const isFR = (profile.locale ?? profile.language ?? "en").toLowerCase().startsWith("fr");
+    const isFR = (profile.language ?? "en").toLowerCase().startsWith("fr");
     const pet = pets[0];
     const petName = escapeHtml(pet.name);
     const species = (pet.species ?? "").toLowerCase();

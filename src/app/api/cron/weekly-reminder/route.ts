@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, email, locale, language, unsubscribe_token")
+    .select("id, email, language, unsubscribe_token")
     .eq("email_reminders", true);
 
   if (!profiles) return NextResponse.json({ sent: 0 });
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
 
     if (!pets || pets.length === 0) continue;
 
-    const locale = (profile.locale ?? profile.language ?? "en");
+    const locale = (profile.language ?? "en");
     const isFrench = locale.toLowerCase().startsWith("fr");
     const firstPet = pets[0];
     const petName = firstPet.name;

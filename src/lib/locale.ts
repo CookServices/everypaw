@@ -5,10 +5,10 @@ export async function getProfileLocale(email: string): Promise<"en" | "fr"> {
     const supabase = getServiceSupabase();
     const { data } = await supabase
       .from("profiles")
-      .select("locale, language")
+      .select("language")
       .eq("email", email)
       .single();
-    if (data?.locale?.startsWith("en") || data?.language?.startsWith("en")) return "en";
+    if (data?.language?.startsWith("en")) return "en";
   } catch {}
   return "fr";
 }
@@ -18,10 +18,10 @@ export async function getProfileLocaleById(userId: string): Promise<"en" | "fr">
     const supabase = getServiceSupabase();
     const { data } = await supabase
       .from("profiles")
-      .select("locale, language")
+      .select("language")
       .eq("id", userId)
       .single();
-    if (data?.locale?.startsWith("en") || data?.language?.startsWith("en")) return "en";
+    if (data?.language?.startsWith("en")) return "en";
   } catch {}
   return "fr";
 }

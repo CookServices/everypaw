@@ -49,10 +49,10 @@ export async function POST(req: Request) {
   // Re-fetch all data from DB — never trust client-supplied pet details or entry content
   const [{ data: pet }, { data: profile }] = await Promise.all([
     supabase.from("pets").select("id, user_id, name, species, bio").eq("id", petId).single(),
-    supabase.from("profiles").select("locale, language").eq("id", user.id).single(),
+    supabase.from("profiles").select("language").eq("id", user.id).single(),
   ]);
 
-  const lang = (profile?.locale || profile?.language || "fr").toLowerCase().startsWith("fr") ? "French" : "English";
+  const lang = (profile?.language || "fr").toLowerCase().startsWith("fr") ? "French" : "English";
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   if (pet.user_id !== user.id) {
     console.error("[generate] 403 Forbidden: pet.user_id", pet.user_id, "!= user.id", user.id);

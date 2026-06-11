@@ -9,6 +9,14 @@ export async function GET(request: Request) {
   if (code) {
     const supabase = await createClient();
     await supabase.auth.exchangeCodeForSession(code);
+
+    // Persist the signup language (from user_metadata) onto the profile once,
+    // so localized emails can target the right language.
+    const { data: { user } } = await supabase.auth.getUser();
+    const lang = user?.user_metadata?.language;
+    if (user && (lang === "fr" || lang === "en")) {
+      await supabase.from("profiles").update({ language: lang }).eq("id", user.id).is("language", null);
+    }
   }
 
   // Honour redirect param — must be a relative path (no protocol-relative or absolute URLs)

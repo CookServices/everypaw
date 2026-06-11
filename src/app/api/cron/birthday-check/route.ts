@@ -31,7 +31,7 @@ export async function GET(req: Request) {
   const userIds = Array.from(new Set(pets.map(p => p.user_id)));
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, email, locale, language, unsubscribe_token")
+    .select("id, email, language, unsubscribe_token")
     .eq("email_reminders", true)
     .in("id", userIds);
 
@@ -47,7 +47,7 @@ export async function GET(req: Request) {
     const profile = profileMap[pet.user_id];
     if (!profile?.email) continue;
 
-    const locale = (profile.locale ?? profile.language ?? "en").toLowerCase();
+    const locale = (profile.language ?? "en").toLowerCase();
     const isFR = locale.startsWith("fr");
     const lang: "French" | "English" = isFR ? "French" : "English";
     const petName = escapeHtml(pet.name);

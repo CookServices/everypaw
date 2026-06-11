@@ -131,7 +131,10 @@ export default function SignupPage() {
     const { error: signupError } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: { language: isFR ? "fr" : "en" },
+      },
     });
     if (signupError) {
       // Log full error details for server-side debugging (visible in Vercel logs)

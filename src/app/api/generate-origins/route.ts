@@ -46,10 +46,10 @@ export async function POST(req: Request) {
   // Detect language from profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("locale, language")
+    .select("language")
     .eq("id", user.id)
     .single();
-  const lang: "French" | "English" = (profile?.locale || profile?.language || "fr")
+  const lang: "French" | "English" = (profile?.language || "fr")
     .toLowerCase().startsWith("fr") ? "French" : "English";
 
   // Create entries from text answers (antidated: birthdate or today - 1 year)

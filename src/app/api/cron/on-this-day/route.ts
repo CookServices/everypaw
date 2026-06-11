@@ -36,7 +36,7 @@ export async function GET(req: Request) {
   // Fetch eligible profiles (reminders on)
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, email, locale, language, unsubscribe_token")
+    .select("id, email, language, unsubscribe_token")
     .eq("email_reminders", true)
     .in("id", Object.keys(byUser));
 
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
   for (const profile of profiles) {
     if (!profile.email) continue;
 
-    const isFR = (profile.locale ?? profile.language ?? "en").toLowerCase().startsWith("fr");
+    const isFR = (profile.language ?? "en").toLowerCase().startsWith("fr");
     const userEntries = byUser[profile.id] ?? [];
     if (userEntries.length === 0) continue;
 

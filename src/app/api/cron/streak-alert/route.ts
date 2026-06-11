@@ -19,7 +19,7 @@ export async function GET(req: Request) {
 
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, email, locale, language, unsubscribe_token")
+    .select("id, email, language, unsubscribe_token")
     .eq("email_reminders", true);
 
   if (!profiles || profiles.length === 0) return NextResponse.json({ sent: 0 });
@@ -79,7 +79,7 @@ export async function GET(req: Request) {
     const daysSince = Math.floor((now.getTime() - lastDate.getTime()) / 864e5);
 
     const petName = escapeHtml(pet.name);
-    const isFR = (profile.locale ?? profile.language ?? "en").toLowerCase().startsWith("fr");
+    const isFR = (profile.language ?? "en").toLowerCase().startsWith("fr");
     const unsubscribeUrl = profile.unsubscribe_token
       ? `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`
       : "https://everypaw.app/dashboard";
