@@ -55,7 +55,10 @@
     "interview_cta": "Répondre",
     "interview_submitting": "Enregistrement…",
     "interview_done": "À lundi prochain 🐾",
-    "interview_upgrade_hint": "Passez à Premium pour continuer à répondre aux questions hebdomadaires."
+    "interview_upgrade_hint": "Passez à Premium pour continuer à répondre aux questions hebdomadaires.",
+    "payment_issue_title": "Problème de paiement",
+    "payment_issue_desc": "Nous n'avons pas pu traiter le dernier paiement de votre abonnement. Mettez à jour votre moyen de paiement pour conserver votre accès Premium.",
+    "payment_issue_cta": "Mettre à jour mon moyen de paiement →"
   },
   "upgrade": {
     "title": "Passer à Premium",

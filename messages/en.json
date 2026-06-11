@@ -55,7 +55,10 @@
     "interview_cta": "Answer",
     "interview_submitting": "Saving…",
     "interview_done": "See you next Monday 🐾",
-    "interview_upgrade_hint": "Upgrade to Premium to keep answering weekly questions."
+    "interview_upgrade_hint": "Upgrade to Premium to keep answering weekly questions.",
+    "payment_issue_title": "Payment issue",
+    "payment_issue_desc": "We couldn't process your last subscription payment. Please update your payment method to keep your Premium access.",
+    "payment_issue_cta": "Update my payment method →"
   },
   "upgrade": {
     "title": "Upgrade to Premium",

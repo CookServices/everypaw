@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const [plan, setPlan] = useState<Plan>("free");
   const [bookCredits, setBookCredits] = useState(0);
   const [subscriptionRenewalDate, setSubscriptionRenewalDate] = useState<number | null>(null);
+  const [paymentPastDue, setPaymentPastDue] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
   const [subscribeError, setSubscribeError] = useState(false);
   const [currency, setCurrency] = useState<Currency>("USD");
@@ -90,7 +91,7 @@ export default function DashboardPage() {
       ] = await Promise.all([
         supabase.from("pets").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("entries").select("*").eq("user_id", user.id).order("entry_date", { ascending: false }).limit(5),
-        supabase.from("profiles").select("is_premium, onboarding_completed, book_credits, subscription_renewal_date, plan").single(),
+        supabase.from("profiles").select("is_premium, onboarding_completed, book_credits, subscription_renewal_date, plan, payment_past_due").single(),
         supabase.from("stories").select("id").eq("user_id", user.id).limit(1),
         supabase.from("entries").select("*", { count: "exact", head: true }).eq("user_id", user.id).gte("entry_date", monthStart).lte("entry_date", monthEnd),
         supabase.from("entries").select("pet_id, entry_date").eq("user_id", user.id).order("entry_date", { ascending: false }),
@@ -106,6 +107,7 @@ export default function DashboardPage() {
       setPlan((profile?.plan ?? "free") as Plan);
       setBookCredits(profile?.book_credits ?? 0);
       if (profile?.subscription_renewal_date) setSubscriptionRenewalDate(profile.subscription_renewal_date);
+      setPaymentPastDue(!!profile?.payment_past_due);
       setShowOnboarding(!profile?.onboarding_completed);
       setHasStories((storiesData?.length || 0) > 0);
       setHasOrigins((originsCount ?? 0) > 0);
@@ -282,6 +284,20 @@ export default function DashboardPage() {
             hasStories={hasStories}
             onComplete={() => setShowOnboarding(false)}
           />
+        )}
+
+        {paymentPastDue && (
+          <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 8, padding: "12px 16px", marginBottom: "1.5rem" }}>
+            <p style={{ fontSize: ".875rem", fontWeight: 600, color: "#991B1B", margin: "0 0 .25rem" }}>
+              {t.dashboard.payment_issue_title}
+            </p>
+            <p style={{ fontSize: ".85rem", color: "#991B1B", lineHeight: 1.5, margin: "0 0 .5rem" }}>
+              {t.dashboard.payment_issue_desc}
+            </p>
+            <Link href="/dashboard/settings" style={{ fontSize: ".85rem", fontWeight: 600, color: "#991B1B", textDecoration: "underline" }}>
+              {t.dashboard.payment_issue_cta}
+            </Link>
+          </div>
         )}
 
         {!showOnboarding && (
