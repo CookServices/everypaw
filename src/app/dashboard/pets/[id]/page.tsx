@@ -140,8 +140,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawTab = searchParams.get("tab");
-  const tab: "journal" | "stories" | "milestones" =
-    rawTab === "stories" ? "stories" : rawTab === "milestones" ? "milestones" : "journal";
+  const tab: "journal" | "stories" | "milestones" | "tributes" | "members" =
+    rawTab === "stories" ? "stories" : rawTab === "milestones" ? "milestones" : rawTab === "tributes" ? "tributes" : rawTab === "members" ? "members" : "journal";
   const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
 
   const [pet, setPet] = useState<Pet | null>(null);
@@ -188,6 +188,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [isPremium, setIsPremium] = useState(false);
   const [userPlan, setUserPlan] = useState<string>("free");
   const [bookCredits, setBookCredits] = useState(0);
+  const [pendingTributes, setPendingTributes] = useState<{ id: string; author_name: string; message: string; created_at: string }[]>([]);
+  const [tributesLoaded, setTributesLoaded] = useState(false);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const [entryMenuId, setEntryMenuId] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
@@ -195,6 +197,14 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [editMood, setEditMood] = useState<string | null>(null);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [members, setMembers] = useState<{ id: string; invited_email: string; status: string; display_name: string; accepted_at: string | null; created_at: string }[]>([]);
+  const [membersLoaded, setMembersLoaded] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteResult, setInviteResult] = useState<{ success?: boolean; resent?: boolean; error?: string } | null>(null);
+  const [revokeConfirmId, setRevokeConfirmId] = useState<string | null>(null);
+  const [memberProfiles, setMemberProfiles] = useState<Record<string, string>>({});
   const [editPhotos, setEditPhotos] = useState<string[]>([]);
   const [editPendingPhotos, setEditPendingPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -241,7 +251,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
-      const [{ data: petData }, { data: entriesData, count: entriesCount }, { data: datesData }, { data: storiesData }, { data: milestonesData }, { data: profile }, { data: definitionsData }] = await Promise.all([
+      const [{ data: { user } }, { data: petData }, { data: entriesData, count: entriesCount }, { data: datesData }, { data: storiesData }, { data: milestonesData }, { data: profile }, { data: definitionsData }] = await Promise.all([
+        supabase.auth.getUser(),
         supabase.from("pets").select("*").eq("id", id).single(),
         supabase.from("entries").select("*", { count: "exact" }).eq("pet_id", id).order("entry_date", { ascending: false }).range(0, 19),
         supabase.from("entries").select("entry_date").eq("pet_id", id),
@@ -250,6 +261,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
         supabase.from("profiles").select("is_premium, plan, book_credits").single(),
         supabase.from("milestone_definitions").select("*").order("order_index"),
       ]);
+      const uid = user?.id ?? null;
+      setCurrentUserId(uid);
       setPet(petData);
       setEntries(entriesData || []);
       setAllEntryDates((datesData || []).map((e: { entry_date: string }) => e.entry_date));
@@ -260,6 +273,32 @@ export default function PetPage({ params }: { params: { id: string } }) {
       setUserPlan(profile?.plan ?? "free");
       setBookCredits(profile?.book_credits ?? 0);
       if (definitionsData?.length) setMilestoneDefinitions(definitionsData);
+
+      // Fetch display names for contributor entries (entries by others)
+      if (uid && entriesData) {
+        const seen = new Set<string>();
+        const contributorIds: string[] = [];
+        for (const e of entriesData as { user_id: string }[]) {
+          if (e.user_id !== uid && !seen.has(e.user_id)) {
+            seen.add(e.user_id);
+            contributorIds.push(e.user_id);
+          }
+        }
+        if (contributorIds.length > 0) {
+          const { data: contribProfiles } = await supabase
+            .from("profiles")
+            .select("id, full_name, email")
+            .in("id", contributorIds);
+          if (contribProfiles) {
+            const map: Record<string, string> = {};
+            for (const p of contribProfiles) {
+              map[p.id] = p.full_name || p.email || "Member";
+            }
+            setMemberProfiles(map);
+          }
+        }
+      }
+
       setLoading(false);
     };
     load();
@@ -271,6 +310,34 @@ export default function PetPage({ params }: { params: { id: string } }) {
       openMemorialModal();
     }
   }, [pet, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load household members when members tab is active
+  useEffect(() => {
+    if (tab !== "members" || membersLoaded || !pet) return;
+    const load = async () => {
+      const res = await fetch(`/api/pet-members?petId=${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMembers(data.members ?? []);
+      }
+      setMembersLoaded(true);
+    };
+    load();
+  }, [tab, membersLoaded, pet, id]);
+
+  // Load pending tributes when tributes tab is active
+  useEffect(() => {
+    if (tab !== "tributes" || tributesLoaded || !pet?.deceased_at) return;
+    const load = async () => {
+      const res = await fetch(`/api/memorial/tributes?petId=${id}&status=pending`);
+      if (res.ok) {
+        const data = await res.json();
+        setPendingTributes(data.tributes ?? []);
+      }
+      setTributesLoaded(true);
+    };
+    load();
+  }, [tab, tributesLoaded, pet, id]);
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -618,10 +685,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const orphanMilestoneCount = milestones.filter(m => !definedMilestoneKeys.has(m.type)).length;
   const totalMilestoneCount = (milestoneDefinitions.length || MILESTONE_TYPES.length) + orphanMilestoneCount;
 
-  const tabs = [
-    { key: "journal" as const, label: t.pet.tab_journal },
-    { key: "stories" as const, label: t.pet.tab_stories },
-    { key: "milestones" as const, label: t.pet.tab_milestones },
+  const isOwner = !!pet && !!currentUserId && pet.user_id === currentUserId;
+  const tabs: { key: "journal" | "stories" | "milestones" | "tributes" | "members"; label: string }[] = [
+    { key: "journal", label: t.pet.tab_journal },
+    { key: "stories", label: t.pet.tab_stories },
+    { key: "milestones", label: t.pet.tab_milestones },
+    ...(pet?.deceased_at ? [{ key: "tributes" as const, label: isFR ? "Hommages" : "Tributes" }] : []),
+    ...(isOwner ? [{ key: "members" as const, label: t.members.tab }] : []),
   ];
 
   return (
@@ -1404,11 +1474,16 @@ export default function PetPage({ params }: { params: { id: string } }) {
                     <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(61,43,31,.06)" }}>
                       <div style={{ padding: ".875rem 1rem" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: entry.content.trim() ? ".5rem" : 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
                             <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>
                               {fmtDateOrdinal(new Date(entry.entry_date), isFR, { weekday: "short", month: "short" })}
                             </span>
                             {entry.mood && <span style={{ fontSize: ".9rem" }}>{ALL_EMOJIS.find(m => m.value === entry.mood)?.emoji ?? MOOD_OPTIONS.find(m => m.value === entry.mood)?.emoji}</span>}
+                            {currentUserId && entry.user_id !== currentUserId && (
+                              <span style={{ fontSize: ".7rem", color: "#9A8070", background: "rgba(61,43,31,.06)", borderRadius: 100, padding: "1px 7px" }}>
+                                {t.members.added_by.replace("{name}", memberProfiles[entry.user_id] ?? (isFR ? "Membre" : "Member"))}
+                              </span>
+                            )}
                           </div>
                           <div ref={entryMenuId === entry.id ? entryMenuRef : null} style={{ position: "relative" }}>
                             <button onClick={() => setEntryMenuId(entryMenuId === entry.id ? null : entry.id)}
@@ -1730,6 +1805,206 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 </div>
               );
             })()}
+          </div>
+        )}
+
+        {/* ── Tributes moderation (deceased pets only) ──────────────────── */}
+        {tab === "tributes" && pet?.deceased_at && (
+          <div>
+            <div style={{ background: "rgba(200,129,58,.06)", borderRadius: 14, padding: ".875rem 1rem", marginBottom: "1.25rem", border: "1px solid rgba(200,129,58,.2)", display: "flex", gap: ".625rem", alignItems: "flex-start" }}>
+              <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: ".05rem" }}>🕊️</span>
+              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, lineHeight: 1.55 }}>
+                {isFR
+                  ? "Les hommages soumis par les proches apparaissent ici avant publication. Approuvez ceux que vous souhaitez afficher sur la page mémorial."
+                  : "Tributes submitted by family and friends appear here before publishing. Approve the ones you want to display on the memorial page."}
+              </p>
+            </div>
+
+            {!tributesLoaded ? (
+              <p style={{ fontSize: ".85rem", color: "#9A8070", fontStyle: "italic" }}>{isFR ? "Chargement…" : "Loading…"}</p>
+            ) : pendingTributes.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#9A8070", fontSize: ".9rem" }}>
+                <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>🕊️</div>
+                <p style={{ margin: 0, fontStyle: "italic" }}>
+                  {isFR ? "Aucun hommage en attente de validation." : "No tributes pending review."}
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                {pendingTributes.map(tribute => (
+                  <div key={tribute.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1.125rem 1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: ".5rem" }}>
+                      <span style={{ fontSize: ".9rem", fontWeight: 600, color: "#3D2B1F" }}>{tribute.author_name}</span>
+                      <span style={{ fontSize: ".72rem", color: "#9A8070" }}>
+                        {new Date(tribute.created_at).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: ".875rem", color: "#7A5C44", lineHeight: 1.65, margin: "0 0 1rem", fontStyle: "italic" }}>
+                      {tribute.message}
+                    </p>
+                    <div style={{ display: "flex", gap: ".625rem" }}>
+                      <button
+                        onClick={async () => {
+                          const res = await fetch(`/api/memorial/tributes/${tribute.id}/approve`, { method: "POST" });
+                          if (res.ok) setPendingTributes(prev => prev.filter(t => t.id !== tribute.id));
+                        }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".5rem 1rem", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", border: "none", cursor: "pointer", fontSize: ".8rem", fontWeight: 500, fontFamily: "inherit" }}
+                      >
+                        ✓ {isFR ? "Approuver" : "Approve"}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const res = await fetch(`/api/memorial/tributes/${tribute.id}/reject`, { method: "POST" });
+                          if (res.ok) setPendingTributes(prev => prev.filter(t => t.id !== tribute.id));
+                        }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".5rem 1rem", borderRadius: 100, background: "transparent", color: "#9A8070", border: "1.5px solid rgba(61,43,31,.12)", cursor: "pointer", fontSize: ".8rem", fontFamily: "inherit" }}
+                      >
+                        {isFR ? "Rejeter" : "Reject"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Household members tab ────────────────────────────────────────── */}
+        {tab === "members" && (
+          <div style={{ padding: "0 1.5rem 2rem" }}>
+            <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .5rem", fontFamily: "Georgia, serif" }}>
+              {t.members.title}
+            </h2>
+            <p style={{ fontSize: ".85rem", color: "#7A5C44", margin: "0 0 1.5rem", lineHeight: 1.5 }}>
+              {t.members.subtitle}
+            </p>
+
+            {/* Upgrade upsell for non-paid plan owners */}
+            {(userPlan === "free" || userPlan === "book_only") && (
+              <div style={{ background: "#FFF3E0", border: "1px solid #F7C27A", borderRadius: 14, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
+                <p style={{ fontWeight: 600, color: "#3D2B1F", margin: "0 0 .4rem", fontSize: ".95rem" }}>{t.members.upgrade_title}</p>
+                <p style={{ color: "#7A5C44", fontSize: ".85rem", margin: "0 0 1rem", lineHeight: 1.5 }}>{t.members.upgrade_desc}</p>
+                <a href="/dashboard/upgrade" style={{ display: "inline-block", background: "#C8813A", color: "#FDFAF5", textDecoration: "none", padding: "10px 20px", borderRadius: 100, fontWeight: 600, fontSize: ".85rem", fontFamily: "inherit" }}>
+                  {t.members.upgrade_cta}
+                </a>
+              </div>
+            )}
+
+            {/* Invite form — for paid plan owners */}
+            {(userPlan === "digital" || userPlan === "print") && (
+              <div style={{ background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 14, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
+                <label style={{ display: "block", fontSize: ".8rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".5rem" }}>
+                  {t.members.invite_label}
+                </label>
+                <div style={{ display: "flex", gap: ".625rem", flexWrap: "wrap" }}>
+                  <input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={e => { setInviteEmail(e.target.value); setInviteResult(null); }}
+                    placeholder={t.members.invite_placeholder}
+                    style={{ flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: 8, border: "1.5px solid #D4C5B0", background: "#F7F2EA", color: "#3D2B1F", fontSize: ".9rem", fontFamily: "inherit", outline: "none" }}
+                  />
+                  <button
+                    disabled={inviteLoading || !inviteEmail.trim()}
+                    onClick={async () => {
+                      setInviteLoading(true);
+                      setInviteResult(null);
+                      const res = await fetch("/api/pet-members", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ petId: id, email: inviteEmail.trim() }),
+                      });
+                      const data = await res.json();
+                      setInviteLoading(false);
+                      if (res.ok) {
+                        setInviteResult({ success: true, resent: data.resent });
+                        setInviteEmail("");
+                        setMembersLoaded(false); // reload list
+                      } else {
+                        const errKey = data.error as string;
+                        const errMsg =
+                          errKey === "cannot_invite_self" ? t.members.error_cannot_invite_self :
+                          errKey === "already_member" ? t.members.error_already_member :
+                          errKey === "member_limit" ? t.members.error_member_limit :
+                          errKey === "upgrade_required" ? t.members.error_upgrade_required :
+                          errKey === "Invalid email" ? t.members.error_invalid_email :
+                          t.members.error_generic;
+                        setInviteResult({ error: errMsg });
+                      }
+                    }}
+                    style={{ padding: "10px 18px", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", border: "none", cursor: inviteLoading || !inviteEmail.trim() ? "not-allowed" : "pointer", fontWeight: 600, fontSize: ".85rem", fontFamily: "inherit", opacity: inviteLoading || !inviteEmail.trim() ? .6 : 1, flexShrink: 0 }}
+                  >
+                    {inviteLoading ? t.members.invite_sending : t.members.invite_cta}
+                  </button>
+                </div>
+                {inviteResult?.success && (
+                  <p style={{ color: "#2E7D32", fontSize: ".8rem", margin: ".6rem 0 0" }}>
+                    ✓ {inviteResult.resent ? t.members.invite_resent : t.members.invite_success}
+                  </p>
+                )}
+                {inviteResult?.error && (
+                  <p style={{ color: "#A32D2D", fontSize: ".8rem", margin: ".6rem 0 0" }}>{inviteResult.error}</p>
+                )}
+                <p style={{ color: "#9A8070", fontSize: ".75rem", margin: ".75rem 0 0" }}>{t.members.max_members}</p>
+              </div>
+            )}
+
+            {/* Member list */}
+            {!membersLoaded ? (
+              <p style={{ color: "#9A8070", fontSize: ".85rem", fontStyle: "italic" }}>{isFR ? "Chargement…" : "Loading…"}</p>
+            ) : members.length === 0 ? (
+              <p style={{ color: "#9A8070", fontSize: ".875rem", fontStyle: "italic", textAlign: "center", padding: "2rem 0" }}>{t.members.empty}</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+                {members.map(member => (
+                  <div key={member.id} style={{ background: "#FDFAF5", border: "1px solid rgba(61,43,31,.08)", borderRadius: 12, padding: "1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ margin: "0 0 .2rem", fontWeight: 500, color: "#3D2B1F", fontSize: ".9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {member.display_name}
+                      </p>
+                      <p style={{ margin: 0, fontSize: ".75rem", color: "#9A8070", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {member.invited_email}
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: ".625rem", flexShrink: 0 }}>
+                      <span style={{
+                        fontSize: ".72rem", fontWeight: 500, padding: "3px 10px", borderRadius: 100,
+                        background: member.status === "accepted" ? "rgba(46,94,30,.1)" : "rgba(61,43,31,.07)",
+                        color: member.status === "accepted" ? "#2E5E1E" : "#7A5C44",
+                      }}>
+                        {member.status === "accepted" ? t.members.status_accepted : t.members.status_pending}
+                      </span>
+                      {revokeConfirmId === member.id ? (
+                        <div style={{ display: "flex", gap: ".4rem" }}>
+                          <button
+                            onClick={async () => {
+                              const res = await fetch(`/api/pet-members/${member.id}/revoke`, { method: "POST" });
+                              if (res.ok) {
+                                setMembers(prev => prev.filter(m => m.id !== member.id));
+                              }
+                              setRevokeConfirmId(null);
+                            }}
+                            style={{ padding: "5px 12px", borderRadius: 100, background: "#A32D2D", color: "#fff", border: "none", cursor: "pointer", fontSize: ".78rem", fontWeight: 500, fontFamily: "inherit" }}>
+                            {t.members.revoke_yes}
+                          </button>
+                          <button
+                            onClick={() => setRevokeConfirmId(null)}
+                            style={{ padding: "5px 12px", borderRadius: 100, background: "transparent", color: "#7A5C44", border: "1px solid rgba(61,43,31,.15)", cursor: "pointer", fontSize: ".78rem", fontFamily: "inherit" }}>
+                            {t.members.revoke_no}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setRevokeConfirmId(member.id)}
+                          style={{ padding: "5px 12px", borderRadius: 100, background: "transparent", color: "#9A8070", border: "1px solid rgba(61,43,31,.12)", cursor: "pointer", fontSize: ".78rem", fontFamily: "inherit" }}>
+                          {t.members.revoke_cta}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>

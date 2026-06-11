@@ -55,6 +55,8 @@ const STRINGS = {
     chapter: "Chapter",
     moments: "Moments",
     dedication: "A MESSAGE FROM YOUR FAMILY",
+    tributes: "TRIBUTES",
+    tributesSubtitle: "Messages from family & friends",
     noStories: (name: string) => `No stories yet. Add journal entries and generate ${name}'s first story.`,
     backTitle: "Every moment remembered.",
     backText: "This book was created with love using Everypaw, the AI journal that turns your pet's daily moments into stories worth keeping forever.",
@@ -66,6 +68,8 @@ const STRINGS = {
     chapter: "Chapitre",
     moments: "Souvenirs",
     dedication: "UN MESSAGE DE VOTRE FAMILLE",
+    tributes: "HOMMAGES",
+    tributesSubtitle: "Messages de proches et d'amis",
     noStories: (name: string) => `Aucune histoire pour l'instant. Ajoutez des entrées et générez la première histoire de ${name}.`,
     backTitle: "Chaque moment, à jamais.",
     backText: "Ce livre a été créé avec amour grâce à Everypaw, le journal IA qui transforme les moments du quotidien de votre animal en histoires à garder pour toujours.",
@@ -94,6 +98,7 @@ type StoryRow = {
   created_at: string;
 };
 type EntryRow = { id: string; photo_urls: string[]; entry_date: string };
+type TributeRow = { id: string; author_name: string; message: string; created_at: string };
 
 // ── Page components ──────────────────────────────────────────────────────────
 
@@ -394,6 +399,40 @@ function OrphanPhotosPage({
   );
 }
 
+function TributesPage({
+  colors,
+  strings,
+  tributes,
+}: {
+  colors: ThemeColors;
+  strings: Strings;
+  tributes: TributeRow[];
+}) {
+  const BP = BLEED_INT + PAD;
+  return (
+    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
+      <View style={{ padding: BP, flex: 1 }}>
+        <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 2, color: colors.accent, marginBottom: 4 }}>
+          {strings.tributes}
+        </Text>
+        <Text style={{ fontSize: 9, color: "#7A5C44", fontFamily: "Helvetica", marginBottom: 20 }}>
+          {strings.tributesSubtitle}
+        </Text>
+        {tributes.map((tribute) => (
+          <View key={tribute.id} style={{ marginBottom: 16, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: "rgba(61,43,31,0.08)" }}>
+            <Text style={{ fontSize: 9, fontFamily: "Helvetica-Bold", color: "#3D2B1F", marginBottom: 4 }}>
+              {tribute.author_name}
+            </Text>
+            <Text style={{ fontSize: 10, fontFamily: "Times-Italic", color: "#3D2B1F", lineHeight: 1.75 }}>
+              {tribute.message}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </Page>
+  );
+}
+
 function BlankPage() {
   return <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }} />;
 }
@@ -417,6 +456,7 @@ interface BookDocumentProps {
   blankPagesCount: number;
   coverWidthPt: number;
   coverHeightPt: number;
+  tributes?: TributeRow[];
 }
 
 function BookDocument({
@@ -436,9 +476,11 @@ function BookDocument({
   blankPagesCount,
   coverWidthPt,
   coverHeightPt,
+  tributes,
 }: BookDocumentProps) {
   const colors = COVER_THEMES[theme];
   const strings = STRINGS[lang];
+  const hasTributes = tributes && tributes.length > 0;
 
   return (
     <Document>
@@ -472,6 +514,9 @@ function BookDocument({
       )}
       {hasOrphanPhotos && (
         <OrphanPhotosPage colors={colors} strings={strings} orphanEntries={orphanEntries} />
+      )}
+      {hasTributes && (
+        <TributesPage colors={colors} strings={strings} tributes={tributes!} />
       )}
       {Array.from({ length: blankPagesCount }).map((_, i) => (
         <BlankPage key={`blank-${i}`} />
@@ -546,12 +591,17 @@ export async function GET(req: Request) {
   const coverWidthPt = (isNaN(coverWidthMm) || coverWidthMm < 300 || coverWidthMm > 800 ? 458 : coverWidthMm) * MM;
   const coverHeightPt = (isNaN(coverHeightMm) || coverHeightMm < 150 || coverHeightMm > 400 ? 246 : coverHeightMm) * MM;
 
+  const includeTributes = url.searchParams.get("includeTributes") === "1";
+
   // Fetch data
   const supabase = getServiceSupabase();
-  const [{ data: pet }, { data: allStories }, { data: allEntries }] = await Promise.all([
+  const [{ data: pet }, { data: allStories }, { data: allEntries }, { data: tributesData }] = await Promise.all([
     supabase.from("pets").select("*").eq("id", petId).single(),
     supabase.from("stories").select("*").eq("pet_id", petId).order("created_at", { ascending: true }),
     supabase.from("entries").select("*").eq("pet_id", petId).order("entry_date", { ascending: true }),
+    includeTributes
+      ? supabase.from("memorial_tributes").select("id, author_name, message, created_at").eq("pet_id", petId).eq("status", "approved").order("created_at", { ascending: true })
+      : Promise.resolve({ data: null }),
   ]);
 
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
@@ -574,6 +624,8 @@ export async function GET(req: Request) {
     : (allEntries ?? []);
 
   const hasDedication = dedication.trim().length > 0;
+  const approvedTributes: TributeRow[] = (includeTributes && tributesData) ? tributesData as TributeRow[] : [];
+  const hasTributes = approvedTributes.length > 0;
 
   // Associate photo entries to story chapters (same logic as preview-pdf)
   const entryToStoryIdx = new Map<string, number>();
@@ -608,7 +660,7 @@ export async function GET(req: Request) {
   // pageCount declared to Gelato = content pages only (cover + endpaper + back cover are structural).
   // Total PDF pages = contentPages + blankPagesCount + 3 structural = targetContentPages + 3.
   const storyPageCount = stories.length > 0 ? stories.length : 1;
-  const contentPages = (hasDedication ? 1 : 0) + storyPageCount + (hasOrphanPhotos ? 1 : 0);
+  const contentPages = (hasDedication ? 1 : 0) + storyPageCount + (hasOrphanPhotos ? 1 : 0) + (hasTributes ? 1 : 0);
   const targetContentPages = Math.max(28, Math.ceil(contentPages / 4) * 4);
   const blankPagesCount = targetContentPages - contentPages;
 
@@ -631,6 +683,7 @@ export async function GET(req: Request) {
         blankPagesCount={blankPagesCount}
         coverWidthPt={coverWidthPt}
         coverHeightPt={coverHeightPt}
+        tributes={approvedTributes.length > 0 ? approvedTributes : undefined}
       />,
     );
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getTranslations } from "@/lib/i18n";
 import PublicFooter from "@/components/PublicFooter";
+import TributeSection from "@/components/memorial/TributeSection";
 
 // ── OG meta ───────────────────────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ export default async function MemorialPage({ params, searchParams }: { params: {
   const supabaseAuth = await createServerClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
 
-  const [{ data: pet }, { data: stories }] = await Promise.all([
+  const [{ data: pet }, { data: stories }, { data: tributes }] = await Promise.all([
     supabase.from("pets").select("*").eq("id", params.id).single(),
     supabase
       .from("stories")
@@ -86,6 +87,12 @@ export default async function MemorialPage({ params, searchParams }: { params: {
       .eq("pet_id", params.id)
       .order("created_at", { ascending: false })
       .limit(3),
+    supabase
+      .from("memorial_tributes")
+      .select("id, author_name, message, created_at")
+      .eq("pet_id", params.id)
+      .eq("status", "approved")
+      .order("created_at", { ascending: true }),
   ]);
 
   const isOwner = user?.id === pet?.user_id;
@@ -189,8 +196,16 @@ export default async function MemorialPage({ params, searchParams }: { params: {
           </div>
         )}
 
+        {/* Tributes */}
+        <TributeSection
+          petId={params.id}
+          petName={pet.name}
+          initialTributes={tributes ?? []}
+          locale={locale}
+        />
+
         {/* CTA */}
-        <div style={{ textAlign: "center", borderTop: "1px solid rgba(247,242,234,.06)", paddingTop: "3rem" }}>
+        <div style={{ textAlign: "center", borderTop: "1px solid rgba(247,242,234,.06)", paddingTop: "3rem", marginTop: "3rem" }}>
           <p style={{ fontSize: ".8rem", color: "rgba(247,242,234,.3)", fontFamily: "sans-serif", marginBottom: ".5rem", letterSpacing: ".04em" }}>
             Everypaw
           </p>

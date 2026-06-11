@@ -84,6 +84,171 @@ export interface GeneratedStory {
  * Returns null on unique constraint violation (duplicate month_key for this pet) so callers
  * can skip gracefully.
  */
+export function buildOriginsPrompt(
+  pet: StoryPet,
+  answer1: string,
+  answer2: string,
+  answer3: string,
+  lang: "French" | "English",
+): string {
+  const petName = escapeXml(pet.name);
+  const petSpecies = escapeXml(pet.species || "");
+  const petBio = escapeXml(pet.bio || "Not provided");
+  const a1 = escapeXml(answer1);
+  const a2 = answer2.trim() ? escapeXml(answer2) : null;
+  const a3 = answer3.trim() ? escapeXml(answer3) : null;
+
+  const titleEN = "Chapter 1 — How it all began";
+  const titleFR = "Chapitre 1 — Comment tout a commencé";
+  const fixedTitle = lang === "French" ? titleFR : titleEN;
+
+  return `You are writing a warm, emotional, first-person narrative story for a pet journal called Everypaw.
+
+IMPORTANT: Write this story entirely in ${lang}. Do not use any other language.
+
+This is a special ORIGINS story — the very first chapter of ${petName}'s life with their family.
+The title is fixed: "${fixedTitle}"
+
+<pet_details>
+  <name>${petName}</name>
+  <species>${petSpecies}</species>
+  <bio>${petBio}</bio>
+</pet_details>
+
+<origins_answers>
+  <arrival>${a1}</arrival>${a2 ? `\n  <first_memory>${a2}</first_memory>` : ""}${a3 ? `\n  <what_makes_unique>${a3}</what_makes_unique>` : ""}
+</origins_answers>
+
+Write a beautiful narrative retrospective story of 350-450 words. The pet is the narrator (first-person voice).
+Structure:
+- Opening paragraph: how I arrived, the first moments with my family — paint the scene with sensory details
+- Middle paragraphs (1-2): early memories, first mischief or milestone, what makes me unique
+- Closing paragraph: a tender, warm note — what home means to me now. End with one resonant sentence.
+
+Style rules:
+- First-person voice throughout (I, me, my)
+- Use ${petName} as a self-reference at least once naturally
+- Warm, intimate, slightly poetic — like a letter to the reader
+- Do NOT list facts — transform them into narrative
+- Target 350-450 words
+
+You MUST respond with valid JSON only, no other text:
+{"title": "${fixedTitle}", "story": "..."}`;
+}
+
+export function buildBirthdayLetterPrompt(
+  pet: StoryPet,
+  entries: StoryEntry[],
+  lang: "French" | "English",
+  age: number | null,
+): string {
+  const petName = escapeXml(pet.name);
+  const petSpecies = escapeXml(pet.species || "");
+  const petBio = escapeXml(pet.bio || "Not provided");
+  const ageStr = age
+    ? (lang === "French"
+        ? `${age} an${age > 1 ? "s" : ""}`
+        : `${age} year${age > 1 ? "s" : ""}`)
+    : null;
+  const fixedTitle = lang === "French"
+    ? `Une lettre de ${pet.name} 🎂`
+    : `A letter from ${pet.name} 🎂`;
+  const entriesText = entries
+    .map((e) => `[${e.entry_date}] ${e.content}`)
+    .join("\n");
+
+  return `You are writing a short, heartfelt birthday letter for a pet journal called Everypaw.
+
+IMPORTANT: Write this letter entirely in ${lang}. Do not use any other language.
+
+The pet is writing to their human family on their birthday${ageStr ? ` — turning ${ageStr}` : ""}.
+
+<pet_details>
+  <name>${petName}</name>
+  <species>${petSpecies}</species>
+  <bio>${petBio}</bio>
+</pet_details>
+
+${entries.length > 0 ? `<journal_entries_this_year>\n${escapeXml(entriesText)}\n</journal_entries_this_year>` : ""}
+
+Write a short, warm birthday letter of exactly 150-250 words.
+- First-person voice: the pet is the narrator (I, me, my)
+${entries.length > 0
+    ? "- Weave in 1-2 specific memories from the journal entries above"
+    : "- Write warmly based on the pet's species and name"}
+- Tone: tender, slightly playful, full of love
+- End with a warm closing sentence addressed to the human family
+
+The title is fixed: "${fixedTitle}"
+
+You MUST respond with valid JSON only, no other text:
+{"title": "${fixedTitle}", "story": "..."}`;
+}
+
+export async function generateAndSaveBirthdayLetter(
+  supabase: SupabaseClient,
+  userId: string,
+  pet: StoryPet,
+  entries: StoryEntry[],
+  lang: "French" | "English",
+  yearKey: string,
+  age: number | null,
+): Promise<GeneratedStory | null> {
+  const prompt = buildBirthdayLetterPrompt(pet, entries, lang, age);
+  const today = new Date().toISOString().split("T")[0];
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY!,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 600,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+
+  const anthropicData = await response.json();
+  if (!response.ok) {
+    throw new Error(`Anthropic API error: ${JSON.stringify(anthropicData.error)}`);
+  }
+
+  const text: string = anthropicData.content?.[0]?.text || "";
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error(`No JSON in Anthropic birthday response: ${text.slice(0, 200)}`);
+  }
+
+  const { title, story } = JSON.parse(jsonMatch[0]) as { title: string; story: string };
+
+  const { data: saved, error: insertError } = await supabase
+    .from("stories")
+    .insert({
+      pet_id: pet.id,
+      user_id: userId,
+      title,
+      content: story,
+      style: "tender",
+      period_start: `${yearKey}-01-01`,
+      period_end: today,
+      status: "published",
+      month_key: yearKey,
+      story_type: "birthday",
+    })
+    .select("id")
+    .single();
+
+  if (insertError) {
+    if (insertError.code === "23505") return null;
+    throw new Error(`Supabase INSERT birthday letter: ${insertError.message}`);
+  }
+
+  return { id: saved.id, title, story };
+}
+
 export async function generateAndSaveStory(
   supabase: SupabaseClient,
   userId: string,
@@ -92,6 +257,7 @@ export async function generateAndSaveStory(
   lang: "French" | "English",
   style: StoryStyle = "classic",
   monthKey: string | null = null,
+  storyType: string = "monthly",
 ): Promise<GeneratedStory | null> {
   const prompt = buildStoryPrompt(pet, entries, lang, style);
 
@@ -141,6 +307,7 @@ export async function generateAndSaveStory(
       period_end: periodEnd,
       status: "published",
       ...(monthKey ? { month_key: monthKey } : {}),
+      story_type: storyType,
     })
     .select("id")
     .single();

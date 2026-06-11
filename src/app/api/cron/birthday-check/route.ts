@@ -3,6 +3,7 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
+import { generateAndSaveBirthdayLetter } from "@/lib/story";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -14,14 +15,18 @@ export async function GET(req: Request) {
   const today = new Date();
   const mm = String(today.getMonth() + 1).padStart(2, "0");
   const dd = String(today.getDate()).padStart(2, "0");
-  // Match pets whose birthdate ends in -MM-DD (any year)
+  const currentYear = today.getFullYear();
+  const yearKey = String(currentYear);
+  const todayStr = today.toISOString().split("T")[0];
+  const yearStart = `${yearKey}-01-01`;
+
   const { data: pets } = await supabase
     .from("pets")
-    .select("id, user_id, name, species, birthdate")
+    .select("id, user_id, name, species, bio, birthdate")
     .like("birthdate", `%-${mm}-${dd}`)
     .is("deceased_at", null);
 
-  if (!pets || pets.length === 0) return NextResponse.json({ sent: 0 });
+  if (!pets || pets.length === 0) return NextResponse.json({ sent: 0, letters: 0 });
 
   const userIds = Array.from(new Set(pets.map(p => p.user_id)));
   const { data: profiles } = await supabase
@@ -30,20 +35,22 @@ export async function GET(req: Request) {
     .eq("email_reminders", true)
     .in("id", userIds);
 
-  if (!profiles || profiles.length === 0) return NextResponse.json({ sent: 0 });
+  if (!profiles || profiles.length === 0) return NextResponse.json({ sent: 0, letters: 0 });
 
   const profileMap: Record<string, typeof profiles[number]> = {};
   for (const p of profiles) profileMap[p.id] = p;
 
   let sent = 0;
+  let letters = 0;
 
   for (const pet of pets) {
     const profile = profileMap[pet.user_id];
     if (!profile?.email) continue;
 
-    const isFR = (profile.locale ?? profile.language ?? "en").toLowerCase().startsWith("fr");
+    const locale = (profile.locale ?? profile.language ?? "en").toLowerCase();
+    const isFR = locale.startsWith("fr");
+    const lang: "French" | "English" = isFR ? "French" : "English";
     const petName = escapeHtml(pet.name);
-    const currentYear = today.getFullYear();
     const birthYear = pet.birthdate ? parseInt(pet.birthdate.slice(0, 4), 10) : null;
     const age = birthYear ? currentYear - birthYear : null;
     const unsubscribeUrl = profile.unsubscribe_token
@@ -58,6 +65,75 @@ export async function GET(req: Request) {
       ? `🎂 C'est l'anniversaire de ${petName} !`
       : `🎂 It's ${petName}'s birthday!`;
 
+    // ── Birthday letter (idempotent — one per pet per year) ───────────────────
+    let letterExcerpt: string | null = null;
+    let storyId: string | null = null;
+
+    try {
+      const { data: existing } = await supabase
+        .from("stories")
+        .select("id, content")
+        .eq("pet_id", pet.id)
+        .eq("story_type", "birthday")
+        .eq("month_key", yearKey)
+        .maybeSingle();
+
+      if (existing) {
+        storyId = existing.id;
+        letterExcerpt = existing.content.split("\n").find((l: string) => l.trim().length > 0)?.slice(0, 200) ?? null;
+      } else {
+        const { data: yearEntries } = await supabase
+          .from("entries")
+          .select("entry_date, content")
+          .eq("pet_id", pet.id)
+          .gte("entry_date", yearStart)
+          .lte("entry_date", todayStr)
+          .order("entry_date", { ascending: false })
+          .limit(20);
+
+        const generated = await generateAndSaveBirthdayLetter(
+          supabase,
+          pet.user_id,
+          { id: pet.id, name: pet.name, species: pet.species as string | null, bio: pet.bio as string | null ?? null },
+          (yearEntries || []).map(e => ({ entry_date: e.entry_date, content: e.content })),
+          lang,
+          yearKey,
+          age,
+        );
+
+        if (generated) {
+          storyId = generated.id;
+          letterExcerpt = generated.story.split("\n").find((l: string) => l.trim().length > 0)?.slice(0, 200) ?? null;
+          letters++;
+        }
+      }
+    } catch (err) {
+      console.error(`[birthday-check] letter generation failed for pet ${pet.id}:`, err);
+      // email still goes out
+    }
+
+    // ── Build enriched email HTML ─────────────────────────────────────────────
+    const storyUrl = storyId
+      ? `https://everypaw.app/dashboard/pets/${pet.id}?tab=stories`
+      : "https://everypaw.app/dashboard";
+    const excerptEscaped = letterExcerpt ? escapeHtml(letterExcerpt) : null;
+
+    const letterBlock = excerptEscaped ? (isFR
+      ? `
+        <div style="background: #F7F2EA; border-left: 3px solid #C8813A; padding: 16px 20px; border-radius: 0 10px 10px 0; margin: 0 0 20px; font-style: italic; font-size: 15px; line-height: 1.65; color: #3D2B1F;">
+          « ${excerptEscaped}… »
+        </div>
+        <a href="${storyUrl}" style="display: inline-block; background: transparent; color: #C8813A; padding: 10px 20px; border-radius: 100px; border: 1.5px solid #C8813A; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500; margin-bottom: 20px;">
+          Lire la lettre de ${petName} →
+        </a><br>`
+      : `
+        <div style="background: #F7F2EA; border-left: 3px solid #C8813A; padding: 16px 20px; border-radius: 0 10px 10px 0; margin: 0 0 20px; font-style: italic; font-size: 15px; line-height: 1.65; color: #3D2B1F;">
+          "${excerptEscaped}…"
+        </div>
+        <a href="${storyUrl}" style="display: inline-block; background: transparent; color: #C8813A; padding: 10px 20px; border-radius: 100px; border: 1.5px solid #C8813A; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500; margin-bottom: 20px;">
+          Read ${petName}'s letter →
+        </a><br>`) : "";
+
     const html = isFR ? `
       <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
         <p style="font-size: 36px; margin: 0 0 8px;">🎂</p>
@@ -68,6 +144,7 @@ export async function GET(req: Request) {
           C'est une belle occasion de noter ce moment dans son journal. Décrivez comment ${petName} est aujourd'hui,
           ce qu'il ou elle aime, ce qui a changé cette année — dans quelques ans, vous serez heureux de l'avoir noté.
         </p>
+        ${letterBlock}
         <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
           Écrire une entrée d'anniversaire →
         </a>
@@ -85,6 +162,7 @@ export async function GET(req: Request) {
           Today is a perfect day to add a birthday entry to ${petName}'s journal. Describe how they are right now,
           what they love, what's changed this year — you'll be so glad you wrote it down.
         </p>
+        ${letterBlock}
         <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
           Write a birthday entry →
         </a>
@@ -104,5 +182,5 @@ export async function GET(req: Request) {
     sent++;
   }
 
-  return NextResponse.json({ sent });
+  return NextResponse.json({ sent, letters });
 }

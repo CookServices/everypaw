@@ -39,6 +39,7 @@ interface Pet {
   name: string;
   birthdate: string | null;
   created_at: string;
+  deceased_at: string | null;
 }
 
 interface Profile {
@@ -119,6 +120,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [addressErrors, setAddressErrors] = useState<Record<string, boolean>>({});
   const [awaitingCredit, setAwaitingCredit] = useState(false);
+  const [approvedTributesCount, setApprovedTributesCount] = useState(0);
+  const [includeTributes, setIncludeTributes] = useState(false);
 
   const [address, setAddress] = useState(() => {
     if (typeof window !== "undefined") {
@@ -143,7 +146,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
       Promise.all([
-        supabase.from("pets").select("id, name, birthdate, created_at, user_id").eq("id", id).single(),
+        supabase.from("pets").select("id, name, birthdate, created_at, user_id, deceased_at").eq("id", id).single(),
         supabase.from("stories").select("id, title, content, period_start, period_end, created_at").eq("pet_id", id).order("created_at", { ascending: true }),
         supabase.from("entries").select("id, photo_urls, entry_date").eq("pet_id", id).order("entry_date", { ascending: true }),
         supabase.from("profiles").select("plan, book_credits, subscription_renewal_date").eq("id", user.id).single(),
@@ -180,6 +183,15 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       });
     });
   }, [id, locale]);
+
+  // Load approved tribute count for deceased pets
+  useEffect(() => {
+    if (!pet?.deceased_at) return;
+    fetch(`/api/memorial/tributes?petId=${id}&status=approved`)
+      .then(r => r.json())
+      .then(d => setApprovedTributesCount((d.tributes ?? []).length))
+      .catch(() => {});
+  }, [pet, id]);
 
   // Load config from URL param (coming from /books page)
   useEffect(() => {
@@ -300,6 +312,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           theme: coverTheme,
           customTitle: customTitle.trim() || undefined,
           layouts: storyLayouts,
+          includeTributes: includeTributes && approvedTributesCount > 0,
         }),
       });
       if (!res.ok) {
@@ -509,6 +522,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           storyLayouts,
           bookConfigId: currentConfigId ?? undefined,
           stripeSessionId: searchParams.get("session_id") ?? undefined,
+          includeTributes: includeTributes && approvedTributesCount > 0,
         }),
       });
       const data = await res.json();
@@ -1162,6 +1176,25 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Tributes chapter option (deceased pets with approved tributes) */}
+      {pet?.deceased_at && approvedTributesCount > 0 && (
+        <div style={{ background: isMemorial ? "rgba(247,242,234,.04)" : "rgba(200,129,58,.04)", border: isMemorial ? "1px solid rgba(247,242,234,.08)" : "1px solid rgba(200,129,58,.2)", borderRadius: 12, padding: ".875rem 1rem", marginBottom: "1rem" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: ".75rem", cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={includeTributes}
+              onChange={e => setIncludeTributes(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: "#C8813A", flexShrink: 0 }}
+            />
+            <span style={{ fontSize: ".875rem", color: textPrimary, lineHeight: 1.5 }}>
+              {locale === "fr"
+                ? `🕊️ Inclure la page des hommages (${approvedTributesCount} message${approvedTributesCount > 1 ? "s" : ""})`
+                : `🕊️ Include tributes page (${approvedTributesCount} message${approvedTributesCount > 1 ? "s" : ""})`}
+            </span>
+          </label>
         </div>
       )}
 

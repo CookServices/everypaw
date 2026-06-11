@@ -65,7 +65,8 @@ export async function POST(req: Request) {
   const { count: storyCount } = await supabase
     .from("stories")
     .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .not("story_type", "in", "(origins,birthday)");
 
   console.log("[generate] plan gate: plan=", plan, "storyCount=", storyCount);
 

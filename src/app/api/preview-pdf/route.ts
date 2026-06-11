@@ -47,6 +47,8 @@ const STRINGS = {
     chapter: "Chapter",
     moments: "Moments",
     dedication: "A message from your family",
+    tributes: "Tributes",
+    tributesSubtitle: "Messages from family & friends",
     noStories: (name: string) => `No stories yet. Add journal entries and generate ${name}'s first story.`,
     backTitle: "Every moment remembered.",
     backText: "This book was created with love using Everypaw , the AI journal that turns your pet's daily moments into stories worth keeping forever.",
@@ -58,6 +60,8 @@ const STRINGS = {
     chapter: "Chapitre",
     moments: "Souvenirs",
     dedication: "Un message de votre famille",
+    tributes: "Hommages",
+    tributesSubtitle: "Messages de proches et d'amis",
     noStories: (name: string) => `Aucune histoire pour l'instant. Ajoutez des entrées et générez la première histoire de ${name}.`,
     backTitle: "Chaque moment, à jamais.",
     backText: "Ce livre a été créé avec amour grâce à Everypaw , le journal IA qui transforme les moments du quotidien de votre animal en histoires à garder pour toujours.",
@@ -75,16 +79,20 @@ async function buildHtml(params: {
   theme: ThemeId;
   customTitle: string | null;
   layouts: Record<string, LayoutType>;
+  includeTributes?: boolean;
 }): Promise<NextResponse> {
-  const { petId, lang, storyIdsParam, dedication, yearFilter, coverPhotoParam, theme, customTitle, layouts } = params;
+  const { petId, lang, storyIdsParam, dedication, yearFilter, coverPhotoParam, theme, customTitle, layouts, includeTributes } = params;
   const supabase = getServiceSupabase();
   const s = STRINGS[lang] ?? STRINGS.en;
   const colors = COVER_THEMES[theme] ?? COVER_THEMES.classic;
 
-  const [{ data: pet }, { data: allStories }, { data: allEntries }] = await Promise.all([
+  const [{ data: pet }, { data: allStories }, { data: allEntries }, { data: approvedTributes }] = await Promise.all([
     supabase.from("pets").select("*").eq("id", petId).single(),
     supabase.from("stories").select("*").eq("pet_id", petId).order("created_at", { ascending: true }),
     supabase.from("entries").select("*").eq("pet_id", petId).order("entry_date", { ascending: true }),
+    includeTributes
+      ? supabase.from("memorial_tributes").select("id, author_name, message, created_at").eq("pet_id", petId).eq("status", "approved").order("created_at", { ascending: true })
+      : Promise.resolve({ data: null }),
   ]);
 
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
@@ -106,6 +114,8 @@ async function buildHtml(params: {
     : (allEntries ?? []);
 
   const hasDedication = dedication.trim().length > 0;
+  const tributesList = (includeTributes && approvedTributes && approvedTributes.length > 0) ? approvedTributes : [];
+  const hasTributes = tributesList.length > 0;
 
   // Associate each photo entry to its story by date range
   // entry → story with best (latest) period_start that still covers entry_date
@@ -148,6 +158,7 @@ async function buildHtml(params: {
     (hasDedication ? 1 : 0) +    // dedication
     storyPageCount +              // chapters (or 1 placeholder)
     (hasOrphanPhotos ? 1 : 0) +  // orphan photos page
+    (hasTributes ? 1 : 0) +      // tributes page
     1;                            // back cover
   const targetPages = Math.max(28, Math.ceil(actualPages / 4) * 4);
   const blankPagesToAdd = targetPages - actualPages;
@@ -325,6 +336,19 @@ async function buildHtml(params: {
   </div>
   ` : ""}
 
+  <!-- Tributes page -->
+  ${hasTributes ? `
+  <div class="photo-page" style="padding: 4rem 3rem 5rem;">
+    <div class="chapter-num" style="margin-bottom: .4rem;">${escapeHtml(s.tributes)}</div>
+    <div class="chapter-period" style="margin-bottom: 2rem;">${escapeHtml(s.tributesSubtitle)}</div>
+    ${tributesList.map(tribute => `
+    <div style="margin-bottom: 1.75rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(61,43,31,.08);">
+      <div style="font-size: .85rem; font-weight: 600; color: #3D2B1F; margin-bottom: .35rem; font-family: 'DM Sans', sans-serif;">${escapeHtml(tribute.author_name)}</div>
+      <div style="font-family: 'Playfair Display', serif; font-style: italic; font-size: .95rem; line-height: 1.8; color: #3D2B1F;">${escapeHtml(tribute.message).replace(/\n/g, "<br>")}</div>
+    </div>`).join("")}
+  </div>
+  ` : ""}
+
   <!-- Blank pages to reach Gelato minimum (20 pages, even count) -->
   ${blankPagesHtml}
 
@@ -471,6 +495,7 @@ export async function GET(req: Request) {
     theme,
     customTitle,
     layouts,
+    includeTributes: url.searchParams.get("includeTributes") === "1",
   });
 }
 
@@ -481,14 +506,14 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: { petId?: string; lang?: string; storyIds?: string; dedication?: string; year?: number; coverPhoto?: string; theme?: string; customTitle?: string; layouts?: Record<string, string> };
+  let body: { petId?: string; lang?: string; storyIds?: string; dedication?: string; year?: number; coverPhoto?: string; theme?: string; customTitle?: string; layouts?: Record<string, string>; includeTributes?: boolean };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const { petId, lang, storyIds, dedication, year, coverPhoto, theme, customTitle, layouts: rawLayouts } = body;
+  const { petId, lang, storyIds, dedication, year, coverPhoto, theme, customTitle, layouts: rawLayouts, includeTributes } = body;
   if (!petId) return NextResponse.json({ error: "petId required" }, { status: 400 });
   if (!UUID_REGEX.test(petId)) return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
 
@@ -559,5 +584,6 @@ export async function POST(req: Request) {
     theme: validTheme,
     customTitle: validCustomTitle,
     layouts,
+    includeTributes: !!includeTributes,
   });
 }
