@@ -1823,4 +1823,8 @@ curl "https://everypaw.app/api/share-card?story_id=<uuid>&format=story" --cookie
 - `retention-emails` : 200 / 401 / idempotence ✓ (fenêtres D1/D7/D30 vides au moment du test)
 - ⚠️ Posé en `--no-sensitive` pour les tests — repasser en sensitive dans le dashboard Vercel quand voulu (reste valide).
 
-*Dernière mise à jour : 2026-06-11 (session 49 — fonts Gelato + CRON_SECRET prod)*
+**🔴 RLS récursion infinie pets ↔ pet_members (bug critique, commit `acacb69`)** — découvert en testant share-card. Session 48 a créé deux policies mutuellement récursives : `pets_owner_or_member_select` lit `pet_members`, et `pet_members_owner_select` lit `pets` → `ERROR 42P17 infinite recursion detected in policy for relation "pets"` → **depuis le deploy session 48, AUCUN user connecté ne pouvait lire ses pets** (dashboard "Animal introuvable" / liste vide pour tout le monde). Fix : `migrations/fix_pets_members_rls_recursion_2026_06_11.sql` — lookups déplacés dans fonctions `SECURITY DEFINER` (`user_owns_pet`, `user_is_accepted_member`) qui s'exécutent en owner et bypass RLS, cassant le cycle. **Migration appliquée prod ✓**. Pattern : jamais 2 policies RLS qui se lisent mutuellement ; utiliser `SECURITY DEFINER` pour les checks cross-table.
+
+**share-card `@vercel/og` crash (commit `acacb69`)** — route `/api/share-card` (session 47, jamais testée) renvoyait `200` + PNG 0 octet → modal "Impossible de créer la carte". Cause (logs Vercel) : `Error: Expected <div> to have explicit "display: flex" ... if it has more than one child node` — la div citation rendait `"{quote}"` = 3 nœuds (2 guillemets littéraux + expression) sans `display:flex`. Fix : `{`"${quote}"`}` (nœud unique). Testé live : preview square ✓ + story 9:16 ✓ (sur seed test-print-multi re-créé). Pattern Satori : toute `<div>` à >1 enfant doit avoir `display:flex`/`none`.
+
+*Dernière mise à jour : 2026-06-11 (session 49 — fonts Gelato + CRON_SECRET + RLS recursion + share-card)*
