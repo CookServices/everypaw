@@ -183,7 +183,7 @@ export async function GET(req: NextRequest) {
           fontStyle: "italic",
           maxWidth: width - paddingH * 2 - 40,
         }}>
-          "{quote}"
+          {`"${quote}"`}
         </div>
 
         {/* Branding */}
