@@ -89,6 +89,31 @@ export function buildResetPasswordEmail(lang: "fr" | "en", resetUrl: string): { 
   };
 }
 
+export function buildPaymentFailedEmail(lang: "fr" | "en", billingPortalUrl: string): { subject: string; html: string } {
+  if (lang === "fr") {
+    return {
+      subject: "⚠️ Problème de paiement sur votre abonnement Everypaw",
+      html: baseLayout(`
+        <h1 style="font-family:Georgia,serif;font-size:1.4rem;font-weight:600;color:${BRAND.text};margin:0 0 12px;">Votre paiement n'a pas abouti</h1>
+        <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 8px;">Nous n'avons pas pu traiter le paiement de votre abonnement Everypaw.</p>
+        <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 24px;">Mettez à jour votre moyen de paiement pour continuer à profiter de toutes les fonctionnalités :</p>
+        ${ctaButton(billingPortalUrl, "Mettre à jour ma carte →")}
+        <p style="font-size:.78rem;color:#9A8070;margin:16px 0 0;line-height:1.5;">Stripe effectuera plusieurs tentatives de prélèvement automatiquement. Si le paiement échoue à nouveau, votre accès Premium sera suspendu.</p>
+      `),
+    };
+  }
+  return {
+    subject: "⚠️ Payment issue on your Everypaw subscription",
+    html: baseLayout(`
+      <h1 style="font-family:Georgia,serif;font-size:1.4rem;font-weight:600;color:${BRAND.text};margin:0 0 12px;">Your payment didn't go through</h1>
+      <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 8px;">We were unable to process the payment for your Everypaw subscription.</p>
+      <p style="font-size:.9rem;color:${BRAND.muted};line-height:1.65;margin:0 0 24px;">Please update your payment method to continue enjoying all features:</p>
+      ${ctaButton(billingPortalUrl, "Update my card →")}
+      <p style="font-size:.78rem;color:#9A8070;margin:16px 0 0;line-height:1.5;">Stripe will automatically retry the charge. If payment continues to fail, your Premium access will be suspended.</p>
+    `),
+  };
+}
+
 export function buildChangeEmailEmail(lang: "fr" | "en", confirmUrl: string, newEmail: string): { subject: string; html: string } {
   if (lang === "fr") {
     return {

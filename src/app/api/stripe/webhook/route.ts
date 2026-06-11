@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { Resend } from "resend";
 import { getServiceSupabase, priceIdToPlan } from "@/lib/plan";
+import { buildPaymentFailedEmail } from "@/lib/auth-emails";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -118,6 +120,7 @@ export async function POST(req: Request) {
         plan: "free",
         is_premium: false,
         stripe_subscription_id: null,
+        payment_past_due: false,
       })
       .eq("stripe_customer_id", customerId);
 
@@ -196,6 +199,17 @@ export async function POST(req: Request) {
   if (event.type === "invoice.payment_succeeded") {
     const invoice = event.data.object as Stripe.Invoice;
     const billingReason = invoice.billing_reason;
+
+    // Clear past-due flag on any successful payment, before the book-credit
+    // gates below (Print-only price filter, 365-day guard) can return early
+    const paidCustomerId = typeof invoice.customer === "string" ? invoice.customer : null;
+    if (paidCustomerId) {
+      await supabase
+        .from("profiles")
+        .update({ payment_past_due: false })
+        .eq("stripe_customer_id", paidCustomerId)
+        .eq("payment_past_due", true);
+    }
 
     if (billingReason === "subscription_cycle" || billingReason === "subscription_create") {
       const priceId = invoice.lines?.data?.[0]?.price?.id;
@@ -298,6 +312,90 @@ export async function POST(req: Request) {
 
       console.log("[webhook] book credit added via invoice for user:", userId, "billing_reason:", billingReason, "event:", event.id);
     }
+  }
+
+  // ── invoice.payment_failed ────────────────────────────────────────────────
+  // Sets payment_past_due flag + sends email. Does NOT downgrade — Stripe retries,
+  // customer.subscription.deleted handles the final downgrade.
+  if (event.type === "invoice.payment_failed") {
+    const invoice = event.data.object as Stripe.Invoice;
+    const customerId = invoice.customer as string;
+
+    // Idempotence: skip if this exact event was already processed (Stripe redelivery)
+    const { data: existingFailEvent } = await supabase
+      .from("events_log")
+      .select("id")
+      .eq("event_type", "stripe_payment_failed")
+      .contains("metadata", { stripe_event_id: event.id })
+      .maybeSingle();
+
+    if (existingFailEvent) {
+      console.log("[webhook] duplicate invoice.payment_failed, skipping:", event.id);
+      return NextResponse.json({ received: true });
+    }
+
+    const { data: failedProfile } = await supabase
+      .from("profiles")
+      .update({ payment_past_due: true })
+      .eq("stripe_customer_id", customerId)
+      .select("id, email, locale, language")
+      .single();
+
+    if (!failedProfile?.id) {
+      console.error("[webhook] invoice.payment_failed: no profile for customer:", customerId, "event:", event.id);
+      return NextResponse.json({ received: true });
+    }
+
+    const userId = failedProfile.id;
+    const userEmail = failedProfile.email as string | undefined;
+
+    // Log to events_log
+    await supabase.from("events_log").insert({
+      user_id: userId,
+      event_type: "stripe_payment_failed",
+      metadata: {
+        stripe_event_id: event.id,
+        customer_id: customerId,
+        attempt_count: invoice.attempt_count ?? null,
+      },
+    });
+
+    // Email only on the first failed attempt — Stripe retries on its own schedule,
+    // one email per attempt would spam the user. Flag stays set until payment succeeds.
+    const attemptCount = invoice.attempt_count ?? 1;
+    if (userEmail && attemptCount <= 1) {
+      try {
+        const lang: "fr" | "en" =
+          (failedProfile.locale as string | undefined)?.startsWith("en") ||
+          (failedProfile.language as string | undefined)?.startsWith("en")
+            ? "en"
+            : "fr";
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://everypaw.app";
+        const portalSession = await stripe.billingPortal.sessions.create({
+          customer: customerId,
+          return_url: `${appUrl}/dashboard/settings`,
+        });
+
+        const { subject, html } = buildPaymentFailedEmail(lang, portalSession.url);
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const { error: emailError } = await resend.emails.send({
+          from: "Everypaw <noreply@everypaw.app>",
+          to: userEmail,
+          subject,
+          html,
+        });
+
+        if (emailError) {
+          console.error("[webhook] invoice.payment_failed: email send error:", emailError, "event:", event.id);
+        } else {
+          console.log("[webhook] payment failed email sent to:", userEmail, "attempt:", invoice.attempt_count, "event:", event.id);
+        }
+      } catch (emailErr) {
+        console.error("[webhook] invoice.payment_failed: unexpected email error:", emailErr, "event:", event.id);
+      }
+    }
+
+    console.log("[webhook] payment_past_due set for user:", userId, "attempt:", invoice.attempt_count, "event:", event.id);
   }
 
   return NextResponse.json({ received: true });

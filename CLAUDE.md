@@ -110,6 +110,7 @@ profiles: id, email, full_name, avatar_url,
           stripe_customer_id,
           email_reminders,   -- boolean — consentement emails hebdomadaires
           onboarding_completed,
+          payment_past_due,  -- boolean — set par invoice.payment_failed, cleared par invoice.payment_succeeded
           created_at
 
 -- pets
@@ -188,9 +189,10 @@ Book credits : incrémentés via RPC `increment_book_credits`, consommés atomiq
 
 Le webhook (`/api/stripe/webhook`) gère :
 - `checkout.session.completed`
-- `customer.subscription.deleted`
+- `customer.subscription.deleted` — downgrade plan free + clear `payment_past_due`
 - `customer.subscription.updated`
-- `invoice.payment_succeeded` — source unique pour les book credits Print (ajouté 2026-05-28)
+- `invoice.payment_succeeded` — source unique pour les book credits Print (ajouté 2026-05-28) ; remet `payment_past_due: false` en tête de handler pour **tout** paiement réussi (avant les gates Print/365j qui return early)
+- `invoice.payment_failed` — set `payment_past_due: true` + log `events_log` (type `stripe_payment_failed`, idempotent par `stripe_event_id`) + email Resend avec lien billing portal Stripe (`return_url` → `/dashboard/settings`) **uniquement à la 1ère tentative** (`attempt_count <= 1`, les retries dunning Stripe ne re-spamment pas) ; ne downgrade pas (Stripe gère les retries, `customer.subscription.deleted` gère le downgrade final). Note : `invoice.payment_failed` doit être activé dans la config webhook Stripe.
 
 **Idempotence webhook (2026-05-22)** : protection contre les retries Stripe.
 - Abonnement : compare `stripe_subscription_id` en DB avant d'agir — skip si déjà activé.
