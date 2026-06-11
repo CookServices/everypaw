@@ -6,6 +6,7 @@ import {
   View,
   Text,
   Image as PdfImage,
+  Font,
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { validatePdfToken } from "@/lib/pdf-token";
@@ -134,9 +135,9 @@ function WrapCoverPage({
 
       {/* ── Back panel (left) ── */}
       <View style={{ position: "absolute", top: WRAP_BLEED, left: WRAP_BLEED, width: TRIM, height: TRIM, alignItems: "center", justifyContent: "center", padding: PAD }}>
-        <Text style={{ fontSize: 18, fontFamily: "Times-Bold", color: "#FDFAF5", marginBottom: 12, textAlign: "center" }}>{strings.backTitle}</Text>
-        <Text style={{ fontSize: 9, color: "rgba(253,250,245,0.7)", fontFamily: "Helvetica", lineHeight: 1.7, textAlign: "center", maxWidth: 320 }}>{strings.backText}</Text>
-        <Text style={{ fontSize: 7, color: "rgba(253,250,245,0.5)", fontFamily: "Helvetica", letterSpacing: 2, marginTop: 24 }}>everypaw.app</Text>
+        <Text style={{ fontSize: 18, fontFamily: "TinosBold", color: "#FDFAF5", marginBottom: 12, textAlign: "center" }}>{strings.backTitle}</Text>
+        <Text style={{ fontSize: 9, color: "rgba(253,250,245,0.7)", fontFamily: "Sans", lineHeight: 1.7, textAlign: "center", maxWidth: 320 }}>{strings.backText}</Text>
+        <Text style={{ fontSize: 7, color: "rgba(253,250,245,0.5)", fontFamily: "Sans", letterSpacing: 2, marginTop: 24 }}>everypaw.app</Text>
       </View>
 
       {/* ── Spine ── */}
@@ -150,14 +151,14 @@ function WrapCoverPage({
         <View style={{ position: "absolute", top: WRAP_BLEED, left: frontLeft, width: TRIM, height: TRIM, backgroundColor: "rgba(0,0,0,0.55)" }} />
       )}
       <View style={{ position: "absolute", top: WRAP_BLEED, left: frontLeft, width: TRIM, height: TRIM, alignItems: "center", justifyContent: "center", padding: PAD }}>
-        <Text style={{ fontSize: 28, color: colors.title, textAlign: "center", fontFamily: "Times-Bold", lineHeight: 1.3 }}>{title}</Text>
+        <Text style={{ fontSize: 28, color: colors.title, textAlign: "center", fontFamily: "TinosBold", lineHeight: 1.3 }}>{title}</Text>
         {birthdate && (
-          <Text style={{ fontSize: 11, color: "rgba(247,242,234,0.6)", marginTop: 10, fontFamily: "Times-Italic", textAlign: "center" }}>
+          <Text style={{ fontSize: 11, color: "rgba(247,242,234,0.6)", marginTop: 10, fontFamily: "TinosItalic", textAlign: "center" }}>
             {strings.birthdate(new Date(birthdate))}
           </Text>
         )}
         <View style={{ width: 60, height: 2, backgroundColor: colors.accent, marginTop: 22, marginBottom: 22 }} />
-        <Text style={{ fontSize: 7, color: "rgba(247,242,234,0.4)", letterSpacing: 2, fontFamily: "Helvetica" }}>{strings.brand}</Text>
+        <Text style={{ fontSize: 7, color: "rgba(247,242,234,0.4)", letterSpacing: 2, fontFamily: "Sans" }}>{strings.brand}</Text>
       </View>
     </Page>
   );
@@ -175,11 +176,11 @@ function DedicationPage({
   return (
     <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: BLEED_INT + PAD }}>
-        <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 2, color: colors.accent, marginBottom: 18, textAlign: "center" }}>
+        <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 18, textAlign: "center" }}>
           {strings.dedication}
         </Text>
         <View style={{ maxWidth: 380 }}>
-          <Text style={{ fontSize: 12, fontFamily: "Times-Italic", lineHeight: 1.85, color: "#3D2B1F", textAlign: "center" }}>
+          <Text style={{ fontSize: 12, fontFamily: "TinosItalic", lineHeight: 1.85, color: "#3D2B1F", textAlign: "center" }}>
             {dedication}
           </Text>
         </View>
@@ -230,7 +231,7 @@ function ChapterPage({
       <Text
         style={{
           fontSize: 7,
-          fontFamily: "Helvetica-Bold",
+          fontFamily: "SansBold",
           letterSpacing: 2,
           color: colors.accent,
           marginBottom: 4,
@@ -242,7 +243,7 @@ function ChapterPage({
         style={{
           fontSize: 8,
           color: "#7A5C44",
-          fontFamily: "Helvetica",
+          fontFamily: "Sans",
           marginBottom: 12,
         }}
       >
@@ -251,7 +252,7 @@ function ChapterPage({
       <Text
         style={{
           fontSize: 18,
-          fontFamily: "Times-Bold",
+          fontFamily: "TinosBold",
           color: "#3D2B1F",
           marginBottom: 18,
           lineHeight: 1.3,
@@ -266,7 +267,7 @@ function ChapterPage({
     <Text
       style={{
         fontSize: 10,
-        fontFamily: "Times-Italic",
+        fontFamily: "TinosItalic",
         lineHeight: 1.9,
         color: "#3D2B1F",
         flex: 1,
@@ -358,11 +359,11 @@ function NoStoriesPage({
   return (
     <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
       <View style={{ padding: BLEED_INT + PAD, flex: 1 }}>
-        <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 2, color: colors.accent, marginBottom: 4 }}>
+        <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 4 }}>
           {strings.chapter.toUpperCase()} 1
         </Text>
-        <Text style={{ fontSize: 18, fontFamily: "Times-Bold", color: "#3D2B1F", marginBottom: 18 }}>The story begins…</Text>
-        <Text style={{ fontSize: 11, color: "#7A5C44", fontFamily: "Helvetica", lineHeight: 1.6 }}>{strings.noStories(petName)}</Text>
+        <Text style={{ fontSize: 18, fontFamily: "TinosBold", color: "#3D2B1F", marginBottom: 18 }}>The story begins…</Text>
+        <Text style={{ fontSize: 11, color: "#7A5C44", fontFamily: "Sans", lineHeight: 1.6 }}>{strings.noStories(petName)}</Text>
       </View>
     </Page>
   );
@@ -386,7 +387,7 @@ function OrphanPhotosPage({
   return (
     <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
       <View style={{ padding: BLEED_INT + PAD, flex: 1, overflow: "hidden" }}>
-        <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 2, color: colors.accent, marginBottom: 18 }}>
+        <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 18 }}>
           {strings.moments.toUpperCase()}
         </Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -412,18 +413,18 @@ function TributesPage({
   return (
     <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
       <View style={{ padding: BP, flex: 1 }}>
-        <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 2, color: colors.accent, marginBottom: 4 }}>
+        <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 4 }}>
           {strings.tributes}
         </Text>
-        <Text style={{ fontSize: 9, color: "#7A5C44", fontFamily: "Helvetica", marginBottom: 20 }}>
+        <Text style={{ fontSize: 9, color: "#7A5C44", fontFamily: "Sans", marginBottom: 20 }}>
           {strings.tributesSubtitle}
         </Text>
         {tributes.map((tribute) => (
           <View key={tribute.id} style={{ marginBottom: 16, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: "rgba(61,43,31,0.08)" }}>
-            <Text style={{ fontSize: 9, fontFamily: "Helvetica-Bold", color: "#3D2B1F", marginBottom: 4 }}>
+            <Text style={{ fontSize: 9, fontFamily: "SansBold", color: "#3D2B1F", marginBottom: 4 }}>
               {tribute.author_name}
             </Text>
-            <Text style={{ fontSize: 10, fontFamily: "Times-Italic", color: "#3D2B1F", lineHeight: 1.75 }}>
+            <Text style={{ fontSize: 10, fontFamily: "TinosItalic", color: "#3D2B1F", lineHeight: 1.75 }}>
               {tribute.message}
             </Text>
           </View>
@@ -528,8 +529,22 @@ function BookDocument({
 
 // ── GET handler ───────────────────────────────────────────────────────────────
 
+// Embed real TTF fonts (Gelato/PDF-X requires all fonts embedded — the base-14
+// standard fonts Helvetica/Times are referenced but NOT embedded by react-pdf).
+// Tinos is a metric-compatible Times clone; Lato replaces Helvetica for labels.
+let fontsRegistered = false;
+function registerFonts(origin: string) {
+  if (fontsRegistered) return;
+  Font.register({ family: "TinosBold", src: `${origin}/fonts/Tinos-Bold.ttf` });
+  Font.register({ family: "TinosItalic", src: `${origin}/fonts/Tinos-Italic.ttf` });
+  Font.register({ family: "Sans", src: `${origin}/fonts/Lato-Regular.ttf` });
+  Font.register({ family: "SansBold", src: `${origin}/fonts/Lato-Bold.ttf` });
+  fontsRegistered = true;
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
+  registerFonts(url.origin);
   const petId = url.searchParams.get("petId");
 
   if (!petId) return NextResponse.json({ error: "petId required" }, { status: 400 });
