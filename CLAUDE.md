@@ -56,9 +56,10 @@ Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suiv
 npm run dev        # Start dev server on localhost:3000
 npm run build      # Production build (also validates TypeScript)
 npx tsc --noEmit   # Type-check without building
+npm test           # Run Vitest unit tests (vitest run)
 ```
 
-Pas de lint script ni de test suite configurés. Type-checker avec `npx tsc --noEmit` avant tout commit.
+Pas de lint script. Tests unitaires via **Vitest** (`npm test`) sur la logique pure critique (`src/lib/*.test.ts`). Type-checker avec `npx tsc --noEmit` avant tout commit.
 
 Déploiement sur **Vercel** — push sur `main` = auto-deploy. Les variables d'environnement (Supabase, Stripe, Gelato, Resend) ne vivent que sur Vercel ; pas de `.env.local` en local.
 
@@ -1858,4 +1859,25 @@ curl "https://everypaw.app/api/share-card?story_id=<uuid>&format=story" --cookie
 
 **Gift — bouton aperçu email** (`gift/page.tsx`) — "Aperçu de l'email cadeau →" → " →" retiré (fr+en), passé d'un lien dotted-underline à un **bouton pill outline** (transparent, `#C8813A`, border `rgba(200,129,58,.4)`, radius 100, full-width) placé **au-dessus** du bouton "Envoyer le cadeau". `no_recurring` reste sous le bouton Envoyer.
 
-*Dernière mise à jour : 2026-06-11 (session 50 — UI fixes + bannissement em-dash humain & IA)*
+---
+
+## Optimisation & dette technique (audit Pareto 2026-06-18)
+
+Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10 items.
+
+**Livré (commits sur `main`) :**
+- **#1 Logs gatés** — `src/lib/log.ts` : `log.debug/info` silencieux sauf `DEBUG_LOGS=1` ; `warn/error` toujours. `console.*` → `log.*` sur 30 routes API (stop fuite user ids/payloads en logs prod).
+- **#3 Client Anthropic unique** — `src/lib/anthropic.ts` : `callClaude()` (model `claude-sonnet-4-6`, version, timeout 30s, 1 retry sur 429/5xx/network) + `parseStoryResponse()`. Refacto des 4 sites (generate, generate-origins, story.ts ×2). Model id défini **une seule fois**.
+- **#5 Singleton Supabase browser** — `src/lib/supabase/client.ts` réutilise une instance au lieu d'en créer une par render.
+- **#7 Rate-limit persistant** — `checkRateLimitDb()` via RPC Postgres atomique `check_rate_limit` (migration `add_rate_limits_2026_06_18.sql` **appliquée en prod ✓**). Table `rate_limits` RLS-on sans policy, fonction SECURITY DEFINER, **fail-open**. Rewire 7 routes (contact, waitlist, gift-checkout, export-data, memorial tributes, suggestion, unsubscribe). L'ancien limiter in-memory (`checkRateLimit`) reste dispo mais non fiable serverless.
+- **#10 Tests Vitest** — `npm test` ; `vitest.config.ts` avec alias `@`→`src` **manuel** (⚠️ PAS `vite-tsconfig-paths` : ESM-only, casse le config loader CJS). 16 tests : plan guards, priceIdToPlan, calcPageCount, parseStoryResponse.
+
+**Écarté — #2 `select("*")` → colonnes explicites :** analysé, **aucun gain réel**, non appliqué. Toutes les occurrences restantes sont soit `select("*", { count, head: true })` (zéro ligne transférée), soit des selects dont **toutes les colonnes sont consommées** (PDF book/preview, gelato/order, book-configs, pet detail). Le seul candidat (5 entries récentes dashboard) gardait `content` (affiché) et cassait le type `Entry` → revert. Ne pas re-tenter sans nouveau besoin.
+
+**Reportés — gros refactors (fort blast-radius) :**
+- **#4 Rendu statique CDN landing** — bloqué : root `layout.tsx` lit `headers()` (x-pathname) juste pour fixer `<html lang>` fr/en → force **tout** le site en dynamique. Fix = restructurer en `/[locale]/` (recoupe #6). Risque SEO bilingue (hreflang) si bricolé.
+- **#6 Dédup landing** — `/` (725 l) et `/fr` (570 l) = copie traduite manuelle → drift. Cible : 1 composant `<Landing locale>` piloté par `messages/*.json`.
+- **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` en `useEffect` (waterfall, requêtes exposées client). Migration RSC = data au 1er paint, moins de surface.
+- **#9 Split god-components** — `pets/[id]/page.tsx` 131 Ko (308 `style={{}}` inline), `order` 81 Ko, `settings` 54 Ko. Extraire sous-composants + styles hors render.
+
+*Dernière mise à jour : 2026-06-18 (audit Pareto — items #1/#3/#5/#7/#10 livrés ; #4/#6/#8/#9 reportés ; #2 écarté)*
