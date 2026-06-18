@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -32,14 +33,14 @@ export async function POST() {
       cancel_at_period_end: true,
     });
 
-    console.log(`[stripe/cancel] user ${user.id} scheduled cancellation at ${updated.cancel_at}`);
+    log.debug(`[stripe/cancel] user ${user.id} scheduled cancellation at ${updated.cancel_at}`);
     return NextResponse.json({
       success: true,
       cancel_at: updated.cancel_at,
       current_period_end: updated.current_period_end,
     });
   } catch (err) {
-    console.error("[stripe/cancel] Error:", err);
+    log.error("[stripe/cancel] Error:", err);
     return NextResponse.json({ error: "Cancellation failed" }, { status: 500 });
   }
 }

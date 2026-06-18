@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { escapeHtml } from "@/lib/html";
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[contact] Resend error:", err);
+    log.error("[contact] Resend error:", err);
     return NextResponse.json({ error: "Send failed" }, { status: 500 });
   }
 }

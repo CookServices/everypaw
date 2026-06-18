@@ -1,4 +1,5 @@
 import { escapeXml } from "@/lib/html";
+import { callClaude, parseStoryResponse } from "@/lib/anthropic";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Strip the em dash (—) from AI-generated text. The model is told never to use it; this guarantees it. */
@@ -205,32 +206,8 @@ export async function generateAndSaveBirthdayLetter(
   const prompt = buildBirthdayLetterPrompt(pet, entries, lang, age);
   const today = new Date().toISOString().split("T")[0];
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": process.env.ANTHROPIC_API_KEY!,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 600,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-
-  const anthropicData = await response.json();
-  if (!response.ok) {
-    throw new Error(`Anthropic API error: ${JSON.stringify(anthropicData.error)}`);
-  }
-
-  const text: string = anthropicData.content?.[0]?.text || "";
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error(`No JSON in Anthropic birthday response: ${text.slice(0, 200)}`);
-  }
-
-  const parsed = JSON.parse(jsonMatch[0]) as { title: string; story: string };
+  const text = await callClaude({ prompt, maxTokens: 600 });
+  const parsed = parseStoryResponse(text);
   const title = stripEmDash(parsed.title);
   const story = stripEmDash(parsed.story);
 
@@ -271,33 +248,8 @@ export async function generateAndSaveStory(
 ): Promise<GeneratedStory | null> {
   const prompt = buildStoryPrompt(pet, entries, lang, style);
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": process.env.ANTHROPIC_API_KEY!,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1200,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-
-  const anthropicData = await response.json();
-
-  if (!response.ok) {
-    throw new Error(`Anthropic API error: ${JSON.stringify(anthropicData.error)}`);
-  }
-
-  const text: string = anthropicData.content?.[0]?.text || "";
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error(`No JSON in Anthropic response: ${text.slice(0, 200)}`);
-  }
-
-  const parsed = JSON.parse(jsonMatch[0]) as { title: string; story: string };
+  const text = await callClaude({ prompt, maxTokens: 1200 });
+  const parsed = parseStoryResponse(text);
   const title = stripEmDash(parsed.title);
   const story = stripEmDash(parsed.story);
 

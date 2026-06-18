@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { buildResetPasswordEmail } from "@/lib/auth-emails";
@@ -39,11 +40,11 @@ export async function POST(req: Request) {
   try {
     const { error } = await resend.emails.send({ from: "Everypaw <noreply@everypaw.app>", to: email, subject, html });
     if (error) {
-      console.error("[emails/reset-password] Resend error:", error);
+      log.error("[emails/reset-password] Resend error:", error);
       return NextResponse.json({ error: "Email send failed" }, { status: 500 });
     }
   } catch (err) {
-    console.error("[emails/reset-password] Unexpected error:", err);
+    log.error("[emails/reset-password] Unexpected error:", err);
     return NextResponse.json({ error: "Email send failed" }, { status: 500 });
   }
 

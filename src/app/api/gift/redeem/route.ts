@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -44,16 +45,16 @@ export async function POST(req: Request) {
     const currency = getCurrencyFromCountry(country);
     const priceId = PRICE_MAP[planKey]?.[currency];
 
-    console.log("[gift/redeem] plan:", planKey, "currency:", currency, "priceId:", priceId ?? "(not set)");
+    log.debug("[gift/redeem] plan:", planKey, "currency:", currency, "priceId:", priceId ?? "(not set)");
 
     if (!priceId) {
-      console.error(`[gift/redeem] Missing price ID for plan ${planKey} / currency ${currency}, check PRICE_MAP env vars`);
+      log.error(`[gift/redeem] Missing price ID for plan ${planKey} / currency ${currency}, check PRICE_MAP env vars`);
       return NextResponse.json({ error: "Gift service not configured" }, { status: 500 });
     }
 
     const giftCouponId = process.env.STRIPE_GIFT_COUPON_ID?.trim();
     if (!giftCouponId) {
-      console.error("[gift/redeem] Missing STRIPE_GIFT_COUPON_ID");
+      log.error("[gift/redeem] Missing STRIPE_GIFT_COUPON_ID");
       return NextResponse.json({ error: "Gift service not configured" }, { status: 500 });
     }
 
@@ -121,7 +122,7 @@ export async function POST(req: Request) {
         ],
       });
 
-      console.log(`[gift/redeem] user ${user.id} → gift ${planKey} scheduled for ${new Date(periodEnd * 1000).toISOString()}`);
+      log.debug(`[gift/redeem] user ${user.id} → gift ${planKey} scheduled for ${new Date(periodEnd * 1000).toISOString()}`);
       return NextResponse.json({ scheduled: true, activatesAt: periodEnd, plan: planKey });
     }
 
@@ -139,7 +140,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error("Gift redeem error:", error);
+    log.error("Gift redeem error:", error);
     return NextResponse.json({ error: "Failed to redeem gift" }, { status: 500 });
   }
 }

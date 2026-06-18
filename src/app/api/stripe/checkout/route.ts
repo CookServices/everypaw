@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { headers } from "next/headers";
@@ -28,10 +29,10 @@ export async function POST(req: Request) {
   const currency = getCurrencyFromCountry(country);
   const priceId = PRICE_MAP[plan]?.[currency];
 
-  console.log("[stripe/checkout] plan:", plan, "country:", country ?? "unknown", "currency:", currency, "priceId:", priceId ?? "(not set)");
+  log.debug("[stripe/checkout] plan:", plan, "country:", country ?? "unknown", "currency:", currency, "priceId:", priceId ?? "(not set)");
 
   if (!priceId) {
-    console.error("[stripe/checkout] Missing price ID for plan:", plan, "currency:", currency, ", check STRIPE_PRICE_ID_DIGITAL_EUR/USD and STRIPE_PRICE_ID_PRINT_EUR/USD env vars");
+    log.error("[stripe/checkout] Missing price ID for plan:", plan, "currency:", currency, ", check STRIPE_PRICE_ID_DIGITAL_EUR/USD and STRIPE_PRICE_ID_PRINT_EUR/USD env vars");
     return NextResponse.json({ error: "Invalid plan or missing price ID" }, { status: 400 });
   }
 

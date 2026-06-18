@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -53,12 +54,12 @@ export async function POST(req: Request) {
         html: `<p>New signup: <strong>${escapeHtml(email)}</strong></p>`,
       });
     } else {
-      console.warn("[waitlist] WAITLIST_TO_EMAIL not set, skipping internal notification");
+      log.warn("[waitlist] WAITLIST_TO_EMAIL not set, skipping internal notification");
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Resend error:", error);
+    log.error("Resend error:", error);
     return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
   }
 }

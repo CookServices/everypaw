@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
@@ -45,7 +46,7 @@ export async function GET(req: Request) {
     .eq("profiles.email_reminders", true);
 
   if (queryError) {
-    console.error("[monthly-story] candidates query error:", queryError);
+    log.error("[monthly-story] candidates query error:", queryError);
     return NextResponse.json({ error: "Query failed" }, { status: 500 });
   }
 
@@ -168,7 +169,7 @@ export async function GET(req: Request) {
         `,
       });
     } catch (err) {
-      console.error(`[monthly-story] error for pet ${pet.id}:`, err);
+      log.error(`[monthly-story] error for pet ${pet.id}:`, err);
       errors++;
     }
   }

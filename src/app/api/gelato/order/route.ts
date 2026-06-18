@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient as createServerClient } from "@/lib/supabase/server";
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
   }
 
   if (!process.env.GELATO_API_KEY) {
-    console.error("[gelato/order] GELATO_API_KEY is not set");
+    log.error("[gelato/order] GELATO_API_KEY is not set");
     return NextResponse.json({ error: "Order service not configured" }, { status: 500 });
   }
 
@@ -259,10 +260,10 @@ export async function POST(req: Request) {
     });
 
     const data = await response.json();
-    console.log("Gelato response:", JSON.stringify(data));
+    log.debug("Gelato response:", JSON.stringify(data));
 
     if (!response.ok) {
-      console.error("Gelato error:", data);
+      log.error("Gelato error:", data);
       // Restore the credit since the order failed
       await supabase.rpc("restore_book_credit", { p_user_id: user.id });
       return NextResponse.json({ error: "Order failed" }, { status: 400 });
@@ -332,7 +333,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ orderId: data.id, status: data.orderStatus });
   } catch (error) {
-    console.error("Gelato order error:", error);
+    log.error("Gelato order error:", error);
     // Restore the credit since the order failed
     await supabase.rpc("restore_book_credit", { p_user_id: user.id });
     return NextResponse.json({ error: "Order failed" }, { status: 500 });

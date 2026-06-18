@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { buildChangeEmailEmail } from "@/lib/auth-emails";
@@ -39,11 +40,11 @@ export async function POST(req: Request) {
   try {
     const { error } = await resend.emails.send({ from: "Everypaw <noreply@everypaw.app>", to: newEmail, subject, html });
     if (error) {
-      console.error("[emails/change-email] Resend error:", error);
+      log.error("[emails/change-email] Resend error:", error);
       return NextResponse.json({ error: "Email send failed" }, { status: 500 });
     }
   } catch (err) {
-    console.error("[emails/change-email] Unexpected error:", err);
+    log.error("[emails/change-email] Unexpected error:", err);
     return NextResponse.json({ error: "Email send failed" }, { status: 500 });
   }
 

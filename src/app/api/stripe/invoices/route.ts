@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -41,7 +42,7 @@ export async function GET() {
 
     return NextResponse.json({ invoices });
   } catch (err) {
-    console.error("[stripe/invoices] Error:", err);
+    log.error("[stripe/invoices] Error:", err);
     return NextResponse.json({ error: "Failed to fetch invoices" }, { status: 500 });
   }
 }

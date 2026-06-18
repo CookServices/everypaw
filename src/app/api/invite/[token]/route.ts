@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/plan";
@@ -91,7 +92,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
     .eq("id", member.id);
 
   if (error) {
-    console.error("[invite/accept] update error:", error.message);
+    log.error("[invite/accept] update error:", error.message);
     return NextResponse.json({ error: "Failed to accept" }, { status: 500 });
   }
 

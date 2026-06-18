@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -23,9 +24,9 @@ export async function POST() {
   if (profile?.stripe_subscription_id) {
     try {
       await stripe.subscriptions.cancel(profile.stripe_subscription_id);
-      console.log(`[account/delete] Stripe subscription cancelled: ${profile.stripe_subscription_id}`);
+      log.debug(`[account/delete] Stripe subscription cancelled: ${profile.stripe_subscription_id}`);
     } catch (err) {
-      console.warn("[account/delete] Stripe cancel warning (may already be cancelled):", err);
+      log.warn("[account/delete] Stripe cancel warning (may already be cancelled):", err);
     }
   }
 
@@ -53,9 +54,9 @@ export async function POST() {
         }
       }
     }
-    console.log(`[account/delete] Storage cleaned for user: ${user.id}`);
+    log.debug(`[account/delete] Storage cleaned for user: ${user.id}`);
   } catch (err) {
-    console.warn("[account/delete] Storage cleanup warning:", err);
+    log.warn("[account/delete] Storage cleanup warning:", err);
     // Non-fatal, continue with DB deletion
   }
 
@@ -81,9 +82,9 @@ export async function POST() {
     await adminSupabase.from("daily_prompts").delete().eq("user_id", user.id);
     await adminSupabase.from("profiles").delete().eq("id", user.id);
 
-    console.log(`[account/delete] DB records deleted for user: ${user.id}`);
+    log.debug(`[account/delete] DB records deleted for user: ${user.id}`);
   } catch (err) {
-    console.error("[account/delete] DB deletion error:", err);
+    log.error("[account/delete] DB deletion error:", err);
     return NextResponse.json({ error: "Failed to delete account data" }, { status: 500 });
   }
 
@@ -91,9 +92,9 @@ export async function POST() {
   try {
     const { error } = await adminSupabase.auth.admin.deleteUser(user.id);
     if (error) throw error;
-    console.log(`[account/delete] Auth user deleted: ${user.id}`);
+    log.debug(`[account/delete] Auth user deleted: ${user.id}`);
   } catch (err) {
-    console.error("[account/delete] Auth user deletion error:", err);
+    log.error("[account/delete] Auth user deletion error:", err);
     return NextResponse.json({ error: "Failed to delete auth user" }, { status: 500 });
   }
 

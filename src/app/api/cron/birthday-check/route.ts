@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
@@ -108,7 +109,7 @@ export async function GET(req: Request) {
         }
       }
     } catch (err) {
-      console.error(`[birthday-check] letter generation failed for pet ${pet.id}:`, err);
+      log.error(`[birthday-check] letter generation failed for pet ${pet.id}:`, err);
       // email still goes out
     }
 

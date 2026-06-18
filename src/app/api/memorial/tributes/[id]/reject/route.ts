@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/plan";
@@ -40,7 +41,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     .eq("id", tributeId);
 
   if (error) {
-    console.error("[tributes/reject] update error:", error.message);
+    log.error("[tributes/reject] update error:", error.message);
     return NextResponse.json({ error: "update_failed" }, { status: 500 });
   }
 

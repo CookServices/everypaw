@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/plan";
@@ -112,7 +113,7 @@ export async function POST(req: Request) {
     });
 
   if (insertError) {
-    console.error("[memorial/tributes] insert error:", insertError.message);
+    log.error("[memorial/tributes] insert error:", insertError.message);
     return NextResponse.json({ error: "insert_failed" }, { status: 500 });
   }
 
@@ -186,7 +187,7 @@ export async function POST(req: Request) {
       }
     }
   } catch (err) {
-    console.error("[memorial/tributes] notification error:", err);
+    log.error("[memorial/tributes] notification error:", err);
     // Non-fatal
   }
 

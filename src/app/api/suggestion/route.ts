@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -47,11 +48,11 @@ export async function POST(req: Request) {
       `,
     });
     if (resendError) {
-      console.error("[suggestion] Resend error:", resendError);
+      log.error("[suggestion] Resend error:", resendError);
       return NextResponse.json({ error: "Failed to send suggestion" }, { status: 500 });
     }
   } catch (err) {
-    console.error("[suggestion] Unexpected error:", err);
+    log.error("[suggestion] Unexpected error:", err);
     return NextResponse.json({ error: "Failed to send suggestion" }, { status: 500 });
   }
 

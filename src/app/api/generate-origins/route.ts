@@ -1,6 +1,8 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildOriginsPrompt, stripEmDash } from "@/lib/story";
+import { callClaude, parseStoryResponse } from "@/lib/anthropic";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -84,33 +86,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1200,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    const anthropicData = await response.json();
-    if (!response.ok) {
-      console.error("[generate-origins] Anthropic error:", anthropicData.error);
-      return NextResponse.json({ error: "Generation failed" }, { status: 500 });
-    }
-
-    const text: string = anthropicData.content?.[0]?.text || "";
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return NextResponse.json({ error: "Invalid response format" }, { status: 500 });
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]) as { title: string; story: string };
+    const text = await callClaude({ prompt, maxTokens: 1200 });
+    const parsed = parseStoryResponse(text);
     const story = stripEmDash(parsed.story);
 
     const { data: saved, error: insertError } = await supabase
@@ -133,13 +110,13 @@ export async function POST(req: Request) {
       if (insertError.code === "23505") {
         return NextResponse.json({ error: "origins_exists" }, { status: 409 });
       }
-      console.error("[generate-origins] INSERT error:", insertError.message);
+      log.error("[generate-origins] INSERT error:", insertError.message);
       return NextResponse.json({ error: "Failed to save story" }, { status: 500 });
     }
 
     return NextResponse.json({ id: saved.id, title: fixedTitle, story });
   } catch (err) {
-    console.error("[generate-origins] Unexpected error:", err);
+    log.error("[generate-origins] Unexpected error:", err);
     return NextResponse.json({ error: "Generation failed" }, { status: 500 });
   }
 }

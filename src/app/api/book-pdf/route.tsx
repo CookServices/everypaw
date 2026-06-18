@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import React from "react";
 import {
@@ -715,7 +716,7 @@ export async function GET(req: Request) {
       },
     });
   } catch (error) {
-    console.error("[book-pdf] renderToBuffer error:", error);
+    log.error("[book-pdf] renderToBuffer error:", error);
     return NextResponse.json({ error: "PDF generation failed" }, { status: 500 });
   }
 }

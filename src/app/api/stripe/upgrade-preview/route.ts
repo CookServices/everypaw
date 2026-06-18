@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -46,7 +47,7 @@ export async function GET(req: Request) {
       scheduledDate: subscription.current_period_end,
     });
   } catch (err) {
-    console.error("[stripe/upgrade-preview] Error:", err);
+    log.error("[stripe/upgrade-preview] Error:", err);
     return NextResponse.json({ error: "Preview failed" }, { status: 500 });
   }
 }

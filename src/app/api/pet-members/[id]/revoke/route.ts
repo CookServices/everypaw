@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/plan";
@@ -46,7 +47,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     .eq("id", memberId);
 
   if (error) {
-    console.error("[pet-members/revoke] update error:", error.message);
+    log.error("[pet-members/revoke] update error:", error.message);
     return NextResponse.json({ error: "Failed to revoke" }, { status: 500 });
   }
 

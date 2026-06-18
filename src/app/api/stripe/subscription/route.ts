@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -32,7 +33,7 @@ export async function GET() {
       const sub = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
       return NextResponse.json({ plan: profile.plan ?? "free", subscription: formatSubscription(sub) });
     } catch (err) {
-      console.error("[stripe/subscription] retrieve error:", err);
+      log.error("[stripe/subscription] retrieve error:", err);
     }
   }
 
@@ -49,7 +50,7 @@ export async function GET() {
         return NextResponse.json({ plan: profile.plan ?? "free", subscription: formatSubscription(sub) });
       }
     } catch (err) {
-      console.error("[stripe/subscription] customer lookup error:", err);
+      log.error("[stripe/subscription] customer lookup error:", err);
     }
   }
 

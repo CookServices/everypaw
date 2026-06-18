@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { headers } from "next/headers";
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
   const priceId = GIFT_PRICE_MAP[normalizedPlan]?.[currency];
 
   if (!priceId) {
-    console.error("[gift/checkout] Missing gift price ID for plan:", normalizedPlan, "currency:", currency);
+    log.error("[gift/checkout] Missing gift price ID for plan:", normalizedPlan, "currency:", currency);
     return NextResponse.json({ error: "Gift service not configured" }, { status: 500 });
   }
 

@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { Resend } from "resend";
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
   // Verify Supabase hook HMAC signature, fail-closed (no secret = reject all)
   const secret = (process.env.SUPABASE_HOOK_SECRET ?? "").trim();
   if (!secret) {
-    console.error("[auth-hook] SUPABASE_HOOK_SECRET is not configured");
+    log.error("[auth-hook] SUPABASE_HOOK_SECRET is not configured");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
   const webhookSignature = req.headers.get("webhook-signature");
 
   if (!webhookId || !webhookTimestamp || !webhookSignature) {
-    console.error("[auth-hook] Missing Standard Webhooks headers");
+    log.error("[auth-hook] Missing Standard Webhooks headers");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -57,7 +58,7 @@ export async function POST(req: Request) {
   });
 
   if (!valid) {
-    console.error("[auth-hook] Signature mismatch, check SUPABASE_HOOK_SECRET in Vercel.");
+    log.error("[auth-hook] Signature mismatch, check SUPABASE_HOOK_SECRET in Vercel.");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -97,22 +98,22 @@ export async function POST(req: Request) {
       const parsed = new URL(rawConfirmationUrl);
       const supabaseHost = new URL(SUPABASE_URL).hostname;
       if (parsed.hostname !== supabaseHost || parsed.protocol !== "https:") {
-        console.error("[auth-hook] Invalid confirmation_url domain:", rawConfirmationUrl);
+        log.error("[auth-hook] Invalid confirmation_url domain:", rawConfirmationUrl);
         return NextResponse.json({ error: "Invalid confirmation URL" }, { status: 400 });
       }
       confirmationUrl = rawConfirmationUrl;
     } catch {
-      console.error("[auth-hook] Malformed confirmation_url:", rawConfirmationUrl);
+      log.error("[auth-hook] Malformed confirmation_url:", rawConfirmationUrl);
       return NextResponse.json({ error: "Invalid confirmation URL" }, { status: 400 });
     }
   }
 
   if (!email) {
-    console.error("[auth-hook] Missing email in payload");
+    log.error("[auth-hook] Missing email in payload");
     return NextResponse.json({ error: "Missing email" }, { status: 400 });
   }
   if (!actionType) {
-    console.error("[auth-hook] Missing email_action_type in payload");
+    log.error("[auth-hook] Missing email_action_type in payload");
     return NextResponse.json({ error: "Missing email_action_type" }, { status: 400 });
   }
 
@@ -131,12 +132,12 @@ export async function POST(req: Request) {
 
   if (actionType === "signup") {
     const url = buildUrl("signup", `${APP_URL}/dashboard`);
-    console.log("[auth-hook] signup url:", url);
+    log.debug("[auth-hook] signup url:", url);
     ({ subject, html } = buildConfirmSignupEmail(lang, url));
 
   } else if (actionType === "recovery") {
     const url = buildUrl("recovery", `${APP_URL}/auth/update-password`);
-    console.log("[auth-hook] recovery url:", url);
+    log.debug("[auth-hook] recovery url:", url);
     ({ subject, html } = buildResetPasswordEmail(lang, url));
 
   } else if (actionType === "email_change") {
@@ -145,15 +146,15 @@ export async function POST(req: Request) {
     // email_change uses token_hash_new for the new address confirmation
     const changeUrl = confirmationUrl
       ?? `${SUPABASE_URL}/auth/v1/verify?token=${tokenHash}&type=email_change&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/dashboard`)}`;
-    console.log("[auth-hook] email_change url:", changeUrl);
+    log.debug("[auth-hook] email_change url:", changeUrl);
     ({ subject, html } = buildChangeEmailEmail(lang, changeUrl, newEmail));
 
   } else {
-    console.warn("[auth-hook] Unknown email_action_type:", actionType);
+    log.warn("[auth-hook] Unknown email_action_type:", actionType);
     return NextResponse.json({ error: `Unknown action type: ${actionType}` }, { status: 400 });
   }
 
-  console.log("[auth-hook] Sending email type:", actionType, "to:", toEmail, "lang:", lang);
+  log.debug("[auth-hook] Sending email type:", actionType, "to:", toEmail, "lang:", lang);
 
   try {
     const { error } = await resend.emails.send({
@@ -163,14 +164,14 @@ export async function POST(req: Request) {
       html,
     });
     if (error) {
-      console.error("[auth-hook] Resend error:", error);
+      log.error("[auth-hook] Resend error:", error);
       return NextResponse.json({ error: "Email send failed" }, { status: 500 });
     }
   } catch (err) {
-    console.error("[auth-hook] Unexpected error:", err);
+    log.error("[auth-hook] Unexpected error:", err);
     return NextResponse.json({ error: "Email send failed" }, { status: 500 });
   }
 
-  console.log("[auth-hook] Email sent successfully for action:", actionType);
+  log.debug("[auth-hook] Email sent successfully for action:", actionType);
   return NextResponse.json({});
 }

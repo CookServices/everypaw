@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
     const newPriceId = PRICE_MAP[newPlan]?.[subCurrency];
 
     if (!newPriceId) {
-      console.error("[stripe/upgrade] Missing price ID for plan:", newPlan, "currency:", subCurrency);
+      log.error("[stripe/upgrade] Missing price ID for plan:", newPlan, "currency:", subCurrency);
       return NextResponse.json({ error: "Missing price ID for this plan/currency combination" }, { status: 400 });
     }
 
@@ -93,10 +94,10 @@ export async function POST(req: Request) {
 
     // DB plan is NOT updated here, the webhook customer.subscription.updated will fire
     // when phase 2 starts (new price kicks in) and reconcile the DB at that point.
-    console.log(`[stripe/upgrade] user ${user.id} → plan: ${newPlan} (${subCurrency}) scheduled at ${new Date(periodEnd * 1000).toISOString()}`);
+    log.debug(`[stripe/upgrade] user ${user.id} → plan: ${newPlan} (${subCurrency}) scheduled at ${new Date(periodEnd * 1000).toISOString()}`);
     return NextResponse.json({ success: true, scheduledAt: periodEnd });
   } catch (err) {
-    console.error("[stripe/upgrade] Error:", err);
+    log.error("[stripe/upgrade] Error:", err);
     return NextResponse.json({ error: "Upgrade failed" }, { status: 500 });
   }
 }

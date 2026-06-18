@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Resend } from "resend";
@@ -93,7 +94,7 @@ export async function POST(req: Request) {
 
   const giftCouponId = process.env.STRIPE_GIFT_COUPON_ID;
   if (!giftCouponId) {
-    console.error("[gift/complete] STRIPE_GIFT_COUPON_ID env var is not set");
+    log.error("[gift/complete] STRIPE_GIFT_COUPON_ID env var is not set");
     return NextResponse.json({ error: "Gift service not configured" }, { status: 500 });
   }
 

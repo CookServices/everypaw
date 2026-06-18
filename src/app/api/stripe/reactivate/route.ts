@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -32,10 +33,10 @@ export async function POST() {
       cancel_at_period_end: false,
     });
 
-    console.log(`[stripe/reactivate] user ${user.id} reactivated subscription ${subscriptionId}`);
+    log.debug(`[stripe/reactivate] user ${user.id} reactivated subscription ${subscriptionId}`);
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[stripe/reactivate] Error:", err);
+    log.error("[stripe/reactivate] Error:", err);
     return NextResponse.json({ error: "Reactivation failed" }, { status: 500 });
   }
 }

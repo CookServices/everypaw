@@ -1,8 +1,10 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getUserPlan, canGenerateStory } from "@/lib/plan";
 import { escapeXml } from "@/lib/html";
 import { stripEmDash } from "@/lib/story";
+import { callClaude, parseStoryResponse, AnthropicError } from "@/lib/anthropic";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -20,7 +22,7 @@ export async function POST(req: Request) {
     .gte("created_at", `${todayUTC}T00:00:00.000Z`);
 
   if ((todayCount ?? 0) >= 10) {
-    console.warn("[generate] rate limit hit for user:", user.id, "todayCount:", todayCount);
+    log.warn("[generate] rate limit hit for user:", user.id, "todayCount:", todayCount);
     return NextResponse.json(
       { error: "daily_generation_limit", message: "You have reached the limit of 10 story generations per day. Try again tomorrow." },
       { status: 429 },
@@ -56,7 +58,7 @@ export async function POST(req: Request) {
   const lang = (profile?.language || "fr").toLowerCase().startsWith("fr") ? "French" : "English";
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   if (pet.user_id !== user.id) {
-    console.error("[generate] 403 Forbidden: pet.user_id", pet.user_id, "!= user.id", user.id);
+    log.error("[generate] 403 Forbidden: pet.user_id", pet.user_id, "!= user.id", user.id);
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -69,11 +71,11 @@ export async function POST(req: Request) {
     .eq("user_id", user.id)
     .not("story_type", "in", "(origins,birthday)");
 
-  console.log("[generate] plan gate: plan=", plan, "storyCount=", storyCount);
+  log.debug("[generate] plan gate: plan=", plan, "storyCount=", storyCount);
 
   const blocked = canGenerateStory(plan, storyCount ?? 0);
   if (blocked === "story_limit") {
-    console.warn("[generate] 403 story_limit: plan=", plan, "storyCount=", storyCount);
+    log.warn("[generate] 403 story_limit: plan=", plan, "storyCount=", storyCount);
     return NextResponse.json({ error: "story_limit" }, { status: 403 });
   }
 
@@ -150,47 +152,17 @@ Also generate a short evocative title (5 words max).
 You MUST respond with valid JSON only, no other text:
 {"title": "...", "story": "..."}`;
 
-  console.log("[generate] params:", { petId, style, periodStart, periodEnd, entriesCount: entries?.length });
-  console.log("[generate] API key present:", !!process.env.ANTHROPIC_API_KEY);
+  log.debug("[generate] params:", { petId, style, periodStart, periodEnd, entriesCount: entries?.length });
 
   try {
-    console.log("[generate] calling Anthropic model=claude-sonnet-4-6");
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY!,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1200,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
+    log.debug("[generate] calling Anthropic model=claude-sonnet-4-6");
+    const text = await callClaude({ prompt, maxTokens: 1200 });
+    log.debug("[generate] raw text length:", text.length);
 
-    const anthropicData = await response.json();
-    console.log("[generate] Anthropic status:", response.status, "| stop_reason:", anthropicData.stop_reason, "| error:", anthropicData.error ?? null);
-
-    if (!response.ok) {
-      console.error("[generate] Anthropic API error:", anthropicData);
-      console.error("[generate] Anthropic error detail:", anthropicData.error);
-      return NextResponse.json({ error: "Generation failed" }, { status: 500 });
-    }
-
-    const text = anthropicData.content?.[0]?.text || "";
-    console.log("[generate] raw text length:", text.length);
-
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error("[generate] No JSON in Anthropic response:", text.slice(0, 200));
-      return NextResponse.json({ error: "Invalid response format" }, { status: 500 });
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed = parseStoryResponse(text);
     const title = stripEmDash(parsed.title);
     const story = stripEmDash(parsed.story);
-    console.log("[generate] parsed title:", title, "| story length:", story?.length);
+    log.debug("[generate] parsed title:", title, "| story length:", story?.length);
 
     // Compute period dates (must be YYYY-MM-DD), entries sorted ASC so [0]=oldest, [last]=most recent
     const today = new Date().toISOString().split("T")[0];
@@ -203,7 +175,7 @@ You MUST respond with valid JSON only, no other text:
         : lastEntry ?? today
     ).slice(0, 10);
 
-    console.log("[generate] INSERT payload:", { pet_id: petId, style: style ?? "classic", period_start: finalPeriodStart, period_end: finalPeriodEnd });
+    log.debug("[generate] INSERT payload:", { pet_id: petId, style: style ?? "classic", period_start: finalPeriodStart, period_end: finalPeriodEnd });
 
     const { data: saved, error: insertError } = await supabase
       .from("stories")
@@ -221,15 +193,15 @@ You MUST respond with valid JSON only, no other text:
       .single();
 
     if (insertError) {
-      console.error("[generate] Supabase INSERT error:", insertError);
-      console.error("[generate] Supabase INSERT error detail:", insertError.message);
+      log.error("[generate] Supabase INSERT error:", insertError.message);
       return NextResponse.json({ error: "Failed to save story" }, { status: 500 });
     }
 
-    console.log("[generate] story saved, id:", saved?.id);
+    log.debug("[generate] story saved, id:", saved?.id);
     return NextResponse.json({ title, story, id: saved?.id });
   } catch (error) {
-    console.error("[generate] Unexpected error:", error);
-    return NextResponse.json({ error: "Generation failed" }, { status: 500 });
+    log.error("[generate] Unexpected error:", error);
+    const status = error instanceof AnthropicError ? error.status : 500;
+    return NextResponse.json({ error: "Generation failed" }, { status: status === 503 ? 503 : 500 });
   }
 }

@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
@@ -169,7 +170,7 @@ export async function GET(req: Request) {
 
       d1Stats.sent++;
     } catch (err) {
-      console.error("[retention-emails] D1 error for user", profile.id, err);
+      log.error("[retention-emails] D1 error for user", profile.id, err);
       d1Stats.errors++;
     }
   }
@@ -296,7 +297,7 @@ export async function GET(req: Request) {
 
       d7Stats.sent++;
     } catch (err) {
-      console.error("[retention-emails] D7 error for user", profile.id, err);
+      log.error("[retention-emails] D7 error for user", profile.id, err);
       d7Stats.errors++;
     }
   }
@@ -414,7 +415,7 @@ export async function GET(req: Request) {
 
       d30Stats.sent++;
     } catch (err) {
-      console.error("[retention-emails] D30 error for user", profile.id, err);
+      log.error("[retention-emails] D30 error for user", profile.id, err);
       d30Stats.errors++;
     }
   }

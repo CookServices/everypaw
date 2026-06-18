@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Resend } from "resend";
@@ -15,11 +16,11 @@ export async function POST(req: Request) {
   try {
     event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch (err) {
-    console.error("Webhook signature error:", err);
+    log.error("Webhook signature error:", err);
     return NextResponse.json({ error: "Webhook error" }, { status: 400 });
   }
 
-  console.log("[webhook] event:", event.id, event.type);
+  log.debug("[webhook] event:", event.id, event.type);
 
   const supabase = getServiceSupabase();
 
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
     const metaPlan = session.metadata?.plan;
 
     if (!userId) {
-      console.error("[webhook] No user_id in session metadata, event:", event.id);
+      log.error("[webhook] No user_id in session metadata, event:", event.id);
       return NextResponse.json({ received: true });
     }
 
@@ -46,14 +47,14 @@ export async function POST(req: Request) {
         .maybeSingle();
 
       if (existing) {
-        console.log("[webhook] duplicate book_checkout, skipping:", event.id);
+        log.debug("[webhook] duplicate book_checkout, skipping:", event.id);
         return NextResponse.json({ received: true });
       }
 
       const { error } = await supabase.rpc("increment_book_credits", { p_user_id: userId });
 
       if (error) {
-        console.error("book_credits increment error:", error);
+        log.error("book_credits increment error:", error);
         return NextResponse.json({ error: "Database update failed" }, { status: 500 });
       }
 
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
         metadata: { stripe_event_id: event.id, stripe_session_id: session.id },
       });
 
-      console.log("[webhook] book credit added for user:", userId, "event:", event.id);
+      log.debug("[webhook] book credit added for user:", userId, "event:", event.id);
       return NextResponse.json({ received: true });
     }
 
@@ -77,7 +78,7 @@ export async function POST(req: Request) {
         .single();
 
       if (profile?.stripe_subscription_id === session.subscription && profile?.is_premium) {
-        console.log("[webhook] duplicate checkout.session.completed, skipping:", event.id);
+        log.debug("[webhook] duplicate checkout.session.completed, skipping:", event.id);
         return NextResponse.json({ received: true });
       }
 
@@ -99,13 +100,13 @@ export async function POST(req: Request) {
         .eq("id", userId);
 
       if (error) {
-        console.error("Supabase plan update error:", error);
+        log.error("Supabase plan update error:", error);
         return NextResponse.json({ error: "Database update failed" }, { status: 500 });
       }
 
       // Book credits are awarded exclusively via invoice.payment_succeeded to avoid race conditions
 
-      console.log(`[webhook] user ${userId} upgraded to plan: ${plan}, event: ${event.id}`);
+      log.debug(`[webhook] user ${userId} upgraded to plan: ${plan}, event: ${event.id}`);
     }
   }
 
@@ -125,11 +126,11 @@ export async function POST(req: Request) {
       .eq("stripe_customer_id", customerId);
 
     if (error) {
-      console.error("Supabase downgrade error:", error);
+      log.error("Supabase downgrade error:", error);
       return NextResponse.json({ error: "Database update failed" }, { status: 500 });
     }
 
-    console.log("[webhook] subscription cancelled for customer:", customerId, "event:", event.id);
+    log.debug("[webhook] subscription cancelled for customer:", customerId, "event:", event.id);
   }
 
   // ── customer.subscription.updated ─────────────────────────────────────────
@@ -157,7 +158,7 @@ export async function POST(req: Request) {
         });
       }
 
-      console.log("[webhook] subscription.updated → status=canceled, downgraded to free:", customerId, "event:", event.id);
+      log.debug("[webhook] subscription.updated → status=canceled, downgraded to free:", customerId, "event:", event.id);
       return NextResponse.json({ received: true });
     }
 
@@ -178,12 +179,12 @@ export async function POST(req: Request) {
         });
       }
 
-      console.log("[webhook] subscription.updated → plan change:", plan, "for customer:", customerId, "event:", event.id);
+      log.debug("[webhook] subscription.updated → plan change:", plan, "for customer:", customerId, "event:", event.id);
     }
 
     // cancel_at_period_end = true → scheduled cancellation, keep access until period end
     if (subscription.cancel_at_period_end) {
-      console.log(
+      log.debug(
         "[webhook] subscription.updated → cancel_at_period_end scheduled for customer:",
         customerId,
         "cancel_at:", subscription.cancel_at,
@@ -233,7 +234,7 @@ export async function POST(req: Request) {
         .single();
 
       if (!invoiceProfile?.id) {
-        console.error("[webhook] invoice.payment_succeeded: no profile for customer:", customerId, "event:", event.id);
+        log.error("[webhook] invoice.payment_succeeded: no profile for customer:", customerId, "event:", event.id);
         return NextResponse.json({ received: true });
       }
 
@@ -265,7 +266,7 @@ export async function POST(req: Request) {
       }
 
       if (alreadyProcessed) {
-        console.log("[webhook] duplicate invoice.payment_succeeded, skipping:", event.id, "billing_reason:", billingReason);
+        log.debug("[webhook] duplicate invoice.payment_succeeded, skipping:", event.id, "billing_reason:", billingReason);
         return NextResponse.json({ received: true });
       }
 
@@ -279,7 +280,7 @@ export async function POST(req: Request) {
       if (profileForCredit?.last_book_credit_at) {
         const daysSinceLast = (Date.now() - new Date(profileForCredit.last_book_credit_at).getTime()) / (1000 * 60 * 60 * 24);
         if (daysSinceLast < 365) {
-          console.log(`[webhook] book credit skipped, last credit was ${Math.floor(daysSinceLast)}d ago (< 365d), user: ${userId}`);
+          log.debug(`[webhook] book credit skipped, last credit was ${Math.floor(daysSinceLast)}d ago (< 365d), user: ${userId}`);
           return NextResponse.json({ received: true });
         }
       }
@@ -287,7 +288,7 @@ export async function POST(req: Request) {
       const { error: creditError } = await supabase.rpc("increment_book_credits", { p_user_id: userId });
 
       if (creditError) {
-        console.error("[webhook] increment_book_credits error:", creditError, "event:", event.id);
+        log.error("[webhook] increment_book_credits error:", creditError, "event:", event.id);
         return NextResponse.json({ error: "Database update failed" }, { status: 500 });
       }
 
@@ -310,7 +311,7 @@ export async function POST(req: Request) {
         },
       });
 
-      console.log("[webhook] book credit added via invoice for user:", userId, "billing_reason:", billingReason, "event:", event.id);
+      log.debug("[webhook] book credit added via invoice for user:", userId, "billing_reason:", billingReason, "event:", event.id);
     }
   }
 
@@ -330,7 +331,7 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (existingFailEvent) {
-      console.log("[webhook] duplicate invoice.payment_failed, skipping:", event.id);
+      log.debug("[webhook] duplicate invoice.payment_failed, skipping:", event.id);
       return NextResponse.json({ received: true });
     }
 
@@ -342,7 +343,7 @@ export async function POST(req: Request) {
       .single();
 
     if (!failedProfile?.id) {
-      console.error("[webhook] invoice.payment_failed: no profile for customer:", customerId, "event:", event.id);
+      log.error("[webhook] invoice.payment_failed: no profile for customer:", customerId, "event:", event.id);
       return NextResponse.json({ received: true });
     }
 
@@ -385,16 +386,16 @@ export async function POST(req: Request) {
         });
 
         if (emailError) {
-          console.error("[webhook] invoice.payment_failed: email send error:", emailError, "event:", event.id);
+          log.error("[webhook] invoice.payment_failed: email send error:", emailError, "event:", event.id);
         } else {
-          console.log("[webhook] payment failed email sent to:", userEmail, "attempt:", invoice.attempt_count, "event:", event.id);
+          log.debug("[webhook] payment failed email sent to:", userEmail, "attempt:", invoice.attempt_count, "event:", event.id);
         }
       } catch (emailErr) {
-        console.error("[webhook] invoice.payment_failed: unexpected email error:", emailErr, "event:", event.id);
+        log.error("[webhook] invoice.payment_failed: unexpected email error:", emailErr, "event:", event.id);
       }
     }
 
-    console.log("[webhook] payment_past_due set for user:", userId, "attempt:", invoice.attempt_count, "event:", event.id);
+    log.debug("[webhook] payment_past_due set for user:", userId, "attempt:", invoice.attempt_count, "event:", event.id);
   }
 
   return NextResponse.json({ received: true });

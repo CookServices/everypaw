@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase, canInviteMembers } from "@/lib/plan";
@@ -147,7 +148,7 @@ export async function POST(req: Request) {
   });
 
   if (insertError) {
-    console.error("[pet-members] insert error:", insertError.message);
+    log.error("[pet-members] insert error:", insertError.message);
     return NextResponse.json({ error: "Failed to create invite" }, { status: 500 });
   }
 
@@ -204,6 +205,6 @@ async function sendInviteEmail(
 </html>`,
     });
   } catch (e) {
-    console.error("[pet-members] email send error:", e);
+    log.error("[pet-members] email send error:", e);
   }
 }
