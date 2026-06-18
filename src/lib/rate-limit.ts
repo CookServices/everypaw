@@ -1,8 +1,42 @@
+import { createClient } from "@/lib/supabase/server";
+import { log } from "@/lib/log";
+
+/**
+ * Persistent, instance-shared rate limit backed by the `check_rate_limit`
+ * Postgres function (atomic check-and-increment). Use this for enforceable
+ * limits — it survives cold starts and is shared across serverless instances.
+ *
+ * Fails open: on any DB/RPC error the request is allowed, so an infra hiccup
+ * never blocks legitimate users on these low-risk endpoints.
+ */
+export async function checkRateLimitDb(
+  key: string,
+  maxRequests: number,
+  windowMs: number
+): Promise<{ allowed: boolean }> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("check_rate_limit", {
+      p_key: key,
+      p_max: maxRequests,
+      p_window_seconds: Math.ceil(windowMs / 1000),
+    });
+    if (error) {
+      log.error("[rate-limit] RPC error, failing open:", error.message);
+      return { allowed: true };
+    }
+    return { allowed: data === true };
+  } catch (e) {
+    log.error("[rate-limit] unexpected error, failing open:", e);
+    return { allowed: true };
+  }
+}
+
 /**
  * In-memory rate limiter, NOT reliable on Vercel serverless.
  * State is lost on every cold start and is not shared across concurrent instances.
  * This provides a light deterrent only; it must NOT be relied upon for security-sensitive limits.
- * For enforceable limits use DB-based counting (see /api/generate) or Upstash Redis.
+ * Prefer `checkRateLimitDb` above. Kept for any non-critical synchronous use.
  */
 
 interface Window {

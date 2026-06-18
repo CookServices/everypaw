@@ -1,12 +1,12 @@
 import { log } from "@/lib/log";
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { escapeHtml } from "@/lib/html";
 
 export async function POST(req: Request) {
-  const { allowed } = checkRateLimit(`suggestion:${getClientIp(req)}`, 3, 60_000);
+  const { allowed } = await checkRateLimitDb(`suggestion:${getClientIp(req)}`, 3, 60_000);
   if (!allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

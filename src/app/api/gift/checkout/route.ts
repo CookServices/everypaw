@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { headers } from "next/headers";
 import { getCurrencyFromCountry } from "@/lib/currency";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 import type { Currency } from "@/lib/currency";
 
 const GIFT_PRICE_MAP: Record<string, Record<Currency, string | undefined>> = {
@@ -18,7 +18,7 @@ const GIFT_PRICE_MAP: Record<string, Record<Currency, string | undefined>> = {
 };
 
 export async function POST(req: Request) {
-  const { allowed } = checkRateLimit(`gift-checkout:${getClientIp(req)}`, 10, 60_000);
+  const { allowed } = await checkRateLimitDb(`gift-checkout:${getClientIp(req)}`, 10, 60_000);
   if (!allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

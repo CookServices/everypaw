@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/plan";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
-  const { allowed } = checkRateLimit(`unsub:${getClientIp(req)}`, 5, 60_000);
+  const { allowed } = await checkRateLimitDb(`unsub:${getClientIp(req)}`, 5, 60_000);
   if (!allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
   const { token } = await req.json();

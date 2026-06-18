@@ -2,7 +2,7 @@ import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { escapeHtml } from "@/lib/html";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 
 const SUBJECT_ROUTING: Record<string, string> = {
   "Question générale":           "hello@everypaw.app",
@@ -13,7 +13,7 @@ const SUBJECT_ROUTING: Record<string, string> = {
 };
 
 export async function POST(req: Request) {
-  const { allowed } = checkRateLimit(`contact:${getClientIp(req)}`, 3, 60_000);
+  const { allowed } = await checkRateLimitDb(`contact:${getClientIp(req)}`, 3, 60_000);
   if (!allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
   let body: { subject?: string; email?: string; message?: string };

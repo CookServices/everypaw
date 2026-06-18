@@ -1,11 +1,11 @@
 import { log } from "@/lib/log";
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 import { escapeHtml } from "@/lib/html";
 
 export async function POST(req: Request) {
-  const { allowed } = checkRateLimit(`waitlist:${getClientIp(req)}`, 5, 60_000);
+  const { allowed } = await checkRateLimitDb(`waitlist:${getClientIp(req)}`, 5, 60_000);
   if (!allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

@@ -4,7 +4,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { getResendClient } from "@/lib/resend";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -58,7 +58,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   // Rate limit: 3 per hour per IP
   const ip = getClientIp(req);
-  const { allowed } = checkRateLimit(`tribute_submit_${ip}`, 3, 60 * 60 * 1000);
+  const { allowed } = await checkRateLimitDb(`tribute_submit_${ip}`, 3, 60 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }

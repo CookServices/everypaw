@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimitDb } from "@/lib/rate-limit";
 import { escapeHtml } from "@/lib/html";
 
 export const dynamic = "force-dynamic";
@@ -243,7 +243,7 @@ export async function GET(req: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { allowed } = checkRateLimit(`export:${user.id}`, 3, 60 * 60 * 1000);
+  const { allowed } = await checkRateLimitDb(`export:${user.id}`, 3, 60 * 60 * 1000);
   if (!allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
   const format = new URL(req.url).searchParams.get("format"); // "html" | null (= json)
