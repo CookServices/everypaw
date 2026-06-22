@@ -3,6 +3,7 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
+import { baseLayout, emoji, heading, paragraph, ctaButton, unsubscribeLink } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -88,35 +89,16 @@ export async function GET(req: Request) {
       ? `🐾 ${daysSince} jours sans entrée pour ${petName}`
       : `🐾 ${daysSince} days without an entry for ${petName}`;
 
-    const html = isFR ? `
-      <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-        <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>
-        <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 12px;">Ça fait ${daysSince} jours…</h1>
-        <p style="font-size: 15px; line-height: 1.7; color: #7A5C44; margin: 0 0 24px;">
-          ${petName} a vécu plein de choses depuis votre dernière entrée. Pas besoin d'un grand moment, une phrase ou une photo, et le souvenir est sauvé pour toujours.
-        </p>
-        <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-          Ajouter un moment →
-        </a>
-        <p style="font-size: 11px; color: #9A8070; margin-top: 32px; font-family: sans-serif; line-height: 1.5;">
-          <a href="${unsubscribeUrl}" style="color: #9A8070;">Se désabonner des rappels</a>
-        </p>
-      </div>
-    ` : `
-      <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-        <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>
-        <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 12px;">It's been ${daysSince} days…</h1>
-        <p style="font-size: 15px; line-height: 1.7; color: #7A5C44; margin: 0 0 24px;">
-          ${petName} has been up to so much since your last entry. It doesn't need to be big, one sentence or a quick photo, and the memory is saved forever.
-        </p>
-        <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-          Add a moment →
-        </a>
-        <p style="font-size: 11px; color: #9A8070; margin-top: 32px; font-family: sans-serif; line-height: 1.5;">
-          <a href="${unsubscribeUrl}" style="color: #9A8070;">Unsubscribe from reminders</a>
-        </p>
-      </div>
-    `;
+    const html = baseLayout(
+      emoji("🐾") +
+      heading(isFR ? `Ça fait ${daysSince} jours…` : `It's been ${daysSince} days…`) +
+      paragraph(isFR
+        ? `${petName} a vécu plein de choses depuis votre dernière entrée. Pas besoin d'un grand moment, une phrase ou une photo, et le souvenir est sauvé pour toujours.`
+        : `${petName} has been up to so much since your last entry. It doesn't need to be big, one sentence or a quick photo, and the memory is saved forever.`) +
+      ctaButton("https://everypaw.app/dashboard", isFR ? "Ajouter un moment →" : "Add a moment →"),
+      unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
+      isFR ? "fr" : "en",
+    );
 
     await resend.emails.send({
       from: "Everypaw <hello@everypaw.app>",

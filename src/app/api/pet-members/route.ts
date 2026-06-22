@@ -4,6 +4,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase, canInviteMembers } from "@/lib/plan";
 import { getResendClient } from "@/lib/resend";
 import { escapeHtml } from "@/lib/html";
+import { baseLayout, heading, paragraph, ctaButton, finePrint } from "@/lib/email-templates";
 import crypto from "node:crypto";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -177,32 +178,14 @@ async function sendInviteEmail(
       from: "Everypaw <hello@everypaw.app>",
       to: toEmail,
       subject: `You're invited to join ${petName}'s journal on Everypaw`,
-      html: `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family:'DM Sans',Arial,sans-serif;background:#F7F2EA;margin:0;padding:0">
-  <div style="max-width:560px;margin:40px auto;background:#FDFAF5;border-radius:16px;overflow:hidden;border:1px solid #EDE5D4">
-    <div style="background:#3D2B1F;padding:24px 32px">
-      <div style="color:#F7F2EA;font-size:1.25rem;font-weight:600">🐾 everypaw</div>
-    </div>
-    <div style="padding:32px">
-      <h1 style="color:#3D2B1F;font-size:1.4rem;margin:0 0 12px">You've been invited to join ${safePet}'s journal</h1>
-      <p style="color:#7A5C44;line-height:1.65;margin:0 0 24px">
-        <strong style="color:#3D2B1F">${safeEmail}</strong> invited you to contribute to
-        <strong style="color:#3D2B1F">${safePet}'s</strong> Everypaw journal &mdash;
-        add memories, photos, and special moments together.
-      </p>
-      <a href="${inviteUrl}" style="display:inline-block;background:#C8813A;color:#FDFAF5;text-decoration:none;padding:14px 28px;border-radius:100px;font-weight:600;font-size:1rem">
-        Accept invitation →
-      </a>
-      <p style="color:#9A8070;font-size:.8rem;margin:24px 0 0">
-        This invitation expires in ${INVITE_TTL_DAYS} days. If you didn't expect this email, you can safely ignore it.
-      </p>
-    </div>
-  </div>
-</body>
-</html>`,
+      html: baseLayout(
+        heading(`You've been invited to join ${safePet}'s journal`) +
+        paragraph(`<strong style="color:#3D2B1F">${safeEmail}</strong> invited you to contribute to <strong style="color:#3D2B1F">${safePet}'s</strong> Everypaw journal &mdash; add memories, photos, and special moments together.`) +
+        ctaButton(inviteUrl, "Accept invitation →") +
+        finePrint(`This invitation expires in ${INVITE_TTL_DAYS} days. If you didn't expect this email, you can safely ignore it.`),
+        "",
+        "en",
+      ),
     });
   } catch (e) {
     log.error("[pet-members] email send error:", e);

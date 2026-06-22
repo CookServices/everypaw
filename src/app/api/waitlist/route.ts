@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { NextResponse } from "next/server";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 import { escapeHtml } from "@/lib/html";
+import { baseLayout, emoji, heading, paragraph } from "@/lib/email-templates";
 
 export async function POST(req: Request) {
   const { allowed } = await checkRateLimitDb(`waitlist:${getClientIp(req)}`, 5, 60_000);
@@ -28,20 +29,15 @@ export async function POST(req: Request) {
       from: "Everypaw <hello@everypaw.app>",
       to: email,
       subject: "You're on the list 🐾",
-      html: `
-        <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-          <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>
-          <h1 style="font-size: 24px; font-weight: 600; margin: 0 0 16px;">You're on the Everypaw waitlist.</h1>
-          <p style="font-size: 16px; line-height: 1.6; color: #7A5C44; margin: 0 0 24px;">
-            We're building something special, an AI journal that turns your pet's daily moments into a beautiful printed book.
-          </p>
-          <p style="font-size: 16px; line-height: 1.6; color: #7A5C44; margin: 0 0 24px;">
-            As one of our first members, you'll get <strong style="color: #C8813A;">50% off</strong> when we launch.
-            We'll be in touch soon.
-          </p>
-          <p style="font-size: 14px; color: #7A5C44;">, The Everypaw team</p>
-        </div>
-      `,
+      html: baseLayout(
+        emoji("🐾") +
+        heading("You're on the Everypaw waitlist.") +
+        paragraph("We're building something special, an AI journal that turns your pet's daily moments into a beautiful printed book.") +
+        paragraph(`As one of our first members, you'll get <strong style="color:#C8813A;">50% off</strong> when we launch. We'll be in touch soon.`) +
+        paragraph("The Everypaw team"),
+        "",
+        "en",
+      ),
     });
 
     // 2. Internal notification (optional, only if env var is set)

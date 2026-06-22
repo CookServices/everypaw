@@ -6,6 +6,7 @@ import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
 import { generateAndSaveStory } from "@/lib/story";
 import { getProfileLocaleById } from "@/lib/locale";
+import { baseLayout, emoji, eyebrow, heading, paragraph, ctaButton, unsubscribeLink } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -155,18 +156,15 @@ export async function GET(req: Request) {
         from: "Everypaw <hello@everypaw.app>",
         to: profile.email,
         subject,
-        html: `
-          <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-            <p style="font-size: 28px; margin: 0 0 8px;">📖</p>
-            <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 8px;">${titleSafe}</h1>
-            <p style="font-size: 13px; color: #7A5C44; margin: 0 0 20px; font-family: sans-serif; text-transform: uppercase; letter-spacing: 0.05em;">${petNameSafe}</p>
-            <p style="font-size: 16px; line-height: 1.7; color: #5A3E2B; margin: 0 0 28px;">${extractSafe}</p>
-            <a href="${storiesUrl}" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 15px; font-weight: 500;">${ctaLabel}</a>
-            <p style="font-size: 12px; color: #7A5C44; margin-top: 32px; font-family: sans-serif;">
-              <a href="${unsubscribeUrl}" style="color: #C8813A;">${unsubscribeLabel}</a>
-            </p>
-          </div>
-        `,
+        html: baseLayout(
+          emoji("📖") +
+          eyebrow(petNameSafe) +
+          heading(titleSafe) +
+          paragraph(extractSafe) +
+          ctaButton(storiesUrl, ctaLabel),
+          unsubscribeLink(unsubscribeUrl, unsubscribeLabel),
+          locale === "en" ? "en" : "fr",
+        ),
       });
     } catch (err) {
       log.error(`[monthly-story] error for pet ${pet.id}:`, err);

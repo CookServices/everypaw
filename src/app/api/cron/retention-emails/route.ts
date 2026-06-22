@@ -4,26 +4,27 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
+import { baseLayout, heading, paragraph, ctaButton, emoji, quote, unsubscribeLink } from "@/lib/email-templates";
 import { estimateBookPages } from "@/lib/book";
 import { getTranslations } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 
-// ── Email helpers ─────────────────────────────────────────────────────────────
+// ── Email helpers (thin wrappers over the shared template primitives) ──────────
 
 function btn(url: string, label: string): string {
-  return `<a href="${url}" style="display:inline-block;background:#C8813A;color:#FDFAF5;padding:12px 24px;border-radius:100px;text-decoration:none;font-family:sans-serif;font-size:15px;font-weight:500;">${escapeHtml(label)}</a>`;
+  return ctaButton(url, escapeHtml(label));
 }
 
-function wrap(body: string, unsubscribeUrl: string, unsubscribeLabel: string): string {
-  return `<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:40px 24px;color:#3D2B1F;">${body}<p style="font-size:12px;color:#7A5C44;margin-top:32px;font-family:sans-serif;"><a href="${unsubscribeUrl}" style="color:#C8813A;">${escapeHtml(unsubscribeLabel)}</a></p></div>`;
+function wrap(body: string, unsubscribeUrl: string, unsubscribeLabel: string, lang: "fr" | "en" = "fr"): string {
+  return baseLayout(body, unsubscribeLink(unsubscribeUrl, unsubscribeLabel), lang);
 }
 
 function h1(text: string): string {
-  return `<h1 style="font-size:22px;font-weight:600;margin:0 0 16px;">${escapeHtml(text)}</h1>`;
+  return heading(escapeHtml(text));
 }
 
 function p(text: string): string {
-  return `<p style="font-size:16px;line-height:1.6;color:#7A5C44;margin:0 0 24px;">${escapeHtml(text)}</p>`;
+  return paragraph(escapeHtml(text));
 }
 
 function extract2Sentences(text: string): string {
@@ -116,7 +117,7 @@ export async function GET(req: Request) {
           h1(re.d1_no_pet_title) +
           p(re.d1_no_pet_body) +
           btn("https://everypaw.app/dashboard/pets/new", re.d1_no_pet_cta),
-          unsubscribeUrl, re.unsubscribe,
+          unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
         );
       } else {
         const firstPet = alivePets[0];
@@ -132,7 +133,7 @@ export async function GET(req: Request) {
         if (ec === 0) {
           subject = re.d1_subject_no_entry.replace("{petName}", firstPet.name);
           body = wrap(
-            `<p style="font-size:28px;margin:0 0 8px;">🐾</p>` +
+            emoji("🐾") +
             h1(re.d1_no_entry_title) +
             p(re.d1_no_entry_body) +
             btn(`https://everypaw.app/dashboard/pets/${firstPet.id}`, re.d1_no_entry_cta),
@@ -144,7 +145,7 @@ export async function GET(req: Request) {
             .replace("{remaining}", String(remaining))
             .replace("{petName}", firstPet.name);
           body = wrap(
-            `<p style="font-size:28px;margin:0 0 8px;">🐾</p>` +
+            emoji("🐾") +
             h1(re.d1_entry_title.replace("{remaining}", String(remaining))) +
             `<p style="font-size:16px;line-height:1.6;color:#7A5C44;margin:0 0 24px;">` +
               `${escapeHtml(re.d1_entry_body)}, <strong>${escapeHtml(petNameSafe)}</strong>` +
@@ -236,15 +237,13 @@ export async function GET(req: Request) {
 
         subject = re.d7_story_subject.replace("{petName}", storyPet.name);
         body = wrap(
-          `<p style="font-size:28px;margin:0 0 8px;">📖</p>` +
+          emoji("📖") +
           h1(re.d7_story_title) +
-          `<h2 style="font-size:17px;font-weight:600;color:#3D2B1F;margin:0 0 8px;">${titleSafe}</h2>` +
-          `<p style="font-size:15px;line-height:1.7;color:#5A3E2B;margin:0 0 12px;font-style:italic;">${excerpt}</p>` +
-          `<p style="font-size:14px;color:#7A5C44;margin:0 0 24px;">` +
-            escapeHtml(re.d7_story_pages.replace("{petName}", storyPet.name).replace("{pages}", String(pages))) +
-          `</p>` +
+          `<h2 style="font-family:Georgia,serif;font-size:1.1rem;font-weight:600;color:#3D2B1F;margin:0 0 8px;">${titleSafe}</h2>` +
+          quote(excerpt) +
+          paragraph(escapeHtml(re.d7_story_pages.replace("{petName}", storyPet.name).replace("{pages}", String(pages)))) +
           btn(`https://everypaw.app/dashboard/pets/${storyPet.id}?tab=stories`, re.d7_story_cta),
-          unsubscribeUrl, re.unsubscribe,
+          unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
         );
       } else {
         // Best entry with photo
@@ -268,17 +267,17 @@ export async function GET(req: Request) {
           : "";
 
         const entryText = photoEntry?.content
-          ? `<p style="font-size:15px;line-height:1.7;color:#5A3E2B;margin:0 0 20px;font-style:italic;">${escapeHtml(photoEntry.content.slice(0, 200))}</p>`
+          ? quote(escapeHtml(photoEntry.content.slice(0, 200)))
           : "";
 
         body = wrap(
-          `<p style="font-size:28px;margin:0 0 8px;">🌿</p>` +
+          emoji("🌿") +
           h1(re.d7_no_story_title) +
           photoImg +
           entryText +
           p(re.d7_no_story_body) +
           btn(`https://everypaw.app/dashboard/pets/${entryPet.id}`, re.d7_no_story_cta),
-          unsubscribeUrl, re.unsubscribe,
+          unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
         );
       }
 
@@ -367,7 +366,7 @@ export async function GET(req: Request) {
 
         subject = re.d30_free_subject.replace("{petName}", firstPet.name);
         body = wrap(
-          `<p style="font-size:28px;margin:0 0 8px;">📚</p>` +
+          emoji("📚") +
           h1(re.d30_free_title.replace("{petName}", firstPet.name)) +
           p(
             re.d30_free_body
@@ -376,7 +375,7 @@ export async function GET(req: Request) {
               .replace("{petName}", firstPet.name),
           ) +
           btn("https://everypaw.app/dashboard/settings", re.d30_free_cta),
-          unsubscribeUrl, re.unsubscribe,
+          unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
         );
       } else {
         // Paid user, pages estimate + upcoming chapter date
@@ -388,7 +387,7 @@ export async function GET(req: Request) {
 
         subject = re.d30_paid_subject.replace("{date}", nextDate);
         body = wrap(
-          `<p style="font-size:28px;margin:0 0 8px;">✨</p>` +
+          emoji("✨") +
           h1(re.d30_paid_title) +
           p(
             re.d30_paid_body
@@ -396,7 +395,7 @@ export async function GET(req: Request) {
               .replace("{pages}", String(pages)),
           ) +
           btn(`https://everypaw.app/dashboard/pets/${firstPet.id}`, re.d30_paid_cta),
-          unsubscribeUrl, re.unsubscribe,
+          unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
         );
       }
 

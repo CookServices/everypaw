@@ -3,6 +3,7 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
+import { baseLayout, emoji, eyebrow, quote, ctaButton, unsubscribeLink } from "@/lib/email-templates";
 
 // Prompts rotate daily by day-of-year index
 const PROMPTS_EN: Record<string, string[]> = {
@@ -157,35 +158,14 @@ export async function GET(req: Request) {
       ? `✍️ Prompt du jour pour ${petName}`
       : `✍️ Today's writing prompt for ${petName}`;
 
-    const html = isFR ? `
-      <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-        <p style="font-size: 28px; margin: 0 0 8px;">✍️</p>
-        <p style="font-size: 12px; font-family: sans-serif; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: #C8813A; margin: 0 0 12px;">Prompt du jour</p>
-        <div style="background: #F7F2EA; border-left: 3px solid #C8813A; padding: 20px 24px; border-radius: 0 12px 12px 0; margin: 0 0 28px; font-size: 18px; font-style: italic; line-height: 1.6; color: #3D2B1F;">
-          ${escapeHtml(prompt)}
-        </div>
-        <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-          Écrire pour ${petName} →
-        </a>
-        <p style="font-size: 11px; color: #9A8070; margin-top: 32px; font-family: sans-serif; line-height: 1.5;">
-          <a href="${unsubscribeUrl}" style="color: #9A8070;">Se désabonner des rappels</a>
-        </p>
-      </div>
-    ` : `
-      <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-        <p style="font-size: 28px; margin: 0 0 8px;">✍️</p>
-        <p style="font-size: 12px; font-family: sans-serif; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: #C8813A; margin: 0 0 12px;">Today's prompt</p>
-        <div style="background: #F7F2EA; border-left: 3px solid #C8813A; padding: 20px 24px; border-radius: 0 12px 12px 0; margin: 0 0 28px; font-size: 18px; font-style: italic; line-height: 1.6; color: #3D2B1F;">
-          ${escapeHtml(prompt)}
-        </div>
-        <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-          Write for ${petName} →
-        </a>
-        <p style="font-size: 11px; color: #9A8070; margin-top: 32px; font-family: sans-serif; line-height: 1.5;">
-          <a href="${unsubscribeUrl}" style="color: #9A8070;">Unsubscribe from reminders</a>
-        </p>
-      </div>
-    `;
+    const html = baseLayout(
+      emoji("✍️") +
+      eyebrow(isFR ? "Prompt du jour" : "Today's prompt") +
+      quote(escapeHtml(prompt)) +
+      ctaButton("https://everypaw.app/dashboard", isFR ? `Écrire pour ${petName} →` : `Write for ${petName} →`),
+      unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
+      isFR ? "fr" : "en",
+    );
 
     await resend.emails.send({
       from: "Everypaw <hello@everypaw.app>",

@@ -4,6 +4,7 @@ import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
 import { getWeeklyQuestion, currentISOWeekBounds } from "@/lib/interview";
+import { baseLayout, emoji, eyebrow, quote, ctaButton, paragraph, unsubscribeLink } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -74,22 +75,15 @@ export async function GET(req: Request) {
         : "No moments added this week, every small detail matters.");
     const unsubLabel = isFrench ? "Se désabonner des rappels hebdomadaires" : "Unsubscribe from weekly reminders";
 
-    const html = `
-      <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-        <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>
-        <p style="font-size: 12px; font-family: sans-serif; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #C8813A; margin: 0 0 16px;">
-          ${isFrench ? "Question de la semaine" : "Question of the week"}
-        </p>
-        <div style="background: #F7F2EA; border-left: 3px solid #C8813A; padding: 20px 24px; border-radius: 0 12px 12px 0; margin: 0 0 28px; font-size: 19px; font-style: italic; line-height: 1.6; color: #3D2B1F;">
-          ${questionHtml}
-        </div>
-        <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 15px; font-weight: 500;">${ctaLabel}</a>
-        <p style="font-size: 13px; color: #7A5C44; margin-top: 20px; font-family: sans-serif; line-height: 1.5;">${escapeHtml(weekNote)}</p>
-        <p style="font-size: 11px; color: #9A8070; margin-top: 28px; font-family: sans-serif; line-height: 1.5;">
-          <a href="${unsubscribeUrl}" style="color: #9A8070;">${unsubLabel}</a>
-        </p>
-      </div>
-    `;
+    const html = baseLayout(
+      emoji("🐾") +
+      eyebrow(isFrench ? "Question de la semaine" : "Question of the week") +
+      quote(questionHtml) +
+      ctaButton("https://everypaw.app/dashboard", ctaLabel) +
+      paragraph(escapeHtml(weekNote)),
+      unsubscribeLink(unsubscribeUrl, unsubLabel),
+      isFrench ? "fr" : "en",
+    );
 
     await resend.emails.send({
       from: "Everypaw <hello@everypaw.app>",

@@ -3,6 +3,7 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
+import { baseLayout, emoji, heading, paragraph, quote, ctaButton, unsubscribeLink } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -73,43 +74,25 @@ export async function GET(req: Request) {
       ? `🐾 Il y a ${yearsAgo} an${yearsAgo > 1 ? "s" : ""}, ${petName}…`
       : `🐾 ${yearsAgo} year${yearsAgo > 1 ? "s" : ""} ago, ${petName}…`;
 
-    const html = isFR ? `
-      <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-        <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>
-        <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 8px;">Il y a ${yearsAgo} an${yearsAgo > 1 ? "s" : ""}, ${petName}…</h1>
-        <p style="font-size: 14px; color: #7A5C44; margin: 0 0 20px; font-family: sans-serif;">
-          ${new Date(featured.entry_date + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
-        </p>
-        <div style="background: #F7F2EA; border-left: 3px solid #C8813A; padding: 16px 20px; border-radius: 0 10px 10px 0; margin: 0 0 24px; font-style: italic; font-size: 15px; line-height: 1.7; color: #3D2B1F;">
-          "${snippet}"
-        </div>
-        <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-          Voir le journal de ${petName} →
-        </a>
-        <p style="font-size: 11px; color: #9A8070; margin-top: 32px; font-family: sans-serif; line-height: 1.5;">
-          Ces souvenirs méritent d'être dans un livre. <a href="https://everypaw.app/dashboard" style="color: #C8813A;">Découvrez Everypaw Print →</a><br />
-          <a href="${unsubscribeUrl}" style="color: #9A8070;">Se désabonner des rappels</a>
-        </p>
-      </div>
-    ` : `
-      <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-        <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>
-        <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 8px;">${yearsAgo} year${yearsAgo > 1 ? "s" : ""} ago, ${petName}…</h1>
-        <p style="font-size: 14px; color: #7A5C44; margin: 0 0 20px; font-family: sans-serif;">
-          ${new Date(featured.entry_date + "T12:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}
-        </p>
-        <div style="background: #F7F2EA; border-left: 3px solid #C8813A; padding: 16px 20px; border-radius: 0 10px 10px 0; margin: 0 0 24px; font-style: italic; font-size: 15px; line-height: 1.7; color: #3D2B1F;">
-          "${snippet}"
-        </div>
-        <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-          See ${petName}'s journal →
-        </a>
-        <p style="font-size: 11px; color: #9A8070; margin-top: 32px; font-family: sans-serif; line-height: 1.5;">
-          These memories deserve to be in a book. <a href="https://everypaw.app/dashboard" style="color: #C8813A;">Discover Everypaw Print →</a><br />
-          <a href="${unsubscribeUrl}" style="color: #9A8070;">Unsubscribe from reminders</a>
-        </p>
-      </div>
-    `;
+    const dateLabel = new Date(featured.entry_date + "T12:00:00").toLocaleDateString(
+      isFR ? "fr-FR" : "en-US",
+      { day: "numeric", month: "long", year: "numeric" },
+    );
+    const printPromo = isFR
+      ? `Ces souvenirs méritent d'être dans un livre. <a href="https://everypaw.app/dashboard" style="color:#C8813A;">Découvrez Everypaw Print →</a>`
+      : `These memories deserve to be in a book. <a href="https://everypaw.app/dashboard" style="color:#C8813A;">Discover Everypaw Print →</a>`;
+
+    const html = baseLayout(
+      emoji("🐾") +
+      heading(isFR
+        ? `Il y a ${yearsAgo} an${yearsAgo > 1 ? "s" : ""}, ${petName}…`
+        : `${yearsAgo} year${yearsAgo > 1 ? "s" : ""} ago, ${petName}…`) +
+      paragraph(dateLabel) +
+      quote(`"${snippet}"`) +
+      ctaButton("https://everypaw.app/dashboard", isFR ? `Voir le journal de ${petName} →` : `See ${petName}'s journal →`),
+      printPromo + "<br />" + unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
+      isFR ? "fr" : "en",
+    );
 
     await resend.emails.send({
       from: "Everypaw <hello@everypaw.app>",

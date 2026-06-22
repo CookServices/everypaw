@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Resend } from "resend";
 import { escapeHtml } from "@/lib/html";
+import { baseLayout, emoji, heading, paragraph, quote, codeBox, ctaButton, finePrint } from "@/lib/email-templates";
 
 const copy = {
   fr: {
@@ -39,24 +40,18 @@ function buildEmailHtml({
   redeemUrl: string;
 }): string {
   const c = copy[locale] ?? copy.en;
-  return `
-    <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-      <p style="font-size: 28px; margin: 0 0 8px;">🎁</p>
-      <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 16px;">${c.heading}</h1>
-      <p style="font-size: 16px; line-height: 1.6; color: #7A5C44; margin: 0 0 16px;">
-        ${c.body(escapeHtml(senderName))}
-      </p>
-      ${message ? `
-      <div style="background: #F7F2EA; border-left: 3px solid #C8813A; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
-        <p style="font-size: 15px; font-style: italic; color: #3D2B1F; margin: 0;">"${escapeHtml(message)}"</p>
-      </div>
-      ` : ""}
-      <p style="font-size: 15px; color: #7A5C44; margin: 0 0 8px;">${c.codeLabel}</p>
-      <div style="background: #3D2B1F; color: #F7C27A; font-family: monospace; font-size: 1.5rem; padding: 16px 24px; border-radius: 12px; text-align: center; letter-spacing: .15em; margin: 0 0 24px;">${code}</div>
-      <a href="${redeemUrl}" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 14px 28px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 15px; font-weight: 500;">${c.cta}</a>
-      <p style="font-size: 12px; color: #7A5C44; margin-top: 32px; font-family: sans-serif;">${c.footer}</p>
-    </div>
-  `;
+  return baseLayout(
+    emoji("🎁") +
+    heading(c.heading) +
+    paragraph(c.body(escapeHtml(senderName))) +
+    (message ? quote(`"${escapeHtml(message)}"`) : "") +
+    paragraph(c.codeLabel) +
+    codeBox(code) +
+    ctaButton(redeemUrl, c.cta) +
+    finePrint(c.footer),
+    "",
+    locale,
+  );
 }
 
 export async function POST(req: Request) {

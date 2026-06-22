@@ -1834,7 +1834,7 @@ curl "https://everypaw.app/api/share-card?story_id=<uuid>&format=story" --cookie
 
 **🔴 Colonne `profiles.language` inexistante (bug critique, commit `c50bffc`)** — `profiles.language` ET `profiles.locale` n'existaient nulle part en prod (aucune migration), pourtant ~11 chemins serveur faisaient `.select("locale, language")` → PostgREST 400 → résultat null → **tous les emails localisés cassés** : 6 crons (weekly-reminder, birthday-check, daily-prompts, on-this-day, streak-alert, retention-emails) renvoyaient `sent:0` à chaque run, + langue email dunning Stripe en fallback. Fix : migration `add_profiles_language_2026_06_11.sql` (`profiles.language text` nullable, appliquée prod ✓), retrait de `locale` des 11 selects (langue basée sur `profiles.language` seul), signup écrit la langue dans `user_metadata`, `/auth/callback` la persiste sur le profil (si null). Testé live : weekly-reminder `sent:1` + email FR reçu yopmail ✓. Pattern : ne jamais `.select()` une colonne non garantie en prod — PostgREST échoue toute la requête.
 
-**TODO email (note Julien 2026-06-11)** : améliorer les rendus visuels des emails transactionnels/crons (templates HTML inline actuels basiques).
+**~~TODO email (note Julien 2026-06-11)~~ ✅ fait session 51** : emails transactionnels/crons harmonisés via `src/lib/email-templates.ts`.
 
 ### ✅ Session 50 — Fixes UI/UX + typographie em-dash (2026-06-11)
 
@@ -1881,3 +1881,15 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 - **#9 Split god-components** — `pets/[id]/page.tsx` 131 Ko (308 `style={{}}` inline), `order` 81 Ko, `settings` 54 Ko. Extraire sous-composants + styles hors render.
 
 *Dernière mise à jour : 2026-06-18 (audit Pareto — items #1/#3/#5/#7/#10 livrés ; #4/#6/#8/#9 reportés ; #2 écarté)*
+
+### ✅ Session 51 — Harmonisation templates emails (2026-06-20)
+
+**Nouveau `src/lib/email-templates.ts`** — primitives partagées : `BRAND`, `baseLayout(content, footerExtra?, lang?)` (header marron 🐾 + footer © année auto), `ctaButton`, `ctaButtonOutline`, `emoji`, `eyebrow`, `heading`, `paragraph`, `quote`, `codeBox`, `finePrint`, `unsubscribeLink`. Tous les emails user-facing partagent désormais header/footer/polices/couleurs/bouton identiques.
+
+**Avant** : 2 styles divergents — `auth-emails.ts` (layout brandé, DM Sans) vs ~10 emails crons/transactionnels en `<div>` inline Georgia sans header/footer/logo.
+
+**Migrés vers `baseLayout`** : `auth-emails.ts` (importe le lib partagé, dédupliqué), crons `daily-prompts` / `birthday-check` / `on-this-day` / `streak-alert` / `weekly-reminder` / `monthly-story` / `retention-emails` (helpers locaux `btn/wrap/h1/p` délèguent au lib), `gift/complete` (codeBox conservé), `waitlist` (confirmation), `pet-members` (invitation, avait son propre DOCTYPE).
+
+**`lang` dynamique** : `<html lang>` propagé (`isFR`/`isFrench`/`locale`) — fini le `lang="fr"` codé en dur sur les emails EN. **Année footer** : `new Date().getFullYear()`.
+
+**Non migrés (volontaire)** : emails admin internes (notif waitlist, suggestion, contact, memorial tributes) = texte brut, pas user-facing. `export-data`/`preview-pdf` = exports PDF/HTML, pas des emails.

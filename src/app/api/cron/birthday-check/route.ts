@@ -5,6 +5,7 @@ import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
 import { generateAndSaveBirthdayLetter } from "@/lib/story";
+import { baseLayout, emoji, heading, paragraph, quote, ctaButton, ctaButtonOutline, unsubscribeLink } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -119,59 +120,25 @@ export async function GET(req: Request) {
       : "https://everypaw.app/dashboard";
     const excerptEscaped = letterExcerpt ? escapeHtml(letterExcerpt) : null;
 
-    const letterBlock = excerptEscaped ? (isFR
-      ? `
-        <div style="background: #F7F2EA; border-left: 3px solid #C8813A; padding: 16px 20px; border-radius: 0 10px 10px 0; margin: 0 0 20px; font-style: italic; font-size: 15px; line-height: 1.65; color: #3D2B1F;">
-          « ${excerptEscaped}… »
-        </div>
-        <a href="${storyUrl}" style="display: inline-block; background: transparent; color: #C8813A; padding: 10px 20px; border-radius: 100px; border: 1.5px solid #C8813A; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500; margin-bottom: 20px;">
-          Lire la lettre de ${petName} →
-        </a><br>`
-      : `
-        <div style="background: #F7F2EA; border-left: 3px solid #C8813A; padding: 16px 20px; border-radius: 0 10px 10px 0; margin: 0 0 20px; font-style: italic; font-size: 15px; line-height: 1.65; color: #3D2B1F;">
-          "${excerptEscaped}…"
-        </div>
-        <a href="${storyUrl}" style="display: inline-block; background: transparent; color: #C8813A; padding: 10px 20px; border-radius: 100px; border: 1.5px solid #C8813A; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500; margin-bottom: 20px;">
-          Read ${petName}'s letter →
-        </a><br>`) : "";
+    const letterBlock = excerptEscaped
+      ? quote(isFR ? `« ${excerptEscaped}… »` : `"${excerptEscaped}…"`) +
+        ctaButtonOutline(storyUrl, isFR ? `Lire la lettre de ${petName} →` : `Read ${petName}'s letter →`) +
+        "<br>"
+      : "";
 
-    const html = isFR ? `
-      <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-        <p style="font-size: 36px; margin: 0 0 8px;">🎂</p>
-        <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 12px;">
-          Joyeux anniversaire, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !
-        </h1>
-        <p style="font-size: 15px; line-height: 1.7; color: #7A5C44; margin: 0 0 24px;">
-          C'est une belle occasion de noter ce moment dans son journal. Décrivez comment ${petName} est aujourd'hui,
-          ce qu'il ou elle aime, ce qui a changé cette année, dans quelques ans, vous serez heureux de l'avoir noté.
-        </p>
-        ${letterBlock}
-        <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-          Écrire une entrée d'anniversaire →
-        </a>
-        <p style="font-size: 11px; color: #9A8070; margin-top: 32px; font-family: sans-serif; line-height: 1.5;">
-          <a href="${unsubscribeUrl}" style="color: #9A8070;">Se désabonner des rappels</a>
-        </p>
-      </div>
-    ` : `
-      <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-        <p style="font-size: 36px; margin: 0 0 8px;">🎂</p>
-        <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 12px;">
-          Happy birthday, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !
-        </h1>
-        <p style="font-size: 15px; line-height: 1.7; color: #7A5C44; margin: 0 0 24px;">
-          Today is a perfect day to add a birthday entry to ${petName}'s journal. Describe how they are right now,
-          what they love, what's changed this year, you'll be so glad you wrote it down.
-        </p>
-        ${letterBlock}
-        <a href="https://everypaw.app/dashboard" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-          Write a birthday entry →
-        </a>
-        <p style="font-size: 11px; color: #9A8070; margin-top: 32px; font-family: sans-serif; line-height: 1.5;">
-          <a href="${unsubscribeUrl}" style="color: #9A8070;">Unsubscribe from reminders</a>
-        </p>
-      </div>
-    `;
+    const html = baseLayout(
+      emoji("🎂") +
+      heading(isFR
+        ? `Joyeux anniversaire, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !`
+        : `Happy birthday, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !`) +
+      paragraph(isFR
+        ? `C'est une belle occasion de noter ce moment dans son journal. Décrivez comment ${petName} est aujourd'hui, ce qu'il ou elle aime, ce qui a changé cette année, dans quelques ans, vous serez heureux de l'avoir noté.`
+        : `Today is a perfect day to add a birthday entry to ${petName}'s journal. Describe how they are right now, what they love, what's changed this year, you'll be so glad you wrote it down.`) +
+      letterBlock +
+      ctaButton("https://everypaw.app/dashboard", isFR ? "Écrire une entrée d'anniversaire →" : "Write a birthday entry →"),
+      unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
+      isFR ? "fr" : "en",
+    );
 
     await resend.emails.send({
       from: "Everypaw <hello@everypaw.app>",
