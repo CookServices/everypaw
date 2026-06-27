@@ -7,7 +7,6 @@ import { getTranslations } from "@/lib/i18n";
 import { formatPrice, type Currency } from "@/lib/currency";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
-import ExitIntentPopup from "@/components/ExitIntentPopup";
 
 const tEN = getTranslations("en");
 const tFR = getTranslations("fr");
@@ -719,7 +718,6 @@ export default function Home() {
       </section>
 
       <PublicFooter variant="full" />
-      <ExitIntentPopup isFR={isFR} />
     </>
   );
 }

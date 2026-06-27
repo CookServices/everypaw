@@ -1882,6 +1882,14 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 
 *Dernière mise à jour : 2026-06-18 (audit Pareto — items #1/#3/#5/#7/#10 livrés ; #4/#6/#8/#9 reportés ; #2 écarté)*
 
+### ✅ Session 52 — UI fixes + désactivation exit-intent (2026-06-27)
+
+**Exit-intent popup désactivée** : `ExitIntentPopup` retiré de `app/page.tsx` et `app/fr/page.tsx` (import + usage). Composant `src/components/ExitIntentPopup.tsx` conservé pour réactivation future sous conditions à définir.
+
+**Signup — titre centré** : `auth/signup/page.tsx` — le bloc titre (logo + sous-titre) sorti du flex row et placé au-dessus des 2 colonnes dans un wrapper `maxWidth: 860/420`. `marginTop: "3.5rem"` retiré du panel value (plus nécessaire). Résultat : titre centré sur toute la largeur desktop + mobile, 2 colonnes correctement alignées en dessous.
+
+**Google OAuth branding** : configuration effectuée côté Google Cloud Console + OVH DNS pour que l'écran de sélection de compte Google affiche `everypaw.app` au lieu de `yeuppcnalfbjonpefgcx.supabase.co`. Record TXT `google-site-verification` ajouté sur `@` chez OVH. Validation Google Search Console en attente de propagation DNS.
+
 ### ✅ Session 51 — Harmonisation templates emails (2026-06-20)
 
 **Nouveau `src/lib/email-templates.ts`** — primitives partagées : `BRAND`, `baseLayout(content, footerExtra?, lang?)` (header marron 🐾 + footer © année auto), `ctaButton`, `ctaButtonOutline`, `emoji`, `eyebrow`, `heading`, `paragraph`, `quote`, `codeBox`, `finePrint`, `unsubscribeLink`. Tous les emails user-facing partagent désormais header/footer/polices/couleurs/bouton identiques.

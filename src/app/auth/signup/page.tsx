@@ -203,9 +203,8 @@ export default function SignupPage() {
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1rem" }}>
-      <div style={isDesktop ? { display: "flex", gap: "2rem", alignItems: "flex-start", maxWidth: 860, width: "100%" } : { width: "100%", maxWidth: 420 }}>
-      <div style={{ flex: 1, minWidth: 0, maxWidth: 420 }}>
-        <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+      <div style={{ width: "100%", maxWidth: isDesktop ? 860 : 420 }}>
+        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <Link href="/" style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", fontWeight: 600, color: "#3D2B1F", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: ".4rem" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#C8813A", display: "inline-block" }} />
             Everypaw
@@ -214,6 +213,8 @@ export default function SignupPage() {
             {isFR ? "Commencez l'histoire de votre animal aujourd'hui" : "Start your pet's story today"}
           </p>
         </div>
+      <div style={isDesktop ? { display: "flex", gap: "2rem", alignItems: "flex-start" } : {}}>
+      <div style={{ flex: 1, minWidth: 0, maxWidth: isDesktop ? undefined : 420 }}>
 
         <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", boxShadow: "0 4px 40px rgba(61,43,31,.06)" }}>
           {planInfo && (
@@ -416,7 +417,7 @@ export default function SignupPage() {
       </div>
 
       {isDesktop && (
-        <div style={{ flex: "0 0 300px", background: "#EDE5D4", borderRadius: 16, padding: "32px", alignSelf: "flex-start", marginTop: "3.5rem" }}>
+        <div style={{ flex: "0 0 300px", background: "#EDE5D4", borderRadius: 16, padding: "32px", alignSelf: "flex-start" }}>
           <div style={{ fontSize: 80, marginBottom: "1.25rem", lineHeight: 1 }}>📖</div>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 1.25rem", lineHeight: 1.3 }}>
             {t.signup.value_title}
