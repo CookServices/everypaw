@@ -156,7 +156,7 @@ export default function InvitePage({ params }: { params: { token: string } }) {
                 href={loginUrl}
                 style={{ display: "block", background: "#C8813A", color: "#FDFAF5", textDecoration: "none", padding: "13px 24px", borderRadius: 100, fontWeight: 600, fontSize: ".95rem", fontFamily: "inherit" }}
               >
-                {isFR ? "Se connecter pour accepter →" : "Sign in to accept →"}
+                {isFR ? "Se connecter pour accepter" : "Sign in to accept"}
               </a>
               <a
                 href={signupUrl}
