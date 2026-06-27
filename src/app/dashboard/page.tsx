@@ -89,7 +89,7 @@ export default function DashboardPage() {
         { data: interviewEntry },
         { count: totalEntries },
       ] = await Promise.all([
-        supabase.from("pets").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("pets").select("*").order("created_at", { ascending: false }),
         supabase.from("entries").select("*").eq("user_id", user.id).order("entry_date", { ascending: false }).limit(5),
         supabase.from("profiles").select("is_premium, onboarding_completed, book_credits, subscription_renewal_date, plan, payment_past_due").single(),
         supabase.from("stories").select("id").eq("user_id", user.id).limit(1),
