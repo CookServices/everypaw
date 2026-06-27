@@ -434,6 +434,7 @@ export default function SignupPage() {
 
       </div>
       </div>
+      </div>
       <PublicFooter />
     </div>
   );
