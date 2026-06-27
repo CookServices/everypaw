@@ -170,22 +170,38 @@ async function sendInviteEmail(
   const safeEmail = escapeHtml(ownerEmail);
   const safePet = escapeHtml(petName);
 
+  const db = getServiceSupabase();
+  const { data: ownerProfile } = await db.from("profiles").select("language").eq("id", ownerId).single();
+  const isFR = (ownerProfile?.language ?? "en").toLowerCase().startsWith("fr");
+  const lang: "fr" | "en" = isFR ? "fr" : "en";
+
   let resend;
   try { resend = getResendClient(); } catch { return; }
+
+  const subject = isFR
+    ? `Vous êtes invité(e) à rejoindre le journal de ${petName} sur Everypaw`
+    : `You're invited to join ${petName}'s journal on Everypaw`;
+
+  const html = baseLayout(
+    isFR
+      ? heading(`Vous avez été invité(e) à rejoindre le journal de ${safePet}`) +
+        paragraph(`<strong style="color:#3D2B1F">${safeEmail}</strong> vous invite à contribuer au journal Everypaw de <strong style="color:#3D2B1F">${safePet}</strong> — ajoutez des souvenirs, des photos et des moments ensemble.`) +
+        ctaButton(inviteUrl, "Accepter l'invitation →") +
+        finePrint(`Cette invitation expire dans ${INVITE_TTL_DAYS} jours. Si vous n'attendiez pas cet email, vous pouvez l'ignorer.`)
+      : heading(`You've been invited to join ${safePet}'s journal`) +
+        paragraph(`<strong style="color:#3D2B1F">${safeEmail}</strong> invited you to contribute to <strong style="color:#3D2B1F">${safePet}'s</strong> Everypaw journal — add memories, photos, and special moments together.`) +
+        ctaButton(inviteUrl, "Accept invitation →") +
+        finePrint(`This invitation expires in ${INVITE_TTL_DAYS} days. If you didn't expect this email, you can safely ignore it.`),
+    "",
+    lang,
+  );
 
   try {
     await resend.emails.send({
       from: "Everypaw <hello@everypaw.app>",
       to: toEmail,
-      subject: `You're invited to join ${petName}'s journal on Everypaw`,
-      html: baseLayout(
-        heading(`You've been invited to join ${safePet}'s journal`) +
-        paragraph(`<strong style="color:#3D2B1F">${safeEmail}</strong> invited you to contribute to <strong style="color:#3D2B1F">${safePet}'s</strong> Everypaw journal &mdash; add memories, photos, and special moments together.`) +
-        ctaButton(inviteUrl, "Accept invitation →") +
-        finePrint(`This invitation expires in ${INVITE_TTL_DAYS} days. If you didn't expect this email, you can safely ignore it.`),
-        "",
-        "en",
-      ),
+      subject,
+      html,
     });
   } catch (e) {
     log.error("[pet-members] email send error:", e);
