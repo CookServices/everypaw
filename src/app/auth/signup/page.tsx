@@ -47,15 +47,18 @@ export default function SignupPage() {
 
   const planInfo = selectedPlan ? PLAN_LABELS[selectedPlan] ?? null : null;
 
-  // Redirect params from gift redeem flow
+  // Redirect params from gift redeem / invite flows
   const getRedirectTarget = () => {
     if (typeof window === "undefined") return "/dashboard";
     const p = new URLSearchParams(window.location.search);
     const redirect = p.get("redirect");
+    const next = p.get("next");
     const code = p.get("code");
+    // `next` used by invite flow, `redirect` used by gift flow
+    const target = next ?? redirect;
     // Only allow relative paths, prevent open redirect to external sites
-    if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
-      return code ? `${redirect}?code=${code}` : redirect;
+    if (target && target.startsWith("/") && !target.startsWith("//")) {
+      return code ? `${target}?code=${code}` : target;
     }
     return "/dashboard";
   };
@@ -132,7 +135,12 @@ export default function SignupPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: (() => {
+          const target = getRedirectTarget();
+          return target !== "/dashboard"
+            ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(target)}`
+            : `${window.location.origin}/auth/callback`;
+        })(),
         data: { language: isFR ? "fr" : "en" },
       },
     });
