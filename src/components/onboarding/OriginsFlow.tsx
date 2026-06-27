@@ -231,7 +231,7 @@ export default function OriginsFlow({ pet, onComplete, onSkip }: Props) {
                 cursor: "pointer",
               }}
             >
-              {t.onboarding.origins_continue as string} →
+              {t.onboarding.origins_continue as string}
             </button>
           </div>
         </div>

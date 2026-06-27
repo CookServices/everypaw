@@ -122,7 +122,7 @@ export async function GET(req: Request) {
 
     const letterBlock = excerptEscaped
       ? quote(isFR ? `« ${excerptEscaped}… »` : `"${excerptEscaped}…"`) +
-        ctaButtonOutline(storyUrl, isFR ? `Lire la lettre de ${petName} →` : `Read ${petName}'s letter →`) +
+        ctaButtonOutline(storyUrl, isFR ? `Lire la lettre de ${petName}` : `Read ${petName}'s letter`) +
         "<br>"
       : "";
 

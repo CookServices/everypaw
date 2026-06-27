@@ -82,13 +82,13 @@ export default function RedeemPage() {
                   href={loginUrl}
                   style={{ display: "block", padding: ".75rem", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, textDecoration: "none" }}
                 >
-                  {isFR ? "Se connecter →" : "Sign in →"}
+                  {isFR ? "Se connecter" : "Sign in"}
                 </Link>
                 <Link
                   href={signupUrl}
                   style={{ display: "block", padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#3D2B1F", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, textDecoration: "none" }}
                 >
-                  {isFR ? "Créer un compte →" : "Create an account →"}
+                  {isFR ? "Créer un compte" : "Create an account"}
                 </Link>
               </div>
             </div>

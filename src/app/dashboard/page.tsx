@@ -541,7 +541,7 @@ export default function DashboardPage() {
                 <p style={{ fontSize: ".8rem", color: "#C8813A", margin: 0, fontWeight: 400 }}>
                   {t.dashboard.interview_upgrade_hint}{" "}
                   <Link href="/dashboard/settings" style={{ color: "#C8813A", fontWeight: 500 }}>
-                    {locale === "fr" ? "Passer Premium →" : "Upgrade →"}
+                    {locale === "fr" ? "Passer Premium" : "Upgrade"}
                   </Link>
                 </p>
               ) : (

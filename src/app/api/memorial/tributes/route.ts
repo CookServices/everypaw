@@ -155,7 +155,7 @@ export async function POST(req: Request) {
               Quelqu'un a souhaité partager un souvenir ou un message sur la page mémorial de ${petNameEsc}. Vous pouvez l'approuver ou le rejeter depuis le tableau de bord.
             </p>
             <a href="https://everypaw.app/dashboard/pets/${pet.id}?tab=tributes" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-              Voir les hommages →
+              Voir les hommages
             </a>
           </div>
         ` : `
@@ -166,7 +166,7 @@ export async function POST(req: Request) {
               Someone shared a memory or message on ${petNameEsc}'s memorial page. You can approve or reject it from your dashboard.
             </p>
             <a href="https://everypaw.app/dashboard/pets/${pet.id}?tab=tributes" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-              Review tributes →
+              Review tributes
             </a>
           </div>
         `;

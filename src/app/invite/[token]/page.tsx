@@ -183,7 +183,7 @@ export default function InvitePage({ params }: { params: { token: string } }) {
               href={loginUrl}
               style={{ display: "inline-block", background: "#C8813A", color: "#FDFAF5", textDecoration: "none", padding: "13px 24px", borderRadius: 100, fontWeight: 600, fontSize: ".95rem", fontFamily: "inherit" }}
             >
-              {isFR ? "Se connecter avec le bon compte →" : "Sign in with correct account →"}
+              {isFR ? "Se connecter avec le bon compte" : "Sign in with correct account"}
             </a>
           </>
         )}
@@ -201,7 +201,7 @@ export default function InvitePage({ params }: { params: { token: string } }) {
               href="/dashboard"
               style={{ display: "inline-block", background: "#C8813A", color: "#FDFAF5", textDecoration: "none", padding: "13px 24px", borderRadius: 100, fontWeight: 600, fontSize: ".95rem" }}
             >
-              {isFR ? "Aller au tableau de bord →" : "Go to dashboard →"}
+              {isFR ? "Aller au tableau de bord" : "Go to dashboard"}
             </Link>
           </>
         )}

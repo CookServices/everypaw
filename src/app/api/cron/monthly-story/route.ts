@@ -146,7 +146,7 @@ export async function GET(req: Request) {
           ? `${pet.name}'s new chapter is ready 📖`
           : `Le nouveau chapitre de ${pet.name} est prêt 📖`;
 
-      const ctaLabel = locale === "en" ? "Read the chapter →" : "Lire le chapitre →";
+      const ctaLabel = locale === "en" ? "Read the chapter" : "Lire le chapitre";
       const unsubscribeLabel =
         locale === "en"
           ? "Unsubscribe from monthly story emails"

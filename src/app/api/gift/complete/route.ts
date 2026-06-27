@@ -12,7 +12,7 @@ const copy = {
     body: (sender: string) =>
       `<strong>${sender}</strong> vous offre 12 mois d'Everypaw Premium, le journal IA qui transforme les moments du quotidien de votre animal en un beau livre imprimé.`,
     codeLabel: "Votre code cadeau :",
-    cta: "Activer mon cadeau →",
+    cta: "Activer mon cadeau",
     footer: "Code valable 12 mois · Usage unique. Aucune carte bancaire requise pour l'activer.",
   },
   en: {
@@ -21,7 +21,7 @@ const copy = {
     body: (sender: string) =>
       `<strong>${sender}</strong> gifted you 12 months of Everypaw Premium, the AI journal that turns your pet's daily moments into a beautiful printed book.`,
     codeLabel: "Your gift code:",
-    cta: "Activate my gift →",
+    cta: "Activate my gift",
     footer: "Code valid for 12 months · Single use. No credit card required to redeem.",
   },
 };
