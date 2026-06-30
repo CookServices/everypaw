@@ -1523,7 +1523,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                         {entry.content.trim() && <p style={{ fontSize: ".9rem", color: "var(--ep-text)", lineHeight: 1.65, margin: 0 }}>{entry.content}</p>}
                       </div>
                       {entry.photo_urls && entry.photo_urls.length > 0 && (
-                        <div style={{ display: "grid", gridTemplateColumns: entry.photo_urls.length === 1 ? "1fr" : entry.photo_urls.length === 2 ? "1fr 1fr" : "1fr 1fr 1fr", gap: "2px", borderRadius: "0 0 16px 16px", overflow: "hidden" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: entry.photo_urls.length === 1 ? "1fr" : entry.photo_urls.length === 2 ? "1fr 1fr" : "1fr 1fr 1fr", gap: "2px", borderRadius: "0 0 14px 14px", overflow: "hidden" }}>
                           {entry.photo_urls.slice(0, 3).map((url: string, i: number) => (
                             <div key={i} style={{ position: "relative" }}>
                               <img src={url} alt="" onClick={() => setLightboxUrl(url)}
@@ -1744,7 +1744,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 </span>
               </div>
               <div style={{ height: 6, borderRadius: 100, background: "rgba(61,43,31,.1)", overflow: "hidden" }}>
-                <div style={{ height: "100%", borderRadius: 100, background: "var(--ep-brand)", width: `${milestones.length / (totalMilestoneCount) * 100}%`, transition: "width .5s ease" }} />
+                <div style={{ height: "100%", borderRadius: 100, background: "var(--ep-brand)", width: "100%", transform: `scaleX(${totalMilestoneCount ? milestones.length / totalMilestoneCount : 0})`, transformOrigin: "left", transition: "transform .5s ease" }} />
               </div>
             </div>
 

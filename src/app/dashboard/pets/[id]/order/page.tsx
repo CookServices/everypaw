@@ -1414,16 +1414,16 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           {fields.slice(0, 2).map(field => (
             <div key={field.key}>
               <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
-              <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => { setAddress({ ...address, [field.key]: e.target.value }); setAddressErrors(prev => ({ ...prev, [field.key]: false })); }} style={{ ...inputStyle, borderColor: addressErrors[field.key] ? "#EF4444" : undefined }} />
-              {addressErrors[field.key] && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
+              <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => { setAddress({ ...address, [field.key]: e.target.value }); setAddressErrors(prev => ({ ...prev, [field.key]: false })); }} style={{ ...inputStyle, borderColor: addressErrors[field.key] ? "var(--ep-alert)" : undefined }} />
+              {addressErrors[field.key] && <span style={{ fontSize: ".7rem", color: "var(--ep-alert)", fontFamily: "sans-serif" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
             </div>
           ))}
         </div>
         {fields.slice(2).map(field => (
           <div key={field.key}>
             <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
-            <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => { setAddress({ ...address, [field.key]: e.target.value }); setAddressErrors(prev => ({ ...prev, [field.key]: false })); }} style={{ ...inputStyle, borderColor: addressErrors[field.key] ? "#EF4444" : undefined }} />
-            {addressErrors[field.key] && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
+            <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => { setAddress({ ...address, [field.key]: e.target.value }); setAddressErrors(prev => ({ ...prev, [field.key]: false })); }} style={{ ...inputStyle, borderColor: addressErrors[field.key] ? "var(--ep-alert)" : undefined }} />
+            {addressErrors[field.key] && <span style={{ fontSize: ".7rem", color: "var(--ep-alert)", fontFamily: "sans-serif" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
           </div>
         ))}
         <div>
@@ -1473,7 +1473,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {addressErrors.country && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif", marginTop: ".25rem", display: "block" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
+      {addressErrors.country && <span style={{ fontSize: ".7rem", color: "var(--ep-alert)", fontFamily: "sans-serif", marginTop: ".25rem", display: "block" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
 
       {/* Shipping + price estimate (shown once country selected) */}
       {address.country && (
