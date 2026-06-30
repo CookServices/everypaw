@@ -11,6 +11,10 @@
   --ep-text-muted:  #7A5C44;
   --ep-text-faint:  #9A8070;
   --ep-border:      rgba(61,43,31,.1);
+  --ep-error-bg:     #FEF2F2;
+  --ep-error-border: #FCA5A5;
+  --ep-error-ink:    #991B1B;
+  --ep-alert:        #A32D2D;
   --ep-radius-sm:   8px;
   --ep-radius-md:   14px;
   --ep-radius-lg:   20px;

@@ -10,7 +10,11 @@
       "bg-card":    { "role": "neutral", "displayName": "Soft Ivory",       "canonical": "#FDFAF5", "tonalRamp": ["#2D2920", "#4C463A", "#6F6757", "#968D79", "#C0B7A2", "#E0D9CB", "#FDFAF5", "#FFFFFF"] },
       "ink":        { "role": "neutral", "displayName": "Cocoa Ink",        "canonical": "#3D2B1F", "tonalRamp": ["#1C130D", "#2C1F16", "#3D2B1F", "#5A4030", "#7A5C44", "#9A8070", "#C0AC9C", "#E3D9CF"] },
       "ink-muted":  { "role": "neutral", "displayName": "Muted Cocoa",      "canonical": "#7A5C44", "tonalRamp": ["#1C130D", "#2C1F16", "#3D2B1F", "#5A4030", "#7A5C44", "#9A8070", "#C0AC9C", "#E3D9CF"] },
-      "ink-faint":  { "role": "neutral", "displayName": "Faint Cocoa",      "canonical": "#9A8070", "tonalRamp": ["#1C130D", "#2C1F16", "#3D2B1F", "#5A4030", "#7A5C44", "#9A8070", "#C0AC9C", "#E3D9CF"] }
+      "ink-faint":  { "role": "neutral", "displayName": "Faint Cocoa",      "canonical": "#9A8070", "tonalRamp": ["#1C130D", "#2C1F16", "#3D2B1F", "#5A4030", "#7A5C44", "#9A8070", "#C0AC9C", "#E3D9CF"] },
+      "error-bg":     { "role": "semantic", "displayName": "Error Wash",   "canonical": "#FEF2F2", "tonalRamp": ["#4A1212", "#6B1A1A", "#8C2222", "#B83A3A", "#D97070", "#EFA8A8", "#FAD4D4", "#FEF2F2"] },
+      "error-border": { "role": "semantic", "displayName": "Error Edge",   "canonical": "#FCA5A5", "tonalRamp": ["#4A1212", "#6B1A1A", "#8C2222", "#B83A3A", "#D97070", "#FCA5A5", "#FDC9C9", "#FEE8E8"] },
+      "error-ink":    { "role": "semantic", "displayName": "Error Ink",    "canonical": "#991B1B", "tonalRamp": ["#3A0A0A", "#5C1212", "#7E1818", "#991B1B", "#C13A3A", "#D97070", "#EFA8A8", "#FAD4D4"] },
+      "alert":        { "role": "semantic", "displayName": "Alert",        "canonical": "#A32D2D", "tonalRamp": ["#3A0A0A", "#5C1212", "#7E1818", "#A32D2D", "#C45252", "#DA8484", "#EDB6B6", "#F8E0E0"] }
     },
     "typographyMeta": {
       "display":  { "displayName": "Display",  "purpose": "Hero headlines and major page titles. Georgia serif for emotional weight." },

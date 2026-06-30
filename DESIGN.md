@@ -10,6 +10,10 @@ colors:
   ink-muted: "#7A5C44"
   ink-faint: "#9A8070"
   border: "#3D2B1F1A"
+  error-bg: "#FEF2F2"
+  error-border: "#FCA5A5"
+  error-ink: "#991B1B"
+  alert: "#A32D2D"
 typography:
   display:
     fontFamily: "Georgia, 'Times New Roman', serif"
@@ -109,8 +113,15 @@ A single warm terracotta accent over a warm sand/cream field, grounded by deep c
 - **Faint Cocoa** (`#9A8070`): Tertiary text, timestamps, the quietest labels only.
 - **Hairline Border** (`rgba(61,43,31,.1)`): Dividers and card borders — a whisper, not a line.
 
+### Semantic — Error
+The only place a non-brand hue is allowed. Reserved strictly for error states; never decorative.
+- **Error Wash** (`#FEF2F2`, `--ep-error-bg`): Background of error notices.
+- **Error Edge** (`#FCA5A5`, `--ep-error-border`): Border of error notices.
+- **Error Ink** (`#991B1B`, `--ep-error-ink`): Text inside an error notice (on Error Wash).
+- **Alert** (`#A32D2D`, `--ep-alert`): Standalone error text and the over-goal progress state.
+
 ### Named Rules
-**The One Voice Rule.** Terracotta is the only accent. There is no secondary or tertiary color. Its consistency is the brand; do not introduce a second hue for "variety."
+**The One Voice Rule.** Terracotta is the only accent. There is no secondary or tertiary color. Its consistency is the brand; do not introduce a second hue for "variety." The single exception is the semantic Error role (red), used only for error states — never as decoration.
 
 **The Contrast Floor Rule.** Body text must hold ≥4.5:1 on its background. Muted Cocoa (`#7A5C44`) and Faint Cocoa (`#9A8070`) are the danger zone on Warm Sand — never drop body copy to Faint Cocoa, and verify Muted Cocoa at small sizes. When close, move toward Cocoa Ink. Light brown "for elegance" is forbidden if it costs legibility.
 
@@ -182,6 +193,8 @@ A CSS-rendered 3D mockup of the printed photo book (terracotta-to-cocoa gradient
 - **Do** keep body copy at DM Sans 300 but verify ≥4.5:1 contrast; push toward Cocoa Ink when close.
 - **Do** use fully-rounded pill buttons and 14px-radius cards.
 - **Do** design every surface for EN and FR — tolerate longer French strings without breaking layout.
+- **Do** consume colors via CSS tokens (`var(--ep-brand)`, `var(--ep-text-muted)`, `var(--ep-error-ink)`…), never literal hex inline — keeps the system the single source of truth.
+- **Do** use the Error tokens (`--ep-error-bg/border/ink`, `--ep-alert`) for error states only.
 
 ### Don't:
 - **Don't** build a **generic SaaS dashboard**: no cold blue gradients, no hero-metric template (big number + small label + supporting stats), no endless identical icon-heading-text card grids.

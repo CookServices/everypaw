@@ -53,6 +53,7 @@ export default function DashboardPage() {
   const [interviewDone, setInterviewDone] = useState(false);
   const [interviewAnsweredContent, setInterviewAnsweredContent] = useState("");
   const [interviewSubmitting, setInterviewSubmitting] = useState(false);
+  const [interviewError, setInterviewError] = useState(false);
   const [totalEntriesCount, setTotalEntriesCount] = useState(0);
   const [petMetadata, setPetMetadata] = useState<Record<string, {
     lastEntry: string | null;
@@ -176,6 +177,7 @@ export default function DashboardPage() {
     const today = new Date().toISOString().slice(0, 10);
 
     setInterviewSubmitting(true);
+    setInterviewError(false);
     const { error } = await supabase.from("entries").insert({
       pet_id: resolvedPetId,
       user_id: user.id,
@@ -188,11 +190,13 @@ export default function DashboardPage() {
       setInterviewDone(true);
       setInterviewAnsweredContent(content);
       setInterviewAnswer("");
+    } else {
+      setInterviewError(true);
     }
   };
 
   if (loading) return (
-    <div style={{ minHeight: "100dvh", background: "#F7F2EA", padding: "2.5rem 1.5rem", maxWidth: 900, margin: "0 auto" }}>
+    <div style={{ minHeight: "100dvh", background: "var(--ep-bg)", padding: "2.5rem 1.5rem", maxWidth: 900, margin: "0 auto" }}>
       {/* Header skeleton */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div className="ep-skeleton" style={{ width: 160, height: 28 }} />
@@ -229,7 +233,7 @@ export default function DashboardPage() {
 
   const progressGoal = 15;
   const progressPct = Math.min(monthlyEntryCount / progressGoal, 1);
-  const progressColor = progressPct >= 1 ? "#A32D2D" : "#C8813A";
+  const progressColor = progressPct >= 1 ? "var(--ep-alert)" : "var(--ep-brand)";
 
   const orderLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/order` : "/dashboard";
   const storiesLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}?tab=stories` : "/dashboard";
@@ -241,18 +245,26 @@ export default function DashboardPage() {
   const chipActiveStyle: React.CSSProperties = {
     display: "inline-flex", alignItems: "center", gap: ".35rem",
     padding: ".35rem .75rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500,
-    border: "1.5px solid #C8813A", background: "rgba(200,129,58,.12)", color: "#C8813A",
+    border: "1.5px solid var(--ep-brand)", background: "rgba(200,129,58,.12)", color: "var(--ep-brand)",
     cursor: "default", whiteSpace: "nowrap",
   };
   const chipStyle: React.CSSProperties = {
     display: "inline-flex", alignItems: "center", gap: ".35rem",
     padding: ".35rem .75rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 400,
-    border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44",
+    border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "var(--ep-text-muted)",
     textDecoration: "none", whiteSpace: "nowrap", transition: "border-color .12s, background .12s",
   };
 
+  const sectionHeadingStyle: React.CSSProperties = {
+    fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600,
+    color: "var(--ep-text)", margin: "0 0 .875rem",
+  };
+  const cardLabelStyle: React.CSSProperties = {
+    fontSize: ".7rem", fontWeight: 600, color: "var(--ep-text-muted)", margin: "0 0 .4rem",
+  };
+
   return (
-    <div style={{ minHeight: "100dvh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: "100dvh", background: "var(--ep-bg)", fontFamily: "'DM Sans', sans-serif" }}>
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
 
         {showOnboarding && !pets.length && (
@@ -287,14 +299,14 @@ export default function DashboardPage() {
         )}
 
         {paymentPastDue && (
-          <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 8, padding: "12px 16px", marginBottom: "1.5rem" }}>
-            <p style={{ fontSize: ".875rem", fontWeight: 600, color: "#991B1B", margin: "0 0 .25rem" }}>
+          <div style={{ background: "var(--ep-error-bg)", border: "1px solid var(--ep-error-border)", borderRadius: 8, padding: "12px 16px", marginBottom: "1.5rem" }}>
+            <p style={{ fontSize: ".875rem", fontWeight: 600, color: "var(--ep-error-ink)", margin: "0 0 .25rem" }}>
               {t.dashboard.payment_issue_title}
             </p>
-            <p style={{ fontSize: ".85rem", color: "#991B1B", lineHeight: 1.5, margin: "0 0 .5rem" }}>
+            <p style={{ fontSize: ".85rem", color: "var(--ep-error-ink)", lineHeight: 1.5, margin: "0 0 .5rem" }}>
               {t.dashboard.payment_issue_desc}
             </p>
-            <Link href="/dashboard/settings" style={{ fontSize: ".85rem", fontWeight: 600, color: "#991B1B", textDecoration: "underline" }}>
+            <Link href="/dashboard/settings" style={{ fontSize: ".85rem", fontWeight: 600, color: "var(--ep-error-ink)", textDecoration: "underline" }}>
               {t.dashboard.payment_issue_cta}
             </Link>
           </div>
@@ -312,7 +324,7 @@ export default function DashboardPage() {
         {/* ── Zone A, Header with pet chips ────────────────────────────── */}
         <div style={{ marginBottom: "2rem" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".75rem", marginBottom: "1rem" }}>
-            <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>
+            <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 600, color: "var(--ep-text)", margin: 0 }}>
               {t.dashboard.title}
             </h1>
             <Link
@@ -321,11 +333,11 @@ export default function DashboardPage() {
                 display: "inline-flex", alignItems: "center", gap: ".35rem",
                 padding: ".4rem .875rem", borderRadius: 100,
                 border: "1.5px solid rgba(61,43,31,.2)", background: "transparent",
-                color: "#7A5C44", fontSize: ".8rem", textDecoration: "none",
+                color: "var(--ep-text-muted)", fontSize: ".8rem", textDecoration: "none",
                 transition: "border-color .12s, background .12s",
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#C8813A"; (e.currentTarget as HTMLElement).style.color = "#C8813A"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.2)"; (e.currentTarget as HTMLElement).style.color = "#7A5C44"; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--ep-brand)"; (e.currentTarget as HTMLElement).style.color = "var(--ep-brand)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.2)"; (e.currentTarget as HTMLElement).style.color = "var(--ep-text-muted)"; }}
             >
               {isFR ? "Ajouter un animal" : "Add a pet"}
             </Link>
@@ -339,8 +351,8 @@ export default function DashboardPage() {
                   key={pet.id}
                   href={`/dashboard/pets/${pet.id}`}
                   style={chipStyle}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#C8813A"; (e.currentTarget as HTMLElement).style.background = "rgba(200,129,58,.06)"; (e.currentTarget as HTMLElement).style.color = "#C8813A"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.15)"; (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#7A5C44"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--ep-brand)"; (e.currentTarget as HTMLElement).style.background = "rgba(200,129,58,.06)"; (e.currentTarget as HTMLElement).style.color = "var(--ep-brand)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.15)"; (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--ep-text-muted)"; }}
                 >
                   {pet.photo_url ? (
                     <img src={pet.photo_url} alt={pet.name} style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
@@ -350,20 +362,22 @@ export default function DashboardPage() {
                   <span style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pet.name}</span>
                   {petMetadata[pet.id]?.hasNewChapter && (
                     <span
+                      role="img"
                       title={isFR ? "Nouveau chapitre disponible" : "New chapter available"}
-                      style={{ width: 6, height: 6, borderRadius: "50%", background: "#C8813A", display: "inline-block", flexShrink: 0 }}
+                      aria-label={isFR ? "Nouveau chapitre disponible" : "New chapter available"}
+                      style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--ep-brand)", display: "inline-block", flexShrink: 0 }}
                     />
                   )}
                 </Link>
               ))}
               {extraPets > 0 && (
-                <span style={{ fontSize: ".78rem", color: "#9A8070" }}>+{extraPets}</span>
+                <span style={{ fontSize: ".78rem", color: "var(--ep-text-muted)" }}>+{extraPets}</span>
               )}
             </div>
           )}
 
           {/* Subtitle: this month */}
-          <p style={{ fontSize: ".8rem", color: "#9A8070", margin: ".625rem 0 0", fontWeight: 300 }}>
+          <p style={{ fontSize: ".8rem", color: "var(--ep-text-muted)", margin: ".625rem 0 0", fontWeight: 300 }}>
             {monthlyEntryCount > 0
               ? `${monthlyEntryCount} ${isFR ? "moment(s) ce mois" : "moments this month"} · ${isFR ? "prochain chapitre dans" : "next chapter in"} ${daysUntilChapter}j`
               : (isFR ? "Aucun moment ajouté ce mois, commencez votre premier ✨" : "No moments this month, start your first one ✨")}
@@ -372,39 +386,39 @@ export default function DashboardPage() {
 
         {/* ── Zone B, KPI cards ────────────────────────────────────────── */}
         <div style={{ marginBottom: "1.5rem" }}>
-          <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
+          <p style={sectionHeadingStyle}>
             {t.dashboard.month_title}
           </p>
           <div className="ep-grid-kpi" style={{ gridTemplateColumns: isPremium ? undefined : "repeat(2, 1fr)" }}>
 
             {/* Entries card */}
-            <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.1rem", border: "1px solid rgba(61,43,31,.07)" }}>
-              <p style={{ fontSize: ".68rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".07em", margin: "0 0 .4rem", fontFamily: "sans-serif" }}>
+            <div style={{ background: "var(--ep-bg-card)", borderRadius: 16, padding: "1rem 1.1rem", border: "1px solid rgba(61,43,31,.07)" }}>
+              <p style={cardLabelStyle}>
                 {t.dashboard.month_entries_label}
               </p>
-              <p style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .5rem", lineHeight: 1 }}>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .5rem", lineHeight: 1 }}>
                 {entriesLabel}
               </p>
               {/* Progress bar toward 15-entry goal */}
               <div style={{ height: 4, borderRadius: 100, background: "rgba(61,43,31,.1)", overflow: "hidden", marginBottom: ".35rem" }}>
-                <div style={{ height: "100%", borderRadius: 100, background: progressColor, width: `${progressPct * 100}%`, transition: "width .4s ease" }} />
+                <div style={{ height: "100%", borderRadius: 100, background: progressColor, width: "100%", transform: `scaleX(${progressPct})`, transformOrigin: "left", transition: "transform .4s ease" }} />
               </div>
-              <p style={{ fontSize: ".68rem", color: "#9A8070", margin: 0, fontWeight: 300 }}>
+              <p style={{ fontSize: ".68rem", color: "var(--ep-text-muted)", margin: 0, fontWeight: 300 }}>
                 {isPremium
                   ? `∞ ${t.dashboard.premium_badge}`
                   : `${isFR ? "Objectif" : "Goal"} : ${progressGoal} ${isFR ? "moments" : "moments"}`}
               </p>
             </div>
 
-            {/* Next chapter card */}
-            <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.1rem", border: "1px solid rgba(61,43,31,.07)" }}>
-              <p style={{ fontSize: ".68rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".07em", margin: "0 0 .4rem", fontFamily: "sans-serif" }}>
+            {/* Next chapter card — emotional focal point */}
+            <div style={{ background: "linear-gradient(135deg, rgba(200,129,58,.12) 0%, rgba(200,129,58,.05) 100%)", borderRadius: 16, padding: "1.1rem 1.2rem", border: "1.5px solid rgba(200,129,58,.25)" }}>
+              <p style={cardLabelStyle}>
                 {t.dashboard.month_chapter_label}
               </p>
-              <p style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem", lineHeight: 1.2 }}>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.4rem, 5vw, 1.65rem)", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .35rem", lineHeight: 1.15 }}>
                 {chapterLabel}
               </p>
-              <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: "0 0 .15rem", fontWeight: 300 }}>
+              <p style={{ fontSize: ".72rem", color: "var(--ep-text-muted)", margin: "0 0 .15rem", fontWeight: 300 }}>
                 {(() => {
                   const d = firstOfNextMonth.getDate();
                   const m = firstOfNextMonth.toLocaleDateString(dateLocale, { month: "long" });
@@ -412,13 +426,13 @@ export default function DashboardPage() {
                   return isFR ? `${ord} ${m}` : `${m} ${ord}`;
                 })()}
               </p>
-              <p style={{ fontSize: ".68rem", color: "#9A8070", margin: "0 0 .5rem", fontWeight: 300 }}>
+              <p style={{ fontSize: ".68rem", color: "var(--ep-text-muted)", margin: "0 0 .5rem", fontWeight: 300 }}>
                 {isFR ? "Généré automatiquement" : "Auto-generated"}
               </p>
               {hasStories && (
                 <Link
                   href={storiesLink}
-                  style={{ fontSize: ".72rem", color: "#C8813A", textDecoration: "none", fontWeight: 400 }}
+                  style={{ fontSize: ".72rem", color: "var(--ep-brand)", textDecoration: "none", fontWeight: 400 }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.textDecoration = "underline"}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.textDecoration = "none"}
                 >
@@ -429,19 +443,19 @@ export default function DashboardPage() {
 
             {/* Book card, Premium only */}
             {isPremium && (
-              <div style={{ background: "linear-gradient(135deg, rgba(200,129,58,.1) 0%, rgba(200,129,58,.05) 100%)", borderRadius: 16, padding: "1rem 1.1rem", border: "1px solid rgba(200,129,58,.2)", gridColumn: "1 / -1" }}>
-                <p style={{ fontSize: ".68rem", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: ".07em", margin: "0 0 .4rem", fontFamily: "sans-serif" }}>
+              <div style={{ background: "var(--ep-bg-card)", borderRadius: 16, padding: "1rem 1.1rem", border: "1.5px solid rgba(200,129,58,.25)", gridColumn: "1 / -1" }}>
+                <p style={{ ...cardLabelStyle, color: "var(--ep-brand)" }}>
                   {t.dashboard.month_book_label.replace("{year}", String(year))}
                 </p>
-                <p style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .3rem", lineHeight: 1.2 }}>
+                <p style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .3rem", lineHeight: 1.2 }}>
                   {t.dashboard.month_book_value}
                 </p>
-                <p style={{ fontSize: ".72rem", color: "#7A5C44", margin: "0 0 .25rem", fontWeight: 300 }}>
+                <p style={{ fontSize: ".72rem", color: "var(--ep-text-muted)", margin: "0 0 .25rem", fontWeight: 300 }}>
                   {monthlyEntryCount > 0
                     ? `${monthlyEntryCount} ${monthlyEntryCount === 1 ? (isFR ? "entrée ajoutée" : "entry added") : (isFR ? "entrées ajoutées" : "entries added")}`
                     : (isFR ? "Aucune entrée ce mois, ajoutez des moments ✨" : "No entries this month, add some moments ✨")}
                 </p>
-                <p style={{ fontSize: ".72rem", color: bookCredits > 0 ? "#C8813A" : "#9A8070", margin: "0 0 .625rem", fontWeight: 300 }}>
+                <p style={{ fontSize: ".72rem", color: bookCredits > 0 ? "var(--ep-brand)" : "var(--ep-text-muted)", margin: "0 0 .625rem", fontWeight: 300 }}>
                   {bookCredits > 0
                     ? t.dashboard.month_book_credit_available.replace("{n}", String(bookCredits))
                     : subscriptionRenewalDate
@@ -452,7 +466,7 @@ export default function DashboardPage() {
                   href={orderLink}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: ".3rem",
-                    fontSize: ".75rem", fontWeight: 500, color: "#C8813A",
+                    fontSize: ".75rem", fontWeight: 500, color: "var(--ep-brand)",
                     textDecoration: "none", border: "1.5px solid rgba(200,129,58,.4)",
                     borderRadius: 100, padding: ".3rem .75rem",
                     transition: "background .12s",
@@ -475,10 +489,10 @@ export default function DashboardPage() {
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem",
           }}>
             <div>
-              <p style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .25rem" }}>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .25rem" }}>
                 {(t.onboarding.origins_dashboard_title as string).replace("{petName}", pets[0]?.name || "")}
               </p>
-              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>
+              <p style={{ fontSize: ".8rem", color: "var(--ep-text-muted)", margin: 0, fontWeight: 300 }}>
                 {t.onboarding.origins_dashboard_desc as string}
               </p>
             </div>
@@ -489,7 +503,7 @@ export default function DashboardPage() {
               }}
               style={{
                 flexShrink: 0, padding: ".5rem 1rem", borderRadius: 100, border: "none",
-                background: "#C8813A", color: "#FDFAF5",
+                background: "var(--ep-brand)", color: "var(--ep-bg-card)",
                 fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: "pointer",
                 whiteSpace: "nowrap",
               }}
@@ -505,7 +519,7 @@ export default function DashboardPage() {
           if (!resolvedPet) return null;
           return (
             <div style={{ marginBottom: "1.5rem" }}>
-              <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
+              <p style={sectionHeadingStyle}>
                 {isFR ? `Votre livre ${year}` : `Your ${year} book`}
               </p>
               <BookProgressWidget pet={resolvedPet} plan={plan} />
@@ -521,26 +535,26 @@ export default function DashboardPage() {
           const isEntryLimitReached = plan === "free" && totalEntriesCount >= 10;
 
           return (
-            <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1.25rem 1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.07)" }}>
-              <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem", fontFamily: "sans-serif" }}>
+            <div style={{ background: "var(--ep-bg-card)", borderRadius: 16, padding: "1.25rem 1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.07)" }}>
+              <p style={{ ...cardLabelStyle, margin: "0 0 .75rem" }}>
                 {t.dashboard.interview_title}
               </p>
-              <p style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 400, color: "#3D2B1F", lineHeight: 1.6, margin: "0 0 .875rem", fontStyle: "italic" }}>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 400, color: "var(--ep-text)", lineHeight: 1.6, margin: "0 0 .875rem", fontStyle: "italic" }}>
                 {question}
               </p>
               {interviewDone ? (
                 <div>
-                  <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: "0 0 .35rem", fontWeight: 300, lineHeight: 1.5, whiteSpace: "pre-line" }}>
+                  <p style={{ fontSize: ".8rem", color: "var(--ep-text-muted)", margin: "0 0 .35rem", fontWeight: 300, lineHeight: 1.5, whiteSpace: "pre-line" }}>
                     {interviewAnsweredContent.split("\n").slice(1).join("\n")}
                   </p>
-                  <p style={{ fontSize: ".75rem", color: "#9A8070", margin: 0, fontWeight: 300 }}>
+                  <p style={{ fontSize: ".75rem", color: "var(--ep-text-muted)", margin: 0, fontWeight: 300 }}>
                     {t.dashboard.interview_done}
                   </p>
                 </div>
               ) : isEntryLimitReached ? (
-                <p style={{ fontSize: ".8rem", color: "#C8813A", margin: 0, fontWeight: 400 }}>
+                <p style={{ fontSize: ".8rem", color: "var(--ep-brand)", margin: 0, fontWeight: 400 }}>
                   {t.dashboard.interview_upgrade_hint}{" "}
-                  <Link href="/dashboard/settings" style={{ color: "#C8813A", fontWeight: 500 }}>
+                  <Link href="/dashboard/settings" style={{ color: "var(--ep-brand)", fontWeight: 500 }}>
                     {locale === "fr" ? "Passer Premium" : "Upgrade"}
                   </Link>
                 </p>
@@ -554,11 +568,11 @@ export default function DashboardPage() {
                     style={{
                       width: "100%", boxSizing: "border-box",
                       padding: ".625rem .75rem", borderRadius: 10,
-                      border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA",
+                      border: "1.5px solid rgba(61,43,31,.15)", background: "var(--ep-bg)",
                       fontFamily: "'DM Sans', sans-serif", fontSize: ".875rem",
-                      color: "#3D2B1F", resize: "vertical", outline: "none",
+                      color: "var(--ep-text)", resize: "vertical", outline: "none",
                     }}
-                    onFocus={e => (e.currentTarget.style.borderColor = "#C8813A")}
+                    onFocus={e => (e.currentTarget.style.borderColor = "var(--ep-brand)")}
                     onBlur={e => (e.currentTarget.style.borderColor = "rgba(61,43,31,.15)")}
                   />
                   <button
@@ -566,7 +580,7 @@ export default function DashboardPage() {
                     disabled={interviewSubmitting || !interviewAnswer.trim()}
                     style={{
                       alignSelf: "flex-start", padding: ".45rem 1.1rem", borderRadius: 100,
-                      border: "none", background: "#C8813A", color: "#FDFAF5",
+                      border: "none", background: "var(--ep-brand)", color: "var(--ep-bg-card)",
                       fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500,
                       cursor: interviewSubmitting || !interviewAnswer.trim() ? "not-allowed" : "pointer",
                       opacity: interviewSubmitting || !interviewAnswer.trim() ? .55 : 1,
@@ -575,6 +589,13 @@ export default function DashboardPage() {
                   >
                     {interviewSubmitting ? t.dashboard.interview_submitting : t.dashboard.interview_cta}
                   </button>
+                  {interviewError && (
+                    <p style={{ fontSize: ".8rem", color: "var(--ep-error-ink)", margin: 0, fontWeight: 400 }}>
+                      {isFR
+                        ? "Échec de l'enregistrement. Vérifie ta connexion et réessaie."
+                        : "Couldn't save your answer. Check your connection and try again."}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -584,26 +605,26 @@ export default function DashboardPage() {
         {/* Premium upsell, 2 cartes */}
         {!isPremium && (
           <div style={{ marginBottom: "1.5rem" }}>
-            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
+            <p style={sectionHeadingStyle}>
               {isFR ? "Passer à Premium" : "Upgrade to Premium"}
             </p>
             <div className="ep-grid-2">
 
               {/* Digital */}
-              <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1.1rem", border: "1.5px solid rgba(200,129,58,.2)", display: "flex", flexDirection: "column", gap: ".5rem" }}>
-                <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#C8813A", textTransform: "uppercase", letterSpacing: ".07em", margin: 0 }}>
+              <div style={{ background: "var(--ep-bg-card)", borderRadius: 16, padding: "1.1rem", border: "1.5px solid rgba(200,129,58,.2)", display: "flex", flexDirection: "column", gap: ".5rem" }}>
+                <p style={{ fontSize: ".8rem", fontWeight: 600, color: "var(--ep-brand)", margin: 0 }}>
                   Premium Digital
                 </p>
-                <p style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", margin: 0, lineHeight: 1 }}>
-                  {formatPrice(currency, "digital")}<span style={{ fontSize: ".75rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span>
+                <p style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "var(--ep-text)", margin: 0, lineHeight: 1 }}>
+                  {formatPrice(currency, "digital")}<span style={{ fontSize: ".75rem", fontWeight: 400, color: "var(--ep-text-muted)" }}>/{isFR ? "mois" : "mo"}</span>
                 </p>
-                <p style={{ fontSize: ".75rem", color: "#7A5C44", margin: 0, fontWeight: 300, lineHeight: 1.5 }}>
+                <p style={{ fontSize: ".75rem", color: "var(--ep-text-muted)", margin: 0, fontWeight: 300, lineHeight: 1.5 }}>
                   {isFR ? "Entrées illimitées, histoires IA, export PDF" : "Unlimited entries, AI stories, PDF export"}
                 </p>
                 <button
                   onClick={() => handleSubscribe("digital")}
                   disabled={subscribing}
-                  style={{ marginTop: "auto", padding: ".5rem .875rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: subscribing ? "wait" : "pointer", opacity: subscribing ? .7 : 1 }}
+                  style={{ marginTop: "auto", padding: ".5rem .875rem", borderRadius: 100, border: "none", background: "var(--ep-brand)", color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: subscribing ? "wait" : "pointer", opacity: subscribing ? .7 : 1 }}
                 >
                   {isFR ? "Choisir Digital" : "Choose Digital"}
                 </button>
@@ -611,29 +632,29 @@ export default function DashboardPage() {
 
               {/* Print */}
               <div style={{ background: "linear-gradient(135deg, rgba(200,129,58,.1) 0%, rgba(200,129,58,.04) 100%)", borderRadius: 16, padding: "1.1rem", border: "1.5px solid rgba(200,129,58,.35)", display: "flex", flexDirection: "column", gap: ".5rem", position: "relative" }}>
-                <div style={{ position: "absolute", top: "-.6rem", right: ".875rem", background: "#C8813A", color: "#FDFAF5", fontSize: ".65rem", fontWeight: 600, borderRadius: 100, padding: ".2rem .6rem", letterSpacing: ".04em" }}>
+                <div style={{ position: "absolute", top: "-.6rem", right: ".875rem", background: "var(--ep-brand)", color: "var(--ep-bg-card)", fontSize: ".65rem", fontWeight: 600, borderRadius: 100, padding: ".2rem .6rem", letterSpacing: ".04em" }}>
                   {isFR ? "Meilleure valeur" : "Best value"}
                 </div>
-                <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#C8813A", textTransform: "uppercase", letterSpacing: ".07em", margin: 0 }}>
+                <p style={{ fontSize: ".8rem", fontWeight: 600, color: "var(--ep-brand)", margin: 0 }}>
                   Premium Print
                 </p>
-                <p style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", margin: 0, lineHeight: 1 }}>
-                  {formatPrice(currency, "print")}<span style={{ fontSize: ".75rem", fontWeight: 400, color: "#7A5C44" }}>/{isFR ? "mois" : "mo"}</span>
+                <p style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "var(--ep-text)", margin: 0, lineHeight: 1 }}>
+                  {formatPrice(currency, "print")}<span style={{ fontSize: ".75rem", fontWeight: 400, color: "var(--ep-text-muted)" }}>/{isFR ? "mois" : "mo"}</span>
                 </p>
-                <p style={{ fontSize: ".75rem", color: "#7A5C44", margin: 0, fontWeight: 300, lineHeight: 1.5 }}>
+                <p style={{ fontSize: ".75rem", color: "var(--ep-text-muted)", margin: 0, fontWeight: 300, lineHeight: 1.5 }}>
                   {isFR ? "Tout Digital + livre relié annuel livré chez vous" : "All Digital + annual hardcover book delivered"}
                 </p>
                 <button
                   onClick={() => handleSubscribe("print_annual")}
                   disabled={subscribing}
-                  style={{ marginTop: "auto", padding: ".5rem .875rem", borderRadius: 100, border: "1.5px solid #C8813A", background: "transparent", color: "#C8813A", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: subscribing ? "wait" : "pointer", opacity: subscribing ? .7 : 1 }}
+                  style={{ marginTop: "auto", padding: ".5rem .875rem", borderRadius: 100, border: "1.5px solid var(--ep-brand)", background: "transparent", color: "var(--ep-brand)", fontFamily: "inherit", fontSize: ".8rem", fontWeight: 500, cursor: subscribing ? "wait" : "pointer", opacity: subscribing ? .7 : 1 }}
                 >
                   {isFR ? "Choisir Print" : "Choose Print"}
                 </button>
               </div>
             </div>
             {subscribeError && (
-              <p style={{ fontSize: ".8rem", color: "#A32D2D", marginTop: ".75rem", textAlign: "center" }}>
+              <p style={{ fontSize: ".8rem", color: "var(--ep-alert)", marginTop: ".75rem", textAlign: "center" }}>
                 {isFR
                   ? "Une erreur est survenue. Vérifie ta connexion ou réessaie."
                   : "Something went wrong. Please check your connection and try again."}
@@ -644,11 +665,11 @@ export default function DashboardPage() {
 
         {/* Empty state, no pets */}
         {pets.length === 0 && (
-          <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "3rem 2rem", textAlign: "center", border: "1.5px dashed rgba(61,43,31,.15)", marginBottom: "2.5rem" }}>
+          <div style={{ background: "var(--ep-bg-card)", borderRadius: 20, padding: "3rem 2rem", textAlign: "center", border: "1.5px dashed rgba(61,43,31,.15)", marginBottom: "2.5rem" }}>
             <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🐾</div>
-            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: "#3D2B1F", marginBottom: ".5rem" }}>{t.dashboard.no_pets_title}</h3>
-            <p style={{ fontSize: ".875rem", color: "#7A5C44", fontWeight: 300, marginBottom: "1.5rem" }}>{t.dashboard.no_pets_desc}</p>
-            <Link href="/dashboard/pets/new" style={{ background: "#C8813A", color: "#FDFAF5", padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
+            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: "var(--ep-text)", marginBottom: ".5rem" }}>{t.dashboard.no_pets_title}</h3>
+            <p style={{ fontSize: ".875rem", color: "var(--ep-text-muted)", fontWeight: 300, marginBottom: "1.5rem" }}>{t.dashboard.no_pets_desc}</p>
+            <Link href="/dashboard/pets/new" style={{ background: "var(--ep-brand)", color: "var(--ep-bg-card)", padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
               {t.dashboard.add_first_pet}
             </Link>
           </div>
@@ -658,13 +679,13 @@ export default function DashboardPage() {
         {entries.length > 0 && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>
+              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: 600, color: "var(--ep-text)", margin: 0 }}>
                 {t.dashboard.recent_moments}
               </h2>
               {resolvedPetId && (
                 <Link
                   href={`/dashboard/pets/${resolvedPetId}?tab=journal`}
-                  style={{ fontSize: ".8rem", color: "#C8813A", textDecoration: "none", fontWeight: 400 }}
+                  style={{ fontSize: ".8rem", color: "var(--ep-brand)", textDecoration: "none", fontWeight: 400 }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.textDecoration = "underline"}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.textDecoration = "none"}
                 >
@@ -678,7 +699,7 @@ export default function DashboardPage() {
                 return (
                   <Link key={entry.id} href={`/dashboard/pets/${entry.pet_id}?tab=journal`} style={{ textDecoration: "none" }}>
                     <div
-                      style={{ background: "#FDFAF5", borderRadius: 14, padding: ".875rem 1.125rem", border: "1px solid rgba(61,43,31,.07)", display: "flex", gap: ".875rem", alignItems: "flex-start", transition: "border-color .15s" }}
+                      style={{ background: "var(--ep-bg-card)", borderRadius: 14, padding: ".875rem 1.125rem", border: "1px solid rgba(61,43,31,.07)", display: "flex", gap: ".875rem", alignItems: "flex-start", transition: "border-color .15s" }}
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = "rgba(200,129,58,.3)"}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.07)"}
                     >
@@ -689,26 +710,36 @@ export default function DashboardPage() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {/* Pet name badge (multi-pet view) */}
                         {pets.length > 1 && entryPet && (
-                          <p style={{ fontSize: ".68rem", color: "#C8813A", fontWeight: 500, margin: "0 0 .2rem" }}>{entryPet.name}</p>
+                          <p style={{ fontSize: ".68rem", color: "var(--ep-brand)", fontWeight: 500, margin: "0 0 .2rem" }}>{entryPet.name}</p>
                         )}
                         {entry.content.trim() && (
-                          <p style={{ fontSize: ".875rem", color: "#3D2B1F", lineHeight: 1.55, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
+                          <p style={{ fontSize: ".875rem", color: "var(--ep-text)", lineHeight: 1.55, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
                             {entry.content}
                           </p>
                         )}
                         {!entry.content.trim() && entry.photo_urls && entry.photo_urls.length > 0 && (
-                          <p style={{ fontSize: ".875rem", color: "#9A8070", margin: 0, fontStyle: "italic" }}>
+                          <p style={{ fontSize: ".875rem", color: "var(--ep-text-muted)", margin: 0, fontStyle: "italic" }}>
                             {entry.photo_urls.length} {isFR ? "photo(s)" : "photo(s)"}
                           </p>
                         )}
                       </div>
                       {/* Date + mood */}
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px", flexShrink: 0 }}>
-                        <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300, whiteSpace: "nowrap" }}>
+                        <span style={{ fontSize: ".72rem", color: "var(--ep-text-muted)", fontWeight: 300, whiteSpace: "nowrap" }}>
                           {fmtDateOrdinal(new Date(entry.entry_date), isFR, { month: "short" })}
                         </span>
                         {entry.mood && (
-                          <span style={{ fontSize: ".9rem" }}>
+                          <span
+                            role="img"
+                            aria-label={
+                              entry.mood === "happy" ? (isFR ? "Heureux" : "Happy")
+                                : entry.mood === "funny" ? (isFR ? "Drôle" : "Funny")
+                                  : entry.mood === "tender" ? (isFR ? "Tendre" : "Tender")
+                                    : entry.mood === "sad" ? (isFR ? "Triste" : "Sad")
+                                      : entry.mood === "proud" ? (isFR ? "Fier" : "Proud") : ""
+                            }
+                            style={{ fontSize: ".9rem" }}
+                          >
                             {entry.mood === "happy" ? "😄" : entry.mood === "funny" ? "😂" : entry.mood === "tender" ? "🥰" : entry.mood === "sad" ? "😢" : entry.mood === "proud" ? "🏆" : ""}
                           </span>
                         )}
@@ -724,13 +755,13 @@ export default function DashboardPage() {
                   href={`/dashboard/pets/${resolvedPetId}?tab=journal`}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: ".35rem",
-                    fontSize: ".8rem", color: "#7A5C44", textDecoration: "none",
+                    fontSize: ".8rem", color: "var(--ep-text-muted)", textDecoration: "none",
                     padding: ".5rem 1rem", borderRadius: 100,
                     border: "1px solid rgba(61,43,31,.15)",
                     transition: "border-color .12s, color .12s",
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#C8813A"; (e.currentTarget as HTMLElement).style.color = "#C8813A"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.15)"; (e.currentTarget as HTMLElement).style.color = "#7A5C44"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--ep-brand)"; (e.currentTarget as HTMLElement).style.color = "var(--ep-brand)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.15)"; (e.currentTarget as HTMLElement).style.color = "var(--ep-text-muted)"; }}
                 >
                   {isFR ? "Voir tout le journal" : "See full journal"}
                 </Link>
