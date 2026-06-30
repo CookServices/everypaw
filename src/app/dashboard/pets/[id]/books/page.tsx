@@ -314,7 +314,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
 
         {!loading && ordered.length > 0 && (
           <section style={{ marginBottom: "2rem" }}>
-            <h2 style={{ fontSize: ".75rem", fontWeight: 600, color: textMuted, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: "1rem", fontFamily: "sans-serif" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: textPrimary, marginBottom: "1rem" }}>
               {isFR ? "Commandes passées" : "Past orders"}
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: ".875rem" }}>
@@ -325,9 +325,9 @@ export default function BooksPage({ params }: { params: { id: string } }) {
 
         {!loading && drafts.length > 0 && (
           <section>
-            <h2 style={{ fontSize: ".75rem", fontWeight: 600, color: textMuted, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: "1rem", fontFamily: "sans-serif", display: "flex", justifyContent: "space-between" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: textPrimary, marginBottom: "1rem", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <span>{isFR ? "Brouillons" : "Drafts"}</span>
-              <span style={{ fontWeight: 400 }}>{drafts.length}/15 {isFR ? "brouillons maximums" : "drafts maximum"}</span>
+              <span style={{ fontSize: ".72rem", fontWeight: 400, color: textMuted, fontFamily: "'DM Sans', sans-serif" }}>{drafts.length}/15 {isFR ? "brouillons maximums" : "drafts maximum"}</span>
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: ".875rem" }}>
               {drafts.map(c => <ConfigCard key={c.id} config={c} />)}

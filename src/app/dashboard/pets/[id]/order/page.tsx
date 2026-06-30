@@ -814,7 +814,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       {/* Year filter, shown as soon as there is data (Point 9) */}
       {availableYears.length >= 1 && (
         <div style={{ marginBottom: "1.25rem" }}>
-          <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>
+          <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>
             {bookYearLabel}
           </label>
           <select
@@ -835,7 +835,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       {/* Customization, theme + title */}
       {!isMemorial && (
         <div style={{ marginBottom: "1.25rem", background: cardBg, border: cardBorder, borderRadius: 14, padding: "1rem 1.25rem" }}>
-          <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+          <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, marginBottom: ".875rem", fontFamily: "sans-serif" }}>
             {locale === "fr" ? "Personnalisation" : "Customization"}
           </div>
           {/* Theme swatches */}
@@ -923,7 +923,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
       {/* Cover photo picker (Point 10), always visible */}
       <div style={{ marginBottom: "1.25rem" }}>
-        <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+        <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, marginBottom: ".875rem", fontFamily: "sans-serif" }}>
           {coverPhotoLabel}
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", alignItems: "center" }}>
@@ -1054,7 +1054,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       {/* Chapter selection (Point 4 & 9) */}
       {visibleStories.length > 0 && (
         <div style={{ marginBottom: "1.25rem" }}>
-          <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+          <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, marginBottom: ".875rem", fontFamily: "sans-serif" }}>
             {chaptersLabel}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
@@ -1093,7 +1093,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "baseline", gap: ".6rem", marginBottom: ".4rem", flexWrap: "wrap" }}>
-                      <span style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".1em" }}>
+                      <span style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor }}>
                         {t.order.preview_chapter} {i + 1}
                       </span>
                       {(() => {
@@ -1122,7 +1122,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                       onClick={e => e.stopPropagation()}
                       style={{ borderTop: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.06)"}`, paddingTop: ".75rem" }}
                     >
-                      <div style={{ fontSize: ".65rem", color: textMuted, fontFamily: "sans-serif", marginBottom: ".4rem", textTransform: "uppercase", letterSpacing: ".08em" }}>
+                      <div style={{ fontSize: ".65rem", color: textMuted, fontFamily: "sans-serif", marginBottom: ".4rem" }}>
                         {t.order.layout_label}
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".35rem" }}>
@@ -1165,7 +1165,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       {/* Photo preview (first available photo) */}
       {photoEntries.length > 0 && (
         <div style={{ marginBottom: "1.5rem" }}>
-          <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".875rem", fontFamily: "sans-serif" }}>
+          <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, marginBottom: ".875rem", fontFamily: "sans-serif" }}>
             {t.order.preview_photos_page}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: photoEntries.length > 1 ? "1fr 1fr" : "1fr", gap: ".625rem" }}>
@@ -1324,7 +1324,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.5rem" }}>{t.order.confirm_title}</h2>
 
           <div style={{ background: isMemorial ? "rgba(247,242,234,.04)" : "#F7F2EA", borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
-            <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".75rem", fontFamily: "sans-serif" }}>{t.order.shipping_to}</div>
+            <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, marginBottom: ".75rem", fontFamily: "sans-serif" }}>{t.order.shipping_to}</div>
             <p style={{ fontSize: ".9rem", color: textPrimary, lineHeight: 1.7, margin: 0 }}>
               {address.firstName} {address.lastName}<br />
               {address.addressLine1}{address.addressLine2 ? `, ${address.addressLine2}` : ""}<br />
@@ -1334,7 +1334,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           </div>
 
           <div style={{ background: isMemorial ? "rgba(247,242,234,.04)" : "#F7F2EA", borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
-            <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".75rem", fontFamily: "sans-serif" }}>{t.order.order_summary}</div>
+            <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, marginBottom: ".75rem", fontFamily: "sans-serif" }}>{t.order.order_summary}</div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".9rem", color: textPrimary, marginBottom: ".5rem" }}>
               <span>{isMemorial && petName ? t.memorial.order_tribute.replace("{name}", petName) : t.order.product_name}</span>
               <span style={{ fontWeight: 500 }}>{price}</span>
@@ -1413,7 +1413,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
           {fields.slice(0, 2).map(field => (
             <div key={field.key}>
-              <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
+              <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
               <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => { setAddress({ ...address, [field.key]: e.target.value }); setAddressErrors(prev => ({ ...prev, [field.key]: false })); }} style={{ ...inputStyle, borderColor: addressErrors[field.key] ? "#EF4444" : undefined }} />
               {addressErrors[field.key] && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
             </div>
@@ -1421,13 +1421,13 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         </div>
         {fields.slice(2).map(field => (
           <div key={field.key}>
-            <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
+            <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{field.label}</label>
             <input type="text" autoComplete={field.autocomplete} placeholder={field.placeholder} value={address[field.key as keyof typeof address]} onChange={e => { setAddress({ ...address, [field.key]: e.target.value }); setAddressErrors(prev => ({ ...prev, [field.key]: false })); }} style={{ ...inputStyle, borderColor: addressErrors[field.key] ? "#EF4444" : undefined }} />
             {addressErrors[field.key] && <span style={{ fontSize: ".7rem", color: "#EF4444", fontFamily: "sans-serif" }}>{locale === "fr" ? "Champ requis" : "Required"}</span>}
           </div>
         ))}
         <div>
-          <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{t.order.country}</label>
+          <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>{t.order.country}</label>
           <div style={{ position: "relative" }}>
             <input
               type="text"
@@ -1478,7 +1478,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       {/* Shipping + price estimate (shown once country selected) */}
       {address.country && (
         <div style={{ marginTop: "1.25rem", background: isMemorial ? "rgba(200,129,58,.06)" : "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.18)", borderRadius: 14, padding: "1rem 1.25rem" }}>
-          <div style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: ".75rem", fontFamily: "sans-serif" }}>
+          <div style={{ fontSize: ".7rem", fontWeight: 600, color: accentColor, marginBottom: ".75rem", fontFamily: "sans-serif" }}>
             {t.order.price_total_est}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".875rem", color: textPrimary, marginBottom: ".375rem" }}>
@@ -1494,7 +1494,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
       {/* Dedication textarea (Point 7) */}
       <div style={{ marginTop: "1.5rem" }}>
-        <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>
+        <label style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, display: "block", marginBottom: ".4rem", fontFamily: "sans-serif" }}>
           {dedicationLabel}
         </label>
         <textarea

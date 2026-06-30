@@ -740,11 +740,11 @@ export default function PetPage({ params }: { params: { id: string } }) {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div>
-                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem" }}>{t.memorial.date_label}</label>
+                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", display: "block", marginBottom: ".4rem" }}>{t.memorial.date_label}</label>
                 <input type="date" value={deceasedAt} onChange={e => setDeceasedAt(e.target.value)} style={{ width: "100%", padding: ".75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none", boxSizing: "border-box" as const }} />
               </div>
               <div>
-                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".4rem" }}>{t.memorial.message_label}</label>
+                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", display: "block", marginBottom: ".4rem" }}>{t.memorial.message_label}</label>
                 <textarea value={memorialMessage} onChange={e => setMemorialMessage(e.target.value)} placeholder={t.memorial.message_placeholder} rows={3} style={{ width: "100%", padding: ".75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none", resize: "none", boxSizing: "border-box" as const, lineHeight: 1.6 }} />
               </div>
 
@@ -754,7 +754,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 const displaySrc = memorialPhotoPreview ?? memorialPhotoUrl;
                 return (
                   <div>
-                    <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: ".75rem" }}>
+                    <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", display: "block", marginBottom: ".75rem" }}>
                       {isFR ? "Photo du mémorial (optionnel)" : "Memorial photo (optional)"}
                     </label>
                     <div style={{ display: "flex", gap: "1rem", alignItems: "center", marginBottom: showMemorialPhotoGrid ? ".75rem" : 0 }}>
@@ -1009,7 +1009,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   <div style={{ position: "absolute", top: "calc(100% + .5rem)", left: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 16, boxShadow: "0 8px 30px rgba(61,43,31,.15)", padding: "1rem", zIndex: 60, width: 280, maxHeight: 300, overflowY: "auto" }}>
                     {EMOJI_CATEGORIES.map(cat => (
                       <div key={cat.label} style={{ marginBottom: ".75rem" }}>
-                        <p style={{ fontSize: ".65rem", fontWeight: 600, color: "#9A8070", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .4rem" }}>{cat.label}</p>
+                        <p style={{ fontSize: ".65rem", fontWeight: 600, color: "#9A8070", margin: "0 0 .4rem" }}>{cat.label}</p>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: ".2rem" }}>
                           {cat.emojis.map(e => (
                             <button key={e.value} onClick={() => { setEditMood(editMood === e.value ? null : e.value); setShowEditEmojiPicker(false); }}
@@ -1029,7 +1029,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             {/* Existing photos */}
             {editPhotos.length > 0 && (
               <div style={{ marginBottom: ".75rem" }}>
-                <p style={{ fontSize: ".72rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", margin: "0 0 .5rem" }}>{isFR ? "Photos existantes" : "Existing photos"}</p>
+                <p style={{ fontSize: ".72rem", fontWeight: 500, color: "#7A5C44", margin: "0 0 .5rem" }}>{isFR ? "Photos existantes" : "Existing photos"}</p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {editPhotos.map((url, i) => (
                     <div key={i} style={{ position: "relative", width: 64, height: 64 }}>
@@ -1044,7 +1044,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             {/* New pending photos */}
             {editPendingPhotos.length > 0 && (
               <div style={{ marginBottom: ".75rem" }}>
-                <p style={{ fontSize: ".72rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", margin: "0 0 .5rem" }}>{isFR ? "Nouvelles photos" : "New photos"}</p>
+                <p style={{ fontSize: ".72rem", fontWeight: 500, color: "#7A5C44", margin: "0 0 .5rem" }}>{isFR ? "Nouvelles photos" : "New photos"}</p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {editPendingPhotos.map((p, i) => (
                     <div key={i} style={{ position: "relative", width: 64, height: 64 }}>
@@ -1101,7 +1101,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             </h2>
 
             {/* Style selector */}
-            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
+            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", margin: "0 0 .75rem" }}>
               {isFR ? "Style narratif" : "Narrative style"}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: ".5rem", marginBottom: "1.5rem" }}>
@@ -1119,7 +1119,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             </div>
 
             {/* Period selector */}
-            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .75rem" }}>
+            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", margin: "0 0 .75rem" }}>
               {isFR ? "Période (optionnel)" : "Period (optional)"}
             </p>
             {(() => {
@@ -1425,7 +1425,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                       <div style={{ position: "absolute", top: "calc(100% + .5rem)", left: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 16, boxShadow: "0 8px 30px rgba(61,43,31,.15)", padding: "1rem", zIndex: 60, width: 280, maxHeight: 340, overflowY: "auto" }}>
                         {EMOJI_CATEGORIES.map(cat => (
                           <div key={cat.label} style={{ marginBottom: ".75rem" }}>
-                            <p style={{ fontSize: ".65rem", fontWeight: 600, color: "#9A8070", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .4rem" }}>{cat.label}</p>
+                            <p style={{ fontSize: ".65rem", fontWeight: 600, color: "#9A8070", margin: "0 0 .4rem" }}>{cat.label}</p>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: ".2rem" }}>
                               {cat.emojis.map(e => (
                                 <button key={e.value} onClick={() => { setMood(mood === e.value ? null : e.value); setShowEmojiPicker(false); }}
@@ -1806,7 +1806,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
                   {achievedItems.length > 0 && (
                     <>
-                      <p style={{ fontSize: ".68rem", fontWeight: 600, color: "#C8813A", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 .1rem", fontFamily: "sans-serif" }}>
+                      <p style={{ fontSize: ".68rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .1rem", fontFamily: "sans-serif" }}>
                         {t.milestones.unlocked.replace("{n}", String(achievedItems.length))}
                       </p>
                       {achievedItems.map(renderItem)}
@@ -1814,7 +1814,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   )}
                   {pendingItems.length > 0 && (
                     <>
-                      <p style={{ fontSize: ".68rem", fontWeight: 600, color: "#9A8070", textTransform: "uppercase", letterSpacing: ".08em", margin: `${achievedItems.length > 0 ? ".5rem" : "0"} 0 .1rem`, fontFamily: "sans-serif" }}>
+                      <p style={{ fontSize: ".68rem", fontWeight: 600, color: "#9A8070", margin: `${achievedItems.length > 0 ? ".5rem" : "0"} 0 .1rem`, fontFamily: "sans-serif" }}>
                         {t.milestones.locked.replace("{n}", String(pendingItems.length))}
                       </p>
                       {pendingItems.map(renderItem)}
@@ -1911,7 +1911,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             {/* Invite form, for paid plan owners */}
             {(userPlan === "digital" || userPlan === "print") && (
               <div style={{ background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 14, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
-                <label style={{ display: "block", fontSize: ".8rem", fontWeight: 500, color: "#7A5C44", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: ".5rem" }}>
+                <label style={{ display: "block", fontSize: ".8rem", fontWeight: 500, color: "#7A5C44", marginBottom: ".5rem" }}>
                   {t.members.invite_label}
                 </label>
                 <div style={{ display: "flex", gap: ".625rem", flexWrap: "wrap" }}>
