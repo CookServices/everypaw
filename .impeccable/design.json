@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-30T00:00:00Z",
+  "title": "Design System: everypaw",
+  "extensions": {
+    "colorMeta": {
+      "brand":      { "role": "primary", "displayName": "Terracotta",     "canonical": "#C8813A", "tonalRamp": ["#3A2410", "#5C3A1E", "#7E5024", "#A0662C", "#C8813A", "#D89E63", "#E6BC92", "#F3DCC4"] },
+      "brand-dark": { "role": "primary", "displayName": "Burnt Terracotta", "canonical": "#B5712E", "tonalRamp": ["#341F0C", "#54331A", "#754622", "#955C2A", "#B5712E", "#CB9255", "#DEB587", "#EFD9BF"] },
+      "bg":         { "role": "neutral", "displayName": "Warm Sand",        "canonical": "#F7F2EA", "tonalRamp": ["#2A2419", "#48402F", "#6B6049", "#938668", "#BCB096", "#DAD1BF", "#F7F2EA", "#FCFAF5"] },
+      "bg-card":    { "role": "neutral", "displayName": "Soft Ivory",       "canonical": "#FDFAF5", "tonalRamp": ["#2D2920", "#4C463A", "#6F6757", "#968D79", "#C0B7A2", "#E0D9CB", "#FDFAF5", "#FFFFFF"] },
+      "ink":        { "role": "neutral", "displayName": "Cocoa Ink",        "canonical": "#3D2B1F", "tonalRamp": ["#1C130D", "#2C1F16", "#3D2B1F", "#5A4030", "#7A5C44", "#9A8070", "#C0AC9C", "#E3D9CF"] },
+      "ink-muted":  { "role": "neutral", "displayName": "Muted Cocoa",      "canonical": "#7A5C44", "tonalRamp": ["#1C130D", "#2C1F16", "#3D2B1F", "#5A4030", "#7A5C44", "#9A8070", "#C0AC9C", "#E3D9CF"] },
+      "ink-faint":  { "role": "neutral", "displayName": "Faint Cocoa",      "canonical": "#9A8070", "tonalRamp": ["#1C130D", "#2C1F16", "#3D2B1F", "#5A4030", "#7A5C44", "#9A8070", "#C0AC9C", "#E3D9CF"] }
+    },
+    "typographyMeta": {
+      "display":  { "displayName": "Display",  "purpose": "Hero headlines and major page titles. Georgia serif for emotional weight." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings." },
+      "title":    { "displayName": "Title",    "purpose": "Card titles, feature names, pet names." },
+      "body":     { "displayName": "Body",     "purpose": "All running copy. DM Sans 300, airy and calm." },
+      "label":    { "displayName": "Label",    "purpose": "Eyebrow kickers and category tags, uppercase terracotta." }
+    },
+    "shadows": [
+      { "name": "resting",  "value": "0 2px 8px rgba(61,43,31,.08)",  "purpose": "Default card lift — barely there." },
+      { "name": "raised",   "value": "0 8px 24px rgba(61,43,31,.12)", "purpose": "Hovered cards, popovers, key tiles." },
+      { "name": "floating", "value": "0 16px 48px rgba(61,43,31,.16)", "purpose": "Modals, book mockup, top-layer surfaces." }
+    ],
+    "motion": [
+      { "name": "standard", "value": "150ms ease", "purpose": "Default state transitions (background, border, box-shadow)." },
+      { "name": "touch-active", "value": "transform scale(0.98), opacity 0.75, 80ms", "purpose": "Mobile :active tactile feedback." }
+    ],
+    "breakpoints": [
+      { "name": "gift", "value": "500px" },
+      { "name": "nav",  "value": "640px" },
+      { "name": "app",  "value": "768px" },
+      { "name": "hero", "value": "860px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single confident CTA — terracotta pill with ivory text.",
+      "html": "<button class=\"ds-btn-primary\">Commencer</button>",
+      "css": ".ds-btn-primary { background: #C8813A; color: #FDFAF5; border: none; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 1rem; padding: 12px 24px; cursor: pointer; transition: background 150ms ease, box-shadow 150ms ease; } .ds-btn-primary:hover { background: #B5712E; } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 2px solid #C8813A; outline-offset: 3px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Quiet secondary action — transparent pill, hairline border that warms on hover.",
+      "html": "<button class=\"ds-btn-outline\">En savoir plus</button>",
+      "css": ".ds-btn-outline { background: transparent; color: #3D2B1F; border: 1.5px solid rgba(61,43,31,.2); border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 1rem; padding: 12px 24px; cursor: pointer; transition: border-color 150ms ease, color 150ms ease; } .ds-btn-outline:hover { border-color: #C8813A; color: #C8813A; } .ds-btn-outline:focus-visible { outline: 2px solid #C8813A; outline-offset: 3px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Soft Ivory surface lifting gently off the sand field with a warm cocoa shadow.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Max</h3><p class=\"ds-card-body\">Premiers pas dans le jardin, sous le soleil de juillet.</p></div>",
+      "css": ".ds-card { background: #FDFAF5; border-radius: 14px; padding: 24px; box-shadow: 0 2px 8px rgba(61,43,31,.08); border: 1px solid rgba(61,43,31,.1); transition: box-shadow 150ms ease; } .ds-card:hover { box-shadow: 0 8px 24px rgba(61,43,31,.12); } .ds-card-title { font-family: Georgia, serif; font-weight: 600; font-size: 1.1rem; color: #3D2B1F; margin: 0 0 8px; } .ds-card-body { font-family: 'DM Sans', sans-serif; font-weight: 300; font-size: 1rem; line-height: 1.7; color: #7A5C44; margin: 0; }"
+    },
+    {
+      "name": "Eyebrow Label",
+      "kind": "chip",
+      "refersTo": "label",
+      "description": "Uppercase terracotta kicker above section headings.",
+      "html": "<span class=\"ds-eyebrow\">Le journal</span>",
+      "css": ".ds-eyebrow { font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: #C8813A; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Calm field with hairline border and terracotta focus ring; 16px font avoids iOS zoom.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Nom de votre animal\" />",
+      "css": ".ds-input { background: #FDFAF5; color: #3D2B1F; border: 1px solid rgba(61,43,31,.2); border-radius: 8px; padding: 12px 14px; font-family: 'DM Sans', sans-serif; font-size: 16px; width: 100%; } .ds-input::placeholder { color: #7A5C44; } .ds-input:focus-visible { outline: 2px solid #C8813A; outline-offset: 3px; border-color: #C8813A; }"
+    },
+    {
+      "name": "Story Quote",
+      "kind": "custom",
+      "refersTo": "display",
+      "description": "Signature emotional element — AI-generated story rendered in Georgia italic, like a printed book.",
+      "html": "<blockquote class=\"ds-quote\">Max courait toujours vers la porte, comme s'il savait l'heure exacte de ton retour.</blockquote>",
+      "css": ".ds-quote { font-family: Georgia, serif; font-style: italic; font-size: 1.05rem; line-height: 1.75; color: #3D2B1F; margin: 0; border: none; padding: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Hearthside Journal",
+    "overview": "everypaw is a handwritten diary kept by warm lamplight — a place where an owner records a companion's life one tender moment at a time, and where those moments are eventually bound into a printed keepsake. The interface should feel intimate and unhurried, like turning the pages of a personal journal, never like operating a tool. Warmth is the whole point: the terracotta-and-cream palette, the serif headings, the soft shadows all serve the feeling of holding something cherished. The content is emotional; the chrome gets out of its way.",
+    "keyCharacteristics": [
+      "Warm, tender, nostalgic — comfort over efficiency.",
+      "Serif display (Georgia) for emotional weight; clean sans (DM Sans) for legibility.",
+      "Soft, rounded forms — pills and 14px cards, never sharp corners.",
+      "Restrained motion; gentle, never loud.",
+      "Bilingual EN/FR parity baked into every layout."
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "Terracotta is the only accent. There is no secondary or tertiary color. Its consistency is the brand; do not introduce a second hue for variety.", "section": "colors" },
+      { "name": "The Contrast Floor Rule", "body": "Body text must hold ≥4.5:1 on its background. Muted Cocoa (#7A5C44) and Faint Cocoa (#9A8070) are the danger zone on Warm Sand — never drop body copy to Faint Cocoa, and verify Muted Cocoa at small sizes. When close, move toward Cocoa Ink.", "section": "colors" },
+      { "name": "The Serif-for-Soul Rule", "body": "Anything emotional — a pet's name, a generated story quote, a hero line, a memorial caption — is set in Georgia, often italic. Functional UI text stays in DM Sans. Emotion gets serif; mechanics get sans.", "section": "typography" },
+      { "name": "The Light-Body Rule", "body": "Body copy is DM Sans 300, not 400. The airiness is deliberate and on-brand — but it raises the contrast stakes, so honor The Contrast Floor Rule.", "section": "typography" },
+      { "name": "The Warm-Shadow Rule", "body": "Every shadow is cocoa (rgba(61,43,31,*)), never black or neutral gray. A gray shadow on this palette reads cold and breaks the hearthside feel instantly.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep terracotta (#C8813A) as the only accent — one voice across the whole product.",
+      "Do set emotional text (pet names, story quotes, hero lines, memorials) in Georgia, often italic.",
+      "Do use warm cocoa shadows (rgba(61,43,31,*)) for all elevation.",
+      "Do keep body copy at DM Sans 300 but verify ≥4.5:1 contrast; push toward Cocoa Ink when close.",
+      "Do use fully-rounded pill buttons and 14px-radius cards.",
+      "Do design every surface for EN and FR — tolerate longer French strings without breaking layout."
+    ],
+    "donts": [
+      "Don't build a generic SaaS dashboard: no cold blue gradients, no hero-metric template, no endless identical icon-heading-text card grids.",
+      "Don't build a sterile medical/vet tool: no clinical white, no charts-first utilitarian layout.",
+      "Don't drop body text to Faint Cocoa (#9A8070) — it fails contrast on Warm Sand.",
+      "Don't use gray/black shadows; they read cold and break the hearthside feel.",
+      "Don't introduce a second accent hue for variety.",
+      "Don't use sharp corners or square buttons; the system is soft by doctrine."
+    ]
+  }
+}

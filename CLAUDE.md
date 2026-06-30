@@ -31,6 +31,20 @@ Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suiv
 
 ---
 
+## Design Context (impeccable)
+
+Contexte design à la racine, à lire avant tout travail UI :
+
+- **`PRODUCT.md`** — stratégie : register (`product`, override `brand` pour la landing `/`, `/fr`), users, anti-références (pas de dashboard SaaS, pas d'outil véto), 5 principes design.
+- **`DESIGN.md`** — système visuel : North Star « The Hearthside Journal ». Tokens — terracotta `#C8813A`, fonds sable `#F7F2EA`/ivoire `#FDFAF5`, ink cocoa `#3D2B1F`, paire Georgia (display) + DM Sans (body), boutons pill, ombres cocoa chaudes.
+- **`.impeccable/design.json`** — sidecar : rampes tonales, tokens ombres/motion, snippets composants.
+
+Règles clés : terracotta = seul accent (One Voice) · texte émotionnel en Georgia italique (Serif-for-Soul) · body DM Sans 300 mais ≥4.5:1 contraste (Contrast Floor) · ombres toujours cocoa, jamais grises (Warm-Shadow).
+
+Skill `/impeccable <command>` pour critique/audit/polish/live.
+
+---
+
 ## Stack technique
 
 | Couche | Techno | Notes |
