@@ -1229,14 +1229,14 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
           {/* Top row: photo + name + breed */}
           <div style={{ display: "flex", alignItems: "center", gap: "1rem", paddingRight: "2.5rem" }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.75rem", flexShrink: 0, overflow: "hidden" }}>
+            <div style={{ width: 72, height: 72, borderRadius: 18, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.2rem", flexShrink: 0, overflow: "hidden" }}>
               {pet.photo_url
                 ? <img src={pet.photo_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 : SPECIES_EMOJI[pet.species]}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
-                <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.3rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>{pet.name}</h1>
+                <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.7rem, 4vw, 2.2rem)", fontWeight: 600, letterSpacing: "-.01em", color: "#3D2B1F", margin: 0 }}>{pet.name}</h1>
                 {pet.deceased_at && (
                   <span style={{ fontSize: ".7rem", background: "rgba(139,107,74,.12)", color: "#8B6B4A", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".2rem .6rem", fontWeight: 500, letterSpacing: ".04em", whiteSpace: "nowrap" }}>
                     🕊️ {t.memorial.badge}
@@ -1605,7 +1605,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
               <div key={story.id}>
               <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1rem", gap: ".75rem" }}>
-                  <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>{story.title || `${pet.name}'s Story`}</h3>
+                  <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>{story.title || `${pet.name}'s Story`}</h3>
                   <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300, flexShrink: 0 }}>{fmtDateOrdinal(new Date(story.created_at), isFR, { month: "short", year: "numeric" })}</span>
                 </div>
                 {(story.period_start && story.period_end || story.style) && (
@@ -1626,7 +1626,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                     })()}
                   </div>
                 )}
-                <div style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.75, marginBottom: "1.25rem", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
+                <div style={{ fontSize: "1.05rem", color: "#3D2B1F", lineHeight: 1.8, marginBottom: "1.25rem", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
                   {story.content
                     .replace(/\*\*(INTRO|INTRODUCTION|DÉVELOPPEMENT|DEVELOPPEMENT|DEVELOPMENT|CHUTE|CONCLUSION|ENDING)\*\*/gi, "")
                     .split(/\n{2,}/)
