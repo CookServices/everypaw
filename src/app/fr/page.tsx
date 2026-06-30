@@ -124,7 +124,7 @@ export default function FrHome() {
         minHeight: "100vh",
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "7rem 2rem 4rem",
-        background: "radial-gradient(ellipse 80% 60% at 50% 30%, rgba(200,129,58,.12) 0%, transparent 70%)",
+        background: "radial-gradient(ellipse 90% 70% at 50% 25%, rgba(200,129,58,.18) 0%, rgba(200,129,58,.04) 45%, transparent 72%)",
       }}>
         <div className="ep-hero-inner" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4rem", maxWidth: 1100, width: "100%", flexWrap: "wrap" }}>
 
@@ -138,12 +138,12 @@ export default function FrHome() {
             }}>{t.landing.early_access}</span>
 
             <h1 style={{
-              fontFamily: "Georgia, serif", fontSize: "clamp(2.1rem, 4vw, 4rem)",
-              fontWeight: 600, lineHeight: 1.1, color: "#3D2B1F",
-              margin: "0 0 1rem",
+              fontFamily: "Georgia, serif", fontSize: "clamp(2.6rem, 6vw, 5.25rem)",
+              fontWeight: 600, lineHeight: 1.05, letterSpacing: "-.02em", textWrap: "balance",
+              color: "#3D2B1F", margin: "0 0 1.25rem",
             }}>
               {t.landing.hero_title_1}<br />
-              <em style={{ color: "#C8813A", fontStyle: "italic" }}>{t.landing.hero_title_em}</em> {t.landing.hero_title_2}
+              <em style={{ color: "#C8813A", fontStyle: "italic" }}>{t.landing.hero_title_em}</em>{t.landing.hero_title_2}
             </h1>
 
             <h2 style={{ fontSize: "1rem", fontWeight: 300, color: "#7A5C44", maxWidth: 440, lineHeight: 1.7, margin: "0 0 .5rem" }}>
@@ -157,9 +157,9 @@ export default function FrHome() {
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "1rem" }}>
               <Link href="/auth/signup" style={{
                 background: "#C8813A", color: "#FDFAF5",
-                padding: ".875rem 2.25rem", borderRadius: "100px",
-                fontSize: "1rem", fontWeight: 500, textDecoration: "none",
-                boxShadow: "0 4px 20px rgba(200,129,58,.35)",
+                padding: "1rem 2.75rem", borderRadius: "100px",
+                fontSize: "1.05rem", fontWeight: 600, textDecoration: "none",
+                boxShadow: "0 8px 28px rgba(200,129,58,.4)",
               }}>
                 {t.landing.hero_cta}
               </Link>
