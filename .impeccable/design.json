@@ -14,7 +14,11 @@
       "error-bg":     { "role": "semantic", "displayName": "Error Wash",   "canonical": "#FEF2F2", "tonalRamp": ["#4A1212", "#6B1A1A", "#8C2222", "#B83A3A", "#D97070", "#EFA8A8", "#FAD4D4", "#FEF2F2"] },
       "error-border": { "role": "semantic", "displayName": "Error Edge",   "canonical": "#FCA5A5", "tonalRamp": ["#4A1212", "#6B1A1A", "#8C2222", "#B83A3A", "#D97070", "#FCA5A5", "#FDC9C9", "#FEE8E8"] },
       "error-ink":    { "role": "semantic", "displayName": "Error Ink",    "canonical": "#991B1B", "tonalRamp": ["#3A0A0A", "#5C1212", "#7E1818", "#991B1B", "#C13A3A", "#D97070", "#EFA8A8", "#FAD4D4"] },
-      "alert":        { "role": "semantic", "displayName": "Alert",        "canonical": "#A32D2D", "tonalRamp": ["#3A0A0A", "#5C1212", "#7E1818", "#A32D2D", "#C45252", "#DA8484", "#EDB6B6", "#F8E0E0"] }
+      "alert":        { "role": "semantic", "displayName": "Alert",        "canonical": "#A32D2D", "tonalRamp": ["#3A0A0A", "#5C1212", "#7E1818", "#A32D2D", "#C45252", "#DA8484", "#EDB6B6", "#F8E0E0"] },
+      "status-print":     { "role": "semantic", "displayName": "Print Blue",     "canonical": "#5880B8", "tonalRamp": ["#101D33", "#1E3060", "#2C4A86", "#3E63A4", "#5880B8", "#84A3CE", "#B0C6E2", "#DCE7F3"] },
+      "status-ship":      { "role": "semantic", "displayName": "Ship Green",     "canonical": "#6A9E78", "tonalRamp": ["#16291C", "#234230", "#325E44", "#477E5C", "#6A9E78", "#93BC9D", "#BFD8C5", "#E3EFE7"] },
+      "status-ship-ink":  { "role": "semantic", "displayName": "Ship Green Ink", "canonical": "#3A6A48", "tonalRamp": ["#16291C", "#234230", "#3A6A48", "#477E5C", "#6A9E78", "#93BC9D", "#BFD8C5", "#E3EFE7"] },
+      "memorial":         { "role": "semantic", "displayName": "Memorial Brown", "canonical": "#8B6B4A", "tonalRamp": ["#2C2014", "#46341F", "#63492C", "#8B6B4A", "#A88A6B", "#C5AC92", "#DECDBA", "#F0E7DB"] }
     },
     "typographyMeta": {
       "display":  { "displayName": "Display",  "purpose": "Hero headlines and major page titles. Georgia serif for emotional weight." },

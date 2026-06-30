@@ -40,13 +40,13 @@ const SPECIES_EMOJI: Record<string, string> = {
 };
 
 const STATUS_LABEL: Record<string, { fr: string; en: string; color: string }> = {
-  created:    { fr: "Créée",       en: "Created",    color: "#7A5C44" },
-  passed:     { fr: "En cours",    en: "Processing", color: "#C8813A" },
-  accepted:   { fr: "Acceptée",    en: "Accepted",   color: "#C8813A" },
-  printed:    { fr: "Imprimée",    en: "Printed",    color: "#5880B8" },
-  shipped:    { fr: "Expédiée",    en: "Shipped",    color: "#6A9E78" },
-  delivered:  { fr: "Livrée",      en: "Delivered",  color: "#6A9E78" },
-  canceled:   { fr: "Annulée",     en: "Canceled",   color: "#A32D2D" },
+  created:    { fr: "Créée",       en: "Created",    color: "var(--ep-text-muted)" },
+  passed:     { fr: "En cours",    en: "Processing", color: "var(--ep-brand)" },
+  accepted:   { fr: "Acceptée",    en: "Accepted",   color: "var(--ep-brand)" },
+  printed:    { fr: "Imprimée",    en: "Printed",    color: "var(--ep-status-print)" },
+  shipped:    { fr: "Expédiée",    en: "Shipped",    color: "var(--ep-status-ship)" },
+  delivered:  { fr: "Livrée",      en: "Delivered",  color: "var(--ep-status-ship)" },
+  canceled:   { fr: "Annulée",     en: "Canceled",   color: "var(--ep-alert)" },
 };
 
 export default function BooksPage({ params }: { params: { id: string } }) {
@@ -63,11 +63,11 @@ export default function BooksPage({ params }: { params: { id: string } }) {
   const [petSpecies, setPetSpecies] = useState<string>("");
   const [petPhotoUrl, setPetPhotoUrl] = useState<string | null>(null);
 
-  const bg = "#F7F2EA";
-  const textPrimary = "#3D2B1F";
-  const textMuted = "#7A5C44";
-  const accentColor = "#C8813A";
-  const cardBg = "#FDFAF5";
+  const bg = "var(--ep-bg)";
+  const textPrimary = "var(--ep-text)";
+  const textMuted = "var(--ep-text-muted)";
+  const accentColor = "var(--ep-brand)";
+  const cardBg = "var(--ep-bg-card)";
   const cardBorder = "1px solid rgba(61,43,31,.08)";
 
   const fetchConfigs = useCallback(async () => {
@@ -143,7 +143,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
                 fontSize: ".65rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em",
                 padding: ".2rem .5rem", borderRadius: 4,
                 background: isOrdered ? "rgba(106,158,120,.15)" : "rgba(200,129,58,.12)",
-                color: isOrdered ? "#3A6A48" : accentColor,
+                color: isOrdered ? "var(--ep-status-ship-ink)" : accentColor,
               }}>
                 {isOrdered ? (isFR ? "Commandé" : "Ordered") : (isFR ? "Brouillon" : "Draft")}
               </span>
@@ -198,7 +198,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
             href={shipment.trackingUrl}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ fontSize: ".8rem", color: "#5880B8", fontFamily: "sans-serif" }}
+            style={{ fontSize: ".8rem", color: "var(--ep-status-print)", fontFamily: "sans-serif" }}
           >
             🚚 {isFR ? "Suivre ma commande" : "Track my order"} ({shipment.carrier})
           </a>
@@ -211,17 +211,17 @@ export default function BooksPage({ params }: { params: { id: string } }) {
               href={config.stripe_receipt_url}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ fontSize: ".78rem", color: "#5880B8", fontFamily: "sans-serif", display: "inline-flex", alignItems: "center", gap: ".3rem" }}
+              style={{ fontSize: ".78rem", color: "var(--ep-status-print)", fontFamily: "sans-serif", display: "inline-flex", alignItems: "center", gap: ".3rem" }}
             >
               🧾 {isFR ? "Voir la facture" : "View receipt"}
               {config.stripe_amount_paid != null && config.stripe_currency && (
-                <span style={{ color: "#9A8070" }}>
+                <span style={{ color: "var(--ep-text-faint)" }}>
                   · {(config.stripe_amount_paid / 100).toFixed(2)} {config.stripe_currency.toUpperCase()}
                 </span>
               )}
             </a>
           ) : (
-            <p style={{ fontSize: ".78rem", color: "#9A8070", fontFamily: "sans-serif", margin: 0 }}>
+            <p style={{ fontSize: ".78rem", color: "var(--ep-text-faint)", fontFamily: "sans-serif", margin: 0 }}>
               🧾 {isFR ? "Inclus dans votre abonnement Print" : "Included in your Print subscription"}
             </p>
           )
@@ -237,7 +237,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
             }
             style={{
               padding: ".5rem 1rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500,
-              background: accentColor, color: "#FDFAF5", textDecoration: "none",
+              background: accentColor, color: "var(--ep-bg-card)", textDecoration: "none",
             }}
           >
             {isOrdered ? (isFR ? "Recommander" : "Reorder") : (isFR ? "Reprendre" : "Resume")}
@@ -249,7 +249,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
               style={{
                 padding: ".5rem 1rem", borderRadius: 100, fontSize: ".8rem",
                 border: "1px solid rgba(163,45,45,.3)", background: "transparent",
-                color: "#A32D2D", cursor: "pointer", fontFamily: "inherit",
+                color: "var(--ep-alert)", cursor: "pointer", fontFamily: "inherit",
                 opacity: deletingId === config.id ? .5 : 1,
               }}
             >
@@ -283,9 +283,9 @@ export default function BooksPage({ params }: { params: { id: string } }) {
           </h1>
           <Link
             href={`/dashboard/pets/${petId}/order`}
-            style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#7A5C44", fontSize: ".8rem", textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0, transition: "border-color .12s, color .12s" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#C8813A"; (e.currentTarget as HTMLElement).style.color = "#C8813A"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.2)"; (e.currentTarget as HTMLElement).style.color = "#7A5C44"; }}
+            style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "var(--ep-text-muted)", fontSize: ".8rem", textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0, transition: "border-color .12s, color .12s" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--ep-brand)"; (e.currentTarget as HTMLElement).style.color = "var(--ep-brand)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.2)"; (e.currentTarget as HTMLElement).style.color = "var(--ep-text-muted)"; }}
           >
             {isFR ? "Nouveau livre" : "New book"}
           </Link>
@@ -305,7 +305,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
             </p>
             <Link
               href={`/dashboard/pets/${petId}/order`}
-              style={{ display: "inline-block", marginTop: "1rem", background: accentColor, color: "#FDFAF5", padding: ".75rem 1.5rem", borderRadius: 100, textDecoration: "none", fontSize: ".875rem", fontWeight: 500 }}
+              style={{ display: "inline-block", marginTop: "1rem", background: accentColor, color: "var(--ep-bg-card)", padding: ".75rem 1.5rem", borderRadius: 100, textDecoration: "none", fontSize: ".875rem", fontWeight: 500 }}
             >
               {isFR ? "Créer mon premier livre" : "Create my first book"}
             </Link>

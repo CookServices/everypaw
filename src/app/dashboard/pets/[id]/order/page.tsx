@@ -74,10 +74,10 @@ const COUNTRIES = [
 ];
 
 const COVER_THEMES = [
-  { id: "classic", labelFr: "Classique", labelEn: "Classic", bg: "#3D2B1F", title: "#F7C27A", accent: "#C8813A", back: "#C8813A" },
+  { id: "classic", labelFr: "Classique", labelEn: "Classic", bg: "var(--ep-text)", title: "#F7C27A", accent: "var(--ep-brand)", back: "var(--ep-brand)" },
   { id: "noir",    labelFr: "Noir",      labelEn: "Noir",    bg: "#1A1A1E", title: "#F0EEE8", accent: "#B8AFA0", back: "#2C2C2E" },
-  { id: "forest",  labelFr: "Forêt",     labelEn: "Forest",  bg: "#1B3028", title: "#AACCA0", accent: "#6A9E78", back: "#2A4A38" },
-  { id: "ocean",   labelFr: "Océan",     labelEn: "Ocean",   bg: "#152040", title: "#A8C8E8", accent: "#5880B8", back: "#1E3060" },
+  { id: "forest",  labelFr: "Forêt",     labelEn: "Forest",  bg: "#1B3028", title: "#AACCA0", accent: "var(--ep-status-ship)", back: "#2A4A38" },
+  { id: "ocean",   labelFr: "Océan",     labelEn: "Ocean",   bg: "#152040", title: "#A8C8E8", accent: "var(--ep-status-print)", back: "#1E3060" },
   { id: "rose",    labelFr: "Rose",      labelEn: "Rose",    bg: "#3A1525", title: "#F0B8C8", accent: "#C87890", back: "#8A3050" },
 ] as const;
 type ThemeId = typeof COVER_THEMES[number]["id"];
@@ -550,19 +550,19 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const selectedTheme = COVER_THEMES.find(t => t.id === coverTheme) ?? COVER_THEMES[0];
   const bookBg = isMemorial ? "#0E0B08" : selectedTheme.bg;
   const bookTitleColor = isMemorial ? "#F7C27A" : selectedTheme.title;
-  const bookAccentColor = isMemorial ? "#8B6B4A" : selectedTheme.accent;
+  const bookAccentColor = isMemorial ? "var(--ep-memorial)" : selectedTheme.accent;
   const defaultCoverTitle = isMemorial
     ? t.order.memorial_cover_title.replace("{name}", petName || "…")
     : t.order.book_cover_title.replace("{name}", petName || "…");
   const displayCoverTitle = customTitle.trim() || defaultCoverTitle;
 
-  const bg = isMemorial ? "#1C1410" : "#F7F2EA";
-  const cardBg = isMemorial ? "rgba(247,242,234,.04)" : "#FDFAF5";
+  const bg = isMemorial ? "#1C1410" : "var(--ep-bg)";
+  const cardBg = isMemorial ? "rgba(247,242,234,.04)" : "var(--ep-bg-card)";
   const cardBorder = isMemorial ? "1px solid rgba(247,242,234,.08)" : "1px solid rgba(61,43,31,.08)";
-  const textPrimary = isMemorial ? "#F7F2EA" : "#3D2B1F";
-  const textMuted = isMemorial ? "rgba(247,242,234,.5)" : "#7A5C44";
-  const labelColor = isMemorial ? "rgba(247,242,234,.4)" : "#7A5C44";
-  const accentColor = isMemorial ? "#8B6B4A" : "#C8813A";
+  const textPrimary = isMemorial ? "var(--ep-bg)" : "var(--ep-text)";
+  const textMuted = isMemorial ? "rgba(247,242,234,.5)" : "var(--ep-text-muted)";
+  const labelColor = isMemorial ? "rgba(247,242,234,.4)" : "var(--ep-text-muted)";
+  const accentColor = isMemorial ? "var(--ep-memorial)" : "var(--ep-brand)";
   const extraBookPrice = calcGelatoBookPrice(estimatedPages);
   const extraBookPriceLabel = `${extraBookPrice} €`;
   const price = isMemorial ? t.memorial.order_price : extraBookPriceLabel;
@@ -575,9 +575,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const inputStyle = {
     width: "100%", padding: ".75rem 1rem", borderRadius: 12,
     border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.12)" : "rgba(61,43,31,.15)"}`,
-    background: isMemorial ? "rgba(247,242,234,.05)" : "#F7F2EA",
+    background: isMemorial ? "rgba(247,242,234,.05)" : "var(--ep-bg)",
     fontFamily: "inherit", fontSize: ".9rem",
-    color: isMemorial ? "#F7F2EA" : "#3D2B1F",
+    color: isMemorial ? "var(--ep-bg)" : "var(--ep-text)",
     outline: "none", boxSizing: "border-box" as const,
   };
 
@@ -618,14 +618,14 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         style={{ width: "100%", maxWidth: 860, height: "90vh", display: "flex", flexDirection: "column", borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.5)" }}
       >
         {/* Modal header */}
-        <div style={{ background: "#3D2B1F", padding: ".75rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div style={{ background: "var(--ep-text)", padding: ".75rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", color: "#F7C27A", display: "flex", alignItems: "center", gap: ".5rem" }}>
             {previewLabel}
             {previewStale && <span style={{ fontSize: ".7rem", background: "rgba(200,129,58,.25)", color: "#F7C27A", padding: ".15rem .5rem", borderRadius: 4 }}>↻ mise à jour…</span>}
           </span>
           <button
             onClick={closePreview}
-            style={{ background: "rgba(247,242,234,.12)", border: "none", color: "#F7F2EA", borderRadius: 8, padding: ".35rem .75rem", cursor: "pointer", fontFamily: "inherit", fontSize: ".8rem" }}
+            style={{ background: "rgba(247,242,234,.12)", border: "none", color: "var(--ep-bg)", borderRadius: 8, padding: ".35rem .75rem", cursor: "pointer", fontFamily: "inherit", fontSize: ".8rem" }}
           >
             {closeLabel} ✕
           </button>
@@ -633,7 +633,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         {/* iframe via srcdoc, evite les restrictions blob: URL / CSP */}
         <iframe
           srcDoc={previewHtml!}
-          style={{ flex: 1, border: "none", background: "#F7F2EA" }}
+          style={{ flex: 1, border: "none", background: "var(--ep-bg)" }}
           title="Book preview"
         />
       </div>
@@ -663,7 +663,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             background: i < currentIdx ? accentColor : i === currentIdx ? accentColor : isMemorial ? "rgba(247,242,234,.08)" : "rgba(61,43,31,.08)",
             border: i === currentIdx ? `2px solid ${accentColor}` : "2px solid transparent",
             display: "flex", alignItems: "center", justifyContent: "center",
-            color: i <= currentIdx ? "#FDFAF5" : textMuted,
+            color: i <= currentIdx ? "var(--ep-bg-card)" : textMuted,
             fontSize: i < currentIdx ? ".85rem" : ".8rem",
             fontWeight: 600, transition: "all .3s",
             boxShadow: clickable ? `0 0 0 3px ${accentColor}22` : "none",
@@ -732,7 +732,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           <a
             href="/dashboard/settings"
             style={{
-              background: accentColor, color: "#FDFAF5", border: "none",
+              background: accentColor, color: "var(--ep-bg-card)", border: "none",
               padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
               fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
               textDecoration: "none", display: "inline-block",
@@ -770,7 +770,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 if (data.url) window.location.href = data.url;
               }}
               style={{
-                background: accentColor, color: "#FDFAF5", border: "none",
+                background: accentColor, color: "var(--ep-bg-card)", border: "none",
                 padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
                 fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
               }}
@@ -794,7 +794,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       {isMemorial && petName && step === "preview" && (
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>🕊️</div>
-          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.75rem", fontWeight: 600, color: "#F7F2EA", marginBottom: ".5rem" }}>
+          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.75rem", fontWeight: 600, color: "var(--ep-bg)", marginBottom: ".5rem" }}>
             {t.memorial.order_tribute.replace("{name}", petName)}
           </h1>
           <p style={{ fontSize: ".9rem", color: "rgba(247,242,234,.5)", fontWeight: 300, lineHeight: 1.7, maxWidth: 380, margin: "0 auto" }}>
@@ -883,7 +883,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               placeholder={defaultCoverTitle}
               style={{ ...inputStyle, fontSize: ".85rem" }}
             />
-            <div style={{ fontSize: ".65rem", color: customTitle.length >= 54 ? "#A32D2D" : textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
+            <div style={{ fontSize: ".65rem", color: customTitle.length >= 54 ? "var(--ep-alert)" : textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
               {customTitle.length}/60
             </div>
           </div>
@@ -932,8 +932,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             onClick={() => setCoverPhotoUrl(null)}
             style={{
               width: 72, height: 72, borderRadius: 8,
-              background: "#3D2B1F",
-              border: coverPhotoUrl === null ? "2px solid #C8813A" : "2px solid transparent",
+              background: "var(--ep-text)",
+              border: coverPhotoUrl === null ? "2px solid var(--ep-brand)" : "2px solid transparent",
               cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               color: "rgba(247,242,234,.6)", fontSize: ".6rem", fontFamily: "sans-serif",
               textAlign: "center", padding: 4, lineHeight: 1.2,
@@ -948,7 +948,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               onClick={() => setCoverPhotoUrl(photoUrl)}
               style={{
                 width: 72, height: 72, borderRadius: 8,
-                border: coverPhotoUrl === photoUrl ? "2px solid #C8813A" : "2px solid transparent",
+                border: coverPhotoUrl === photoUrl ? "2px solid var(--ep-brand)" : "2px solid transparent",
                 padding: 0, cursor: "pointer", overflow: "hidden", background: "transparent",
               }}
             >
@@ -993,14 +993,14 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               <img
                 src={coverPhotoUrl}
                 alt=""
-                style={{ width: 72, height: 72, borderRadius: 8, objectFit: "cover", display: "block", border: "2px solid #C8813A" }}
+                style={{ width: 72, height: 72, borderRadius: 8, objectFit: "cover", display: "block", border: "2px solid var(--ep-brand)" }}
               />
               <button
                 onClick={() => setCoverPhotoUrl(null)}
                 style={{
                   position: "absolute", top: -6, right: -6,
                   width: 18, height: 18, borderRadius: "50%",
-                  background: "#C8813A", border: "none",
+                  background: "var(--ep-brand)", border: "none",
                   color: "#fff", fontSize: ".6rem", fontWeight: 700,
                   cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                   lineHeight: 1,
@@ -1029,7 +1029,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               <Link
                 href={`/dashboard/pets/${id}?tab=journal`}
                 title={locale === "fr" ? "Ajoutez des photos dans vos entrées du journal pour les inclure dans votre livre" : "Add photos to your journal entries to include them in your book"}
-                style={{ fontSize: ".875rem", fontWeight: 400, color: "#C8813A", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "3px" }}
+                style={{ fontSize: ".875rem", fontWeight: 400, color: "var(--ep-brand)", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "3px" }}
               >
                 {item}
               </Link>
@@ -1087,7 +1087,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                     background: isSelected ? accentColor : "transparent",
                     border: `2px solid ${isSelected ? accentColor : isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "#FDFAF5", fontSize: ".7rem", fontWeight: 700,
+                    color: "var(--ep-bg-card)", fontSize: ".7rem", fontWeight: 700,
                   }}>
                     {isSelected ? "✓" : ""}
                   </div>
@@ -1187,7 +1187,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               type="checkbox"
               checked={includeTributes}
               onChange={e => setIncludeTributes(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: "#C8813A", flexShrink: 0 }}
+              style={{ width: 16, height: 16, accentColor: "var(--ep-brand)", flexShrink: 0 }}
             />
             <span style={{ fontSize: ".875rem", color: textPrimary, lineHeight: 1.5 }}>
               {locale === "fr"
@@ -1200,12 +1200,12 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
       {/* CTA buttons */}
       {visibleStories.length > 0 && selectedStoryIds.length === 0 && (
-        <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 12, padding: ".75rem 1rem", marginBottom: ".25rem", fontSize: ".8rem", color: "#C8813A", fontFamily: "sans-serif" }}>
+        <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 12, padding: ".75rem 1rem", marginBottom: ".25rem", fontSize: ".8rem", color: "var(--ep-brand)", fontFamily: "sans-serif" }}>
           {locale === "fr" ? "Sélectionnez au moins un chapitre pour continuer." : "Select at least one chapter to continue."}
         </div>
       )}
       {tooFewContent && selectedStoryIds.length > 0 && (
-        <div style={{ background: "rgba(163,45,45,.06)", border: "1px solid rgba(163,45,45,.25)", borderRadius: 12, padding: ".75rem 1rem", marginBottom: ".25rem", fontSize: ".8rem", color: "#A32D2D", fontFamily: "sans-serif" }}>
+        <div style={{ background: "rgba(163,45,45,.06)", border: "1px solid rgba(163,45,45,.25)", borderRadius: 12, padding: ".75rem 1rem", marginBottom: ".25rem", fontSize: ".8rem", color: "var(--ep-alert)", fontFamily: "sans-serif" }}>
           {locale === "fr"
             ? "Pas assez de chapitres pour imprimer un livre (minimum 7 chapitres requis)."
             : "Not enough chapters to print a book (minimum 7 chapters required)."}
@@ -1220,7 +1220,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           disabled={(visibleStories.length > 0 && selectedStoryIds.length === 0) || tooFewContent || checkoutLoading || profile?.plan === "free"}
           style={{
             width: "100%", padding: ".875rem 1rem", borderRadius: 100, border: "none",
-            background: accentColor, color: "#FDFAF5", fontFamily: "inherit",
+            background: accentColor, color: "var(--ep-bg-card)", fontFamily: "inherit",
             fontSize: ".9rem", fontWeight: 600, cursor: (visibleStories.length > 0 && selectedStoryIds.length === 0) || tooFewContent || checkoutLoading || profile?.plan === "free" ? "not-allowed" : "pointer",
             opacity: (visibleStories.length > 0 && selectedStoryIds.length === 0) || tooFewContent || checkoutLoading || profile?.plan === "free" ? .5 : 1,
             display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", minHeight: 48,
@@ -1233,7 +1233,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               : t.order.preview_cta}
         </button>}
         {checkoutError && (
-          <p style={{ fontSize: ".8rem", color: "#A32D2D", textAlign: "center", margin: "-.25rem 0 0" }}>
+          <p style={{ fontSize: ".8rem", color: "var(--ep-alert)", textAlign: "center", margin: "-.25rem 0 0" }}>
             {locale === "fr"
               ? "Une erreur est survenue. Vérifie ta connexion et réessaie."
               : "Something went wrong. Check your connection and try again."}
@@ -1272,10 +1272,10 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           disabled={saving}
           style={{
             width: "100%", padding: ".75rem 1rem", borderRadius: 100,
-            border: `1.5px solid ${saveSuccess ? "#6A9E78" : isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
+            border: `1.5px solid ${saveSuccess ? "var(--ep-status-ship)" : isMemorial ? "rgba(247,242,234,.2)" : "rgba(61,43,31,.2)"}`,
             background: saveSuccess ? "rgba(106,158,120,.1)" : "transparent",
             fontFamily: "inherit", fontSize: ".875rem",
-            color: saveSuccess ? "#6A9E78" : textMuted,
+            color: saveSuccess ? "var(--ep-status-ship)" : textMuted,
             cursor: saving ? "wait" : "pointer",
             opacity: saving ? .6 : 1,
             transition: "all .2s",
@@ -1300,7 +1300,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       <p style={{ fontSize: ".8rem", color: textMuted, fontWeight: 300, marginBottom: "2rem" }}>
         {t.order.order_id} <code style={{ background: isMemorial ? "rgba(247,242,234,.08)" : "rgba(61,43,31,.06)", padding: "2px 6px", borderRadius: 4 }}>{orderId}</code>
       </p>
-      <Link href="/dashboard" style={{ background: accentColor, color: "#FDFAF5", padding: ".75rem 2rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
+      <Link href="/dashboard" style={{ background: accentColor, color: "var(--ep-bg-card)", padding: ".75rem 2rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
         {t.order.back_dashboard}
       </Link>
     </div>
@@ -1310,7 +1310,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     <>
       {awaitingCredit && (
         <div style={{ background: cardBg, borderRadius: 24, padding: "2.5rem", border: cardBorder, textAlign: "center" }}>
-          <div style={{ display: "inline-block", width: 32, height: 32, border: "3px solid rgba(200,129,58,.3)", borderTopColor: "#C8813A", borderRadius: "50%", animation: "spin .8s linear infinite", marginBottom: "1.25rem" }} />
+          <div style={{ display: "inline-block", width: 32, height: 32, border: "3px solid rgba(200,129,58,.3)", borderTopColor: "var(--ep-brand)", borderRadius: "50%", animation: "spin .8s linear infinite", marginBottom: "1.25rem" }} />
           <p style={{ fontSize: ".95rem", color: textPrimary, fontWeight: 500, margin: "0 0 .4rem" }}>
             {locale === "fr" ? "Paiement reçu" : "Payment received"}
           </p>
@@ -1323,7 +1323,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         <div style={{ background: cardBg, borderRadius: 24, padding: "2rem", border: cardBorder }}>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.5rem" }}>{t.order.confirm_title}</h2>
 
-          <div style={{ background: isMemorial ? "rgba(247,242,234,.04)" : "#F7F2EA", borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
+          <div style={{ background: isMemorial ? "rgba(247,242,234,.04)" : "var(--ep-bg)", borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
             <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, marginBottom: ".75rem", fontFamily: "sans-serif" }}>{t.order.shipping_to}</div>
             <p style={{ fontSize: ".9rem", color: textPrimary, lineHeight: 1.7, margin: 0 }}>
               {address.firstName} {address.lastName}<br />
@@ -1333,7 +1333,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             </p>
           </div>
 
-          <div style={{ background: isMemorial ? "rgba(247,242,234,.04)" : "#F7F2EA", borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
+          <div style={{ background: isMemorial ? "rgba(247,242,234,.04)" : "var(--ep-bg)", borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
             <div style={{ fontSize: ".75rem", fontWeight: 500, color: labelColor, marginBottom: ".75rem", fontFamily: "sans-serif" }}>{t.order.order_summary}</div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".9rem", color: textPrimary, marginBottom: ".5rem" }}>
               <span>{isMemorial && petName ? t.memorial.order_tribute.replace("{name}", petName) : t.order.product_name}</span>
@@ -1346,7 +1346,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           </div>
 
           {selectedStoryIds.length < 3 && (
-            <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 12, padding: ".875rem 1rem", marginBottom: "1rem", fontSize: ".8rem", color: "#C8813A", lineHeight: 1.5, fontFamily: "sans-serif" }}>
+            <div style={{ background: "rgba(200,129,58,.08)", border: "1px solid rgba(200,129,58,.3)", borderRadius: 12, padding: ".875rem 1rem", marginBottom: "1rem", fontSize: ".8rem", color: "var(--ep-brand)", lineHeight: 1.5, fontFamily: "sans-serif" }}>
               {t.order.few_stories_warning}
             </div>
           )}
@@ -1376,7 +1376,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 handleOrder();
               }}
               disabled={loading}
-              style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: loading ? "wait" : "pointer", opacity: loading ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}
+              style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: loading ? "wait" : "pointer", opacity: loading ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}
             >
               {loading && <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .7s linear infinite" }} />}
               {loading ? t.order.placing : t.order.place_order}
@@ -1396,7 +1396,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           <p style={{ fontSize: ".8rem", color: textMuted, margin: 0, fontWeight: 300, fontFamily: "sans-serif" }}>{productSpecs}</p>
         </div>
         <div style={{ marginLeft: "auto", textAlign: "right" }}>
-          <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#C8813A", whiteSpace: "nowrap" }}>{price}</span>
+          <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "var(--ep-brand)", whiteSpace: "nowrap" }}>{price}</span>
           {(profile?.book_credits ?? 0) > 0 && (
             <p style={{ fontSize: ".72rem", color: textMuted, margin: ".2rem 0 0", fontFamily: "sans-serif", whiteSpace: "nowrap" }}>
               {locale === "fr"
@@ -1441,7 +1441,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             {countrySearch.trim().length > 0 && (
               <div style={{
                 position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
-                background: isMemorial ? "#1C1410" : "#FDFAF5",
+                background: isMemorial ? "#1C1410" : "var(--ep-bg-card)",
                 border: `1.5px solid ${isMemorial ? "rgba(247,242,234,.15)" : "rgba(61,43,31,.15)"}`,
                 borderRadius: 12, overflow: "hidden",
                 boxShadow: "0 8px 24px rgba(0,0,0,.12)",
@@ -1509,7 +1509,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             lineHeight: 1.6,
           }}
         />
-        <div style={{ fontSize: ".7rem", color: dedicationText.length >= 360 ? "#A32D2D" : textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
+        <div style={{ fontSize: ".7rem", color: dedicationText.length >= 360 ? "var(--ep-alert)" : textMuted, textAlign: "right", marginTop: ".25rem", fontFamily: "sans-serif" }}>
           {dedicationText.length}/400
         </div>
       </div>
@@ -1526,7 +1526,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           setAddressErrors({});
           setStep("confirm");
         }}
-        style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: 1 }}
+        style={{ marginTop: "1.5rem", width: "100%", padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", opacity: 1 }}
       >
         {t.order.continue_to_payment}
       </button>

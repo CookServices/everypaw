@@ -14,6 +14,10 @@ colors:
   error-border: "#FCA5A5"
   error-ink: "#991B1B"
   alert: "#A32D2D"
+  status-print: "#5880B8"
+  status-ship: "#6A9E78"
+  status-ship-ink: "#3A6A48"
+  memorial: "#8B6B4A"
 typography:
   display:
     fontFamily: "Georgia, 'Times New Roman', serif"
@@ -120,8 +124,15 @@ The only place a non-brand hue is allowed. Reserved strictly for error states; n
 - **Error Ink** (`#991B1B`, `--ep-error-ink`): Text inside an error notice (on Error Wash).
 - **Alert** (`#A32D2D`, `--ep-alert`): Standalone error text and the over-goal progress state.
 
+### Semantic — Status (Gelato order) & Memorial
+Functional, never decorative. Used only to encode order state or the memorial context.
+- **Print Blue** (`#5880B8`, `--ep-status-print`): printed / in-transit order status.
+- **Ship Green** (`#6A9E78`, `--ep-status-ship`): shipped / delivered status.
+- **Ship Green Ink** (`#3A6A48`, `--ep-status-ship-ink`): text on a green status tint.
+- **Memorial Brown** (`#8B6B4A`, `--ep-memorial`): memorial pages, deceased-pet badges and links — a softer brown, distinct from Cocoa Ink.
+
 ### Named Rules
-**The One Voice Rule.** Terracotta is the only accent. There is no secondary or tertiary color. Its consistency is the brand; do not introduce a second hue for "variety." The single exception is the semantic Error role (red), used only for error states — never as decoration.
+**The One Voice Rule.** Terracotta is the only accent. There is no secondary or tertiary color. Its consistency is the brand; do not introduce a second hue for "variety." The only exceptions are the semantic roles — Error (red), order Status (blue/green), and Memorial (brown) — each used strictly for its meaning, never as decoration.
 
 **The Contrast Floor Rule.** Body text must hold ≥4.5:1 on its background. Muted Cocoa (`#7A5C44`) and Faint Cocoa (`#9A8070`) are the danger zone on Warm Sand — never drop body copy to Faint Cocoa, and verify Muted Cocoa at small sizes. When close, move toward Cocoa Ink. Light brown "for elegance" is forbidden if it costs legibility.
 

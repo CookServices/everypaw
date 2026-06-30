@@ -632,7 +632,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
 
   if (loading) return (
-    <div style={{ minHeight: "100dvh", background: "#F7F2EA", padding: "2rem 1.5rem", maxWidth: 900, margin: "0 auto" }}>
+    <div style={{ minHeight: "100dvh", background: "var(--ep-bg)", padding: "2rem 1.5rem", maxWidth: 900, margin: "0 auto" }}>
       {/* Pet header skeleton */}
       <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
         <div className="ep-skeleton" style={{ width: 56, height: 56, borderRadius: "50%" }} />
@@ -653,7 +653,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   );
   if (!pet) return (
     <div className="ep-page-centered" style={{ flexDirection: "column", gap: "1.25rem", textAlign: "center" }}>
-      <p style={{ color: "#7A5C44", fontSize: "1rem" }}>{t.pet.not_found}</p>
+      <p style={{ color: "var(--ep-text-muted)", fontSize: "1rem" }}>{t.pet.not_found}</p>
       <a
         href="https://everypaw.app/dashboard/pets/new"
         style={{
@@ -713,18 +713,18 @@ export default function PetPage({ params }: { params: { id: string } }) {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "var(--ep-bg)", fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Milestone notification */}
       {newMilestone && (
-        <div className="ep-toast" style={{ background: "#3D2B1F", color: "#FDFAF5", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
+        <div className="ep-toast" style={{ background: "var(--ep-text)", color: "var(--ep-bg-card)", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
           🏆 {t.milestones.new_notification.replace("{title}", translateMilestone(newMilestone.type, isFR, milestoneDefinitions))}
         </div>
       )}
 
       {/* Share link copied notification */}
       {shareLinkCopied && (
-        <div className="ep-toast" style={{ background: "#2E5E1E", color: "#FDFAF5", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
+        <div className="ep-toast" style={{ background: "#2E5E1E", color: "var(--ep-bg-card)", padding: "1rem 1.5rem", borderRadius: 100, fontSize: ".9rem", fontWeight: 500, zIndex: 200, boxShadow: "0 8px 30px rgba(0,0,0,.2)", display: "flex", alignItems: "center", gap: ".75rem", whiteSpace: "nowrap" }}>
           🔗 {isFR ? "Lien copié !" : "Link copied!"}
         </div>
       )}
@@ -732,20 +732,20 @@ export default function PetPage({ params }: { params: { id: string } }) {
       {/* Memorial modal */}
       {showMemorialModal && (
         <div onClick={() => setShowMemorialModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(28,20,16,.75)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", maxWidth: 400, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,.25)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "var(--ep-bg-card)", borderRadius: 24, padding: "2rem", maxWidth: 400, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,.25)" }}>
             <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
               <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>🕊️</div>
-              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .4rem" }}>{t.memorial.modal_title.replace("{name}", pet.name)}</h2>
-              <p style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, margin: 0 }}>{t.memorial.modal_subtitle}</p>
+              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .4rem" }}>{t.memorial.modal_title.replace("{name}", pet.name)}</h2>
+              <p style={{ fontSize: ".8rem", color: "var(--ep-text-muted)", fontWeight: 300, margin: 0 }}>{t.memorial.modal_subtitle}</p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div>
-                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", display: "block", marginBottom: ".4rem" }}>{t.memorial.date_label}</label>
-                <input type="date" value={deceasedAt} onChange={e => setDeceasedAt(e.target.value)} style={{ width: "100%", padding: ".75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none", boxSizing: "border-box" as const }} />
+                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "var(--ep-text-muted)", display: "block", marginBottom: ".4rem" }}>{t.memorial.date_label}</label>
+                <input type="date" value={deceasedAt} onChange={e => setDeceasedAt(e.target.value)} style={{ width: "100%", padding: ".75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "var(--ep-bg)", fontFamily: "inherit", fontSize: ".9rem", color: "var(--ep-text)", outline: "none", boxSizing: "border-box" as const }} />
               </div>
               <div>
-                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", display: "block", marginBottom: ".4rem" }}>{t.memorial.message_label}</label>
-                <textarea value={memorialMessage} onChange={e => setMemorialMessage(e.target.value)} placeholder={t.memorial.message_placeholder} rows={3} style={{ width: "100%", padding: ".75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", outline: "none", resize: "none", boxSizing: "border-box" as const, lineHeight: 1.6 }} />
+                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "var(--ep-text-muted)", display: "block", marginBottom: ".4rem" }}>{t.memorial.message_label}</label>
+                <textarea value={memorialMessage} onChange={e => setMemorialMessage(e.target.value)} placeholder={t.memorial.message_placeholder} rows={3} style={{ width: "100%", padding: ".75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "var(--ep-bg)", fontFamily: "inherit", fontSize: ".9rem", color: "var(--ep-text)", outline: "none", resize: "none", boxSizing: "border-box" as const, lineHeight: 1.6 }} />
               </div>
 
               {/* Photo du mémorial */}
@@ -754,7 +754,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 const displaySrc = memorialPhotoPreview ?? memorialPhotoUrl;
                 return (
                   <div>
-                    <label style={{ fontSize: ".75rem", fontWeight: 500, color: "#7A5C44", display: "block", marginBottom: ".75rem" }}>
+                    <label style={{ fontSize: ".75rem", fontWeight: 500, color: "var(--ep-text-muted)", display: "block", marginBottom: ".75rem" }}>
                       {isFR ? "Photo du mémorial (optionnel)" : "Memorial photo (optional)"}
                     </label>
                     <div style={{ display: "flex", gap: "1rem", alignItems: "center", marginBottom: showMemorialPhotoGrid ? ".75rem" : 0 }}>
@@ -769,7 +769,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                         <button
                           type="button"
                           onClick={() => memorialPhotoInputRef.current?.click()}
-                          style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".375rem .75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "#7A5C44", cursor: "pointer" }}
+                          style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".375rem .75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "var(--ep-text-muted)", cursor: "pointer" }}
                         >
                           {isFR ? "Uploader une photo" : "Upload a photo"}
                         </button>
@@ -777,7 +777,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                           <button
                             type="button"
                             onClick={() => setShowMemorialPhotoGrid(v => !v)}
-                            style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".375rem .75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "#7A5C44", cursor: "pointer" }}
+                            style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".375rem .75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "var(--ep-text-muted)", cursor: "pointer" }}
                           >
                             {isFR ? "Choisir dans le journal" : "Pick from journal"} {showMemorialPhotoGrid ? "▲" : "▼"}
                           </button>
@@ -791,7 +791,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                               if (memorialPhotoPreview) URL.revokeObjectURL(memorialPhotoPreview);
                               setMemorialPhotoPreview(null);
                             }}
-                            style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", padding: ".375rem .5rem", borderRadius: 100, border: "none", background: "transparent", fontFamily: "inherit", fontSize: ".72rem", color: "#9A8070", cursor: "pointer" }}
+                            style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", padding: ".375rem .5rem", borderRadius: 100, border: "none", background: "transparent", fontFamily: "inherit", fontSize: ".72rem", color: "var(--ep-text-faint)", cursor: "pointer" }}
                           >
                             × {isFR ? "Retirer" : "Remove"}
                           </button>
@@ -812,7 +812,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                               setMemorialPhotoPreview(null);
                               setShowMemorialPhotoGrid(false);
                             }}
-                            style={{ position: "relative", cursor: "pointer", borderRadius: 6, overflow: "hidden", border: `2px solid ${memorialPhotoUrl === url ? "#C8813A" : "transparent"}`, aspectRatio: "1 / 1" }}
+                            style={{ position: "relative", cursor: "pointer", borderRadius: 6, overflow: "hidden", border: `2px solid ${memorialPhotoUrl === url ? "var(--ep-brand)" : "transparent"}`, aspectRatio: "1 / 1" }}
                           >
                             <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                           </div>
@@ -840,10 +840,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
               })()}
             </div>
             <div style={{ display: "flex", gap: ".75rem", marginTop: "1.5rem" }}>
-              <button onClick={() => setShowMemorialModal(false)} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".875rem", color: "#7A5C44", cursor: "pointer" }}>
+              <button onClick={() => setShowMemorialModal(false)} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".875rem", color: "var(--ep-text-muted)", cursor: "pointer" }}>
                 {t.memorial.cancel}
               </button>
-              <button onClick={saveMemorial} disabled={savingMemorial || !deceasedAt} style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: "#8B6B4A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: savingMemorial || !deceasedAt ? .6 : 1 }}>
+              <button onClick={saveMemorial} disabled={savingMemorial || !deceasedAt} style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: "var(--ep-memorial)", color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: savingMemorial || !deceasedAt ? .6 : 1 }}>
                 {savingMemorial ? t.memorial.saving : t.memorial.save}
               </button>
             </div>
@@ -854,19 +854,19 @@ export default function PetPage({ params }: { params: { id: string } }) {
       {/* Upsell modal */}
       {showUpsellModal && (
         <div onClick={() => setShowUpsellModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.55)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", maxWidth: 400, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,.2)", textAlign: "center" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "var(--ep-bg-card)", borderRadius: 24, padding: "2rem", maxWidth: 400, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,.2)", textAlign: "center" }}>
             <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>✦</div>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.2rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .75rem" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.2rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .75rem" }}>
               {t.dashboard.upsell_title}
             </h2>
-            <p style={{ fontSize: ".875rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.65, margin: "0 0 1.75rem" }}>
+            <p style={{ fontSize: ".875rem", color: "var(--ep-text-muted)", fontWeight: 300, lineHeight: 1.65, margin: "0 0 1.75rem" }}>
               {t.dashboard.upsell_desc.replace("{name}", pet?.name ?? "")}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-              <Link href="/dashboard/upgrade" style={{ display: "block", padding: ".75rem 1.5rem", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", textDecoration: "none", fontSize: ".875rem", fontWeight: 500 }}>
+              <Link href="/dashboard/upgrade" style={{ display: "block", padding: ".75rem 1.5rem", borderRadius: 100, background: "var(--ep-brand)", color: "var(--ep-bg-card)", textDecoration: "none", fontSize: ".875rem", fontWeight: 500 }}>
                 {t.dashboard.upsell_cta}
               </Link>
-              <button onClick={() => setShowUpsellModal(false)} style={{ padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer" }}>
+              <button onClick={() => setShowUpsellModal(false)} style={{ padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "var(--ep-text-muted)", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer" }}>
                 {t.dashboard.upsell_later}
               </button>
             </div>
@@ -877,8 +877,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
       {/* Share card modal */}
       {shareCardStory && (
         <div onClick={() => setShareCardStory(null)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.6)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 24, padding: "1.75rem", maxWidth: 420, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,.22)" }}>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 1.25rem", textAlign: "center" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "var(--ep-bg-card)", borderRadius: 24, padding: "1.75rem", maxWidth: 420, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,.22)" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 1.25rem", textAlign: "center" }}>
               {t.stories.share_card_modal_title}
             </h2>
             {/* Format picker */}
@@ -890,9 +890,9 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   style={{
                     flex: 1, padding: ".625rem .5rem",
                     borderRadius: 12,
-                    border: `1.5px solid ${shareCardFormat === fmt ? "#C8813A" : "rgba(61,43,31,.15)"}`,
+                    border: `1.5px solid ${shareCardFormat === fmt ? "var(--ep-brand)" : "rgba(61,43,31,.15)"}`,
                     background: shareCardFormat === fmt ? "rgba(200,129,58,.08)" : "transparent",
-                    color: shareCardFormat === fmt ? "#C8813A" : "#7A5C44",
+                    color: shareCardFormat === fmt ? "var(--ep-brand)" : "var(--ep-text-muted)",
                     fontSize: ".78rem", fontWeight: shareCardFormat === fmt ? 600 : 400,
                     cursor: "pointer", fontFamily: "inherit",
                     transition: "all .15s",
@@ -935,7 +935,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 disabled={shareCardLoading || !shareCardBlob}
                 style={{
                   flex: 1, padding: ".75rem", borderRadius: 100,
-                  background: "#C8813A", color: "#FDFAF5",
+                  background: "var(--ep-brand)", color: "var(--ep-bg-card)",
                   border: "none", fontSize: ".875rem", fontWeight: 500,
                   cursor: shareCardLoading ? "wait" : "pointer",
                   fontFamily: "inherit", opacity: (shareCardLoading || !shareCardBlob) ? .65 : 1,
@@ -949,7 +949,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 style={{
                   padding: ".75rem 1.25rem", borderRadius: 100,
                   border: "1.5px solid rgba(61,43,31,.15)",
-                  background: "transparent", color: "#7A5C44",
+                  background: "transparent", color: "var(--ep-text-muted)",
                   fontSize: ".875rem", cursor: "pointer", fontFamily: "inherit",
                 }}
               >
@@ -963,15 +963,15 @@ export default function PetPage({ params }: { params: { id: string } }) {
       {/* Delete entry confirmation modal */}
       {deletingEntryId && (
         <div onClick={() => setDeletingEntryId(null)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.75rem", maxWidth: 360, width: "100%", boxShadow: "0 8px 40px rgba(61,43,31,.18)" }}>
-            <p style={{ fontSize: ".9rem", color: "#3D2B1F", margin: "0 0 1.25rem", lineHeight: 1.5 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "var(--ep-bg-card)", borderRadius: 20, padding: "1.75rem", maxWidth: 360, width: "100%", boxShadow: "0 8px 40px rgba(61,43,31,.18)" }}>
+            <p style={{ fontSize: ".9rem", color: "var(--ep-text)", margin: "0 0 1.25rem", lineHeight: 1.5 }}>
               {isFR ? "Voulez-vous vraiment supprimer ce moment ?" : "Are you sure you want to delete this moment?"}
             </p>
             <div style={{ display: "flex", gap: ".625rem" }}>
-              <button onClick={() => setDeletingEntryId(null)} style={{ flex: 1, padding: ".6rem 1rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".85rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
+              <button onClick={() => setDeletingEntryId(null)} style={{ flex: 1, padding: ".6rem 1rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "var(--ep-text-muted)", fontFamily: "inherit", fontSize: ".85rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
                 {isFR ? "Annuler" : "Cancel"}
               </button>
-              <button onClick={() => deleteEntry(deletingEntryId)} style={{ flex: 1, padding: ".6rem 1rem", borderRadius: 100, border: "none", background: "#A32D2D", color: "#fff", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
+              <button onClick={() => deleteEntry(deletingEntryId)} style={{ flex: 1, padding: ".6rem 1rem", borderRadius: 100, border: "none", background: "var(--ep-alert)", color: "#fff", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
                 {isFR ? "Supprimer" : "Delete"}
               </button>
             </div>
@@ -982,39 +982,39 @@ export default function PetPage({ params }: { params: { id: string } }) {
       {/* Edit entry modal */}
       {editingEntry && (
         <div onClick={() => setEditingEntry(null)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.75rem", maxWidth: 440, width: "100%", boxShadow: "0 8px 40px rgba(61,43,31,.18)", maxHeight: "90vh", overflowY: "auto" }}>
-            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 1rem" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "var(--ep-bg-card)", borderRadius: 20, padding: "1.75rem", maxWidth: 440, width: "100%", boxShadow: "0 8px 40px rgba(61,43,31,.18)", maxHeight: "90vh", overflowY: "auto" }}>
+            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 1rem" }}>
               {isFR ? "Modifier ce moment" : "Edit this moment"}
             </h3>
             <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4} maxLength={1000}
-              style={{ width: "100%", boxSizing: "border-box", padding: ".75rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".9rem", color: "#3D2B1F", resize: "none", outline: "none", lineHeight: 1.6 }} />
+              style={{ width: "100%", boxSizing: "border-box", padding: ".75rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "var(--ep-bg)", fontFamily: "inherit", fontSize: ".9rem", color: "var(--ep-text)", resize: "none", outline: "none", lineHeight: 1.6 }} />
 
             {/* Emoji / mood */}
             <div style={{ margin: ".75rem 0 1rem" }}>
               <div ref={editEmojiPickerRef} style={{ position: "relative", display: "inline-block" }}>
                 <div style={{ position: "relative", display: "inline-block" }}>
                   <button onClick={() => setShowEditEmojiPicker(v => !v)}
-                    style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${editMood ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: editMood ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset" }}
+                    style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${editMood ? "var(--ep-brand)" : "rgba(61,43,31,.2)"}`, background: editMood ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset" }}
                     title={isFR ? "Ajouter une émoticône" : "Add an emoji"}>
                     {editMood ? (ALL_EMOJIS.find(e => e.value === editMood)?.emoji ?? "😊") : "😊"}
                   </button>
                   {editMood && (
                     <button onClick={e => { e.stopPropagation(); setEditMood(null); }}
-                      style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: "50%", background: "rgba(61,43,31,.25)", color: "#3D2B1F", border: "none", cursor: "pointer", fontSize: "9px", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, padding: 0, fontWeight: 700, minHeight: "unset" }}>
+                      style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: "50%", background: "rgba(61,43,31,.25)", color: "var(--ep-text)", border: "none", cursor: "pointer", fontSize: "9px", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, padding: 0, fontWeight: 700, minHeight: "unset" }}>
                       ✕
                     </button>
                   )}
                 </div>
                 {showEditEmojiPicker && (
-                  <div style={{ position: "absolute", top: "calc(100% + .5rem)", left: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 16, boxShadow: "0 8px 30px rgba(61,43,31,.15)", padding: "1rem", zIndex: 60, width: 280, maxHeight: 300, overflowY: "auto" }}>
+                  <div style={{ position: "absolute", top: "calc(100% + .5rem)", left: 0, background: "var(--ep-bg-card)", border: "1px solid rgba(61,43,31,.1)", borderRadius: 16, boxShadow: "0 8px 30px rgba(61,43,31,.15)", padding: "1rem", zIndex: 60, width: 280, maxHeight: 300, overflowY: "auto" }}>
                     {EMOJI_CATEGORIES.map(cat => (
                       <div key={cat.label} style={{ marginBottom: ".75rem" }}>
-                        <p style={{ fontSize: ".65rem", fontWeight: 600, color: "#9A8070", margin: "0 0 .4rem" }}>{cat.label}</p>
+                        <p style={{ fontSize: ".65rem", fontWeight: 600, color: "var(--ep-text-faint)", margin: "0 0 .4rem" }}>{cat.label}</p>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: ".2rem" }}>
                           {cat.emojis.map(e => (
                             <button key={e.value} onClick={() => { setEditMood(editMood === e.value ? null : e.value); setShowEditEmojiPicker(false); }}
                               title={e.label}
-                              style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${editMood === e.value ? "#C8813A" : "transparent"}`, background: editMood === e.value ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${editMood === e.value ? "var(--ep-brand)" : "transparent"}`, background: editMood === e.value ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {e.emoji}
                             </button>
                           ))}
@@ -1029,12 +1029,12 @@ export default function PetPage({ params }: { params: { id: string } }) {
             {/* Existing photos */}
             {editPhotos.length > 0 && (
               <div style={{ marginBottom: ".75rem" }}>
-                <p style={{ fontSize: ".72rem", fontWeight: 500, color: "#7A5C44", margin: "0 0 .5rem" }}>{isFR ? "Photos existantes" : "Existing photos"}</p>
+                <p style={{ fontSize: ".72rem", fontWeight: 500, color: "var(--ep-text-muted)", margin: "0 0 .5rem" }}>{isFR ? "Photos existantes" : "Existing photos"}</p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {editPhotos.map((url, i) => (
                     <div key={i} style={{ position: "relative", width: 64, height: 64 }}>
                       <img src={url} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8 }} />
-                      <button onClick={() => setEditPhotos(prev => prev.filter((_, idx) => idx !== i))} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "#A32D2D", color: "#fff", border: "none", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset", padding: 0 }}>×</button>
+                      <button onClick={() => setEditPhotos(prev => prev.filter((_, idx) => idx !== i))} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "var(--ep-alert)", color: "#fff", border: "none", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset", padding: 0 }}>×</button>
                     </div>
                   ))}
                 </div>
@@ -1044,12 +1044,12 @@ export default function PetPage({ params }: { params: { id: string } }) {
             {/* New pending photos */}
             {editPendingPhotos.length > 0 && (
               <div style={{ marginBottom: ".75rem" }}>
-                <p style={{ fontSize: ".72rem", fontWeight: 500, color: "#7A5C44", margin: "0 0 .5rem" }}>{isFR ? "Nouvelles photos" : "New photos"}</p>
+                <p style={{ fontSize: ".72rem", fontWeight: 500, color: "var(--ep-text-muted)", margin: "0 0 .5rem" }}>{isFR ? "Nouvelles photos" : "New photos"}</p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {editPendingPhotos.map((p, i) => (
                     <div key={i} style={{ position: "relative", width: 64, height: 64 }}>
                       <img src={p.preview} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8 }} />
-                      <button onClick={() => setEditPendingPhotos(prev => { URL.revokeObjectURL(prev[i].preview); return prev.filter((_, idx) => idx !== i); })} style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: "#3D2B1F", color: "#fff", border: "none", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                      <button onClick={() => setEditPendingPhotos(prev => { URL.revokeObjectURL(prev[i].preview); return prev.filter((_, idx) => idx !== i); })} style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: "var(--ep-text)", color: "#fff", border: "none", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
                     </div>
                   ))}
                 </div>
@@ -1060,7 +1060,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             {editPhotos.length + editPendingPhotos.length < 5 && (
               <button
                 onClick={() => editFileInputRef.current?.click()}
-                style={{ display: "flex", alignItems: "center", gap: ".4rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".8rem", cursor: "pointer", marginBottom: ".75rem" }}
+                style={{ display: "flex", alignItems: "center", gap: ".4rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "var(--ep-text-muted)", fontFamily: "inherit", fontSize: ".8rem", cursor: "pointer", marginBottom: ".75rem" }}
               >
                 <span>{isFR ? "Ajouter une photo" : "Add a photo"}</span>
               </button>
@@ -1081,10 +1081,10 @@ export default function PetPage({ params }: { params: { id: string } }) {
             />
 
             <div style={{ display: "flex", gap: ".625rem", marginTop: ".5rem" }}>
-              <button onClick={() => setEditingEntry(null)} style={{ flex: 1, padding: ".6rem 1rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
+              <button onClick={() => setEditingEntry(null)} style={{ flex: 1, padding: ".6rem 1rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "var(--ep-text-muted)", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
                 {isFR ? "Annuler" : "Cancel"}
               </button>
-              <button onClick={updateEntry} disabled={savingEdit} style={{ flex: 2, padding: ".6rem 1rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: savingEdit ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
+              <button onClick={updateEntry} disabled={savingEdit} style={{ flex: 2, padding: ".6rem 1rem", borderRadius: 100, border: "none", background: "var(--ep-brand)", color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: savingEdit ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
                 {savingEdit ? (isFR ? "Enregistrement…" : "Saving…") : (isFR ? "Enregistrer" : "Save")}
               </button>
             </div>
@@ -1095,31 +1095,31 @@ export default function PetPage({ params }: { params: { id: string } }) {
       {/* Generate story modal */}
       {showGenerateModal && (
         <div onClick={() => setShowGenerateModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", maxWidth: 480, width: "100%", boxShadow: "0 16px 60px rgba(61,43,31,.2)", maxHeight: "90vh", overflowY: "auto" }}>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.2rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 1.5rem" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "var(--ep-bg-card)", borderRadius: 24, padding: "2rem", maxWidth: 480, width: "100%", boxShadow: "0 16px 60px rgba(61,43,31,.2)", maxHeight: "90vh", overflowY: "auto" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.2rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 1.5rem" }}>
               {isFR ? "Créer une histoire" : "Create a story"}
             </h2>
 
             {/* Style selector */}
-            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", margin: "0 0 .75rem" }}>
+            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "var(--ep-text-muted)", margin: "0 0 .75rem" }}>
               {isFR ? "Style narratif" : "Narrative style"}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: ".5rem", marginBottom: "1.5rem" }}>
               {STORY_STYLES.map(s => (
                 <button key={s.value} onClick={() => setStoryStyle(storyStyle === s.value ? null : s.value)}
-                  style={{ display: "flex", alignItems: "center", gap: ".875rem", padding: ".75rem 1rem", borderRadius: 12, border: `1.5px solid ${storyStyle === s.value ? "#C8813A" : "rgba(61,43,31,.12)"}`, background: storyStyle === s.value ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", transition: "all .12s" }}>
+                  style={{ display: "flex", alignItems: "center", gap: ".875rem", padding: ".75rem 1rem", borderRadius: 12, border: `1.5px solid ${storyStyle === s.value ? "var(--ep-brand)" : "rgba(61,43,31,.12)"}`, background: storyStyle === s.value ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", transition: "all .12s" }}>
                   <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>{s.icon}</span>
                   <div>
-                    <p style={{ fontSize: ".875rem", fontWeight: 600, color: storyStyle === s.value ? "#C8813A" : "#3D2B1F", margin: "0 0 .15rem" }}>{isFR ? s.labelFR : s.labelEN}</p>
-                    <p style={{ fontSize: ".75rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{isFR ? s.descFR : s.descEN}</p>
+                    <p style={{ fontSize: ".875rem", fontWeight: 600, color: storyStyle === s.value ? "var(--ep-brand)" : "var(--ep-text)", margin: "0 0 .15rem" }}>{isFR ? s.labelFR : s.labelEN}</p>
+                    <p style={{ fontSize: ".75rem", color: "var(--ep-text-muted)", margin: 0, fontWeight: 300 }}>{isFR ? s.descFR : s.descEN}</p>
                   </div>
-                  {storyStyle === s.value && <span style={{ marginLeft: "auto", fontSize: ".85rem", color: "#C8813A", flexShrink: 0 }}>✓</span>}
+                  {storyStyle === s.value && <span style={{ marginLeft: "auto", fontSize: ".85rem", color: "var(--ep-brand)", flexShrink: 0 }}>✓</span>}
                 </button>
               ))}
             </div>
 
             {/* Period selector */}
-            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "#7A5C44", margin: "0 0 .75rem" }}>
+            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "var(--ep-text-muted)", margin: "0 0 .75rem" }}>
               {isFR ? "Période (optionnel)" : "Period (optional)"}
             </p>
             {(() => {
@@ -1130,29 +1130,29 @@ export default function PetPage({ params }: { params: { id: string } }) {
               return (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".625rem", marginBottom: "1.5rem" }}>
                   <div>
-                    <label style={{ fontSize: ".72rem", color: "#7A5C44", display: "block", marginBottom: ".3rem" }}>{isFR ? "Du" : "From"}</label>
+                    <label style={{ fontSize: ".72rem", color: "var(--ep-text-muted)", display: "block", marginBottom: ".3rem" }}>{isFR ? "Du" : "From"}</label>
                     <input type="date" value={genPeriodStart} min={firstEntry} max={maxDate}
                       onChange={e => setGenPeriodStart(e.target.value)}
-                      style={{ width: "100%", padding: ".625rem .875rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".85rem", color: "#3D2B1F", outline: "none", boxSizing: "border-box" as const }} />
+                      style={{ width: "100%", padding: ".625rem .875rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "var(--ep-bg)", fontFamily: "inherit", fontSize: ".85rem", color: "var(--ep-text)", outline: "none", boxSizing: "border-box" as const }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: ".72rem", color: "#7A5C44", display: "block", marginBottom: ".3rem" }}>{isFR ? "Au" : "To"}</label>
+                    <label style={{ fontSize: ".72rem", color: "var(--ep-text-muted)", display: "block", marginBottom: ".3rem" }}>{isFR ? "Au" : "To"}</label>
                     <input type="date" value={genPeriodEnd} min={firstEntry} max={maxDate}
                       onChange={e => setGenPeriodEnd(e.target.value)}
-                      style={{ width: "100%", padding: ".625rem .875rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "#F7F2EA", fontFamily: "inherit", fontSize: ".85rem", color: "#3D2B1F", outline: "none", boxSizing: "border-box" as const }} />
+                      style={{ width: "100%", padding: ".625rem .875rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "var(--ep-bg)", fontFamily: "inherit", fontSize: ".85rem", color: "var(--ep-text)", outline: "none", boxSizing: "border-box" as const }} />
                   </div>
                 </div>
               );
             })()}
-            <p style={{ fontSize: ".75rem", color: "#9A8070", margin: "-.5rem 0 1.5rem", lineHeight: 1.5 }}>
+            <p style={{ fontSize: ".75rem", color: "var(--ep-text-faint)", margin: "-.5rem 0 1.5rem", lineHeight: 1.5 }}>
               {isFR ? "Sans période : toutes les entrées sont utilisées." : "Without a period: all entries are used."}
             </p>
 
             <div style={{ display: "flex", gap: ".75rem" }}>
-              <button onClick={() => setShowGenerateModal(false)} style={{ flex: 1, padding: ".75rem 1rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "#7A5C44", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 44 }}>
+              <button onClick={() => setShowGenerateModal(false)} style={{ flex: 1, padding: ".75rem 1rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "var(--ep-text-muted)", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 44 }}>
                 {isFR ? "Annuler" : "Cancel"}
               </button>
-              <button onClick={generateStory} style={{ flex: 2, padding: ".75rem 1rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 44 }}>
+              <button onClick={generateStory} style={{ flex: 2, padding: ".75rem 1rem", borderRadius: 100, border: "none", background: "var(--ep-brand)", color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 44 }}>
                 {isFR ? "Générer ✨" : "Generate ✨"}
               </button>
             </div>
@@ -1172,7 +1172,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {/* Page header row: pet name + share button */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.25rem, 3vw, 1.75rem)", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>
+          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.25rem, 3vw, 1.75rem)", fontWeight: 600, color: "var(--ep-text)", margin: 0 }}>
             {pet?.name ?? ""}
           </h1>
           <button
@@ -1180,46 +1180,46 @@ export default function PetPage({ params }: { params: { id: string } }) {
               navigator.clipboard.writeText(`${window.location.origin}/pets/${id}?lang=${locale}`);
               alert(t.pet.link_copied);
             }}
-            style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#7A5C44", fontSize: ".8rem", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flexShrink: 0, transition: "border-color .12s, color .12s" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#C8813A"; (e.currentTarget as HTMLElement).style.color = "#C8813A"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.2)"; (e.currentTarget as HTMLElement).style.color = "#7A5C44"; }}
+            style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "var(--ep-text-muted)", fontSize: ".8rem", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flexShrink: 0, transition: "border-color .12s, color .12s" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--ep-brand)"; (e.currentTarget as HTMLElement).style.color = "var(--ep-brand)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.2)"; (e.currentTarget as HTMLElement).style.color = "var(--ep-text-muted)"; }}
           >
             {t.nav.share_profile}
           </button>
         </div>
 
         {/* Pet header */}
-        <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.25rem 1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)", position: "relative" }}>
+        <div style={{ background: "var(--ep-bg-card)", borderRadius: 20, padding: "1.25rem 1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)", position: "relative" }}>
 
           {/* Kebab, absolute top-right */}
           <div ref={kebabRef} style={{ position: "absolute", top: "1rem", right: "1rem", zIndex: 10 }}>
             <button
               onClick={() => { setShowKebabMenu(v => !v); setShowDeleteConfirm(false); }}
-              style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", color: "#7A5C44", fontFamily: "inherit", minHeight: "unset", flexShrink: 0 }}
+              style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", color: "var(--ep-text-muted)", fontFamily: "inherit", minHeight: "unset", flexShrink: 0 }}
               aria-label="Options"
             >
               ···
             </button>
             {showKebabMenu && (
-              <div style={{ position: "absolute", top: "calc(100% + .5rem)", right: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 14, boxShadow: "0 8px 30px rgba(61,43,31,.12)", minWidth: 200, overflow: "hidden", zIndex: 60 }}>
+              <div style={{ position: "absolute", top: "calc(100% + .5rem)", right: 0, background: "var(--ep-bg-card)", border: "1px solid rgba(61,43,31,.1)", borderRadius: 14, boxShadow: "0 8px 30px rgba(61,43,31,.12)", minWidth: 200, overflow: "hidden", zIndex: 60 }}>
                 {!showDeleteConfirm ? (
                   <>
-                    <Link href={`/dashboard/pets/${id}/edit`} style={{ display: "block", padding: ".75rem 1rem", fontSize: ".875rem", color: "#3D2B1F", textDecoration: "none", fontFamily: "inherit" }} onClick={() => setShowKebabMenu(false)}>
+                    <Link href={`/dashboard/pets/${id}/edit`} style={{ display: "block", padding: ".75rem 1rem", fontSize: ".875rem", color: "var(--ep-text)", textDecoration: "none", fontFamily: "inherit" }} onClick={() => setShowKebabMenu(false)}>
                       {t.pet.edit_profile}
                     </Link>
-                    <button onClick={() => { setShowKebabMenu(false); openMemorialModal(); }} style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "#8B6B4A", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                    <button onClick={() => { setShowKebabMenu(false); openMemorialModal(); }} style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "var(--ep-memorial)", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
                       {pet.deceased_at ? (isFR ? "Modifier le mémorial" : "Edit memorial") : t.memorial.mark_passed}
                     </button>
-                    <button onClick={() => setShowDeleteConfirm(true)} style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "#A32D2D", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                    <button onClick={() => setShowDeleteConfirm(true)} style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "var(--ep-alert)", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
                       {t.pet.delete_pet}
                     </button>
                   </>
                 ) : (
                   <div style={{ padding: "1rem" }}>
-                    <p style={{ fontSize: ".8rem", color: "#3D2B1F", margin: "0 0 .875rem", lineHeight: 1.5 }}>{t.pet.delete_confirm.replace("{name}", pet.name)}</p>
+                    <p style={{ fontSize: ".8rem", color: "var(--ep-text)", margin: "0 0 .875rem", lineHeight: 1.5 }}>{t.pet.delete_confirm.replace("{name}", pet.name)}</p>
                     <div style={{ display: "flex", gap: ".5rem" }}>
-                      <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: ".5rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", fontSize: ".8rem", color: "#7A5C44", cursor: "pointer", fontFamily: "inherit" }}>{t.pet.delete_cancel}</button>
-                      <button onClick={deletePet} disabled={deletingPet} style={{ flex: 1, padding: ".5rem", borderRadius: 100, border: "none", background: "#A32D2D", color: "#fff", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", opacity: deletingPet ? .6 : 1 }}>{t.pet.delete_yes}</button>
+                      <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: ".5rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", fontSize: ".8rem", color: "var(--ep-text-muted)", cursor: "pointer", fontFamily: "inherit" }}>{t.pet.delete_cancel}</button>
+                      <button onClick={deletePet} disabled={deletingPet} style={{ flex: 1, padding: ".5rem", borderRadius: 100, border: "none", background: "var(--ep-alert)", color: "#fff", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", opacity: deletingPet ? .6 : 1 }}>{t.pet.delete_yes}</button>
                     </div>
                   </div>
                 )}
@@ -1236,14 +1236,14 @@ export default function PetPage({ params }: { params: { id: string } }) {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
-                <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.7rem, 4vw, 2.2rem)", fontWeight: 600, letterSpacing: "-.01em", color: "#3D2B1F", margin: 0 }}>{pet.name}</h1>
+                <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.7rem, 4vw, 2.2rem)", fontWeight: 600, letterSpacing: "-.01em", color: "var(--ep-text)", margin: 0 }}>{pet.name}</h1>
                 {pet.deceased_at && (
-                  <span style={{ fontSize: ".7rem", background: "rgba(139,107,74,.12)", color: "#8B6B4A", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".2rem .6rem", fontWeight: 500, letterSpacing: ".04em", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: ".7rem", background: "rgba(139,107,74,.12)", color: "var(--ep-memorial)", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".2rem .6rem", fontWeight: 500, letterSpacing: ".04em", whiteSpace: "nowrap" }}>
                     🕊️ {t.memorial.badge}
                   </span>
                 )}
               </div>
-              <p style={{ fontSize: ".82rem", color: "#7A5C44", fontWeight: 300, margin: ".2rem 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <p style={{ fontSize: ".82rem", color: "var(--ep-text-muted)", fontWeight: 300, margin: ".2rem 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {pet.breed || pet.species}{pet.birthdate ? ` · ${t.pet.born} ${new Date(pet.birthdate).toLocaleDateString(dateLocale, { month: "long", year: "numeric" })}` : ""}
               </p>
             </div>
@@ -1252,11 +1252,11 @@ export default function PetPage({ params }: { params: { id: string } }) {
           {/* Milestone badge, inline pill below name */}
           {milestones.length > 0 && (
             <div style={{ display: "inline-flex", alignItems: "center", gap: ".5rem", marginTop: ".875rem", background: "rgba(200,129,58,.1)", borderRadius: 100, padding: ".35rem .875rem" }}>
-              <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "#C8813A" }}>{milestones.length} / {totalMilestoneCount}</span>
-              <span style={{ fontSize: ".7rem", color: "#7A5C44" }}>{t.milestones.label}</span>
+              <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "var(--ep-brand)" }}>{milestones.length} / {totalMilestoneCount}</span>
+              <span style={{ fontSize: ".7rem", color: "var(--ep-text-muted)" }}>{t.milestones.label}</span>
               {milestones[0] && (() => {
                 const localTitle = translateMilestone(milestones[0].type, isFR, milestoneDefinitions, milestones[0].title);
-                return <span style={{ fontSize: ".7rem", color: "#C8813A", opacity: .85 }}>· 🏆 {localTitle.slice(0, 20)}{localTitle.length > 20 ? "…" : ""}</span>;
+                return <span style={{ fontSize: ".7rem", color: "var(--ep-brand)", opacity: .85 }}>· 🏆 {localTitle.slice(0, 20)}{localTitle.length > 20 ? "…" : ""}</span>;
               })()}
             </div>
           )}
@@ -1265,11 +1265,11 @@ export default function PetPage({ params }: { params: { id: string } }) {
           {pet.bio && (
             <div style={{ marginTop: ".875rem" }}>
               <p style={{
-                fontSize: ".85rem", color: "#7A5C44", fontStyle: "italic", margin: 0, lineHeight: 1.55,
+                fontSize: ".85rem", color: "var(--ep-text-muted)", fontStyle: "italic", margin: 0, lineHeight: 1.55,
                 ...(bioExpanded ? {} : { overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const }),
               }}>{pet.bio}</p>
               {pet.bio.length > 120 && (
-                <button onClick={() => setBioExpanded(v => !v)} style={{ background: "none", border: "none", padding: ".25rem 0 0", cursor: "pointer", fontSize: ".75rem", color: "#C8813A", fontFamily: "inherit", display: "block" }}>
+                <button onClick={() => setBioExpanded(v => !v)} style={{ background: "none", border: "none", padding: ".25rem 0 0", cursor: "pointer", fontSize: ".75rem", color: "var(--ep-brand)", fontFamily: "inherit", display: "block" }}>
                   {bioExpanded ? (isFR ? "Voir moins" : "See less") : (isFR ? "Voir plus" : "See more")}
                 </button>
               )}
@@ -1279,12 +1279,12 @@ export default function PetPage({ params }: { params: { id: string } }) {
           {/* Memorial links, full width */}
           {pet.deceased_at && (
             <div style={{ display: "flex", gap: ".75rem", marginTop: ".875rem", flexWrap: "wrap" }}>
-              <Link href={`/memorial/${id}`} style={{ fontSize: ".8rem", color: "#8B6B4A", textDecoration: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".375rem .875rem" }}>
+              <Link href={`/memorial/${id}`} style={{ fontSize: ".8rem", color: "var(--ep-memorial)", textDecoration: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".375rem .875rem" }}>
                 {t.memorial.view_memorial}
               </Link>
               <button
                 onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/memorial/${id}?lang=${locale}`); alert(t.pet.link_copied); }}
-                style={{ fontSize: ".8rem", color: "#8B6B4A", background: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".375rem .875rem", cursor: "pointer", fontFamily: "inherit" }}
+                style={{ fontSize: ".8rem", color: "var(--ep-memorial)", background: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".375rem .875rem", cursor: "pointer", fontFamily: "inherit" }}
               >
                 {t.memorial.share_memorial}
               </button>
@@ -1301,8 +1301,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
               style={{
                 padding: ".5rem 1.125rem", borderRadius: 100, fontSize: ".85rem",
                 whiteSpace: "nowrap", textDecoration: "none", flexShrink: 0,
-                background: tab === t.key ? "#C8813A" : "rgba(61,43,31,.07)",
-                color: tab === t.key ? "#FDFAF5" : "#7A5C44",
+                background: tab === t.key ? "var(--ep-brand)" : "rgba(61,43,31,.07)",
+                color: tab === t.key ? "var(--ep-bg-card)" : "var(--ep-text-muted)",
                 fontWeight: tab === t.key ? 500 : 400,
                 transition: "background .15s, color .15s",
               }}
@@ -1334,7 +1334,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
               }
               return (
                 <div style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", background: hasThisMonthStory ? "rgba(107,123,94,.1)" : "rgba(200,129,58,.08)", borderRadius: 100, padding: ".3rem .75rem", marginBottom: "1rem", border: `1px solid ${hasThisMonthStory ? "rgba(107,123,94,.25)" : "rgba(200,129,58,.2)"}` }}>
-                  <span style={{ fontSize: ".75rem", color: hasThisMonthStory ? "#6B7B5E" : "#C8813A", fontWeight: 500 }}>
+                  <span style={{ fontSize: ".75rem", color: hasThisMonthStory ? "#6B7B5E" : "var(--ep-brand)", fontWeight: 500 }}>
                     {progressLabel}
                   </span>
                 </div>
@@ -1347,7 +1347,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 <select
                   value={filterYear ?? ""}
                   onChange={e => { setFilterYear(e.target.value || null); setFilterMonth(null); }}
-                  style={{ flex: "0 0 auto", height: 36, padding: "0 .625rem", borderRadius: 8, border: "1.5px solid #D4C5B0", background: "#F7F2EA", color: "#3D2B1F", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", outline: "none" }}
+                  style={{ flex: "0 0 auto", height: 36, padding: "0 .625rem", borderRadius: 8, border: "1.5px solid #D4C5B0", background: "var(--ep-bg)", color: "var(--ep-text)", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", outline: "none" }}
                 >
                   <option value="">{isFR ? "Toutes les années" : "All years"}</option>
                   {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
@@ -1355,7 +1355,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 <select
                   value={filterMonth ?? ""}
                   onChange={e => setFilterMonth(e.target.value || null)}
-                  style={{ flex: "0 0 auto", height: 36, padding: "0 .625rem", borderRadius: 8, border: "1.5px solid #D4C5B0", background: "#F7F2EA", color: "#3D2B1F", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", outline: "none" }}
+                  style={{ flex: "0 0 auto", height: 36, padding: "0 .625rem", borderRadius: 8, border: "1.5px solid #D4C5B0", background: "var(--ep-bg)", color: "var(--ep-text)", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", outline: "none" }}
                 >
                   <option value="">{isFR ? "Tous les mois" : "All months"}</option>
                   {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -1364,17 +1364,17 @@ export default function PetPage({ params }: { params: { id: string } }) {
             )}
 
             {userPlan === "free" && allEntryDates.length >= 5 && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".5rem", background: allEntryDates.length >= 9 ? "#C8813A" : "#FFF3E0", border: `1px solid ${allEntryDates.length >= 9 ? "#C8813A" : "#F7C27A"}`, borderRadius: 8, padding: "8px 12px", marginBottom: "1rem" }}>
-                <span style={{ fontSize: "13px", color: allEntryDates.length >= 9 ? "#fff" : "#7A5C44", fontWeight: 400 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".5rem", background: allEntryDates.length >= 9 ? "var(--ep-brand)" : "#FFF3E0", border: `1px solid ${allEntryDates.length >= 9 ? "var(--ep-brand)" : "#F7C27A"}`, borderRadius: 8, padding: "8px 12px", marginBottom: "1rem" }}>
+                <span style={{ fontSize: "13px", color: allEntryDates.length >= 9 ? "#fff" : "var(--ep-text-muted)", fontWeight: 400 }}>
                   {t.journal.entry_counter.replace("{count}", String(allEntryDates.length))}
                 </span>
-                <Link href="/dashboard/settings" style={{ fontSize: "13px", color: allEntryDates.length >= 9 ? "#fff" : "#C8813A", fontWeight: 500, textDecoration: "none" }}>
+                <Link href="/dashboard/settings" style={{ fontSize: "13px", color: allEntryDates.length >= 9 ? "#fff" : "var(--ep-brand)", fontWeight: 500, textDecoration: "none" }}>
                   {t.journal.upgrade_unlimited}
                 </Link>
               </div>
             )}
 
-            <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.25rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
+            <div style={{ background: "var(--ep-bg-card)", borderRadius: 20, padding: "1.25rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
               <textarea
                 value={newEntry}
                 onChange={e => { setNewEntry(e.target.value); if (e.target.value.trim()) setEntryError(false); }}
@@ -1383,15 +1383,15 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 placeholder={t.journal.placeholder.replace("{name}", pet.name)}
                 rows={3}
                 maxLength={1000}
-                style={{ width: "100%", border: entryError ? "1.5px solid #A32D2D" : "none", background: entryError ? "rgba(163,45,45,.04)" : "transparent", borderRadius: entryError ? 8 : 0, fontFamily: "inherit", fontSize: ".95rem", color: "#3D2B1F", outline: "none", resize: "none", lineHeight: 1.6, boxSizing: "border-box", padding: entryError ? ".5rem" : 0, transition: "border-color .15s" }}
+                style={{ width: "100%", border: entryError ? "1.5px solid var(--ep-alert)" : "none", background: entryError ? "rgba(163,45,45,.04)" : "transparent", borderRadius: entryError ? 8 : 0, fontFamily: "inherit", fontSize: ".95rem", color: "var(--ep-text)", outline: "none", resize: "none", lineHeight: 1.6, boxSizing: "border-box", padding: entryError ? ".5rem" : 0, transition: "border-color .15s" }}
               />
               {entryError && (
-                <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: ".25rem 0 0", lineHeight: 1.4 }}>
+                <p style={{ fontSize: ".8rem", color: "var(--ep-alert)", margin: ".25rem 0 0", lineHeight: 1.4 }}>
                   {t.journal.entry_required}
                 </p>
               )}
               {(textareaFocused || newEntry.length > 0) && (
-                <p style={{ fontSize: ".72rem", textAlign: "right", margin: ".2rem 0 0", color: newEntry.length > 950 ? "#A32D2D" : newEntry.length > 800 ? "#C8813A" : "#9A8070" }}>
+                <p style={{ fontSize: ".72rem", textAlign: "right", margin: ".2rem 0 0", color: newEntry.length > 950 ? "var(--ep-alert)" : newEntry.length > 800 ? "var(--ep-brand)" : "var(--ep-text-faint)" }}>
                   {newEntry.length} / 1000
                 </p>
               )}
@@ -1400,7 +1400,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   {pendingPhotos.map((photo, i) => (
                     <div key={i} style={{ position: "relative", width: 72, height: 72 }}>
                       <img src={photo.preview} alt="" style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 10 }} />
-                      <button onClick={() => removePhoto(i)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "#3D2B1F", color: "#FDFAF5", border: "none", cursor: "pointer", fontSize: "11px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset", padding: 0 }}>×</button>
+                      <button onClick={() => removePhoto(i)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "var(--ep-text)", color: "var(--ep-bg-card)", border: "none", cursor: "pointer", fontSize: "11px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset", padding: 0 }}>×</button>
                     </div>
                   ))}
                 </div>
@@ -1410,27 +1410,27 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   <div ref={emojiPickerRef} style={{ position: "relative" }}>
                     <div style={{ position: "relative", display: "inline-block" }}>
                       <button onClick={() => setShowEmojiPicker(v => !v)}
-                        style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${mood ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: mood ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset" }}
+                        style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${mood ? "var(--ep-brand)" : "rgba(61,43,31,.2)"}`, background: mood ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset" }}
                         title={isFR ? "Ajouter une émoticône" : "Add an emoji"}>
                         {mood ? (ALL_EMOJIS.find(e => e.value === mood)?.emoji ?? "😊") : "😊"}
                       </button>
                       {mood && (
                         <button onClick={e => { e.stopPropagation(); setMood(null); }}
-                          style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: "50%", background: "rgba(61,43,31,.25)", color: "#3D2B1F", border: "none", cursor: "pointer", fontSize: "9px", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, padding: 0, fontWeight: 700, minHeight: "unset" }}>
+                          style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: "50%", background: "rgba(61,43,31,.25)", color: "var(--ep-text)", border: "none", cursor: "pointer", fontSize: "9px", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, padding: 0, fontWeight: 700, minHeight: "unset" }}>
                           ✕
                         </button>
                       )}
                     </div>
                     {showEmojiPicker && (
-                      <div style={{ position: "absolute", top: "calc(100% + .5rem)", left: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 16, boxShadow: "0 8px 30px rgba(61,43,31,.15)", padding: "1rem", zIndex: 60, width: 280, maxHeight: 340, overflowY: "auto" }}>
+                      <div style={{ position: "absolute", top: "calc(100% + .5rem)", left: 0, background: "var(--ep-bg-card)", border: "1px solid rgba(61,43,31,.1)", borderRadius: 16, boxShadow: "0 8px 30px rgba(61,43,31,.15)", padding: "1rem", zIndex: 60, width: 280, maxHeight: 340, overflowY: "auto" }}>
                         {EMOJI_CATEGORIES.map(cat => (
                           <div key={cat.label} style={{ marginBottom: ".75rem" }}>
-                            <p style={{ fontSize: ".65rem", fontWeight: 600, color: "#9A8070", margin: "0 0 .4rem" }}>{cat.label}</p>
+                            <p style={{ fontSize: ".65rem", fontWeight: 600, color: "var(--ep-text-faint)", margin: "0 0 .4rem" }}>{cat.label}</p>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: ".2rem" }}>
                               {cat.emojis.map(e => (
                                 <button key={e.value} onClick={() => { setMood(mood === e.value ? null : e.value); setShowEmojiPicker(false); }}
                                   title={e.label}
-                                  style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${mood === e.value ? "#C8813A" : "transparent"}`, background: mood === e.value ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                  style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${mood === e.value ? "var(--ep-brand)" : "transparent"}`, background: mood === e.value ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                   {e.emoji}
                                 </button>
                               ))}
@@ -1441,7 +1441,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                     )}
                   </div>
                   {pendingPhotos.length < 5 && (
-                    <button onClick={() => fileInputRef.current?.click()} style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "#7A5C44" }} title="Add photos">
+                    <button onClick={() => fileInputRef.current?.click()} style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--ep-text-muted)" }} title="Add photos">
                       📷
                     </button>
                   )}
@@ -1454,9 +1454,9 @@ export default function PetPage({ params }: { params: { id: string } }) {
                     min={pet?.birthdate ?? undefined}
                     max={new Date().toISOString().split("T")[0]}
                     onChange={e => setEntryDate(e.target.value)}
-                    style={{ height: 32, padding: "0 .5rem", borderRadius: 8, border: `1.5px solid ${entryDate !== new Date().toISOString().split("T")[0] ? "#C8813A" : "rgba(61,43,31,.2)"}`, background: entryDate !== new Date().toISOString().split("T")[0] ? "rgba(200,129,58,.08)" : "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "#3D2B1F", outline: "none", cursor: "pointer" }}
+                    style={{ height: 32, padding: "0 .5rem", borderRadius: 8, border: `1.5px solid ${entryDate !== new Date().toISOString().split("T")[0] ? "var(--ep-brand)" : "rgba(61,43,31,.2)"}`, background: entryDate !== new Date().toISOString().split("T")[0] ? "rgba(200,129,58,.08)" : "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "var(--ep-text)", outline: "none", cursor: "pointer" }}
                   />
-                  <button onClick={addEntry} disabled={saving || (!newEntry.trim() && pendingPhotos.length === 0)} style={{ padding: ".5rem 1.25rem", borderRadius: 100, border: "none", background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer", opacity: saving || (!newEntry.trim() && pendingPhotos.length === 0) ? .5 : 1 }}>
+                  <button onClick={addEntry} disabled={saving || (!newEntry.trim() && pendingPhotos.length === 0)} style={{ padding: ".5rem 1.25rem", borderRadius: 100, border: "none", background: "var(--ep-brand)", color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer", opacity: saving || (!newEntry.trim() && pendingPhotos.length === 0) ? .5 : 1 }}>
                     {uploadingPhotos ? t.journal.uploading : saving ? t.journal.saving : t.journal.add_moment}
                   </button>
                 </div>
@@ -1470,7 +1470,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 t.journal.generating_3,
               ] : [t.journal.generating, t.journal.generating_2, t.journal.generating_3];
               return (
-                <button onClick={() => { if (entries.length >= 3) { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); } }} disabled={generating || entries.length < 3} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", marginBottom: "1.5rem", opacity: entries.length < 3 ? .5 : 1 }}>
+                <button onClick={() => { if (entries.length >= 3) { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); } }} disabled={generating || entries.length < 3} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "var(--ep-brand)", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", marginBottom: "1.5rem", opacity: entries.length < 3 ? .5 : 1 }}>
                   {generating ? generatingMessages[generatingMsgIdx] : t.journal.generate_story.replace("{name}", pet.name)}
                   {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>{t.journal.add_more.replace("{count}", String(3 - entries.length)).replace("{entries}", 3 - entries.length === 1 ? t.journal.entry : t.journal.entries)}</span>}
                 </button>
@@ -1478,49 +1478,49 @@ export default function PetPage({ params }: { params: { id: string } }) {
             })()}
 
             {filteredEntries.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#7A5C44", fontSize: ".9rem" }}>
+              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--ep-text-muted)", fontSize: ".9rem" }}>
                 {(filterYear || filterMonth) ? (isFR ? "Aucune entrée pour cette période." : "No entries for this period.") : t.journal.no_entries}
               </div>
             ) : groupedEntries.map(group => (
               <div key={group.month} style={{ marginBottom: "2rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
-                  <span style={{ fontFamily: "Georgia, serif", fontSize: ".9rem", fontWeight: 600, color: "#7A5C44" }}>{group.month}</span>
+                  <span style={{ fontFamily: "Georgia, serif", fontSize: ".9rem", fontWeight: 600, color: "var(--ep-text-muted)" }}>{group.month}</span>
                   <div style={{ flex: 1, height: "0.5px", background: "rgba(61,43,31,.1)" }} />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
                   {group.entries.map(entry => (
-                    <div key={entry.id} style={{ background: "#FDFAF5", borderRadius: 16, border: "1px solid rgba(61,43,31,.06)" }}>
+                    <div key={entry.id} style={{ background: "var(--ep-bg-card)", borderRadius: 16, border: "1px solid rgba(61,43,31,.06)" }}>
                       <div style={{ padding: ".875rem 1rem" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: entry.content.trim() ? ".5rem" : 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
-                            <span style={{ fontSize: ".75rem", color: "#7A5C44", fontWeight: 300 }}>
+                            <span style={{ fontSize: ".75rem", color: "var(--ep-text-muted)", fontWeight: 300 }}>
                               {fmtDateOrdinal(new Date(entry.entry_date), isFR, { weekday: "short", month: "short" })}
                             </span>
                             {entry.mood && <span style={{ fontSize: ".9rem" }}>{ALL_EMOJIS.find(m => m.value === entry.mood)?.emoji ?? MOOD_OPTIONS.find(m => m.value === entry.mood)?.emoji}</span>}
                             {currentUserId && entry.user_id !== currentUserId && (
-                              <span style={{ fontSize: ".7rem", color: "#9A8070", background: "rgba(61,43,31,.06)", borderRadius: 100, padding: "1px 7px" }}>
+                              <span style={{ fontSize: ".7rem", color: "var(--ep-text-faint)", background: "rgba(61,43,31,.06)", borderRadius: 100, padding: "1px 7px" }}>
                                 {t.members.added_by.replace("{name}", memberProfiles[entry.user_id] ?? (isFR ? "Membre" : "Member"))}
                               </span>
                             )}
                           </div>
                           <div ref={entryMenuId === entry.id ? entryMenuRef : null} style={{ position: "relative" }}>
                             <button onClick={() => setEntryMenuId(entryMenuId === entry.id ? null : entry.id)}
-                              style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "#7A5C44", fontFamily: "inherit", lineHeight: 1, minHeight: "unset", flexShrink: 0 }}>···</button>
+                              style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--ep-text-muted)", fontFamily: "inherit", lineHeight: 1, minHeight: "unset", flexShrink: 0 }}>···</button>
                             {entryMenuId === entry.id && !deletingEntryId && (
-                              <div style={{ position: "absolute", top: "calc(100% + .3rem)", right: 0, background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 10, boxShadow: "0 4px 16px rgba(61,43,31,.12)", minWidth: 140, zIndex: 30 }}>
+                              <div style={{ position: "absolute", top: "calc(100% + .3rem)", right: 0, background: "var(--ep-bg-card)", border: "1px solid rgba(61,43,31,.1)", borderRadius: 10, boxShadow: "0 4px 16px rgba(61,43,31,.12)", minWidth: 140, zIndex: 30 }}>
                                 <button onClick={() => { setEditingEntry(entry); setEditContent(entry.content.trim()); setEditMood(entry.mood ?? null); setEditPhotos(entry.photo_urls ?? []); setEditPendingPhotos([]); setEntryMenuId(null); }}
-                                  style={{ display: "block", width: "100%", padding: ".625rem .875rem", fontSize: ".8rem", color: "#3D2B1F", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                                  style={{ display: "block", width: "100%", padding: ".625rem .875rem", fontSize: ".8rem", color: "var(--ep-text)", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
                                   {isFR ? "Modifier" : "Edit"}
                                 </button>
                                 <button onClick={() => { setDeletingEntryId(entry.id); setEntryMenuId(null); }}
-                                  style={{ display: "block", width: "100%", padding: ".625rem .875rem", fontSize: ".8rem", color: "#A32D2D", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                                  style={{ display: "block", width: "100%", padding: ".625rem .875rem", fontSize: ".8rem", color: "var(--ep-alert)", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
                                   {isFR ? "Supprimer" : "Delete"}
                                 </button>
                               </div>
                             )}
                           </div>
                         </div>
-                        {entry.content.trim() && <p style={{ fontSize: ".9rem", color: "#3D2B1F", lineHeight: 1.65, margin: 0 }}>{entry.content}</p>}
+                        {entry.content.trim() && <p style={{ fontSize: ".9rem", color: "var(--ep-text)", lineHeight: 1.65, margin: 0 }}>{entry.content}</p>}
                       </div>
                       {entry.photo_urls && entry.photo_urls.length > 0 && (
                         <div style={{ display: "grid", gridTemplateColumns: entry.photo_urls.length === 1 ? "1fr" : entry.photo_urls.length === 2 ? "1fr 1fr" : "1fr 1fr 1fr", gap: "2px", borderRadius: "0 0 16px 16px", overflow: "hidden" }}>
@@ -1563,16 +1563,16 @@ export default function PetPage({ params }: { params: { id: string } }) {
               return (
                 <div style={{ background: hasThisMonthStory ? "rgba(61,43,31,.04)" : "rgba(200,129,58,.06)", borderRadius: 12, padding: ".625rem 1rem", border: `1px solid ${hasThisMonthStory ? "rgba(61,43,31,.08)" : "rgba(200,129,58,.2)"}`, display: "flex", flexDirection: "column", gap: ".35rem" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".5rem", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: ".8rem", color: hasThisMonthStory ? "#7A5C44" : "#C8813A", fontWeight: hasThisMonthStory ? 300 : 500 }}>
+                    <span style={{ fontSize: ".8rem", color: hasThisMonthStory ? "var(--ep-text-muted)" : "var(--ep-brand)", fontWeight: hasThisMonthStory ? 300 : 500 }}>
                       {hasThisMonthStory
                         ? (isFR ? `✓ Chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })} généré` : `✓ ${now.toLocaleDateString(dateLocale, { month: "long" })} chapter generated`)
                         : (isFR ? `✨ Générez le chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })}` : `✨ Generate ${now.toLocaleDateString(dateLocale, { month: "long" })}'s chapter`)}
                     </span>
-                    <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300, flexShrink: 0 }}>
+                    <span style={{ fontSize: ".72rem", color: "var(--ep-text-faint)", fontWeight: 300, flexShrink: 0 }}>
                       {isFR ? `Prochain : ${nextDate} (dans ${daysUntil}j)` : `Next: ${nextDate} (in ${daysUntil}d)`}
                     </span>
                   </div>
-                  <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300 }}>
+                  <span style={{ fontSize: ".72rem", color: "var(--ep-text-faint)", fontWeight: 300 }}>
                     {isFR ? "Généré automatiquement" : "Auto-generated"}
                   </span>
                 </div>
@@ -1589,7 +1589,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 <button
                   onClick={() => { if (entries.length >= 3) { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); } }}
                   disabled={generating || entries.length < 3}
-                  style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "#C8813A", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", opacity: entries.length < 3 ? .5 : 1 }}
+                  style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "var(--ep-brand)", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", opacity: entries.length < 3 ? .5 : 1 }}
                 >
                   {generating ? generatingMessages[generatingMsgIdx] : t.journal.generate_story.replace("{name}", pet.name)}
                   {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>{t.journal.add_more.replace("{count}", String(3 - entries.length)).replace("{entries}", 3 - entries.length === 1 ? t.journal.entry : t.journal.entries)}</span>}
@@ -1599,26 +1599,26 @@ export default function PetPage({ params }: { params: { id: string } }) {
             {stories.length === 0 ? (
               <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
                 <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>✨</div>
-                <p style={{ color: "#7A5C44", fontFamily: "Georgia, serif", fontSize: "1rem" }}>{t.stories.no_stories.replace("{name}", pet.name)}</p>
+                <p style={{ color: "var(--ep-text-muted)", fontFamily: "Georgia, serif", fontSize: "1rem" }}>{t.stories.no_stories.replace("{name}", pet.name)}</p>
               </div>
             ) : stories.map(story => (
               <div key={story.id}>
-              <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
+              <div style={{ background: "var(--ep-bg-card)", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1rem", gap: ".75rem" }}>
-                  <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>{story.title || `${pet.name}'s Story`}</h3>
-                  <span style={{ fontSize: ".72rem", color: "#9A8070", fontWeight: 300, flexShrink: 0 }}>{fmtDateOrdinal(new Date(story.created_at), isFR, { month: "short", year: "numeric" })}</span>
+                  <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "var(--ep-text)", margin: 0 }}>{story.title || `${pet.name}'s Story`}</h3>
+                  <span style={{ fontSize: ".72rem", color: "var(--ep-text-faint)", fontWeight: 300, flexShrink: 0 }}>{fmtDateOrdinal(new Date(story.created_at), isFR, { month: "short", year: "numeric" })}</span>
                 </div>
                 {(story.period_start && story.period_end || story.style) && (
                   <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: ".875rem", alignItems: "center" }}>
                     {story.period_start && story.period_end && (
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", background: "rgba(200,129,58,.07)", borderRadius: 100, padding: ".25rem .75rem", fontSize: ".72rem", color: "#C8813A", fontWeight: 500 }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", background: "rgba(200,129,58,.07)", borderRadius: 100, padding: ".25rem .75rem", fontSize: ".72rem", color: "var(--ep-brand)", fontWeight: 500 }}>
                         {fmtDateOrdinal(new Date(story.period_start + "T12:00:00"), isFR, { month: "short" })} – {fmtDateOrdinal(new Date(story.period_end + "T12:00:00"), isFR, { month: "short", year: "numeric" })}
                       </span>
                     )}
                     {story.style && (() => {
                       const s = STORY_STYLES.find(st => st.value === story.style);
                       return s ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", background: "rgba(61,43,31,.05)", borderRadius: 100, padding: ".25rem .75rem", fontSize: ".72rem", color: "#7A5C44", fontWeight: 400 }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", background: "rgba(61,43,31,.05)", borderRadius: 100, padding: ".25rem .75rem", fontSize: ".72rem", color: "var(--ep-text-muted)", fontWeight: 400 }}>
                           <span>{s.icon}</span>
                           <span>{isFR ? s.labelFR : s.labelEN}</span>
                         </span>
@@ -1626,7 +1626,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                     })()}
                   </div>
                 )}
-                <div style={{ fontSize: "1.05rem", color: "#3D2B1F", lineHeight: 1.8, marginBottom: "1.25rem", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
+                <div style={{ fontSize: "1.05rem", color: "var(--ep-text)", lineHeight: 1.8, marginBottom: "1.25rem", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
                   {story.content
                     .replace(/\*\*(INTRO|INTRODUCTION|DÉVELOPPEMENT|DEVELOPPEMENT|DEVELOPMENT|CHUTE|CONCLUSION|ENDING)\*\*/gi, "")
                     .split(/\n{2,}/)
@@ -1643,7 +1643,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                       display: "inline-flex", alignItems: "center", gap: ".5rem",
                       background: "transparent",
                       border: "1.5px solid rgba(200,129,58,.35)",
-                      color: "#C8813A",
+                      color: "var(--ep-brand)",
                       borderRadius: 100, padding: ".5rem 1.125rem",
                       fontSize: ".8rem", fontWeight: 500, cursor: "pointer",
                       fontFamily: "inherit", opacity: sharingStoryId === story.id ? .65 : 1,
@@ -1673,7 +1673,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                       display: "inline-flex", alignItems: "center", gap: ".5rem",
                       background: "transparent",
                       border: "1.5px solid rgba(61,43,31,.18)",
-                      color: "#7A5C44",
+                      color: "var(--ep-text-muted)",
                       borderRadius: 100, padding: ".5rem 1.125rem",
                       fontSize: ".8rem", fontWeight: 500, cursor: "pointer",
                       fontFamily: "inherit",
@@ -1692,16 +1692,16 @@ export default function PetPage({ params }: { params: { id: string } }) {
               </div>
               {userPlan === "free" && (
                 <div style={{ background: "#FFF3E0", borderRadius: 12, padding: "20px", border: "1px solid rgba(200,129,58,.2)" }}>
-                  <p style={{ fontSize: ".875rem", color: "#3D2B1F", lineHeight: 1.6, margin: "0 0 1rem", fontFamily: "Georgia, serif" }}>
+                  <p style={{ fontSize: ".875rem", color: "var(--ep-text)", lineHeight: 1.6, margin: "0 0 1rem", fontFamily: "Georgia, serif" }}>
                     {t.stories.free_upsell_text}
                   </p>
                   <Link
                     href="/dashboard/settings"
-                    style={{ display: "inline-block", padding: ".625rem 1.25rem", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}
+                    style={{ display: "inline-block", padding: ".625rem 1.25rem", borderRadius: 100, background: "var(--ep-brand)", color: "var(--ep-bg-card)", fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}
                   >
                     {t.stories.free_upsell_cta}
                   </Link>
-                  <p style={{ fontSize: ".75rem", color: "#9A8070", margin: ".75rem 0 0", fontWeight: 300 }}>
+                  <p style={{ fontSize: ".75rem", color: "var(--ep-text-faint)", margin: ".75rem 0 0", fontWeight: 300 }}>
                     {t.stories.free_upsell_refresh}
                   </p>
                 </div>
@@ -1714,7 +1714,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 <button
                   onClick={loadMoreEntries}
                   disabled={loadingMore}
-                  style={{ display: "inline-flex", alignItems: "center", gap: ".5rem", padding: ".5rem 1.25rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "#7A5C44", fontSize: ".8rem", fontFamily: "inherit", cursor: loadingMore ? "wait" : "pointer", opacity: loadingMore ? .6 : 1 }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: ".5rem", padding: ".5rem 1.25rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "var(--ep-text-muted)", fontSize: ".8rem", fontFamily: "inherit", cursor: loadingMore ? "wait" : "pointer", opacity: loadingMore ? .6 : 1 }}
                 >
                   {loadingMore ? (isFR ? "Chargement…" : "Loading…") : (isFR ? "Charger plus" : "Load more")}
                 </button>
@@ -1728,23 +1728,23 @@ export default function PetPage({ params }: { params: { id: string } }) {
             {/* Auto-detection info box */}
             <div style={{ background: "rgba(200,129,58,.06)", borderRadius: 14, padding: ".875rem 1rem", marginBottom: "1.25rem", border: "1px solid rgba(200,129,58,.2)", display: "flex", gap: ".625rem", alignItems: "flex-start" }}>
               <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: ".05rem" }}>💡</span>
-              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, lineHeight: 1.55 }}>
+              <p style={{ fontSize: ".8rem", color: "var(--ep-text-muted)", margin: 0, lineHeight: 1.55 }}>
                 {t.milestones.auto_hint}
               </p>
             </div>
 
             {/* Progress bar */}
-            <div style={{ background: "#FDFAF5", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: "1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
+            <div style={{ background: "var(--ep-bg-card)", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: "1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: ".625rem" }}>
-                <span style={{ fontSize: ".85rem", fontWeight: 500, color: "#3D2B1F" }}>
+                <span style={{ fontSize: ".85rem", fontWeight: 500, color: "var(--ep-text)" }}>
                   {milestones.length} / {totalMilestoneCount} {t.milestones.steps_completed}
                 </span>
-                <span style={{ fontSize: ".8rem", color: "#C8813A", fontWeight: 600 }}>
+                <span style={{ fontSize: ".8rem", color: "var(--ep-brand)", fontWeight: 600 }}>
                   {Math.round(milestones.length / (totalMilestoneCount) * 100)}%
                 </span>
               </div>
               <div style={{ height: 6, borderRadius: 100, background: "rgba(61,43,31,.1)", overflow: "hidden" }}>
-                <div style={{ height: "100%", borderRadius: 100, background: "#C8813A", width: `${milestones.length / (totalMilestoneCount) * 100}%`, transition: "width .5s ease" }} />
+                <div style={{ height: "100%", borderRadius: 100, background: "var(--ep-brand)", width: `${milestones.length / (totalMilestoneCount) * 100}%`, transition: "width .5s ease" }} />
               </div>
             </div>
 
@@ -1785,13 +1785,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   ? t.milestones.unlock_hint.replace("{keyword}", isFR ? (keywords[1] ?? keywords[0]) : keywords[0])
                   : null;
                 return (
-                  <div key={key} style={{ background: "#FDFAF5", borderRadius: 14, padding: ".875rem 1.125rem", border: `1px solid ${achieved ? "rgba(200,129,58,.2)" : "rgba(61,43,31,.06)"}`, display: "flex", alignItems: "center", gap: ".875rem", opacity: achieved ? 1 : 0.6 }}>
+                  <div key={key} style={{ background: "var(--ep-bg-card)", borderRadius: 14, padding: ".875rem 1.125rem", border: `1px solid ${achieved ? "rgba(200,129,58,.2)" : "rgba(61,43,31,.06)"}`, display: "flex", alignItems: "center", gap: ".875rem", opacity: achieved ? 1 : 0.6 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, background: achieved ? "rgba(200,129,58,.12)" : "rgba(61,43,31,.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.15rem", flexShrink: 0 }}>
                       {achieved ? icon : "🔒"}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: ".875rem", fontWeight: 500, color: achieved ? "#3D2B1F" : "#7A5C44", margin: "0 0 .15rem" }}>{localTitle}</p>
-                      <p style={{ fontSize: ".72rem", color: achieved ? "#7A5C44" : "#9A8070", margin: 0, fontWeight: 300 }}>
+                      <p style={{ fontSize: ".875rem", fontWeight: 500, color: achieved ? "var(--ep-text)" : "var(--ep-text-muted)", margin: "0 0 .15rem" }}>{localTitle}</p>
+                      <p style={{ fontSize: ".72rem", color: achieved ? "var(--ep-text-muted)" : "var(--ep-text-faint)", margin: 0, fontWeight: 300 }}>
                         {achieved
                           ? fmtDateOrdinal(new Date(achieved.achieved_at), isFR, { month: "long", year: "numeric" })
                           : (lockHint ?? t.milestones.not_yet)}
@@ -1806,7 +1806,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
                   {achievedItems.length > 0 && (
                     <>
-                      <p style={{ fontSize: ".68rem", fontWeight: 600, color: "#C8813A", margin: "0 0 .1rem", fontFamily: "sans-serif" }}>
+                      <p style={{ fontSize: ".68rem", fontWeight: 600, color: "var(--ep-brand)", margin: "0 0 .1rem", fontFamily: "sans-serif" }}>
                         {t.milestones.unlocked.replace("{n}", String(achievedItems.length))}
                       </p>
                       {achievedItems.map(renderItem)}
@@ -1814,7 +1814,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   )}
                   {pendingItems.length > 0 && (
                     <>
-                      <p style={{ fontSize: ".68rem", fontWeight: 600, color: "#9A8070", margin: `${achievedItems.length > 0 ? ".5rem" : "0"} 0 .1rem`, fontFamily: "sans-serif" }}>
+                      <p style={{ fontSize: ".68rem", fontWeight: 600, color: "var(--ep-text-faint)", margin: `${achievedItems.length > 0 ? ".5rem" : "0"} 0 .1rem`, fontFamily: "sans-serif" }}>
                         {t.milestones.locked.replace("{n}", String(pendingItems.length))}
                       </p>
                       {pendingItems.map(renderItem)}
@@ -1831,7 +1831,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
           <div>
             <div style={{ background: "rgba(200,129,58,.06)", borderRadius: 14, padding: ".875rem 1rem", marginBottom: "1.25rem", border: "1px solid rgba(200,129,58,.2)", display: "flex", gap: ".625rem", alignItems: "flex-start" }}>
               <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: ".05rem" }}>🕊️</span>
-              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, lineHeight: 1.55 }}>
+              <p style={{ fontSize: ".8rem", color: "var(--ep-text-muted)", margin: 0, lineHeight: 1.55 }}>
                 {isFR
                   ? "Les hommages soumis par les proches apparaissent ici avant publication. Approuvez ceux que vous souhaitez afficher sur la page mémorial."
                   : "Tributes submitted by family and friends appear here before publishing. Approve the ones you want to display on the memorial page."}
@@ -1839,9 +1839,9 @@ export default function PetPage({ params }: { params: { id: string } }) {
             </div>
 
             {!tributesLoaded ? (
-              <p style={{ fontSize: ".85rem", color: "#9A8070", fontStyle: "italic" }}>{isFR ? "Chargement…" : "Loading…"}</p>
+              <p style={{ fontSize: ".85rem", color: "var(--ep-text-faint)", fontStyle: "italic" }}>{isFR ? "Chargement…" : "Loading…"}</p>
             ) : pendingTributes.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#9A8070", fontSize: ".9rem" }}>
+              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--ep-text-faint)", fontSize: ".9rem" }}>
                 <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>🕊️</div>
                 <p style={{ margin: 0, fontStyle: "italic" }}>
                   {isFR ? "Aucun hommage en attente de validation." : "No tributes pending review."}
@@ -1850,14 +1850,14 @@ export default function PetPage({ params }: { params: { id: string } }) {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {pendingTributes.map(tribute => (
-                  <div key={tribute.id} style={{ background: "#FDFAF5", borderRadius: 16, padding: "1.125rem 1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
+                  <div key={tribute.id} style={{ background: "var(--ep-bg-card)", borderRadius: 16, padding: "1.125rem 1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
                     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: ".5rem" }}>
-                      <span style={{ fontSize: ".9rem", fontWeight: 600, color: "#3D2B1F" }}>{tribute.author_name}</span>
-                      <span style={{ fontSize: ".72rem", color: "#9A8070" }}>
+                      <span style={{ fontSize: ".9rem", fontWeight: 600, color: "var(--ep-text)" }}>{tribute.author_name}</span>
+                      <span style={{ fontSize: ".72rem", color: "var(--ep-text-faint)" }}>
                         {new Date(tribute.created_at).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}
                       </span>
                     </div>
-                    <p style={{ fontSize: ".875rem", color: "#7A5C44", lineHeight: 1.65, margin: "0 0 1rem", fontStyle: "italic" }}>
+                    <p style={{ fontSize: ".875rem", color: "var(--ep-text-muted)", lineHeight: 1.65, margin: "0 0 1rem", fontStyle: "italic" }}>
                       {tribute.message}
                     </p>
                     <div style={{ display: "flex", gap: ".625rem" }}>
@@ -1866,7 +1866,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                           const res = await fetch(`/api/memorial/tributes/${tribute.id}/approve`, { method: "POST" });
                           if (res.ok) setPendingTributes(prev => prev.filter(t => t.id !== tribute.id));
                         }}
-                        style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".5rem 1rem", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", border: "none", cursor: "pointer", fontSize: ".8rem", fontWeight: 500, fontFamily: "inherit" }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".5rem 1rem", borderRadius: 100, background: "var(--ep-brand)", color: "var(--ep-bg-card)", border: "none", cursor: "pointer", fontSize: ".8rem", fontWeight: 500, fontFamily: "inherit" }}
                       >
                         ✓ {isFR ? "Approuver" : "Approve"}
                       </button>
@@ -1875,7 +1875,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                           const res = await fetch(`/api/memorial/tributes/${tribute.id}/reject`, { method: "POST" });
                           if (res.ok) setPendingTributes(prev => prev.filter(t => t.id !== tribute.id));
                         }}
-                        style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".5rem 1rem", borderRadius: 100, background: "transparent", color: "#9A8070", border: "1.5px solid rgba(61,43,31,.12)", cursor: "pointer", fontSize: ".8rem", fontFamily: "inherit" }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".5rem 1rem", borderRadius: 100, background: "transparent", color: "var(--ep-text-faint)", border: "1.5px solid rgba(61,43,31,.12)", cursor: "pointer", fontSize: ".8rem", fontFamily: "inherit" }}
                       >
                         {isFR ? "Rejeter" : "Reject"}
                       </button>
@@ -1890,19 +1890,19 @@ export default function PetPage({ params }: { params: { id: string } }) {
         {/* ── Household members tab ────────────────────────────────────────── */}
         {tab === "members" && (
           <div style={{ padding: "0 1.5rem 2rem" }}>
-            <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .5rem", fontFamily: "Georgia, serif" }}>
+            <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .5rem", fontFamily: "Georgia, serif" }}>
               {t.members.title}
             </h2>
-            <p style={{ fontSize: ".85rem", color: "#7A5C44", margin: "0 0 1.5rem", lineHeight: 1.5 }}>
+            <p style={{ fontSize: ".85rem", color: "var(--ep-text-muted)", margin: "0 0 1.5rem", lineHeight: 1.5 }}>
               {t.members.subtitle}
             </p>
 
             {/* Upgrade upsell for non-paid plan owners */}
             {(userPlan === "free" || userPlan === "book_only") && (
               <div style={{ background: "#FFF3E0", border: "1px solid #F7C27A", borderRadius: 14, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
-                <p style={{ fontWeight: 600, color: "#3D2B1F", margin: "0 0 .4rem", fontSize: ".95rem" }}>{t.members.upgrade_title}</p>
-                <p style={{ color: "#7A5C44", fontSize: ".85rem", margin: "0 0 1rem", lineHeight: 1.5 }}>{t.members.upgrade_desc}</p>
-                <a href="/dashboard/upgrade" style={{ display: "inline-block", background: "#C8813A", color: "#FDFAF5", textDecoration: "none", padding: "10px 20px", borderRadius: 100, fontWeight: 600, fontSize: ".85rem", fontFamily: "inherit" }}>
+                <p style={{ fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .4rem", fontSize: ".95rem" }}>{t.members.upgrade_title}</p>
+                <p style={{ color: "var(--ep-text-muted)", fontSize: ".85rem", margin: "0 0 1rem", lineHeight: 1.5 }}>{t.members.upgrade_desc}</p>
+                <a href="/dashboard/upgrade" style={{ display: "inline-block", background: "var(--ep-brand)", color: "var(--ep-bg-card)", textDecoration: "none", padding: "10px 20px", borderRadius: 100, fontWeight: 600, fontSize: ".85rem", fontFamily: "inherit" }}>
                   {t.members.upgrade_cta}
                 </a>
               </div>
@@ -1910,8 +1910,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
             {/* Invite form, for paid plan owners */}
             {(userPlan === "digital" || userPlan === "print") && (
-              <div style={{ background: "#FDFAF5", border: "1px solid rgba(61,43,31,.1)", borderRadius: 14, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
-                <label style={{ display: "block", fontSize: ".8rem", fontWeight: 500, color: "#7A5C44", marginBottom: ".5rem" }}>
+              <div style={{ background: "var(--ep-bg-card)", border: "1px solid rgba(61,43,31,.1)", borderRadius: 14, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
+                <label style={{ display: "block", fontSize: ".8rem", fontWeight: 500, color: "var(--ep-text-muted)", marginBottom: ".5rem" }}>
                   {t.members.invite_label}
                 </label>
                 <div style={{ display: "flex", gap: ".625rem", flexWrap: "wrap" }}>
@@ -1920,7 +1920,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                     value={inviteEmail}
                     onChange={e => { setInviteEmail(e.target.value); setInviteResult(null); }}
                     placeholder={t.members.invite_placeholder}
-                    style={{ flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: 8, border: "1.5px solid #D4C5B0", background: "#F7F2EA", color: "#3D2B1F", fontSize: ".9rem", fontFamily: "inherit", outline: "none" }}
+                    style={{ flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: 8, border: "1.5px solid #D4C5B0", background: "var(--ep-bg)", color: "var(--ep-text)", fontSize: ".9rem", fontFamily: "inherit", outline: "none" }}
                   />
                   <button
                     disabled={inviteLoading || !inviteEmail.trim()}
@@ -1952,7 +1952,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                         setTimeout(() => setInviteResult(null), 10000);
                       }
                     }}
-                    style={{ padding: "10px 18px", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", border: "none", cursor: inviteLoading || !inviteEmail.trim() ? "not-allowed" : "pointer", fontWeight: 600, fontSize: ".85rem", fontFamily: "inherit", opacity: inviteLoading || !inviteEmail.trim() ? .6 : 1, flexShrink: 0 }}
+                    style={{ padding: "10px 18px", borderRadius: 100, background: "var(--ep-brand)", color: "var(--ep-bg-card)", border: "none", cursor: inviteLoading || !inviteEmail.trim() ? "not-allowed" : "pointer", fontWeight: 600, fontSize: ".85rem", fontFamily: "inherit", opacity: inviteLoading || !inviteEmail.trim() ? .6 : 1, flexShrink: 0 }}
                   >
                     {inviteLoading ? t.members.invite_sending : t.members.invite_cta}
                   </button>
@@ -1963,26 +1963,26 @@ export default function PetPage({ params }: { params: { id: string } }) {
                   </p>
                 )}
                 {inviteResult?.error && (
-                  <p style={{ color: "#A32D2D", fontSize: ".8rem", margin: ".6rem 0 0" }}>{inviteResult.error}</p>
+                  <p style={{ color: "var(--ep-alert)", fontSize: ".8rem", margin: ".6rem 0 0" }}>{inviteResult.error}</p>
                 )}
-                <p style={{ color: "#9A8070", fontSize: ".75rem", margin: ".75rem 0 0" }}>{t.members.max_members}</p>
+                <p style={{ color: "var(--ep-text-faint)", fontSize: ".75rem", margin: ".75rem 0 0" }}>{t.members.max_members}</p>
               </div>
             )}
 
             {/* Member list */}
             {!membersLoaded ? (
-              <p style={{ color: "#9A8070", fontSize: ".85rem", fontStyle: "italic" }}>{isFR ? "Chargement…" : "Loading…"}</p>
+              <p style={{ color: "var(--ep-text-faint)", fontSize: ".85rem", fontStyle: "italic" }}>{isFR ? "Chargement…" : "Loading…"}</p>
             ) : members.length === 0 ? (
-              <p style={{ color: "#9A8070", fontSize: ".875rem", fontStyle: "italic", textAlign: "center", padding: "2rem 0" }}>{t.members.empty}</p>
+              <p style={{ color: "var(--ep-text-faint)", fontSize: ".875rem", fontStyle: "italic", textAlign: "center", padding: "2rem 0" }}>{t.members.empty}</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
                 {members.map(member => (
-                  <div key={member.id} style={{ background: "#FDFAF5", border: "1px solid rgba(61,43,31,.08)", borderRadius: 12, padding: "1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+                  <div key={member.id} style={{ background: "var(--ep-bg-card)", border: "1px solid rgba(61,43,31,.08)", borderRadius: 12, padding: "1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
                     <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: "0 0 .2rem", fontWeight: 500, color: "#3D2B1F", fontSize: ".9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <p style={{ margin: "0 0 .2rem", fontWeight: 500, color: "var(--ep-text)", fontSize: ".9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {member.display_name}
                       </p>
-                      <p style={{ margin: 0, fontSize: ".75rem", color: "#9A8070", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <p style={{ margin: 0, fontSize: ".75rem", color: "var(--ep-text-faint)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {member.invited_email}
                       </p>
                     </div>
@@ -1990,7 +1990,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
                       <span style={{
                         fontSize: ".72rem", fontWeight: 500, padding: "3px 10px", borderRadius: 100,
                         background: member.status === "accepted" ? "rgba(46,94,30,.1)" : "rgba(61,43,31,.07)",
-                        color: member.status === "accepted" ? "#2E5E1E" : "#7A5C44",
+                        color: member.status === "accepted" ? "#2E5E1E" : "var(--ep-text-muted)",
                       }}>
                         {member.status === "accepted" ? t.members.status_accepted : t.members.status_pending}
                       </span>
@@ -2004,19 +2004,19 @@ export default function PetPage({ params }: { params: { id: string } }) {
                               }
                               setRevokeConfirmId(null);
                             }}
-                            style={{ padding: "5px 12px", borderRadius: 100, background: "#A32D2D", color: "#fff", border: "none", cursor: "pointer", fontSize: ".78rem", fontWeight: 500, fontFamily: "inherit" }}>
+                            style={{ padding: "5px 12px", borderRadius: 100, background: "var(--ep-alert)", color: "#fff", border: "none", cursor: "pointer", fontSize: ".78rem", fontWeight: 500, fontFamily: "inherit" }}>
                             {t.members.revoke_yes}
                           </button>
                           <button
                             onClick={() => setRevokeConfirmId(null)}
-                            style={{ padding: "5px 12px", borderRadius: 100, background: "transparent", color: "#7A5C44", border: "1px solid rgba(61,43,31,.15)", cursor: "pointer", fontSize: ".78rem", fontFamily: "inherit" }}>
+                            style={{ padding: "5px 12px", borderRadius: 100, background: "transparent", color: "var(--ep-text-muted)", border: "1px solid rgba(61,43,31,.15)", cursor: "pointer", fontSize: ".78rem", fontFamily: "inherit" }}>
                             {t.members.revoke_no}
                           </button>
                         </div>
                       ) : (
                         <button
                           onClick={() => setRevokeConfirmId(member.id)}
-                          style={{ padding: "5px 12px", borderRadius: 100, background: "transparent", color: "#9A8070", border: "1px solid rgba(61,43,31,.12)", cursor: "pointer", fontSize: ".78rem", fontFamily: "inherit" }}>
+                          style={{ padding: "5px 12px", borderRadius: 100, background: "transparent", color: "var(--ep-text-faint)", border: "1px solid rgba(61,43,31,.12)", cursor: "pointer", fontSize: ".78rem", fontFamily: "inherit" }}>
                           {t.members.revoke_cta}
                         </button>
                       )}

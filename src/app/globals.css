@@ -15,6 +15,10 @@
   --ep-error-border: #FCA5A5;
   --ep-error-ink:    #991B1B;
   --ep-alert:        #A32D2D;
+  --ep-status-print:    #5880B8;
+  --ep-status-ship:     #6A9E78;
+  --ep-status-ship-ink: #3A6A48;
+  --ep-memorial:        #8B6B4A;
   --ep-radius-sm:   8px;
   --ep-radius-md:   14px;
   --ep-radius-lg:   20px;
