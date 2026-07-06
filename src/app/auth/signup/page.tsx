@@ -5,12 +5,13 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 import { getSignupError } from "@/lib/auth-errors";
+import { log } from "@/lib/log";
 import PublicFooter from "@/components/PublicFooter";
 import PasswordStrength from "@/components/PasswordStrength";
 
 export const dynamic = "force-dynamic";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { EMAIL_REGEX, isSafeRelativePath } from "@/lib/validation";
 
 export default function SignupPage() {
   const { locale, t } = useLocale();
@@ -57,7 +58,7 @@ export default function SignupPage() {
     // `next` used by invite flow, `redirect` used by gift flow
     const target = next ?? redirect;
     // Only allow relative paths, prevent open redirect to external sites
-    if (target && target.startsWith("/") && !target.startsWith("//")) {
+    if (isSafeRelativePath(target)) {
       return code ? `${target}?code=${code}` : target;
     }
     return "/dashboard";
@@ -145,8 +146,8 @@ export default function SignupPage() {
       },
     });
     if (signupError) {
-      // Log full error details for server-side debugging (visible in Vercel logs)
-      console.error("[signup] Supabase error:", {
+      // Log full error details for debugging (gated by DEBUG_LOGS via lib/log)
+      log.error("[signup] Supabase error:", {
         message: signupError.message,
         status: (signupError as { status?: number }).status,
         name: signupError.name,

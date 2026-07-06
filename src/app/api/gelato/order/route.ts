@@ -6,11 +6,12 @@ import { getCurrencyFromCountry } from "@/lib/currency";
 import { getServiceSupabase } from "@/lib/plan";
 import { generatePdfToken } from "@/lib/pdf-token";
 import { calcPageCount } from "@/lib/book-pages";
+import { bestStoryIndexForDate } from "@/lib/book-shared";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripe } from "@/lib/stripe";
 
 const GELATO_PRODUCT_UID = "photobooks-hardcover_pf_200x200-mm-8x8-inch_pt_170-gsm-65lb-coated-silk_cl_4-4_ccl_4-4_bt_glued-left_ct_matt-lamination_prt_1-0_cpt_130-gsm-65-lb-cover-coated-silk_ver";
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_REGEX } from "@/lib/validation";
 
 export async function POST(req: Request) {
   const supabaseAuth = await createServerClient();
@@ -128,22 +129,14 @@ export async function POST(req: Request) {
     activeStories = activeStories.filter(s => selectedStoryIds.includes(s.id));
   }
 
-  // hasOrphanPhotos: same best-match logic as book-pdf to guarantee identical page counts
+  // hasOrphanPhotos: shared best-match logic (bestStoryIndexForDate) to guarantee
+  // the page count matches what book-pdf actually renders.
   const entryToStorySet = new Set<string>();
   for (const entry of filteredEntries) {
     if (!entry.photo_urls?.length) continue;
-    const d = new Date(entry.entry_date);
-    let bestIdx = -1;
-    let bestStart: Date | null = null;
-    for (let i = 0; i < activeStories.length; i++) {
-      const story = activeStories[i];
-      const start = story.period_start ? new Date(story.period_start) : null;
-      const end = story.period_end ? new Date(story.period_end) : null;
-      if (!start || d < start) continue;
-      if (end && d > end) continue;
-      if (bestStart === null || start > bestStart) { bestIdx = i; bestStart = start; }
+    if (bestStoryIndexForDate(new Date(entry.entry_date), activeStories) >= 0) {
+      entryToStorySet.add(entry.id);
     }
-    if (bestIdx >= 0) entryToStorySet.add(entry.id);
   }
   const hasOrphanPhotos = filteredEntries.some(e => e.photo_urls?.length > 0 && !entryToStorySet.has(e.id));
 
@@ -206,11 +199,10 @@ export async function POST(req: Request) {
     pdfUrl.searchParams.set("includeTributes", "1");
   }
   const VALID_LAYOUT_VALUES = ["classic", "photo_hero", "split", "text_only"];
-  const UUID_REGEX_LOCAL = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (storyLayouts && typeof storyLayouts === "object" && !Array.isArray(storyLayouts)) {
     const safeLayouts: Record<string, string> = {};
     for (const [k, v] of Object.entries(storyLayouts)) {
-      if (UUID_REGEX_LOCAL.test(k) && VALID_LAYOUT_VALUES.includes(v as string)) {
+      if (UUID_REGEX.test(k) && VALID_LAYOUT_VALUES.includes(v as string)) {
         safeLayouts[k] = v as string;
       }
     }

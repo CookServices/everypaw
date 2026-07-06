@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Currency } from "@/lib/currency";
 import { PRICE_MAP, resolveSubscriptionId } from "@/lib/stripe-helpers";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripe } from "@/lib/stripe";
 
 export async function POST(req: Request) {
   const supabase = await createClient();

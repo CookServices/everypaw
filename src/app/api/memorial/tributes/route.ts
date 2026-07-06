@@ -6,7 +6,7 @@ import { escapeHtml } from "@/lib/html";
 import { getResendClient } from "@/lib/resend";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_REGEX } from "@/lib/validation";
 
 // GET /api/memorial/tributes?petId=xxx[&status=pending], owner only for pending/rejected
 export async function GET(req: Request) {

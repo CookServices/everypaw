@@ -2,6 +2,7 @@ import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Resend } from "resend";
+import { stripe } from "@/lib/stripe";
 import { escapeHtml } from "@/lib/html";
 import { baseLayout, emoji, heading, paragraph, quote, codeBox, ctaButton, finePrint } from "@/lib/email-templates";
 
@@ -59,8 +60,6 @@ export async function POST(req: Request) {
   if (!sessionId || typeof sessionId !== "string") {
     return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
   }
-
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
   let session: Stripe.Checkout.Session;
   try {

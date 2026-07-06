@@ -22,10 +22,17 @@ export async function GET(req: Request) {
   const todayStr = today.toISOString().split("T")[0];
   const yearStart = `${yearKey}-01-01`;
 
+  // Feb 29 births have no calendar match on non-leap years — fold them onto Feb 28
+  // so those pets still get a birthday email 3 years out of 4.
+  const isLeap = (currentYear % 4 === 0 && currentYear % 100 !== 0) || currentYear % 400 === 0;
+  const datePatterns = [`%-${mm}-${dd}`];
+  if (mm === "02" && dd === "28" && !isLeap) datePatterns.push("%-02-29");
+  const orFilter = datePatterns.map(p => `birthdate.like.${p}`).join(",");
+
   const { data: pets } = await supabase
     .from("pets")
     .select("id, user_id, name, species, bio, birthdate")
-    .like("birthdate", `%-${mm}-${dd}`)
+    .or(orFilter)
     .is("deceased_at", null);
 
   if (!pets || pets.length === 0) return NextResponse.json({ sent: 0, letters: 0 });

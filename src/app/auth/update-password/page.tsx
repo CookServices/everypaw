@@ -21,15 +21,26 @@ export default function UpdatePasswordPage() {
   const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    // Supabase sets the session from the URL hash after redirect
+    // Supabase sets the session from the URL hash after redirect.
     const supabase = createClient();
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setSessionReady(true);
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setSessionReady(true);
     });
+    // Also cover the case where the session is already present on mount.
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setSessionReady(true);
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async () => {
     setError("");
+    if (!sessionReady) {
+      setError(isFR
+        ? "Lien de réinitialisation invalide ou expiré. Ouvrez le lien reçu par email, ou demandez-en un nouveau."
+        : "Invalid or expired reset link. Open the link from your email, or request a new one.");
+      return;
+    }
     if (!password || password.length < 8) {
       setError(isFR ? "Le mot de passe doit faire au moins 8 caractères." : "Password must be at least 8 characters.");
       return;

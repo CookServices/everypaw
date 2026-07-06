@@ -5,6 +5,7 @@
 
 import Stripe from "stripe";
 import { getServiceSupabase } from "@/lib/plan";
+import { log } from "@/lib/log";
 import type { Currency } from "@/lib/currency";
 
 // ── Price map ─────────────────────────────────────────────────────────────────
@@ -51,7 +52,7 @@ export async function resolveSubscriptionId(
       return sub.id;
     }
   } catch (err) {
-    console.error("[stripe-helpers] resolveSubscriptionId error:", err);
+    log.error("[stripe-helpers] resolveSubscriptionId error:", err);
   }
   return null;
 }

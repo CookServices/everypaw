@@ -1,12 +1,11 @@
 import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrencyFromCountry } from "@/lib/currency";
 import { PRICE_MAP } from "@/lib/stripe-helpers";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripe } from "@/lib/stripe";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -24,6 +23,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
 
+  // Guard against a second subscription: a premium user hitting this twice would
+  // spawn a new Stripe customer + subscription, orphaning the first (billed but
+  // no longer referenced, so uncancellable from the app).
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("stripe_subscription_id, stripe_customer_id, is_premium")
+    .eq("id", user.id)
+    .single();
+
+  if (existingProfile?.stripe_subscription_id && existingProfile.is_premium) {
+    return NextResponse.json({ error: "already_subscribed" }, { status: 409 });
+  }
+
   const h = await headers();
   const country = h.get("x-vercel-ip-country");
   const currency = getCurrencyFromCountry(country);
@@ -36,13 +48,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid plan or missing price ID" }, { status: 400 });
   }
 
+  // Reuse the existing Stripe customer when we have one so repeat purchases don't
+  // fan out into duplicate customer records.
+  const customerBinding = existingProfile?.stripe_customer_id
+    ? { customer: existingProfile.stripe_customer_id }
+    : { customer_email: user.email ?? undefined };
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
     mode: "subscription",
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
     cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
-    customer_email: user.email,
+    ...customerBinding,
     metadata: { user_id: user.id, plan },
     custom_text: {
       terms_of_service_acceptance: {

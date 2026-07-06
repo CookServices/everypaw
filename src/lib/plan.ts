@@ -1,5 +1,8 @@
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { getServiceSupabase } from "@/lib/supabase/service";
+
+// Re-exported for the many callers that import it from "@/lib/plan".
+export { getServiceSupabase };
 
 export type Plan = "free" | "digital" | "print" | "book_only";
 
@@ -29,14 +32,6 @@ export async function getUserPlan(): Promise<PlanInfo> {
     isPremium: plan === "digital" || plan === "print" || (data?.is_premium ?? false),
     bookCredits: data?.book_credits ?? 0,
   };
-}
-
-/** Service-role variant used inside webhooks (no auth session). */
-export function getServiceSupabase() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
 }
 
 export async function getUserPlanById(userId: string): Promise<PlanInfo> {

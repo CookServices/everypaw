@@ -12,11 +12,11 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { data: pet } = await getServiceSupabase()
     .from("pets")
-    .select("name, species, bio, photo_url")
+    .select("name, species, bio, photo_url, deceased_at")
     .eq("id", params.id)
     .single();
 
-  if (!pet) return { title: "Everypaw" };
+  if (!pet || !pet.deceased_at) return { title: "Everypaw" };
 
   const species = pet.species
     ? ` · ${pet.species.charAt(0).toUpperCase()}${pet.species.slice(1)}`
@@ -76,8 +76,10 @@ export default async function PublicPetPage({ params, searchParams }: { params: 
   const t = getTranslations(locale);
   const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
 
-  // Service role is required here: entries RLS is restricted to authenticated owners.
-  // The key never leaves the server; explicit pet_id filters limit the scope.
+  // Service role is required here: entries/stories RLS is restricted to owners
+  // and accepted members. The key never leaves the server; explicit pet_id
+  // filters limit the scope, and the page only renders for deceased pets
+  // (public memorial journal) — living pets are never exposed by URL.
   const supabase = getServiceSupabase();
 
   const [{ data: pet }, { data: stories }, { data: entries }] = await Promise.all([
@@ -86,7 +88,7 @@ export default async function PublicPetPage({ params, searchParams }: { params: 
     supabase.from("entries").select("*").eq("pet_id", params.id).order("entry_date", { ascending: false }).limit(6),
   ]);
 
-  if (!pet) return (
+  if (!pet || !pet.deceased_at) return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", color: "#7A5C44" }}>
       {t.public_pet.not_found}
     </div>

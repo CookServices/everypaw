@@ -1,10 +1,9 @@
 import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/plan";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripe } from "@/lib/stripe";
 
 export async function POST() {
   const supabase = await createClient();

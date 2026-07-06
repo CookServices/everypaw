@@ -39,6 +39,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   } catch (e) {
+    // Fail closed on protected routes: if the auth check itself errored we can't
+    // confirm a session, so send dashboard traffic to login rather than serving
+    // the authenticated shell.
+    if (request.nextUrl.pathname.startsWith("/dashboard")) {
+      return NextResponse.redirect(new URL("/auth/login", request.url));
+    }
     return NextResponse.next({ request });
   }
 

@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { getServiceSupabase } from "@/lib/supabase/service";
 import { cookies, headers } from "next/headers";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -9,23 +9,21 @@ import TributeSection from "@/components/memorial/TributeSection";
 
 // ── OG meta ───────────────────────────────────────────────────────────────────
 
-function anonClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
+// Service role is required: pets/stories RLS is restricted to owner + accepted
+// members (no public-read policy), so the anon key returns nothing for public
+// visitors. The key never leaves the server; reads are filtered by pet id and
+// the page only renders when deceased_at is set (memorial pages are public).
 
 export async function generateMetadata(
   { params }: { params: { id: string } }
 ): Promise<Metadata> {
-  const { data: pet } = await anonClient()
+  const { data: pet } = await getServiceSupabase()
     .from("pets")
-    .select("name, species, memorial_message, memorial_photo_url, photo_url")
+    .select("name, species, memorial_message, memorial_photo_url, photo_url, deceased_at")
     .eq("id", params.id)
     .single();
 
-  if (!pet) return { title: "Mémorial · Everypaw" };
+  if (!pet || !pet.deceased_at) return { title: "Mémorial · Everypaw" };
 
   const image = pet.memorial_photo_url ?? pet.photo_url ?? null;
   const description = pet.memorial_message
@@ -71,9 +69,7 @@ export default async function MemorialPage({ params, searchParams }: { params: {
   const t = getTranslations(locale);
   const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
 
-  // Anon key is sufficient here, RLS allows public reads on pets/stories.
-  // Never use the service role key in public server components.
-  const supabase = anonClient();
+  const supabase = getServiceSupabase();
 
   // Check if the viewer is the owner (for edit button)
   const supabaseAuth = await createServerClient();

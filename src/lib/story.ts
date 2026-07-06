@@ -222,6 +222,8 @@ export async function generateAndSaveBirthdayLetter(
       period_start: `${yearKey}-01-01`,
       period_end: today,
       status: "published",
+      // month_key is dual-purpose: 'YYYY-MM' for monthly stories, 'YYYY' here — it
+      // just needs to be unique per (pet, period) to dedup birthday letters per year.
       month_key: yearKey,
       story_type: "birthday",
     })

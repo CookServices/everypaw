@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { EMAIL_REGEX } from "@/lib/validation";
 
 const SUBJECTS = [
   "Question générale",
@@ -9,8 +10,6 @@ const SUBJECTS = [
   "Facturation & abonnement",
   "Autre",
 ];
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const inputStyle: React.CSSProperties = {
   width: "100%",

@@ -1,9 +1,10 @@
 import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { headers } from "next/headers";
 import { getCurrencyFromCountry } from "@/lib/currency";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
+import { EMAIL_REGEX } from "@/lib/validation";
+import { stripe } from "@/lib/stripe";
 import type { Currency } from "@/lib/currency";
 
 const GIFT_PRICE_MAP: Record<string, Record<Currency, string | undefined>> = {
@@ -30,8 +31,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(recipientEmail)) {
+  if (!EMAIL_REGEX.test(recipientEmail)) {
     return NextResponse.json({ error: "Invalid recipient email" }, { status: 400 });
   }
 
@@ -47,7 +47,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Gift service not configured" }, { status: 500 });
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   const emailLocale: "fr" | "en" = locale === "fr" ? "fr" : "en";
 

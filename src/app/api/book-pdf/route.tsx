@@ -12,6 +12,14 @@ import {
 } from "@react-pdf/renderer";
 import { validatePdfToken } from "@/lib/pdf-token";
 import { getServiceSupabase } from "@/lib/plan";
+import { UUID_REGEX } from "@/lib/validation";
+import { calcPageCount } from "@/lib/book-pages";
+import {
+  COVER_THEMES, VALID_THEMES, VALID_LANGS, VALID_LAYOUTS,
+  MAX_DEDICATION_LENGTH, MAX_CUSTOM_TITLE_LENGTH, MIN_YEAR, MAX_YEAR,
+  safeUrl, bestStoryIndexForDate,
+  type Lang, type ThemeId, type LayoutType,
+} from "@/lib/book-shared";
 
 export const dynamic = "force-dynamic";
 
@@ -30,25 +38,6 @@ const PW = TRIM;
 const PH = TRIM;
 const PAD = 40; // content padding within trim area
 
-const VALID_LANGS = ["en", "fr"] as const;
-type Lang = (typeof VALID_LANGS)[number];
-
-const COVER_THEMES = {
-  classic: { bg: "#3D2B1F", title: "#F7C27A", accent: "#C8813A", back: "#C8813A" },
-  noir:    { bg: "#1A1A1E", title: "#F0EEE8", accent: "#B8AFA0", back: "#2C2C2E" },
-  forest:  { bg: "#1B3028", title: "#AACCA0", accent: "#6A9E78", back: "#2A4A38" },
-  ocean:   { bg: "#152040", title: "#A8C8E8", accent: "#5880B8", back: "#1E3060" },
-  rose:    { bg: "#3A1525", title: "#F0B8C8", accent: "#C87890", back: "#8A3050" },
-} as const;
-type ThemeId = keyof typeof COVER_THEMES;
-const VALID_THEMES = Object.keys(COVER_THEMES) as ThemeId[];
-const VALID_LAYOUTS = ["classic", "photo_hero", "split", "text_only"] as const;
-type LayoutType = (typeof VALID_LAYOUTS)[number];
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const MAX_DEDICATION_LENGTH = 500;
-const MIN_YEAR = 2000;
-const MAX_YEAR = 2100;
-const MAX_CUSTOM_TITLE_LENGTH = 60;
 
 const STRINGS = {
   en: {
@@ -78,15 +67,6 @@ const STRINGS = {
     birthdate: (d: Date) => `Né(e) le ${d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`,
   },
 };
-
-function safeUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:" ? url : "";
-  } catch {
-    return "";
-  }
-}
 
 type ThemeColors = (typeof COVER_THEMES)[ThemeId];
 type Strings = (typeof STRINGS)[Lang];
@@ -643,22 +623,12 @@ export async function GET(req: Request) {
   const approvedTributes: TributeRow[] = (includeTributes && tributesData) ? tributesData as TributeRow[] : [];
   const hasTributes = approvedTributes.length > 0;
 
-  // Associate photo entries to story chapters (same logic as preview-pdf)
+  // Associate photo entries to story chapters (shared best-match logic).
   const entryToStoryIdx = new Map<string, number>();
   for (const entry of entries) {
     if (!entry.photo_urls?.length) continue;
-    const d = new Date(entry.entry_date);
-    let bestIdx = -1;
-    let bestStart: Date | null = null;
-    for (let i = 0; i < stories.length; i++) {
-      const story = stories[i];
-      const start = story.period_start ? new Date(story.period_start) : null;
-      const end = story.period_end ? new Date(story.period_end) : null;
-      if (!start || d < start) continue;
-      if (end && d > end) continue;
-      if (bestStart === null || start > bestStart) { bestIdx = i; bestStart = start; }
-    }
-    if (bestIdx >= 0) entryToStoryIdx.set(entry.id, bestIdx);
+    const idx = bestStoryIndexForDate(new Date(entry.entry_date), stories);
+    if (idx >= 0) entryToStoryIdx.set(entry.id, idx);
   }
 
   const chapterPhotos: EntryRow[][] = stories.map(() => []);
@@ -677,7 +647,9 @@ export async function GET(req: Request) {
   // Total PDF pages = contentPages + blankPagesCount + 3 structural = targetContentPages + 3.
   const storyPageCount = stories.length > 0 ? stories.length : 1;
   const contentPages = (hasDedication ? 1 : 0) + storyPageCount + (hasOrphanPhotos ? 1 : 0) + (hasTributes ? 1 : 0);
-  const targetContentPages = Math.max(28, Math.ceil(contentPages / 4) * 4);
+  // Same declared page count as gelato/order (calcPageCount) so the PDF's blank
+  // padding matches what was ordered.
+  const targetContentPages = calcPageCount(storyPageCount, hasOrphanPhotos, hasDedication, hasTributes);
   const blankPagesCount = targetContentPages - contentPages;
 
   try {

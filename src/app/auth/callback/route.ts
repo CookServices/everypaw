@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isSafeRelativePath } from "@/lib/validation";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -20,6 +21,6 @@ export async function GET(request: Request) {
   }
 
   // Honour redirect param, must be a relative path (no protocol-relative or absolute URLs)
-  const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  const destination = isSafeRelativePath(next) ? next : "/dashboard";
   return NextResponse.redirect(`${origin}${destination}`);
 }

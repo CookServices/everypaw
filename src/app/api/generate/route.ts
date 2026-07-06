@@ -2,11 +2,9 @@ import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getUserPlan, canGenerateStory } from "@/lib/plan";
-import { escapeXml } from "@/lib/html";
-import { stripEmDash } from "@/lib/story";
+import { stripEmDash, buildStoryPrompt, type StoryStyle } from "@/lib/story";
 import { callClaude, parseStoryResponse, AnthropicError } from "@/lib/anthropic";
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_REGEX } from "@/lib/validation";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -97,60 +95,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Need at least 3 entries" }, { status: 400 });
   }
 
-  const petName = pet.name;
-  const species = pet.species;
-  const bio = pet.bio;
-
-  const entriesText = entries
-    .map((e: { entry_date: string; content: string; mood?: string }) =>
-      `[${e.entry_date}] ${e.content}`
-    )
-    .join("\n");
-
-  const STYLE_DESCRIPTIONS: Record<string, string> = {
-    poetic:   "Write in a poetic, lyrical style with rich metaphors and emotional imagery. Use beautiful language.",
-    humorous: "Write with humor and wit, light, playful, full of amusing observations and gentle self-deprecating comedy.",
-    classic:  "Write in a classic, clean narrative style, sober, well-structured, timeless.",
-    epic:     "Write in an epic, adventurous, dramatic style. Make everyday moments feel heroic.",
-    tender:   "Write like a love letter, deeply warm, intimate, soft, full of tenderness and affection.",
-  };
-
-  const prompt = `You are writing a warm, emotional, first-person narrative story for a pet journal called Everypaw.
-
-IMPORTANT: Write this story entirely in ${lang}. Do not use any other language.
-${style ? `STYLE: ${STYLE_DESCRIPTIONS[style] ?? ""}` : ""}
-
-<pet_details>
-  <name>${escapeXml(petName)}</name>
-  <species>${escapeXml(species || "")}</species>
-  <bio>${escapeXml(bio || "Not provided")}</bio>
-</pet_details>
-
-<journal_entries>
-${escapeXml(entriesText)}
-</journal_entries>
-
-Write a beautiful narrative story of 400-500 words, structured in exactly 3 paragraphs. Separate each paragraph with a blank line. Do NOT include any section labels or headers (no "INTRO", "DÉVELOPPEMENT", "CHUTE", or similar):
-
-Paragraph 1: Set the mood of the period, evoke atmosphere, season, daily rhythm. Do NOT list events; paint a feeling.
-
-Paragraphs 2-3: Bring to life the key moments from the journal entries. Use sensory details (smells, textures, sounds). Weave entries into a flowing narrative, never list them. Show emotion through action and sensation.
-
-Paragraph 4: End with a tender, introspective note from the pet's point of view, a small reflection or realization. Close with a single memorable, resonant sentence.
-
-Style rules (follow strictly):
-- First-person voice: the pet is the narrator throughout
-- Use the pet's name (from pet_details) at least 3 times naturally in the text
-- Reference the species (from pet_details) or breed at least once
-- Do NOT mechanically list journal entries, transform them into narrative
-- Tone: warm, intimate, slightly poetic, like a letter to the reader
-- Target exactly 400-500 words (count carefully)
-- NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
-
-Also generate a short evocative title (5 words max).
-
-You MUST respond with valid JSON only, no other text:
-{"title": "...", "story": "..."}`;
+  // Shared prompt builder (single source of truth with the cron path in lib/story.ts)
+  const prompt = buildStoryPrompt(
+    { id: pet.id, name: pet.name, species: pet.species, bio: pet.bio },
+    entries,
+    lang,
+    style as StoryStyle | undefined,
+  );
 
   log.debug("[generate] params:", { petId, style, periodStart, periodEnd, entriesCount: entries?.length });
 

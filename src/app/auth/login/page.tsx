@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
+import { isSafeRelativePath } from "@/lib/validation";
 import PublicFooter from "@/components/PublicFooter";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export default function LoginPage() {
     const redirect = p.get("redirect");
     const code = p.get("code");
     // Only allow relative paths, prevent open redirect to external sites
-    if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
+    if (isSafeRelativePath(redirect)) {
       return code ? `${redirect}?code=${code}` : redirect;
     }
     return "/dashboard";

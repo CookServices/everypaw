@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buildOriginsPrompt, stripEmDash } from "@/lib/story";
 import { callClaude, parseStoryResponse } from "@/lib/anthropic";
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_REGEX } from "@/lib/validation";
 
 export async function POST(req: Request) {
   const supabase = await createClient();

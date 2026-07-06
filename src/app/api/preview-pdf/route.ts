@@ -2,38 +2,15 @@ import { NextResponse } from "next/server";
 import { validatePdfToken } from "@/lib/pdf-token";
 import { escapeHtml } from "@/lib/html";
 import { getServiceSupabase } from "@/lib/plan";
+import { UUID_REGEX } from "@/lib/validation";
+import {
+  COVER_THEMES, VALID_THEMES, VALID_LANGS, VALID_LAYOUTS,
+  MAX_DEDICATION_LENGTH, MAX_CUSTOM_TITLE_LENGTH, MIN_YEAR, MAX_YEAR,
+  safeUrl, bestStoryIndexForDate,
+  type Lang, type ThemeId, type LayoutType,
+} from "@/lib/book-shared";
 
 export const dynamic = "force-dynamic";
-
-const VALID_LANGS = ["en", "fr"] as const;
-type Lang = typeof VALID_LANGS[number];
-const MAX_DEDICATION_LENGTH = 500;
-const MIN_YEAR = 2000;
-const MAX_YEAR = 2100;
-const MAX_CUSTOM_TITLE_LENGTH = 60;
-
-const COVER_THEMES = {
-  classic: { bg: "#3D2B1F", title: "#F7C27A", accent: "#C8813A", back: "#C8813A" },
-  noir:    { bg: "#1A1A1E", title: "#F0EEE8", accent: "#B8AFA0", back: "#2C2C2E" },
-  forest:  { bg: "#1B3028", title: "#AACCA0", accent: "#6A9E78", back: "#2A4A38" },
-  ocean:   { bg: "#152040", title: "#A8C8E8", accent: "#5880B8", back: "#1E3060" },
-  rose:    { bg: "#3A1525", title: "#F0B8C8", accent: "#C87890", back: "#8A3050" },
-} as const;
-type ThemeId = keyof typeof COVER_THEMES;
-const VALID_THEMES = Object.keys(COVER_THEMES) as ThemeId[];
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const VALID_LAYOUTS = ["classic", "photo_hero", "split", "text_only"] as const;
-type LayoutType = typeof VALID_LAYOUTS[number];
-
-function safeUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:" ? url : "";
-  } catch {
-    return "";
-  }
-}
 
 // Escape a URL for use inside a CSS url('...') value
 function safeCssUrl(url: string): string {
@@ -117,23 +94,12 @@ async function buildHtml(params: {
   const tributesList = (includeTributes && approvedTributes && approvedTributes.length > 0) ? approvedTributes : [];
   const hasTributes = tributesList.length > 0;
 
-  // Associate each photo entry to its story by date range
-  // entry → story with best (latest) period_start that still covers entry_date
+  // Associate each photo entry to its story (shared best-match logic).
   const entryToStoryIdx = new Map<string, number>();
   for (const entry of entries) {
     if (!entry.photo_urls?.length) continue;
-    const d = new Date(entry.entry_date);
-    let bestIdx = -1;
-    let bestStart: Date | null = null;
-    for (let i = 0; i < stories.length; i++) {
-      const story = stories[i];
-      const start = story.period_start ? new Date(story.period_start) : null;
-      const end = story.period_end ? new Date(story.period_end) : null;
-      if (!start || d < start) continue;
-      if (end && d > end) continue;
-      if (bestStart === null || start > bestStart) { bestIdx = i; bestStart = start; }
-    }
-    if (bestIdx >= 0) entryToStoryIdx.set(entry.id, bestIdx);
+    const idx = bestStoryIndexForDate(new Date(entry.entry_date), stories);
+    if (idx >= 0) entryToStoryIdx.set(entry.id, idx);
   }
 
   // Group photo entries by chapter index (max 4 photos per chapter)

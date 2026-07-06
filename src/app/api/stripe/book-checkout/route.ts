@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrencyFromCountry } from "@/lib/currency";
 import { calcGelatoBookPrice } from "@/lib/gelato-pricing";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { stripe } from "@/lib/stripe";
+import { UUID_REGEX } from "@/lib/validation";
 const MAX_PAGE_COUNT = 500; // Gelato practical limit
 
 export async function POST(req: Request) {

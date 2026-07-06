@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/plan";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripe } from "@/lib/stripe";
 
 function formatSubscription(sub: Stripe.Subscription) {
   return {

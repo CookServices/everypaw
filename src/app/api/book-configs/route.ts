@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 const MAX_DRAFTS = 15;
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_REGEX } from "@/lib/validation";
 const VALID_THEMES = ["classic", "noir", "forest", "ocean", "rose"];
 const VALID_STATUSES = ["draft", "ordered"];
 const VALID_LAYOUTS = ["classic", "photo_hero", "split", "text_only"];

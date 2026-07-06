@@ -7,8 +7,7 @@ import { escapeHtml } from "@/lib/html";
 import { baseLayout, heading, paragraph, ctaButton, finePrint } from "@/lib/email-templates";
 import crypto from "node:crypto";
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+import { UUID_REGEX, EMAIL_REGEX } from "@/lib/validation";
 const MAX_MEMBERS = 5;
 const INVITE_TTL_DAYS = 7;
 

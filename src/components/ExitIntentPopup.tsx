@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { EMAIL_REGEX } from "@/lib/validation";
 
 interface Props {
   isFR?: boolean;
@@ -43,8 +44,7 @@ export default function ExitIntentPopup({ isFR = false }: Props) {
 
   const handleSubmit = async () => {
     setErrorMsg("");
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
+    if (!email || !EMAIL_REGEX.test(email)) {
       setErrorMsg(isFR ? "Adresse email invalide." : "Invalid email address.");
       return;
     }

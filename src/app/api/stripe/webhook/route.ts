@@ -5,7 +5,7 @@ import { Resend } from "resend";
 import { getServiceSupabase, priceIdToPlan } from "@/lib/plan";
 import { buildPaymentFailedEmail } from "@/lib/auth-emails";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripe } from "@/lib/stripe";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -87,12 +87,22 @@ export async function POST(req: Request) {
       });
 
       const priceId = fullSession.line_items?.data?.[0]?.price?.id;
-      const plan = priceId ? priceIdToPlan(priceId) : "digital";
+      let plan = priceId ? priceIdToPlan(priceId) : null;
+
+      // priceIdToPlan can return null if STRIPE_PRICE_ID_* env vars are misnamed
+      // (see .env.local.example). Fall back to the plan captured in the checkout
+      // metadata rather than silently defaulting a Print buyer to "digital".
+      if (!plan) {
+        log.error("[webhook] priceIdToPlan returned null for priceId:", priceId, "falling back to metadata plan:", metaPlan);
+        plan = metaPlan === "print_annual" ? "print"
+          : (metaPlan === "digital" || metaPlan === "digital_annual") ? "digital"
+          : "digital";
+      }
 
       const { error } = await supabase
         .from("profiles")
         .update({
-          plan: plan ?? "digital",
+          plan,
           is_premium: true,
           stripe_customer_id: session.customer as string,
           stripe_subscription_id: session.subscription as string,
@@ -278,9 +288,13 @@ export async function POST(req: Request) {
         .single();
 
       if (profileForCredit?.last_book_credit_at) {
+        // Tolerance below 365d: last_book_credit_at is stamped at webhook-processing
+        // time, but the annual renewal fires ~365d later, landing a few seconds/hours
+        // short of 365 and wrongly skipping the credit. 350d absorbs the drift while
+        // still blocking any genuine sub-annual churn (monthly Print is not eligible).
         const daysSinceLast = (Date.now() - new Date(profileForCredit.last_book_credit_at).getTime()) / (1000 * 60 * 60 * 24);
-        if (daysSinceLast < 365) {
-          log.debug(`[webhook] book credit skipped, last credit was ${Math.floor(daysSinceLast)}d ago (< 365d), user: ${userId}`);
+        if (daysSinceLast < 350) {
+          log.debug(`[webhook] book credit skipped, last credit was ${Math.floor(daysSinceLast)}d ago (< 350d), user: ${userId}`);
           return NextResponse.json({ received: true });
         }
       }

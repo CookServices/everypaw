@@ -1,6 +1,7 @@
 import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { stripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { PRICE_MAP, resolveSubscriptionId } from "@/lib/stripe-helpers";
 import { getCurrencyFromCountry } from "@/lib/currency";
@@ -18,8 +19,6 @@ export async function POST(req: Request) {
   if (code.length > 50 || !/^[A-Z0-9_-]+$/i.test(code)) {
     return NextResponse.json({ error: "Invalid code format" }, { status: 400 });
   }
-
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
   try {
     const promotionCodes = await stripe.promotionCodes.list({ code });
@@ -123,16 +122,23 @@ export async function POST(req: Request) {
         ],
       });
 
+      // Single-use: burn the promotion code so it can't be redeemed again.
+      await stripe.promotionCodes.update(promoCode.id, { active: false });
+
       log.debug(`[gift/redeem] user ${user.id} → gift ${planKey} scheduled for ${new Date(periodEnd * 1000).toISOString()}`);
       return NextResponse.json({ scheduled: true, activatesAt: periodEnd, plan: planKey });
     }
 
-    // No active subscription → create a Stripe checkout session (free, 100% coupon)
+    // No active subscription → create a Stripe checkout session (free).
+    // Apply the promotion_code (not the raw coupon) so Stripe counts the
+    // redemption and auto-disables it (max_redemptions: 1) on successful
+    // payment. This avoids burning the code prematurely if the user abandons
+    // checkout — they can still retry until they actually pay.
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      discounts: [{ coupon: giftCouponId }],
+      discounts: [{ promotion_code: promoCode.id }],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?gift=activated`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/redeem?code=${code}`,
       customer_email: user.email,

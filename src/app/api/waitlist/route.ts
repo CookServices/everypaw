@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 import { escapeHtml } from "@/lib/html";
 import { baseLayout, emoji, heading, paragraph } from "@/lib/email-templates";
+import { EMAIL_REGEX } from "@/lib/validation";
 
 export async function POST(req: Request) {
   const { allowed } = await checkRateLimitDb(`waitlist:${getClientIp(req)}`, 5, 60_000);
@@ -18,8 +19,7 @@ export async function POST(req: Request) {
   if (!email || typeof email !== "string") {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email) || email.length > 254) {
+  if (!EMAIL_REGEX.test(email) || email.length > 254) {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 

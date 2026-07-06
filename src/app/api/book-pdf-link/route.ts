@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { generatePdfToken } from "@/lib/pdf-token";
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_REGEX } from "@/lib/validation";
 const ALLOWED_PLANS = ["digital", "print"];
 const VALID_LANGS = ["en", "fr"];
 const VALID_THEMES = ["classic", "noir", "forest", "ocean", "rose"];
