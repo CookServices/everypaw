@@ -249,6 +249,9 @@ export async function POST(req: Request) {
     },
   };
 
+  // Once Gelato accepts the order the credit is spent for good; post-order
+  // bookkeeping failures must NOT restore it (that would give a free book).
+  let orderPlaced = false;
   try {
     const response = await fetch("https://order.gelatoapis.com/v4/orders", {
       method: "POST",
@@ -268,6 +271,8 @@ export async function POST(req: Request) {
       await supabase.rpc("restore_book_credit", { p_user_id: user.id });
       return NextResponse.json({ error: "Order failed" }, { status: 400 });
     }
+
+    orderPlaced = true;
 
     // Update selected stories as ordered, always filter by user_id to prevent IDOR
     if (Array.isArray(selectedStoryIds) && selectedStoryIds.length > 0) {
@@ -334,8 +339,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ orderId: data.id, status: data.orderStatus });
   } catch (error) {
     log.error("Gelato order error:", error);
-    // Restore the credit since the order failed
-    await supabase.rpc("restore_book_credit", { p_user_id: user.id });
+    // Only restore the credit if the order never reached Gelato
+    if (!orderPlaced) {
+      await supabase.rpc("restore_book_credit", { p_user_id: user.id });
+    }
     return NextResponse.json({ error: "Order failed" }, { status: 500 });
   }
 }

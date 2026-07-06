@@ -145,7 +145,7 @@ export async function POST(req: Request) {
     toEmail = newEmail;
     // email_change uses token_hash_new for the new address confirmation
     const changeUrl = confirmationUrl
-      ?? `${SUPABASE_URL}/auth/v1/verify?token=${tokenHash}&type=email_change&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/dashboard`)}`;
+      ?? `${SUPABASE_URL}/auth/v1/verify?token=${tokenHashNew}&type=email_change&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/dashboard`)}`;
     log.debug("[auth-hook] email_change url:", changeUrl);
     ({ subject, html } = buildChangeEmailEmail(lang, changeUrl, newEmail));
 

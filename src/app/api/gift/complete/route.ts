@@ -131,13 +131,28 @@ export async function POST(req: Request) {
     ...(scheduled_date ? { scheduledAt: new Date(scheduled_date + "T08:00:00Z").toISOString() } : {}),
   };
 
-  await resend.emails.send(emailPayload);
-
-  // Mark the payment intent so repeated calls skip the email
+  // Claim the send with a fresh read + immediate flag write BEFORE the slow
+  // Resend call, so concurrent/duplicate invocations skip instead of re-sending.
   if (pi?.id) {
+    const fresh = await stripe.paymentIntents.retrieve(pi.id);
+    if (fresh.metadata?.gift_email_sent === "true") {
+      return NextResponse.json({ success: true, code: promotionCode.code });
+    }
     await stripe.paymentIntents.update(pi.id, {
-      metadata: { ...pi.metadata, gift_email_sent: "true" },
+      metadata: { ...fresh.metadata, gift_email_sent: "true" },
     });
+  }
+
+  try {
+    await resend.emails.send(emailPayload);
+  } catch (err) {
+    // Release the claim so a retry can resend after a genuine send failure.
+    if (pi?.id) {
+      await stripe.paymentIntents.update(pi.id, {
+        metadata: { ...pi.metadata, gift_email_sent: "" },
+      });
+    }
+    throw err;
   }
 
   return NextResponse.json({ success: true, code: promotionCode.code });

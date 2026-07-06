@@ -21,7 +21,9 @@ export async function GET(req: Request) {
   const supabase = getServiceSupabase();
 
   if (status === "approved") {
-    // Public: anyone can read approved tributes (RLS enforces pet.deceased_at IS NOT NULL)
+    // Public: anyone can read approved tributes. This uses the service role, so RLS
+    // is bypassed — approved tributes are intentionally public (memorial page). They
+    // only exist for deceased pets since POST rejects non-deceased pets.
     const { data } = await supabase
       .from("memorial_tributes")
       .select("id, author_name, message, created_at")

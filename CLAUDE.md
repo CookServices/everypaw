@@ -1908,6 +1908,24 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 
 *Dernière mise à jour : 2026-06-18 (audit Pareto — items #1/#3/#5/#7/#10 livrés ; #4/#6/#8/#9 reportés ; #2 écarté)*
 
+### ✅ Session 53 — Audit sécurité/bugs complet + 7 correctifs (2026-07-06)
+
+Audit ciblé de toutes les routes API + libs core. 7 correctifs (3 MEDIUM, 4 LOW). `tsc --noEmit` OK, 16 tests Vitest verts.
+
+**M1 — Cap 10 entrées plan free non appliqué côté serveur** : `canAddEntry()` (`src/lib/plan.ts`) encodait la règle mais n'était appelé nulle part. Les entrées s'insèrent en direct client-side via clé anon + RLS → un user free contournait le cap trivialement. Fix : **trigger DB** `enforce_free_entry_limit` (migration `enforce_free_entry_limit_2026_07_06.sql`, `BEFORE INSERT ON entries`, `SECURITY DEFINER`, `raise exception 'entry_limit'` si plan free ET count ≥ 10). Client `pets/[id]/page.tsx` `addEntry` détecte `error.message` contenant `entry_limit` → ouvre la modale d'upsell. **⚠️ Migration à appliquer en prod (Supabase SQL Editor) — sans elle le cap reste contournable.**
+
+**M2 — `account/delete` : lignes orphelines** : la cascade oubliait `memorial_tributes` et `pet_members`. Fix : suppression de `memorial_tributes` + `pet_members` par `pet_id`, plus les memberships/invites du user (`user_id`, `invited_by`). (Reste non-atomique — inhérent à supabase-js multi-appels ; storage >1000 fichiers toujours best-effort.)
+
+**M3 — `auth-hook` email_change mauvais token** : le lien de confirmation d'email vers la nouvelle adresse utilisait `token_hash` au lieu de `token_hash_new` (variable `tokenHashNew` calculée mais jamais utilisée). Cassé uniquement quand Supabase ne fournit pas `confirmation_url`. Fix : `changeUrl` utilise `tokenHashNew`.
+
+**L1 — `gift/complete` doublon email en concurrence** : idempotence reposait sur le flag PI posé après envoi → deux appels concurrents envoyaient 2 emails. Fix : fresh-read du PaymentIntent + écriture du flag `gift_email_sent` **avant** l'appel Resend (lent), release du flag si l'envoi échoue. (Resend 3.5.0 n'a pas d'`idempotencyKey` natif.)
+
+**L2 — `gift/redeem` : casse email** : `recipientEmail !== user.email` case-sensitive bloquait un destinataire légitime avec casse différente. Fix : comparaison `.toLowerCase()` des deux côtés.
+
+**L3 — `gelato/order` : crédit restauré à tort** : le `catch` restaurait le crédit même après une commande Gelato acceptée (échec du bookkeeping post-commande = livre gratuit). Fix : flag `orderPlaced` posé après `response.ok` ; restore uniquement si `!orderPlaced`.
+
+**L4 — `memorial/tributes` : commentaire RLS trompeur** : disait « RLS enforces pet.deceased_at » alors que le service role bypass RLS. Commentaire corrigé (tributes publics volontairement, n'existent que pour pets décédés via garde du POST).
+
 ### ✅ Session 52 — UI fixes + désactivation exit-intent (2026-06-27)
 
 **Exit-intent popup désactivée** : `ExitIntentPopup` retiré de `app/page.tsx` et `app/fr/page.tsx` (import + usage). Composant `src/components/ExitIntentPopup.tsx` conservé pour réactivation future sous conditions à définir.

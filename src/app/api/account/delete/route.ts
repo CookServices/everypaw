@@ -74,7 +74,13 @@ export async function POST() {
       await adminSupabase.from("entries").delete().in("pet_id", petIds);
       await adminSupabase.from("stories").delete().in("pet_id", petIds);
       await adminSupabase.from("milestones").delete().in("pet_id", petIds);
+      await adminSupabase.from("memorial_tributes").delete().in("pet_id", petIds);
+      await adminSupabase.from("pet_members").delete().in("pet_id", petIds);
     }
+
+    // Also remove this user's memberships/invites on other people's pets
+    await adminSupabase.from("pet_members").delete().eq("user_id", user.id);
+    await adminSupabase.from("pet_members").delete().eq("invited_by", user.id);
 
     await adminSupabase.from("book_configs").delete().eq("user_id", user.id);
     await adminSupabase.from("pets").delete().eq("user_id", user.id);

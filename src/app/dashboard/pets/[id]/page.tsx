@@ -382,11 +382,19 @@ export default function PetPage({ params }: { params: { id: string } }) {
     let photoUrls: string[] = [];
     if (pendingPhotos.length > 0) photoUrls = await uploadPhotos(user!.id);
 
-    const { data } = await supabase.from("entries").insert({
+    const { data, error: insertErr } = await supabase.from("entries").insert({
       pet_id: id, user_id: user!.id,
       content: newEntry.trim() || " ", mood, photo_urls: photoUrls,
       entry_date: entryDate,
     }).select().single();
+
+    // Free-plan cap enforced by DB trigger (enforce_free_entry_limit): show upsell.
+    if (insertErr?.message?.includes("entry_limit")) {
+      setSaving(false);
+      setUploadingPhotos(false);
+      setShowUpsellModal(true);
+      return;
+    }
 
     if (data) {
       const newEntries = [data, ...entries];

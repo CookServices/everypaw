@@ -29,9 +29,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid or already used code" }, { status: 400 });
     }
 
-    // Prevent gift code theft: ensure code is intended for this user if recipient is specified
+    // Prevent gift code theft: ensure code is intended for this user if recipient is specified.
+    // Case-insensitive: emails are compared without regard to casing.
     const recipientEmail = promoCode.metadata?.recipient_email;
-    if (recipientEmail && recipientEmail !== user.email) {
+    if (recipientEmail && recipientEmail.toLowerCase() !== (user.email ?? "").toLowerCase()) {
       return NextResponse.json({ error: "This gift code is not for your account" }, { status: 403 });
     }
 
