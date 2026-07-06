@@ -116,10 +116,13 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [currentConfigId, setCurrentConfigId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [checkoutError, setCheckoutError] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [addressErrors, setAddressErrors] = useState<Record<string, boolean>>({});
   const [awaitingCredit, setAwaitingCredit] = useState(false);
+  // Payment succeeded but the book credit never landed within the polling window
+  const [paymentPending, setPaymentPending] = useState(false);
   const [approvedTributesCount, setApprovedTributesCount] = useState(0);
   const [includeTributes, setIncludeTributes] = useState(false);
 
@@ -251,6 +254,11 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             sessionStorage.removeItem(`ep_order_${id}_addr`);
           } catch {}
           handleOrder();
+        } else {
+          // Payment went through but the webhook hasn't credited within 20s.
+          // Surface it explicitly and offer a manual retry (which consumes the
+          // credit, never re-triggers a second payment).
+          setPaymentPending(true);
         }
       }
     }, 2000);
@@ -290,6 +298,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       setCoverPhotoUrl(publicUrl);
     } catch (err) {
       console.error("Cover upload error:", err);
+      alert(locale === "fr"
+        ? "Impossible d'importer la photo de couverture. Réessayez."
+        : "Could not upload the cover photo. Please try again.");
     } finally {
       setUploadingCover(false);
       e.target.value = "";
@@ -471,6 +482,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const handleSave = async (name?: string) => {
     setSaving(true);
     setSaveSuccess(false);
+    setSaveError(false);
     const configName = name ?? (locale === "fr" ? `Brouillon ${new Date().toLocaleDateString("fr-FR")}` : `Draft ${new Date().toLocaleDateString("en-GB")}`);
     const payload = {
       id: currentConfigId ?? undefined,
@@ -497,9 +509,36 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         setCurrentConfigId(data.config.id);
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        setSaveError(true);
       }
-    } catch { /* silent */ }
+    } catch {
+      setSaveError(true);
+    }
     setSaving(false);
+  };
+
+  // Launch the paid extra-book Stripe checkout. Shared by the no-credits upsell
+  // and the confirm-step place-order button. Always gives explicit feedback.
+  const startBookCheckout = async () => {
+    setCheckoutError(false);
+    setCheckoutLoading(true);
+    try {
+      // Persist the address so it survives the Stripe redirect
+      try { sessionStorage.setItem(`ep_order_${id}_addr`, JSON.stringify(address)); } catch {}
+      const res = await fetch("/api/stripe/book-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
+      });
+      const data = await res.json();
+      if (data.url) { window.location.href = data.url; return; }
+      setCheckoutError(true);
+    } catch {
+      setCheckoutError(true);
+    } finally {
+      setCheckoutLoading(false);
+    }
   };
 
   const handleOrder = async () => {
@@ -527,9 +566,11 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       });
       const data = await res.json();
       if (data.orderId) {
+        setPaymentPending(false);
         setOrderId(data.orderId);
         setStep("success");
       } else {
+        // Keep the payment-pending retry screen up if this was a post-payment retry
         alert(t.order.order_failed);
       }
     } catch {
@@ -760,22 +801,18 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: ".625rem", alignItems: "center" }}>
             <button
-              onClick={async () => {
-                const res = await fetch("/api/stripe/book-checkout", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
-                });
-                const data = await res.json();
-                if (data.url) window.location.href = data.url;
-              }}
+              onClick={startBookCheckout}
+              disabled={checkoutLoading}
               style={{
                 background: accentColor, color: "var(--ep-bg-card)", border: "none",
                 padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
-                fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                fontWeight: 600, cursor: checkoutLoading ? "wait" : "pointer", fontFamily: "inherit",
+                opacity: checkoutLoading ? .6 : 1,
               }}
             >
-              {t.order.no_credits_cta}, {extraBookPriceLabel} {locale === "fr" ? "+ livraison" : "+ shipping"}
+              {checkoutLoading
+                ? (locale === "fr" ? "Chargement…" : "Loading…")
+                : `${t.order.no_credits_cta}, ${extraBookPriceLabel} ${locale === "fr" ? "+ livraison" : "+ shipping"}`}
             </button>
             <a
               href="/dashboard/settings#plan"
@@ -1286,6 +1323,13 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             ? (locale === "fr" ? "✓ Sauvegardé" : "✓ Saved")
             : (locale === "fr" ? "Sauvegarder" : "Save")}
         </button>
+        {saveError && (
+          <p style={{ fontSize: ".8rem", color: "var(--ep-alert)", textAlign: "center", margin: 0 }}>
+            {locale === "fr"
+              ? "Impossible d'enregistrer le brouillon (limite atteinte ou connexion). Réessaie."
+              : "Could not save the draft (limit reached or connection). Try again."}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -1319,7 +1363,33 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           </p>
         </div>
       )}
-      {!awaitingCredit && (
+      {!awaitingCredit && paymentPending && (
+        <div style={{ background: cardBg, borderRadius: 24, padding: "2.5rem", border: cardBorder, textAlign: "center" }}>
+          <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>⏳</div>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.35rem", color: textPrimary, marginBottom: ".75rem" }}>
+            {locale === "fr" ? "Paiement reçu" : "Payment received"}
+          </h2>
+          <p style={{ fontSize: ".9rem", color: textMuted, fontWeight: 300, lineHeight: 1.6, marginBottom: "1.5rem", maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
+            {locale === "fr"
+              ? "Ton paiement est bien passé, mais la commande n'a pas encore pu être envoyée à l'impression (traitement en cours). Clique pour réessayer, aucun nouveau paiement ne sera demandé."
+              : "Your payment went through, but the order couldn't be sent to print yet (still processing). Tap to retry — you will not be charged again."}
+          </p>
+          <button
+            onClick={handleOrder}
+            disabled={loading}
+            style={{ padding: ".75rem 2rem", borderRadius: 100, border: "none", background: accentColor, color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 600, cursor: loading ? "wait" : "pointer", opacity: loading ? .7 : 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}
+          >
+            {loading && <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .7s linear infinite" }} />}
+            {loading ? t.order.placing : (locale === "fr" ? "Réessayer la commande" : "Retry order")}
+          </button>
+          <p style={{ fontSize: ".78rem", color: textMuted, fontWeight: 300, margin: "1rem 0 0" }}>
+            {locale === "fr"
+              ? "Le problème persiste ? Écris-nous depuis Réglages, ta commande sera honorée."
+              : "Still stuck? Contact us from Settings — your order will be honored."}
+          </p>
+        </div>
+      )}
+      {!awaitingCredit && !paymentPending && (
         <div style={{ background: cardBg, borderRadius: 24, padding: "2rem", border: cardBorder }}>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", color: textPrimary, marginBottom: "1.5rem" }}>{t.order.confirm_title}</h2>
 
@@ -1357,31 +1427,27 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               {t.order.edit_address}
             </button>
             <button
-              onClick={async () => {
+              onClick={() => {
                 if (profile?.plan === "print" && profile.book_credits === 0) {
-                  setLoading(true);
-                  try {
-                    // Persist address so it survives the Stripe redirect
-                    try { sessionStorage.setItem(`ep_order_${id}_addr`, JSON.stringify(address)); } catch {}
-                    const res = await fetch("/api/stripe/book-checkout", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
-                    });
-                    const data = await res.json();
-                    if (data.url) window.location.href = data.url;
-                  } catch { /* silent */ } finally { setLoading(false); }
+                  startBookCheckout();
                   return;
                 }
                 handleOrder();
               }}
-              disabled={loading}
-              style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: loading ? "wait" : "pointer", opacity: loading ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}
+              disabled={loading || checkoutLoading}
+              style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: accentColor, color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: loading || checkoutLoading ? "wait" : "pointer", opacity: loading || checkoutLoading ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}
             >
-              {loading && <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .7s linear infinite" }} />}
-              {loading ? t.order.placing : t.order.place_order}
+              {(loading || checkoutLoading) && <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .7s linear infinite" }} />}
+              {loading || checkoutLoading ? t.order.placing : t.order.place_order}
             </button>
           </div>
+          {checkoutError && (
+            <p style={{ fontSize: ".8rem", color: "var(--ep-alert)", textAlign: "center", margin: "1rem 0 0" }}>
+              {locale === "fr"
+                ? "Impossible de démarrer le paiement. Vérifie ta connexion et réessaie."
+                : "Could not start checkout. Check your connection and try again."}
+            </p>
+          )}
         </div>
       )}
     </>
