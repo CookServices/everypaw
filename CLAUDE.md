@@ -1015,10 +1015,10 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 
 ## Checklist avant mise en production
 
-- [ ] Passer `STRIPE_SECRET_KEY` de `sk_test_...` à `sk_live_...`
-- [ ] Mettre à jour les `STRIPE_PRICE_ID_*` et `STRIPE_WEBHOOK_SECRET` en mode Live
+- [x] Passer `STRIPE_SECRET_KEY` de `sk_test_...` à `sk_live_...` ✅ (2026-07-07, session 55)
+- [x] Mettre à jour les `STRIPE_PRICE_ID_*` et `STRIPE_WEBHOOK_SECRET` en mode Live ✅ (2026-07-07 — catalogue live + endpoint webhook live `we_1TqHQk…`, 6 events dont `invoice.payment_succeeded` ajouté après coup, il manquait)
 - [x] Publier l'application Google OAuth (retirer le mode Test) ✅
-- [ ] Tester le webhook Stripe en mode Live avec un vrai paiement
+- [ ] Tester le webhook Stripe en mode Live avec un vrai paiement (page paiement OK 07-07 ; reste à valider l'activation du plan après paiement réel)
 - [x] Vérifier que le cron weekly-reminder envoie bien les emails ✅ (sent:1 + email FR reçu, après fix `profiles.language` commit `c50bffc`)
 - [x] Vérifier que Gelato est configuré avec une carte de paiement valide ✅
 - [x] Exécuter `round2_security_fixes_2026_05_23.sql` + `round3_security_fixes_2026_05_26.sql` dans Supabase ✅
@@ -1926,7 +1926,7 @@ Nettoyage complet variables/produits Stripe. `tsc --noEmit` OK, tests plan.test.
 
 **À tester manuellement :** checkout digital + print annuel + achat cadeau jusqu'à la page Stripe (vérifier montants affichés).
 
-**⚠️ Modes Stripe test/live :** erreur "No such price" post-deploy → `STRIPE_SECRET_KEY` Vercel était une `sk_test` alors que le nouveau catalogue (produits + prix + coupon) est en mode **live**. Les 2 catalogues sont séparés. Passage en live = remplacer `STRIPE_SECRET_KEY` (sk_live) + créer le webhook endpoint en mode Live et mettre son `whsec` dans `STRIPE_WEBHOOK_SECRET`. Alternative validation sans argent réel : recréer le même catalogue en test et mettre les IDs test dans Vercel.
+**⚠️ Modes Stripe test/live :** erreur "No such price" post-deploy → `STRIPE_SECRET_KEY` Vercel était une `sk_test` alors que le nouveau catalogue (produits + prix + coupon) est en mode **live**. Les 2 catalogues sont séparés. Résolu : passage en live (sk_live + webhook live dans Vercel), page paiement Stripe fonctionnelle. Endpoint webhook live `we_1TqHQkRmAiDTHhpuLkV9Udz4` : il manquait `invoice.payment_succeeded` (traité par la route pour lever `payment_past_due` + créditer le livre au renouvellement annuel) — ajouté via API le 07-07.
 
 **Affichage prix (commits `071d356`, `5a06455`, `93505fe`) :**
 - Premium Print affiché **79 €/an** partout (le 9,99 €/mois n'existe plus) : bloc upsell dashboard, JSON-LD landings, CGV/Terms
