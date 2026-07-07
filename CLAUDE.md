@@ -101,16 +101,10 @@ SUPABASE_SERVICE_ROLE_KEY
 ANTHROPIC_API_KEY
 
 STRIPE_SECRET_KEY              # sk_test_51TKay... (mode test)
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 STRIPE_PRICE_ID_DIGITAL_EUR    # plan digital 4,99 €/mois (Europe)
 STRIPE_PRICE_ID_DIGITAL_USD    # plan digital $4.99/mo (reste du monde)
-STRIPE_PRICE_ID_PRINT_EUR      # plan print 9,99 €/mois (Europe)
-STRIPE_PRICE_ID_PRINT_USD      # plan print $9.99/mo (reste du monde)
-STRIPE_PRICE_ID_DIGITAL_ANNUAL_EUR  # plan digital annuel EUR (2,99 €/mois · 35,88 €/an)
-STRIPE_PRICE_ID_DIGITAL_ANNUAL_USD  # plan digital annuel USD ($2.99/mo · $35.88/year)
-STRIPE_PRICE_PRINT_ANNUAL           # plan print annuel legacy (fallback si EUR/USD absents)
-STRIPE_PRICE_PRINT_ANNUAL_EUR       # plan print annuel EUR (79 €/an)
-STRIPE_PRICE_PRINT_ANNUAL_USD       # plan print annuel USD ($79/year)
+STRIPE_PRICE_PRINT_ANNUAL_EUR  # plan print annuel EUR (79 €/an)
+STRIPE_PRICE_PRINT_ANNUAL_USD  # plan print annuel USD ($79/year)
 STRIPE_WEBHOOK_SECRET
 STRIPE_GIFT_COUPON_ID          # coupon 100% off 12 mois
 
@@ -515,7 +509,7 @@ currency: "USD"
 - Tous les nouveaux params (`lang`, `storyIds`, `dedication`, `coverPhoto`, `year`) transmis à l'URL du PDF
 
 **Backend `book-checkout/route.ts`**
-- **EUR/USD** (Point 5) : `STRIPE_PRICE_BOOK_ONCE_EUR` / `STRIPE_PRICE_BOOK_ONCE_USD` selon pays, fallback `STRIPE_PRICE_BOOK_ONCE`
+- **EUR/USD** (Point 5) : `STRIPE_PRICE_BOOK_ONCE_EUR` / `STRIPE_PRICE_BOOK_ONCE_USD` selon pays, fallback `STRIPE_PRICE_BOOK_ONCE` *(obsolète depuis : prix calculé dynamiquement via `calcGelatoBookPrice(pageCount)`, plus aucun Price ID livre)*
 
 **UI `order/page.tsx`**
 - **Filtre année** (Point 9) : sélecteur affiché si ≥2 années de données ; reset selectedStoryIds au changement
@@ -1022,13 +1016,13 @@ Voir tableau "Sujets restants" ci-dessous pour les items non encore traités.
 ## Checklist avant mise en production
 
 - [ ] Passer `STRIPE_SECRET_KEY` de `sk_test_...` à `sk_live_...`
-- [ ] Mettre à jour `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET` en mode Live
+- [ ] Mettre à jour les `STRIPE_PRICE_ID_*` et `STRIPE_WEBHOOK_SECRET` en mode Live
 - [x] Publier l'application Google OAuth (retirer le mode Test) ✅
 - [ ] Tester le webhook Stripe en mode Live avec un vrai paiement
 - [x] Vérifier que le cron weekly-reminder envoie bien les emails ✅ (sent:1 + email FR reçu, après fix `profiles.language` commit `c50bffc`)
 - [x] Vérifier que Gelato est configuré avec une carte de paiement valide ✅
 - [x] Exécuter `round2_security_fixes_2026_05_23.sql` + `round3_security_fixes_2026_05_26.sql` dans Supabase ✅
-- [x] Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` + `STRIPE_PRICE_BOOK_ONCE_USD` dans Vercel ✅
+- [x] ~~Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` + `STRIPE_PRICE_BOOK_ONCE_USD` dans Vercel~~ (obsolète — prix livre dynamique, vars supprimées)
 - [x] Exécuter `fix_book_credits_print_plan_2026_05_27.sql` dans Supabase ✅
 
 ---
@@ -1906,7 +1900,31 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` en `useEffect` (waterfall, requêtes exposées client). Migration RSC = data au 1er paint, moins de surface.
 - **#9 Split god-components** — `pets/[id]/page.tsx` 131 Ko (308 `style={{}}` inline), `order` 81 Ko, `settings` 54 Ko. Extraire sous-composants + styles hors render.
 
-*Dernière mise à jour : 2026-07-06 (Session 54 — audit approfondi 13 findings + refactor qualité ; 2 migrations SQL à appliquer)*
+*Dernière mise à jour : 2026-07-07 (Session 55 — refonte config Stripe : 3 plans stricts, 11 vars env, catalogue live recréé)*
+
+### ✅ Session 55 — Refonte config Stripe : 3 plans stricts + catalogue live (2026-07-07)
+
+Nettoyage complet variables/produits Stripe. `tsc --noEmit` OK, tests plan.test.ts 9/9 verts.
+
+**Code — système 3 plans strict (free, digital mensuel, print annuel) :**
+- `PRICE_MAP` (stripe-helpers.ts) réduit à `digital` + `print_annual` — `digital_annual` et `print_monthly` supprimés
+- Allowlists checkout/upgrade/upgrade-preview → `["digital", "print_annual"]`
+- `priceIdToPlan()` (plan.ts) → 4 price IDs ; vars legacy supprimées (`STRIPE_PRICE_ID`, `STRIPE_PRICE_DIGITAL_MONTHLY`, `STRIPE_PRICE_PRINT_MONTHLY`, `STRIPE_PRICE_PRINT_ANNUAL` sans devise)
+- Webhook : `printPriceIds` = annual EUR/USD seulement ; fallback metadata simplifié
+- Labels signup : entrées `digital_annual` + `print` mensuel retirées
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` supprimée partout (jamais utilisée — checkout 100% Stripe hosted, pas de Stripe.js client)
+- `STRIPE_PRICE_BOOK_ONCE*` confirmées mortes (livre = prix dynamique `calcGelatoBookPrice`)
+- `scripts/stripe-create-products.ts` réécrit : crée 2 produits × 2 prix (EUR/USD sous le même produit)
+- `.gitignore` réparé (contenu UTF-16 corrompu inséré par une session antérieure → réécrit ASCII)
+
+**Catalogue Stripe LIVE recréé (l'ancien catalogue live était vide — les vars Vercel pointaient vers des objets mode test) :**
+- `prod_UqDtaYROKVKI0W` "Everypaw Premium Digital" : mensuel 4,99 €/$4.99 + gift one-time 4,99 €/$4.99
+- `prod_UqDtrt2zti1g36` "Everypaw Premium Print" : annuel 79 €/$79 + gift one-time 79 €/$79
+- Coupon gift `fZf1Hxyy` : 100% off, `duration: once` (1 mois offert sur mensuel, 1 an sur annuel)
+
+**Vercel — 11 vars Stripe exactement** (voir section env plus haut) : 2 clés + 4 prix plans + 4 prix gift + 1 coupon. Supprimées : `STRIPE_PRICE_ID_PRINT_EUR/USD`, `STRIPE_PRICE_ID_DIGITAL_ANNUAL_EUR/USD`. Déployé + vérifié (endpoints répondent, vars présentes).
+
+**À tester manuellement :** checkout digital + print annuel + achat cadeau jusqu'à la page Stripe (vérifier montants affichés).
 
 ### ✅ Session 54 — Audit approfondi (13 findings) + refactor qualité (2026-07-06)
 

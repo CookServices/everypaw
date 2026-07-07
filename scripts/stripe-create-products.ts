@@ -1,5 +1,6 @@
 /**
- * Run once to create Stripe products & prices for the new pricing structure.
+ * Run once to create Stripe products & prices for the 3-plan system:
+ * free, Premium Digital (monthly), Premium Print (annual).
  *
  *   npx ts-node --project tsconfig.json scripts/stripe-create-products.ts
  *
@@ -7,6 +8,10 @@
  *   STRIPE_SECRET_KEY must be set in your environment (test key: sk_test_...).
  *
  * Output: prints the Price IDs to add to your .env.local and Vercel env vars.
+ * Var names match those read in src/lib/stripe-helpers.ts and src/lib/plan.ts.
+ *
+ * Note: the one-off extra book purchase is priced dynamically per page count
+ * (src/app/api/stripe/book-checkout/route.ts) — no Price ID needed for it.
  */
 
 import Stripe from "stripe";
@@ -16,80 +21,68 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 async function main() {
   console.log("Creating Everypaw Stripe products...\n");
 
-  // ── 1. Premium Digital — $4.99/month ────────────────────────────────────────
+  // ── 1. Premium Digital — 4,99 €/mo · $4.99/mo ────────────────────────────────
   const digitalProduct = await stripe.products.create({
     name: "Everypaw Premium Digital",
     description: "Unlimited AI stories, unlimited journal entries, multi-pet profiles.",
     metadata: { plan: "digital" },
   });
 
-  const digitalMonthlyPrice = await stripe.prices.create({
+  const digitalEur = await stripe.prices.create({
+    product: digitalProduct.id,
+    unit_amount: 499,
+    currency: "eur",
+    recurring: { interval: "month" },
+    nickname: "Digital Monthly EUR",
+    metadata: { plan: "digital" },
+  });
+
+  const digitalUsd = await stripe.prices.create({
     product: digitalProduct.id,
     unit_amount: 499,
     currency: "usd",
     recurring: { interval: "month" },
-    nickname: "Digital Monthly",
+    nickname: "Digital Monthly USD",
     metadata: { plan: "digital" },
   });
 
   console.log("✓ Premium Digital created");
-  console.log(`  STRIPE_PRICE_DIGITAL_MONTHLY=${digitalMonthlyPrice.id}\n`);
 
-  // ── 2. Premium Print — $9.99/month + $79/year ────────────────────────────────
+  // ── 2. Premium Print — 79 €/yr · $79/yr ──────────────────────────────────────
   const printProduct = await stripe.products.create({
     name: "Everypaw Premium Print",
     description: "Everything in Digital + 1 annual hardcover book included.",
     metadata: { plan: "print" },
   });
 
-  const printMonthlyPrice = await stripe.prices.create({
+  const printAnnualEur = await stripe.prices.create({
     product: printProduct.id,
-    unit_amount: 999,
-    currency: "usd",
-    recurring: { interval: "month" },
-    nickname: "Print Monthly",
+    unit_amount: 7900,
+    currency: "eur",
+    recurring: { interval: "year" },
+    nickname: "Print Annual EUR",
     metadata: { plan: "print" },
   });
 
-  const printAnnualPrice = await stripe.prices.create({
+  const printAnnualUsd = await stripe.prices.create({
     product: printProduct.id,
     unit_amount: 7900,
     currency: "usd",
     recurring: { interval: "year" },
-    nickname: "Print Annual",
+    nickname: "Print Annual USD",
     metadata: { plan: "print" },
   });
 
   console.log("✓ Premium Print created");
-  console.log(`  STRIPE_PRICE_PRINT_MONTHLY=${printMonthlyPrice.id}`);
-  console.log(`  STRIPE_PRICE_PRINT_ANNUAL=${printAnnualPrice.id}\n`);
-
-  // ── 3. Book à la carte — $29 one-time ────────────────────────────────────────
-  const bookProduct = await stripe.products.create({
-    name: "Everypaw Book",
-    description: "One hardcover pet journal book (no subscription).",
-    metadata: { plan: "book_only" },
-  });
-
-  const bookPrice = await stripe.prices.create({
-    product: bookProduct.id,
-    unit_amount: 2900,
-    currency: "usd",
-    nickname: "Book One-Time",
-    metadata: { plan: "book_only" },
-  });
-
-  console.log("✓ Book à la carte created");
-  console.log(`  STRIPE_PRICE_BOOK_ONCE=${bookPrice.id}\n`);
 
   // ── Summary ──────────────────────────────────────────────────────────────────
   console.log("══════════════════════════════════════════");
   console.log("Add these to .env.local AND Vercel env vars:");
   console.log("══════════════════════════════════════════");
-  console.log(`STRIPE_PRICE_DIGITAL_MONTHLY=${digitalMonthlyPrice.id}`);
-  console.log(`STRIPE_PRICE_PRINT_MONTHLY=${printMonthlyPrice.id}`);
-  console.log(`STRIPE_PRICE_PRINT_ANNUAL=${printAnnualPrice.id}`);
-  console.log(`STRIPE_PRICE_BOOK_ONCE=${bookPrice.id}`);
+  console.log(`STRIPE_PRICE_ID_DIGITAL_EUR=${digitalEur.id}`);
+  console.log(`STRIPE_PRICE_ID_DIGITAL_USD=${digitalUsd.id}`);
+  console.log(`STRIPE_PRICE_PRINT_ANNUAL_EUR=${printAnnualEur.id}`);
+  console.log(`STRIPE_PRICE_PRINT_ANNUAL_USD=${printAnnualUsd.id}`);
 }
 
 main().catch((e) => {

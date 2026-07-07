@@ -41,11 +41,11 @@ describe("canOrderBook", () => {
 describe("priceIdToPlan", () => {
   beforeEach(() => {
     process.env.STRIPE_PRICE_ID_DIGITAL_EUR = "price_digi_eur";
-    process.env.STRIPE_PRICE_ID_PRINT_USD = "price_print_usd";
+    process.env.STRIPE_PRICE_PRINT_ANNUAL_USD = "price_print_annual_usd";
   });
   it("maps known price ids", () => {
     expect(priceIdToPlan("price_digi_eur")).toBe("digital");
-    expect(priceIdToPlan("price_print_usd")).toBe("print");
+    expect(priceIdToPlan("price_print_annual_usd")).toBe("print");
   });
   it("returns null for unknown ids", () => {
     expect(priceIdToPlan("price_unknown")).toBeNull();

@@ -29,16 +29,6 @@ export default function SignupPage() {
       price: isFR ? "4,99 €/mois" : "$4.99/mo",
       perks: isFR ? "Histoires IA illimitées · Export PDF" : "Unlimited AI stories · PDF export",
     },
-    digital_annual: {
-      name: "Premium Digital",
-      price: isFR ? "35,88 €/an" : "$35.88/yr",
-      perks: isFR ? "Histoires IA illimitées · Export PDF" : "Unlimited AI stories · PDF export",
-    },
-    print: {
-      name: "Premium Print",
-      price: isFR ? "9,99 €/mois" : "$9.99/mo",
-      perks: isFR ? "Livre hardcover inclus · Livraison offerte" : "Hardcover book included · Free shipping",
-    },
     print_annual: {
       name: "Premium Print",
       price: isFR ? "79 €/an" : "$79/yr",

@@ -17,8 +17,8 @@ export async function POST(req: Request) {
 
   const { plan = "digital" } = await req.json().catch(() => ({}));
 
-  // Explicit allowlist, PRICE_MAP also has print_monthly but that plan is not offered (3-plan system)
-  const ALLOWED_PLANS = ["digital", "digital_annual", "print_annual"];
+  // Explicit allowlist (3-plan system: free, digital monthly, print annual)
+  const ALLOWED_PLANS = ["digital", "print_annual"];
   if (!ALLOWED_PLANS.includes(plan)) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   log.debug("[stripe/checkout] plan:", plan, "country:", country ?? "unknown", "currency:", currency, "priceId:", priceId ?? "(not set)");
 
   if (!priceId) {
-    log.error("[stripe/checkout] Missing price ID for plan:", plan, "currency:", currency, ", check STRIPE_PRICE_ID_DIGITAL_EUR/USD and STRIPE_PRICE_ID_PRINT_EUR/USD env vars");
+    log.error("[stripe/checkout] Missing price ID for plan:", plan, "currency:", currency, ", check STRIPE_PRICE_ID_DIGITAL_EUR/USD and STRIPE_PRICE_PRINT_ANNUAL_EUR/USD env vars");
     return NextResponse.json({ error: "Invalid plan or missing price ID" }, { status: 400 });
   }
 

@@ -94,9 +94,7 @@ export async function POST(req: Request) {
       // metadata rather than silently defaulting a Print buyer to "digital".
       if (!plan) {
         log.error("[webhook] priceIdToPlan returned null for priceId:", priceId, "falling back to metadata plan:", metaPlan);
-        plan = metaPlan === "print_annual" ? "print"
-          : (metaPlan === "digital" || metaPlan === "digital_annual") ? "digital"
-          : "digital";
+        plan = metaPlan === "print_annual" ? "print" : "digital";
       }
 
       const { error } = await supabase
@@ -225,11 +223,8 @@ export async function POST(req: Request) {
     if (billingReason === "subscription_cycle" || billingReason === "subscription_create") {
       const priceId = invoice.lines?.data?.[0]?.price?.id;
       const printPriceIds = [
-        process.env.STRIPE_PRICE_ID_PRINT_EUR,
-        process.env.STRIPE_PRICE_ID_PRINT_USD,
         process.env.STRIPE_PRICE_PRINT_ANNUAL_EUR,
         process.env.STRIPE_PRICE_PRINT_ANNUAL_USD,
-        process.env.STRIPE_PRICE_PRINT_ANNUAL,
       ].filter(Boolean);
 
       if (!priceId || !printPriceIds.includes(priceId)) {

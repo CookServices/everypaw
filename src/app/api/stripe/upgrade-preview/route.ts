@@ -13,8 +13,8 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const newPlan = searchParams.get("newPlan");
 
-  // Explicit allowlist, PRICE_MAP also has print_monthly but that plan is not offered (3-plan system)
-  const ALLOWED_PLANS = ["digital", "digital_annual", "print_annual"];
+  // Explicit allowlist (3-plan system: free, digital monthly, print annual)
+  const ALLOWED_PLANS = ["digital", "print_annual"];
   if (!newPlan || !ALLOWED_PLANS.includes(newPlan) || !PRICE_MAP[newPlan]) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
