@@ -1926,6 +1926,15 @@ Nettoyage complet variables/produits Stripe. `tsc --noEmit` OK, tests plan.test.
 
 **À tester manuellement :** checkout digital + print annuel + achat cadeau jusqu'à la page Stripe (vérifier montants affichés).
 
+**⚠️ Modes Stripe test/live :** erreur "No such price" post-deploy → `STRIPE_SECRET_KEY` Vercel était une `sk_test` alors que le nouveau catalogue (produits + prix + coupon) est en mode **live**. Les 2 catalogues sont séparés. Passage en live = remplacer `STRIPE_SECRET_KEY` (sk_live) + créer le webhook endpoint en mode Live et mettre son `whsec` dans `STRIPE_WEBHOOK_SECRET`. Alternative validation sans argent réel : recréer le même catalogue en test et mettre les IDs test dans Vercel.
+
+**Affichage prix (commits `071d356`, `5a06455`, `93505fe`) :**
+- Premium Print affiché **79 €/an** partout (le 9,99 €/mois n'existe plus) : bloc upsell dashboard, JSON-LD landings, CGV/Terms
+- CGV/Terms : mention plan digital annuel (2,99 €/35,88 €) retirée
+- Livre à la carte : plus aucun prix fixe affiché — prix calculé selon nombre de pages (`calcGelatoBookPrice`, minimum 28 €). CGV/Terms reformulées, tuile upgrade "dès 28 €", warning commande référence le montant affiché
+- `currency.ts` : clés mortes `print` (9,99), `digitalAnnual`, `digitalAnnualMonthly`, `book` supprimées de `PRICE_TABLE`
+- Clés `messages/*.json` mortes avec "29 €" (`free_book`, `order_book`, `pricing_book_note`, `product_price`) : non affichées, non corrigées — à corriger si réactivées
+
 ### ✅ Session 54 — Audit approfondi (13 findings) + refactor qualité (2026-07-06)
 
 Second audit exhaustif (lecture seule d'abord, rapports `AUDIT_REPORT.md` + `AUDIT_REPORT_QUALITY.md` + `AUDIT_PLAN.md` à la racine), puis correctifs. `tsc --noEmit` OK, 16 tests Vitest verts.
