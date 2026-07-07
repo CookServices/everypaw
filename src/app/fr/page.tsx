@@ -33,7 +33,7 @@ const APP_JSONLD = {
   offers: [
     { "@type": "Offer", name: "Gratuit",         price: "0",    priceCurrency: "EUR" },
     { "@type": "Offer", name: "Premium Digital", price: "4.99", priceCurrency: "EUR" },
-    { "@type": "Offer", name: "Premium Print",   price: "9.99", priceCurrency: "EUR" },
+    { "@type": "Offer", name: "Premium Print",   price: "79", priceCurrency: "EUR" },
   ],
   aggregateRating: { "@type": "AggregateRating", ratingValue: "5", reviewCount: "3" },
 };

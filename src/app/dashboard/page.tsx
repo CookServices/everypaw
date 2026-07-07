@@ -639,7 +639,7 @@ export default function DashboardPage() {
                   Premium Print
                 </p>
                 <p style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "var(--ep-text)", margin: 0, lineHeight: 1 }}>
-                  {formatPrice(currency, "print")}<span style={{ fontSize: ".75rem", fontWeight: 400, color: "var(--ep-text-muted)" }}>/{isFR ? "mois" : "mo"}</span>
+                  {formatPrice(currency, "printAnnual")}<span style={{ fontSize: ".75rem", fontWeight: 400, color: "var(--ep-text-muted)" }}>/{isFR ? "an" : "yr"}</span>
                 </p>
                 <p style={{ fontSize: ".75rem", color: "var(--ep-text-muted)", margin: 0, fontWeight: 300, lineHeight: 1.5 }}>
                   {isFR ? "Tout Digital + livre relié annuel livré chez vous" : "All Digital + annual hardcover book delivered"}

@@ -23,10 +23,10 @@ const sections: Array<{ title: string; body: React.ReactNode }> = [
         </p>
         <ul style={{ margin: "0 0 .75rem", paddingLeft: "1.25rem" }}>
           <li style={{ ...bodyStyle, marginBottom: ".4rem" }}>
-            <strong>Premium Digital</strong> : 4,99 € par mois, ou 2,99 € par mois facturé 35,88 € par an.
+            <strong>Premium Digital</strong> : 4,99 € par mois.
           </li>
           <li style={bodyStyle}>
-            <strong>Premium Print</strong> : 9,99 € par mois, ou 79 € par an.
+            <strong>Premium Print</strong> : 79 € par an.
           </li>
         </ul>
         <p style={{ ...bodyStyle, margin: 0 }}>
