@@ -30,7 +30,7 @@ const sections: Array<{ title: string; body: React.ReactNode }> = [
           </li>
         </ul>
         <p style={{ ...bodyStyle, margin: 0 }}>
-          Le livre imprimé est inclus dans l&apos;abonnement Premium Print annuel. Il est disponible à 35 € pour les utilisateurs des autres plans.
+          Le livre imprimé est inclus dans l&apos;abonnement Premium Print annuel. Pour les autres plans, il peut être commandé à l&apos;unité ; son prix est calculé en fonction du nombre de pages et affiché avant paiement.
         </p>
       </>
     ),

@@ -95,8 +95,8 @@ export default function UpgradePage() {
 
     book: {
       name:  isFR ? "Livre à la carte" : "Book à la carte",
-      price: formatPrice(currency, "book"),
-      desc:  isFR ? "Un cadeau ou une commande unique" : "A gift or one-time order",
+      price: isFR ? "dès 28 €" : "from $28",
+      desc:  isFR ? "Prix selon le nombre de pages" : "Priced by page count",
       feats: isFR
         ? ["1 livre hardcover imprimé", "Livraison incluse", "Aucun abonnement requis"]
         : ["1 printed hardcover book", "Shipping included", "No subscription required"],

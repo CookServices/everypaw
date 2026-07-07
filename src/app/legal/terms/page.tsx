@@ -30,7 +30,7 @@ const sections: Array<{ title: string; body: React.ReactNode }> = [
           </li>
         </ul>
         <p style={{ ...bodyStyle, margin: 0 }}>
-          The printed book is included in the Premium Print annual plan. It is available for $35 to users on other plans.
+          The printed book is included in the Premium Print annual plan. On other plans it can be ordered individually; its price is calculated based on the page count and shown before payment.
         </p>
       </>
     ),
