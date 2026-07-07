@@ -561,6 +561,8 @@ Nettoyage complet variables/produits Stripe. `tsc --noEmit` OK, tests plan.test.
 - `currency.ts` : clés mortes `print` (9,99), `digitalAnnual`, `digitalAnnualMonthly`, `book` supprimées de `PRICE_TABLE`
 - Clés `messages/*.json` mortes avec "29 €" (`free_book`, `order_book`, `pricing_book_note`, `product_price`) : non affichées, non corrigées — à corriger si réactivées
 
+**CLAUDE.md restructuré (commit `05e9016`)** : 2004 → ~590 lignes (−73% contexte/session). Historique sessions 1-53 + audit UX + détail features déplacés vers `docs/SESSIONS.md`. Règle de maintenance : garder ici les 2 dernières sessions seulement, < 700 lignes. Ajout au repo : `docs/charte-graphique.md` + logos (assets Instagram, créés 06-29).
+
 ### ✅ Session 54 — Audit approfondi (13 findings) + refactor qualité (2026-07-06)
 
 Second audit exhaustif (lecture seule d'abord, rapports `AUDIT_REPORT.md` + `AUDIT_REPORT_QUALITY.md` + `AUDIT_PLAN.md` à la racine), puis correctifs. `tsc --noEmit` OK, 16 tests Vitest verts.
