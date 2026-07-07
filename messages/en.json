@@ -431,7 +431,7 @@
     "product_price": "$29.00",
     "shipping": "Shipping",
     "shipping_calculated": "Calculated at checkout",
-    "warning": "⚠️ This is a real order. The amount of ~$29 + shipping will be charged upon order confirmation. The book will be printed and shipped to the address above.",
+    "warning": "⚠️ This is a real order. The displayed amount (calculated from the page count) + shipping will be charged upon order confirmation. The book will be printed and shipped to the address above.",
     "edit_address": "Edit address",
     "placing": "Placing order…",
     "place_order": "Place order",

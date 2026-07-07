@@ -431,7 +431,7 @@
     "product_price": "29,00 €",
     "shipping": "Livraison",
     "shipping_calculated": "Calculée à la commande",
-    "warning": "⚠️ Ceci est une vraie commande. Le montant de ~29 € + livraison sera débité lors de la confirmation de commande. Le livre sera imprimé et expédié à l'adresse ci-dessus.",
+    "warning": "⚠️ Ceci est une vraie commande. Le montant affiché (calculé selon le nombre de pages) + livraison sera débité lors de la confirmation de commande. Le livre sera imprimé et expédié à l'adresse ci-dessus.",
     "edit_address": "Modifier l'adresse",
     "placing": "Commande en cours…",
     "place_order": "Passer la commande",
