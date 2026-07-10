@@ -205,7 +205,7 @@ export default function GiftPage() {
 
         {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>🎁</div>
+          <img src="/illustrations/bone.svg" alt="" aria-hidden style={{ width: 72, display: "block", margin: "0 auto .75rem" }} />
           <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.75rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".5rem" }}>{t.gift.title}</h1>
           <p style={{ fontSize: ".9rem", color: "#7A5C44", fontWeight: 300, lineHeight: 1.6 }}>{t.gift.subtitle}</p>
         </div>

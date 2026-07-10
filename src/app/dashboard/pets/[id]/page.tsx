@@ -1487,6 +1487,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
             {filteredEntries.length === 0 ? (
               <div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--ep-text-muted)", fontSize: ".9rem" }}>
+                <img src="/illustrations/paw.svg" alt="" aria-hidden style={{ width: 52, display: "block", margin: "0 auto 1rem", opacity: .9 }} />
                 {(filterYear || filterMonth) ? (isFR ? "Aucune entrée pour cette période." : "No entries for this period.") : t.journal.no_entries}
               </div>
             ) : groupedEntries.map(group => (

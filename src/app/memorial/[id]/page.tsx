@@ -158,8 +158,9 @@ export default async function MemorialPage({ params, searchParams }: { params: {
             <span>{t.memorial.passed} {passedDate}</span>
           </div>
 
-          {/* Decorative line */}
-          <div style={{ margin: "2.5rem auto", width: 48, height: 1, background: "rgba(200,129,58,.3)" }} />
+          {/* Decorative plant + line */}
+          <img src="/illustrations/plant.svg" alt="" aria-hidden style={{ width: 44, display: "block", margin: "2.5rem auto 0", opacity: .85 }} />
+          <div style={{ margin: "1.25rem auto 2.5rem", width: 48, height: 1, background: "rgba(200,129,58,.3)" }} />
 
           {/* Memorial message */}
           {pet.memorial_message && (

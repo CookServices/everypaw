@@ -149,6 +149,10 @@ export default function Home() {
           .ep-hero-text { align-items: center !important; text-align: center !important; }
           .ep-hero-demo { margin-top: 3rem; }
         }
+        .ep-deco { position: absolute; pointer-events: none; user-select: none; }
+        @media (max-width: 760px) {
+          .ep-deco { display: none; }
+        }
         @media (prefers-reduced-motion: reduce) {
           .ep-hero-demo * {
             animation: none !important;
@@ -164,7 +168,9 @@ export default function Home() {
         display: "flex", alignItems: "flex-start", justifyContent: "center",
         padding: "7rem 1.25rem 4rem",
         background: "radial-gradient(ellipse 90% 70% at 50% 25%, rgba(200,129,58,.18) 0%, rgba(200,129,58,.04) 45%, transparent 72%)",
+        position: "relative",
       }}>
+        <img src="/illustrations/yarn.svg" alt="" aria-hidden className="ep-deco" style={{ left: "4%", bottom: "6%", width: 64, transform: "rotate(-10deg)", opacity: .9 }} />
         <div className="ep-hero-inner" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4rem", maxWidth: 1100, width: "100%", flexWrap: "wrap" }}>
 
           {/* LEFT, copy */}
@@ -413,7 +419,8 @@ export default function Home() {
 
       {/* FEATURES */}
       <section style={{ padding: "6rem 2rem", background: "#FDFAF5" }}>
-        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+        <div style={{ maxWidth: 1000, margin: "0 auto", position: "relative" }}>
+          <img src="/illustrations/pencil.svg" alt="" aria-hidden className="ep-deco" style={{ right: 0, top: -14, width: 64, transform: "rotate(8deg)" }} />
           <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".12em", textTransform: "uppercase", color: "#C8813A", marginBottom: "1rem" }}>{t.landing.features_tag}</div>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 600, lineHeight: 1.15, marginBottom: "3.5rem", maxWidth: 560 }}>
             {t.landing.features_title_1}<br />{t.landing.features_title_2}
@@ -441,7 +448,8 @@ export default function Home() {
 
       {/* HOW IT WORKS */}
       <section id="how" style={{ padding: "6rem 2rem", background: "#3D2B1F", color: "#F7F2EA" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center", position: "relative" }}>
+          <img src="/illustrations/star.svg" alt="" aria-hidden className="ep-deco" style={{ right: 8, top: -24, width: 48 }} />
           <div style={{ fontSize: ".7rem", fontWeight: 500, letterSpacing: ".12em", textTransform: "uppercase", color: "#E8A96A", marginBottom: "1rem" }}>{t.landing.how_tag}</div>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 600, marginBottom: "3.5rem", color: "#F7F2EA" }}>
             {t.landing.how_title_1}<br />{t.landing.how_title_2}
@@ -461,6 +469,7 @@ export default function Home() {
       {/* TESTIMONIALS */}
       <section style={{ padding: "6rem 2rem", background: "#FDFAF5" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
+          <img src="/illustrations/heart.svg" alt="" aria-hidden style={{ width: 42, display: "block", margin: "0 auto 1rem" }} />
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.8rem, 3.5vw, 2.75rem)", fontWeight: 600, marginBottom: "3rem", textAlign: "center" }}>
             {t.landing.reviews_title}
           </h2>
@@ -548,7 +557,8 @@ export default function Home() {
         <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 600, marginBottom: ".75rem" }}>
           {t.landing.pricing_title}
         </h2>
-        <p style={{ fontSize: "1rem", color: "#7A5C44", fontWeight: 300, marginBottom: "2rem" }}>{t.landing.pricing_desc}</p>
+        <p style={{ fontSize: "1rem", color: "#7A5C44", fontWeight: 300, marginBottom: ".75rem" }}>{t.landing.pricing_desc}</p>
+        <img src="/illustrations/squiggle.svg" alt="" aria-hidden style={{ width: 170, display: "block", margin: "0 auto 2.25rem", opacity: .9 }} />
 
         {/* Digital = monthly, Print = annual, no toggle needed */}
 
@@ -659,7 +669,8 @@ export default function Home() {
 
       {/* FAQ */}
       <section id="faq" style={{ padding: "6rem 2rem", background: "#F7F2EA" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto", position: "relative" }}>
+        <img src="/illustrations/bubble.svg" alt="" aria-hidden className="ep-deco" style={{ right: -8, top: -22, width: 54, transform: "rotate(4deg)" }} />
         <div style={{ textAlign: "center", marginBottom: "3rem" }}>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.6rem, 3vw, 2.25rem)", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>
             {t.faq.title}

@@ -299,7 +299,7 @@ export default function BooksPage({ params }: { params: { id: string } }) {
 
         {!loading && configs.length === 0 && (
           <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
-            <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>📚</div>
+            <img src="/illustrations/book.svg" alt="" aria-hidden style={{ width: 76, display: "block", margin: "0 auto 1rem" }} />
             <p style={{ color: textMuted, fontFamily: "sans-serif" }}>
               {isFR ? "Aucun livre ni brouillon pour le moment." : "No books or drafts yet."}
             </p>
