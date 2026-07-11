@@ -428,7 +428,7 @@ currency: "USD"
 
 **i18n** : EN/FR auto via `navigator.language` (pas de switcher), `messages/{en,fr}.json`, landing FR autonome `/fr`.
 
-**SEO / RGPD** : canonicals par page (relatives, résolues via `metadataBase`), `app/robots.ts` + `app/sitemap.ts` (routes metadata Next), noindex sur login/signup, metas dédiées gift/legal, JSON-LD (FAQ, SoftwareApplication), hreflang (homepage + /fr), cookie banner, export données JSON, suppression de compte complète.
+**SEO / RGPD** : canonicals par page (relatives, résolues via `metadataBase`), `app/robots.ts` + `app/sitemap.ts` (routes metadata Next), noindex sur login/signup, metas dédiées gift/legal, homepage optimisée "ai pet journal" / "pet memory book" (title + H2 hero + H2 livre + CTA gift), JSON-LD homepage dans le server `page.tsx` : Organization + SoftwareApplication (sans aggregateRating — placeholders interdits) + FAQPage construit dynamiquement depuis `messages/en.json` `faq.q1..q6/a1..a6` (zéro drift schema/contenu), hreflang (homepage + /fr), cookie banner, export données JSON, suppression de compte complète. ⚠️ `fr/page.tsx` garde encore un `aggregateRating` factice à retirer (lot FR).
 
 **Sécurité** : 13 rounds de review (détail dans docs/SESSIONS.md) — les règles qui en découlent sont codifiées dans « Conventions de code » ci-dessous.
 
@@ -520,7 +520,7 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` en `useEffect` (waterfall, requêtes exposées client). Migration RSC = data au 1er paint, moins de surface.
 - **#9 Split god-components** — `pets/[id]/page.tsx` 131 Ko (308 `style={{}}` inline), `order` 81 Ko, `settings` 54 Ko. Extraire sous-composants + styles hors render.
 
-*Dernière mise à jour : 2026-07-11 (Session 56 — SEO : canonicals par page, robots.ts, sitemap.ts, noindex auth)*
+*Dernière mise à jour : 2026-07-11 (Session 56 — SEO lot 1 : canonicals/robots/sitemap · lot 2 : on-page homepage, JSON-LD i18n-driven)*
 
 ---
 
@@ -541,7 +541,14 @@ Commit `f01d59a`. Bug critique révélé par audit SEO : `alternates.canonical` 
 - **`src/app/robots.ts`** créé (allow `/`, disallow `/dashboard` `/api` `/auth` `/unsubscribe`, sitemap) ; `public/robots.txt` **supprimé** (conflit route metadata)
 - **`sitemap.ts`** réécrit : anciennes URLs FR 301-redirigées (`/legal/cgv|confidentialite|mentions`) remplacées par terms/privacy/notices, `/gift` ajouté, `/fr` conservé
 - Vérifié sur `next start` + curl : `/gift` canonical+title+desc propres ✓, `/` canonical+hreflang ✓, noindex login/signup ✓, robots.txt + sitemap.xml servis ✓. Build OK, 16 tests Vitest verts. Webhook Stripe + crons intacts.
-- **Note locale** : login/signup rendent le shell `__next_error__` en local (vars `NEXT_PUBLIC_SUPABASE_*` vides après `vercel env pull` — Sensitive) → Next ajoute un `noindex` auto. Artefact local uniquement, pré-existant, absent en prod.
+- **Note locale (résolu)** : login/signup rendaient le shell `__next_error__` en local (vars `NEXT_PUBLIC_SUPABASE_*` vides après `vercel env pull` — Sensitive). Fix : ces valeurs sont publiques par design → récupérées depuis le bundle JS prod et réinjectées dans `.env.local`. Astuce valable pour toute var `NEXT_PUBLIC_*` marquée Sensitive.
+
+**Lot 2 — on-page homepage (commit `52060fd`)** : optimisation "ai pet journal" (primaire) + "pet memory book" (secondaire) :
+- Title/description/og/twitter : "AI Pet Journal That Becomes a Printed Book | Everypaw" (`layout.tsx` + og homepage dans `page.tsx`)
+- H2 hero + H2 section livre + CTA carte gift ("Gift a pet memory book" / "Offrir un livre souvenir") : textes inline hardcodés migrés vers clés i18n `hero_sub`, `book_h2_1/2`, `f6_cta` (en+fr). H1 inchangé
+- JSON-LD déplacé de `home-client.tsx` (client) vers `page.tsx` (server) : Organization (nouveau) + SoftwareApplication (**`aggregateRating` factice 5★/3 retiré** — risque pénalité) + FAQPage **construit depuis les clés i18n** `faq.q1..q6/a1..a6` (mêmes clés que la section visible → jamais de drift)
+- Images landing : 6 SVG décoratifs `alt="" aria-hidden` = correct WCAG, aucun nom cryptique, rien à changer
+- Vérifié : 3 blocs JSON-LD `JSON.parse` OK, headings rendus, hero visuel intact (screenshot), build + 16 tests verts
 
 ### ✅ Session 55 — Refonte config Stripe : 3 plans stricts + catalogue live (2026-07-07)
 
