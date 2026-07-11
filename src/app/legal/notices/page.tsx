@@ -3,7 +3,12 @@ import { LEGAL_LAST_UPDATE } from "@/lib/legal";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
-export const metadata = { title: "Legal Notices · Everypaw" };
+export const metadata = {
+  title: "Legal Notices · Everypaw",
+  description: "Legal notices for Everypaw: publisher information, hosting provider, and intellectual property.",
+  alternates: { canonical: "/legal/notices" },
+  openGraph: { title: "Legal Notices · Everypaw", url: "/legal/notices", siteName: "Everypaw", type: "website" },
+};
 
 export default function Notices() {
   return (

@@ -8,18 +8,9 @@ export const metadata: Metadata = {
   description: "Turn daily pet moments into AI-crafted stories and a hardcover book. Free pet journal, no credit card required.",
   metadataBase: new URL("https://everypaw.app"),
   icons: { icon: "/favicon.png" },
-  alternates: {
-    canonical: "https://everypaw.app",
-    languages: {
-      "en": "https://everypaw.app",
-      "fr": "https://everypaw.app/fr",
-      "x-default": "https://everypaw.app",
-    },
-  },
   openGraph: {
     title: "Everypaw, Your pet's life story, printed",
     description: "Turn your pet's daily moments into a beautiful AI-crafted book.",
-    url: "https://everypaw.app",
     siteName: "Everypaw",
     type: "website",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Everypaw, Your pet's life story, printed" }],

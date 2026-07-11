@@ -28,10 +28,11 @@ export async function generateMetadata(
   return {
     title,
     description,
+    alternates: { canonical: `/pets/${params.id}` },
     openGraph: {
       title,
       description,
-      url: `https://everypaw.app/pets/${params.id}`,
+      url: `/pets/${params.id}`,
       siteName: "Everypaw",
       type: "profile",
       ...(image ? { images: [{ url: image, width: 800, height: 800, alt: pet.name }] } : {}),

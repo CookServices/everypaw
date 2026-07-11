@@ -3,7 +3,12 @@ import { LEGAL_LAST_UPDATE } from "@/lib/legal";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
-export const metadata = { title: "Terms of Sale · Everypaw" };
+export const metadata = {
+  title: "Terms of Sale · Everypaw",
+  description: "Terms of sale for Everypaw: subscription plans and pricing, printed book orders, cancellation and refund policy.",
+  alternates: { canonical: "/legal/terms" },
+  openGraph: { title: "Terms of Sale · Everypaw", url: "/legal/terms", siteName: "Everypaw", type: "website" },
+};
 
 const bodyStyle: React.CSSProperties = {
   fontSize: ".95rem", color: "#7A5C44", lineHeight: 1.75, fontWeight: 300,

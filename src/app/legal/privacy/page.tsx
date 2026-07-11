@@ -3,7 +3,12 @@ import { LEGAL_LAST_UPDATE } from "@/lib/legal";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
-export const metadata = { title: "Privacy Policy · Everypaw" };
+export const metadata = {
+  title: "Privacy Policy · Everypaw",
+  description: "How Everypaw collects, uses, and protects your data: photos, journal entries, payments, and your privacy rights (GDPR).",
+  alternates: { canonical: "/legal/privacy" },
+  openGraph: { title: "Privacy Policy · Everypaw", url: "/legal/privacy", siteName: "Everypaw", type: "website" },
+};
 
 export default function Privacy() {
   return (

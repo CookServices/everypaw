@@ -3,7 +3,11 @@ import ContactForm from "@/components/ContactForm";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
-export const metadata = { title: "Contact, Everypaw" };
+export const metadata = {
+  title: "Contact, Everypaw",
+  alternates: { canonical: "/contact" },
+  openGraph: { title: "Contact, Everypaw", url: "/contact", siteName: "Everypaw", type: "website" },
+};
 
 export default function Contact() {
   return (
