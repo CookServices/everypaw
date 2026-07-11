@@ -1462,3 +1462,33 @@ Audit ciblé de toutes les routes API + libs core. 7 correctifs (3 MEDIUM, 4 LOW
 **`lang` dynamique** : `<html lang>` propagé (`isFR`/`isFrench`/`locale`) — fini le `lang="fr"` codé en dur sur les emails EN. **Année footer** : `new Date().getFullYear()`.
 
 **Non migrés (volontaire)** : emails admin internes (notif waitlist, suggestion, contact, memorial tributes) = texte brut, pas user-facing. `export-data`/`preview-pdf` = exports PDF/HTML, pas des emails.
+### ✅ Session 54 — Audit approfondi (13 findings) + refactor qualité (2026-07-06)
+
+Second audit exhaustif (lecture seule d'abord, rapports `AUDIT_REPORT.md` + `AUDIT_REPORT_QUALITY.md` + `AUDIT_PLAN.md` à la racine), puis correctifs. `tsc --noEmit` OK, 16 tests Vitest verts.
+
+**⚠️ 2 migrations SQL à appliquer en prod (Supabase SQL Editor) :**
+- `revoke_book_credit_rpc_2026_07_06.sql` — **[CRITIQUE C-1]** `REVOKE EXECUTE` sur `increment_book_credits` / `decrement_book_credits` / `try_consume_book_credit` / `restore_book_credit` depuis `anon`/`authenticated`/`public`. Ces RPC `SECURITY DEFINER` du schéma `public` étaient exposées par PostgREST sans REVOKE → un user authentifié pouvait appeler `POST /rest/v1/rpc/increment_book_credits` avec son uid et s'auto-créditer des livres imprimés gratuits. Seul le service role doit les appeler. `search_path` durci. **À vérifier post-deploy : appel RPC avec JWT `authenticated` doit renvoyer 401/403.**
+- `restore_contributor_entry_exemption_2026_07_06.sql` — **[B-1]** réintroduit l'exemption contributeur dans `enforce_free_entry_limit` (les entrées ajoutées à l'animal d'autrui ne comptent pas dans le cap free du contributeur ; la réécriture 07-06 l'avait perdue).
+
+**Findings sécurité/bugs corrigés (code) :**
+- **[H-1] Code cadeau réutilisable** (`gift/redeem`) : promo code `max_redemptions:1` jamais consommé (coupon appliqué en direct). Fix : branche schedule → `promotionCodes.update(active:false)` ; branche checkout → `discounts:[{ promotion_code }]` (Stripe consomme à la complétion).
+- **[H-2] Pages mémorial cassées pour le public** (`memorial/[id]`) : lisait via clé anon, mais les RLS `owner_or_member` (migration `add_pet_members`) ne permettent plus la lecture publique → « not_found » pour tout visiteur. Fix : `getServiceSupabase()` + garde `deceased_at` (page + `generateMetadata`).
+- **[H-3] Crédit livre annuel perdu au renouvellement** (`stripe/webhook`) : garde `daysSinceLast < 365` vs `now()` → off-by-epsilon au renouvellement annuel exact. Fix : tolérance `< 350`.
+- **[M-1] `/pets/[id]` exposait tout animal** (service-role sans garde). Décision produit : **restreindre aux animaux décédés** (comme le mémorial). Fix : garde `!pet.deceased_at → not_found` (page + metadata).
+- **[M-2] Double souscription Stripe** (`stripe/checkout`) : pas de contrôle d'abo existant + `customer_email` créait un nouveau customer → double facturation + abo orphelin. Fix : rejet `already_subscribed` (409) si abo actif, réutilisation du `customer` existant.
+- **[M-3] Fallback plan silencieux** (`stripe/webhook`) : si `priceIdToPlan` renvoie null (env mal nommées), un abonné Print était marqué `digital`. Fix : dérive le plan des metadata du checkout + `log.error`. `.env.local.example` réaligné sur les vrais noms de variables prix.
+- **[B-2] Middleware fail-open** : exception → `next()` servait la coquille dashboard. Fix : fail-closed, redirect `/auth/login` sur `/dashboard`.
+- **[B-4] `update-password`** : soumis sans session de récupération. Fix : submit gaté sur `sessionReady`.
+- **[B-5] `birthday-check` 29 février** : jamais de match les années non bissextiles. Fix : rabattu sur le 28/02.
+- **[B-3] `gift/complete`** : laissé tel quel — déjà mitigé (code renvoyé une seule fois via idempotence `gift_email_sent` + binding `recipient_email` au redeem).
+
+**Refactor qualité (dédup / drift) — nouvelles libs partagées :**
+- `src/lib/validation.ts` — `UUID_REGEX`, `EMAIL_REGEX`, `isUuid`, `isEmail`, `isSafeRelativePath` (14 defs UUID + 7 email dédupliquées ; redirects relatifs login/signup/callback unifiés).
+- `src/lib/stripe.ts` — singleton `stripe` (`apiVersion: '2023-10-16'`), remplace 14 instanciations.
+- `src/lib/supabase/service.ts` — `getServiceSupabase()` sans dépendance server-only (importable edge). `plan.ts` le ré-exporte.
+- `src/lib/book-shared.ts` — `COVER_THEMES`, `VALID_*` (+types), `MAX_*`, `safeUrl`, `bestStoryIndexForDate()`. `book-pdf` utilise désormais `calcPageCount()` comme `gelato/order` → **page count déclaré Gelato = pages réelles PDF garanti**. `STRINGS` laissés dupliqués (PDF majuscules vs preview titre = style intentionnel).
+- `generate/route.ts` utilise `buildStoryPrompt()` de `story.ts` (prompt inline dupliqué supprimé).
+- `console.*` → `log.*` (`stripe-helpers`, `pdf-token`, `signup`).
+
+**Reportés délibérément** : Q7 (650 hex → tokens) et Q13 (découpe composants 2084/1625 l.) — cosmétiques/refactors lourds sans couverture de test, à faire incrémentalement. Q6 (`withAuth`) et Q8 (constantes URL/email) reportés aussi.
+
