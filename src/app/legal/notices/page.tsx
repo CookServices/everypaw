@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LEGAL_LAST_UPDATE } from "@/lib/legal";
+import { LEGAL_LAST_UPDATE_EN } from "@/lib/legal";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
@@ -22,7 +22,7 @@ export default function Notices() {
           Legal Notices
         </h1>
         <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: ".5rem" }}>In accordance with applicable law on online services.</p>
-        <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: "3rem" }}>Last updated: {LEGAL_LAST_UPDATE}</p>
+        <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: "3rem" }}>Last updated: {LEGAL_LAST_UPDATE_EN}</p>
 
         {[
           ["Publisher", "Everypaw\nEmail: hello@everypaw.app\nWebsite: www.everypaw.app"],

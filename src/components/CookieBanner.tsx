@@ -41,8 +41,8 @@ export default function CookieBanner() {
     >
       <p style={{ margin: 0, fontSize: "0.82rem", color: "#FDFAF5", lineHeight: 1.5, flex: 1, minWidth: 200 }}>
         {isFR
-          ? <>Cookies fonctionnels uniquement, aucun tracking.{" "}<Link href="/legal/confidentialite" style={{ color: "#F7C27A", textDecoration: "underline", whiteSpace: "nowrap" }}>Politique de confidentialité</Link></>
-          : <>Essential cookies only, no tracking.{" "}<Link href="/legal/confidentialite" style={{ color: "#F7C27A", textDecoration: "underline", whiteSpace: "nowrap" }}>Privacy policy</Link></>
+          ? <>Cookies fonctionnels uniquement, aucun tracking.{" "}<Link href="/legal/privacy" style={{ color: "#F7C27A", textDecoration: "underline", whiteSpace: "nowrap" }}>Politique de confidentialité</Link></>
+          : <>Essential cookies only, no tracking.{" "}<Link href="/legal/privacy" style={{ color: "#F7C27A", textDecoration: "underline", whiteSpace: "nowrap" }}>Privacy policy</Link></>
         }
       </p>
       <button

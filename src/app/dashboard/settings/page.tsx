@@ -651,7 +651,7 @@ export default function SettingsPage() {
                     {checkoutLoading === "print_annual" ? "…" : (isFR ? `Premium Print, ${formatPrice(currency, "printAnnual")}/an` : `Premium Print, ${formatPrice(currency, "printAnnual")}/yr`)}
                   </button>
                   <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".25rem 0 0", lineHeight: 1.5, fontWeight: 300, textAlign: "center" as const }}>
-                    {isFR ? (<>En continuant, vous acceptez les <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>CGV</a>.</>) : (<>By continuing, you agree to our <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Terms of Service</a>.</>)}
+                    {isFR ? (<>En continuant, vous acceptez les <a href="/legal/terms" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>CGV</a>.</>) : (<>By continuing, you agree to our <a href="/legal/terms" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Terms of Service</a>.</>)}
                   </p>
                 </div>
               )}

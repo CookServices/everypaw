@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LEGAL_LAST_UPDATE } from "@/lib/legal";
+import { LEGAL_LAST_UPDATE_EN } from "@/lib/legal";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
@@ -21,7 +21,7 @@ export default function Privacy() {
         <h1 style={{ fontFamily: "Georgia, serif", fontSize: "2rem", fontWeight: 600, color: "#3D2B1F", margin: "2rem 0 .75rem" }}>
           Privacy Policy
         </h1>
-        <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: "3rem" }}>Last updated: {LEGAL_LAST_UPDATE}</p>
+        <p style={{ fontSize: ".85rem", color: "#7A5C44", marginBottom: "3rem" }}>Last updated: {LEGAL_LAST_UPDATE_EN}</p>
 
         {[
           ["1. Data controller", "Everypaw is responsible for processing your personal data. Contact: hello@everypaw.app."],
