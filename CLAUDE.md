@@ -520,7 +520,7 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` en `useEffect` (waterfall, requêtes exposées client). Migration RSC = data au 1er paint, moins de surface.
 - **#9 Split god-components** — `pets/[id]/page.tsx` 131 Ko (308 `style={{}}` inline), `order` 81 Ko, `settings` 54 Ko. Extraire sous-composants + styles hors render.
 
-*Dernière mise à jour : 2026-07-11 (Session 56 — SEO lot 1 : canonicals/robots/sitemap · lot 2 : on-page homepage, JSON-LD i18n-driven)*
+*Dernière mise à jour : 2026-07-11 (Session 56 — SEO lot 1 : canonicals/robots/sitemap · lot 2 : on-page homepage, JSON-LD i18n-driven · lot 3 : hygiène liens legacy, dates légales localisées, cohérence gift)*
 
 ---
 
@@ -549,6 +549,12 @@ Commit `f01d59a`. Bug critique révélé par audit SEO : `alternates.canonical` 
 - JSON-LD déplacé de `home-client.tsx` (client) vers `page.tsx` (server) : Organization (nouveau) + SoftwareApplication (**`aggregateRating` factice 5★/3 retiré** — risque pénalité) + FAQPage **construit depuis les clés i18n** `faq.q1..q6/a1..a6` (mêmes clés que la section visible → jamais de drift)
 - Images landing : 6 SVG décoratifs `alt="" aria-hidden` = correct WCAG, aucun nom cryptique, rien à changer
 - Vérifié : 3 blocs JSON-LD `JSON.parse` OK, headings rendus, hero visuel intact (screenshot), build + 16 tests verts
+
+**Lot 3 — hygiène SEO / cohérence contenu (commit `a59e318`)** :
+- Architecture homepage : **aucun changement** — `page.tsx` server (metadata + JSON-LD server-rendered depuis lot 2), corps client SSR complet via force-dynamic ; split en îlots RSC = refactor lourd reporté (#4/#8), zéro gain SEO
+- Liens legacy 301 remplacés par liens directs : `/legal/cgv`→`terms`, `/legal/confidentialite`→`privacy` dans signup, settings, upgrade, CookieBanner (`/gift` était déjà propre)
+- `src/lib/legal.ts` : source ISO unique `LEGAL_LAST_UPDATE_ISO` + formateur → `LEGAL_LAST_UPDATE_EN` "May 26, 2026" sur terms/privacy/notices (affichaient "26 mai 2026"), const FR conservée pour les pages legacy
+- Gift "12 months" : affichage réel déjà dynamique (`step3_title_digital/print`) — clés mortes `step3_title/desc` réécrites avec la durée réelle, `redeem.subtitle` visible corrigé ("12 months" → formulation neutre), en+fr
 
 ### ✅ Session 55 — Refonte config Stripe : 3 plans stricts + catalogue live (2026-07-07)
 
