@@ -20,33 +20,6 @@ const FAQ_IDS = [
   "annuler-abonnement",
 ];
 
-const FAQ_JSONLD = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: [
-    { "@type": "Question", name: "How does the AI work?", acceptedAnswer: { "@type": "Answer", text: "Our AI transforms your journal entries into a warm, flowing narrative chapter, written in your pet's own voice. A handful of moments is all it takes to create something truly memorable, and you can generate whenever you're ready." } },
-    { "@type": "Question", name: "What happens if my pet passes away?", acceptedAnswer: { "@type": "Answer", text: "All your memories stay accessible forever. You can create a dedicated memorial page, share their profile with loved ones, and order a commemorative hardcover book that gathers every story and moment from their life, a keepsake to hold onto." } },
-    { "@type": "Question", name: "Can I customise the book?", acceptedAnswer: { "@type": "Answer", text: "Yes. When ordering, you choose from 5 cover themes (Classic, Noir, Forest, Ocean, Rose), set a custom title, pick which chapters to include, filter by year, and add a personal dedication page. The cover photo is customisable too, pick one from your journal or upload your own." } },
-    { "@type": "Question", name: "What is the print quality like?", acceptedAnswer: { "@type": "Answer", text: "Our books are printed on 170gsm coated silk paper with a rigid hardcover and matt lamination. 20×20 cm format, perfect-bound. Professional quality, comparable to premium photo books from specialist studios." } },
-    { "@type": "Question", name: "Is the free plan really free?", acceptedAnswer: { "@type": "Answer", text: "Yes, completely and with no conditions. You can create a pet profile, add up to 10 journal entries, and generate one AI story chapter, all for free. No credit card required to get started." } },
-    { "@type": "Question", name: "How do I cancel my subscription?", acceptedAnswer: { "@type": "Answer", text: "From your account settings, in one click. No commitment, no cancellation fee. You keep full access to all your stories, entries, and account data even after cancelling." } },
-  ],
-};
-
-const APP_JSONLD = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: "Everypaw",
-  applicationCategory: "LifestyleApplication",
-  operatingSystem: "Web",
-  offers: [
-    { "@type": "Offer", name: "Free",            price: "0",    priceCurrency: "USD" },
-    { "@type": "Offer", name: "Premium Digital", price: "4.99", priceCurrency: "USD" },
-    { "@type": "Offer", name: "Premium Print",   price: "79", priceCurrency: "USD" },
-  ],
-  aggregateRating: { "@type": "AggregateRating", ratingValue: "5", reviewCount: "3" },
-};
-
 export default function Home() {
   const { t, locale } = useLocale();
   const isFR = locale === "fr";
@@ -115,9 +88,6 @@ export default function Home() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSONLD) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APP_JSONLD) }} />
-
       <PublicNav variant="full" fixed />
 
       {/* HERO */}
@@ -190,9 +160,7 @@ export default function Home() {
             </h1>
 
             <h2 style={{ fontSize: "1rem", fontWeight: 300, color: "#7A5C44", maxWidth: 440, lineHeight: 1.7, margin: "0 0 .5rem" }}>
-              {isFR
-                ? "Le journal de vie de votre animal, raconté par l'IA et imprimé en livre chaque année."
-                : "The AI-powered pet journal that prints into a hardcover book every year"}
+              {t.landing.hero_sub}
             </h2>
 
             <p style={{ fontSize: "1rem", fontWeight: 300, color: "#7A5C44", maxWidth: 440, lineHeight: 1.7, margin: "0 0 2rem" }}>
@@ -437,7 +405,7 @@ export default function Home() {
               <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, marginBottom: ".5rem" }}>{t.landing.f6_title}</h3>
               <p style={{ fontSize: ".875rem", color: "#7A5C44", lineHeight: 1.6, fontWeight: 300, flex: 1 }}>{t.landing.f6_desc}</p>
               <Link href="/gift" style={{ display: "block", marginTop: "1.25rem", padding: ".75rem 1.75rem", borderRadius: "100px", background: "#C8813A", color: "#FDFAF5", fontSize: ".875rem", fontWeight: 500, textDecoration: "none", textAlign: "center", boxShadow: "0 4px 20px rgba(200,129,58,.35)" }}>
-                {isFR ? "Offrir un abonnement" : "Give a subscription"}
+                {t.landing.f6_cta}
               </Link>
             </div>
           </div>
@@ -502,7 +470,7 @@ export default function Home() {
               {isFR ? "Un vrai objet" : "A real object"}
             </div>
             <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)", fontWeight: 600, lineHeight: 1.2, color: "#3D2B1F", marginBottom: "1.5rem" }}>
-              {isFR ? <>Un livre relié,<br />pas juste un PDF</> : <>A hardcover book,<br />not just a PDF</>}
+              {t.landing.book_h2_1}<br />{t.landing.book_h2_2}
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
               {(isFR ? [

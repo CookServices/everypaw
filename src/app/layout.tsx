@@ -4,21 +4,21 @@ import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 
 export const metadata: Metadata = {
-  title: "Everypaw, Your pet's life story, printed",
-  description: "Turn daily pet moments into AI-crafted stories and a hardcover book. Free pet journal, no credit card required.",
+  title: "AI Pet Journal That Becomes a Printed Book | Everypaw",
+  description: "Everypaw is the AI pet journal that turns your daily moments into story chapters — and a printed pet memory book every year. Start free, no credit card.",
   metadataBase: new URL("https://everypaw.app"),
   icons: { icon: "/favicon.png" },
   openGraph: {
-    title: "Everypaw, Your pet's life story, printed",
-    description: "Turn your pet's daily moments into a beautiful AI-crafted book.",
+    title: "AI Pet Journal That Becomes a Printed Book | Everypaw",
+    description: "Everypaw is the AI pet journal that turns your daily moments into story chapters — and a printed pet memory book every year. Start free, no credit card.",
     siteName: "Everypaw",
     type: "website",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Everypaw, Your pet's life story, printed" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Everypaw, Your pet's life story, printed",
-    description: "Turn your pet's daily moments into a beautiful AI-crafted book.",
+    title: "AI Pet Journal That Becomes a Printed Book | Everypaw",
+    description: "Everypaw is the AI pet journal that turns your daily moments into story chapters — and a printed pet memory book every year. Start free, no credit card.",
     images: ["/og-image.png"],
   },
 };
