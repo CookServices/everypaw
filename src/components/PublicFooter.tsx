@@ -48,6 +48,7 @@ export default function PublicFooter({ variant = "minimal", locale, localeSwitch
 
   // "full" variant
   const links = [
+    { label: "Blog",                   href: "/blog" },
     { label: t.landing.legal_cgv,      href: "/legal/terms" },
     { label: t.landing.legal_privacy,  href: "/legal/privacy" },
     { label: t.landing.legal_mentions, href: "/legal/notices" },
