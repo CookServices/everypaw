@@ -6,6 +6,7 @@ import { getTranslations, type Locale } from "@/lib/i18n";
 import { formatPrice, type Currency } from "@/lib/currency";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
+import LangSuggestBanner from "@/components/LangSuggestBanner";
 
 const tEN = getTranslations("en");
 const tFR = getTranslations("fr");
@@ -698,6 +699,7 @@ export default function Home({ locale }: { locale: Locale }) {
       </section>
 
       <PublicFooter variant="full" locale={locale} localeSwitch={localeSwitch} />
+      <LangSuggestBanner pageLocale={locale} altHref={localeSwitch.href} />
     </>
   );
 }

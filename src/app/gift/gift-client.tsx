@@ -7,6 +7,7 @@ import { getTranslations, type Locale } from "@/lib/i18n";
 import { formatPrice, type Currency } from "@/lib/currency";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
+import LangSuggestBanner from "@/components/LangSuggestBanner";
 
 export default function GiftContent({ locale }: { locale: Locale }) {
   const t = getTranslations(locale);
@@ -517,6 +518,7 @@ export default function GiftContent({ locale }: { locale: Locale }) {
         locale={locale}
         localeSwitch={isFR ? { href: "/gift", label: "English" } : { href: "/fr/gift", label: "Français" }}
       />
+      <LangSuggestBanner pageLocale={locale} altHref={isFR ? "/gift" : "/fr/gift"} />
     </div>
   );
 }
