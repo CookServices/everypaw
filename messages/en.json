@@ -512,6 +512,17 @@
     "cta_desc": "Everypaw turns your pet's daily moments into a story you'll cherish forever.",
     "cta_button": "Start your pet's story"
   },
+  "memorial_landing": {
+    "hero_h1": "A gentle way to honor their story",
+    "hero_sub": "A pet memorial book and a dedicated memorial page, so the moments you shared stay close — kept, shared, and remembered.",
+    "s1_title": "Their memories stay with you",
+    "s1_body": "Every journal entry, photo, and story remains yours to revisit, for as long as you like. Nothing is lost.",
+    "s2_title": "A dedicated memorial page",
+    "s2_body": "A quiet page to remember them, ready to share with the people who loved them too.",
+    "s3_title": "A commemorative bound book",
+    "s3_body": "Gather the stories of their whole life into a hardcover pet memorial book — a keepsake to hold onto.",
+    "cta": "Create a memorial"
+  },
   "onboarding": {
     "title": "Get started with Everypaw",
     "all_done": "You're all set! 🎉",

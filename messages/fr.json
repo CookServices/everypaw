@@ -512,6 +512,17 @@
     "cta_desc": "Everypaw transforme les moments du quotidien de votre animal en une histoire que vous chérirez pour toujours.",
     "cta_button": "Commencez l'histoire de votre animal"
   },
+  "memorial_landing": {
+    "hero_h1": "Une façon douce d'honorer son histoire",
+    "hero_sub": "Un livre commémoratif pour animaux et une page mémorial dédiée, pour garder près de vous les moments partagés — conservés, partagés, gardés en mémoire.",
+    "s1_title": "Ses souvenirs restent avec vous",
+    "s1_body": "Chaque entrée de journal, chaque photo et chaque histoire reste accessible, aussi longtemps que vous le souhaitez. Rien ne se perd.",
+    "s2_title": "Une page mémorial dédiée",
+    "s2_body": "Une page paisible pour se souvenir de lui, à partager avec ceux qui l'aimaient aussi.",
+    "s3_title": "Un livre commémoratif relié",
+    "s3_body": "Rassemblez les histoires de toute sa vie dans un livre relié commémoratif — un objet précieux à conserver.",
+    "cta": "Créer un mémorial"
+  },
   "onboarding": {
     "title": "Commencer avec Everypaw",
     "all_done": "Tout est prêt ! 🎉",

@@ -54,7 +54,7 @@ export default function Home({ locale }: { locale: Locale }) {
     ["✨", t.landing.f2_title, t.landing.f2_desc],
     ["📖", t.landing.f3_title, t.landing.f3_desc],
     ["🐾", t.landing.f4_title, t.landing.f4_desc],
-    ["🕊️", t.landing.f5_title, t.landing.f5_desc],
+    ["🕊️", t.landing.f5_title, t.landing.f5_desc, "/memorial"],
   ];
 
   const steps = [
@@ -396,13 +396,23 @@ export default function Home({ locale }: { locale: Locale }) {
             {t.landing.features_title_1}<br />{t.landing.features_title_2}
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
-            {features.map(([icon, title, desc]) => (
-              <div key={title as string} style={{ background: "#F7F2EA", borderRadius: 20, padding: "1.75rem" }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", marginBottom: "1rem" }}>{icon}</div>
-                <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, marginBottom: ".5rem" }}>{title}</h3>
-                <p style={{ fontSize: ".875rem", color: "#7A5C44", lineHeight: 1.6, fontWeight: 300 }}>{desc}</p>
-              </div>
-            ))}
+            {features.map(([icon, title, desc, href]) => {
+              const cardStyle = { background: "#F7F2EA", borderRadius: 20, padding: "1.75rem" };
+              const inner = (
+                <>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", marginBottom: "1rem" }}>{icon}</div>
+                  <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, marginBottom: ".5rem" }}>{title}</h3>
+                  <p style={{ fontSize: ".875rem", color: "#7A5C44", lineHeight: 1.6, fontWeight: 300 }}>{desc}</p>
+                </>
+              );
+              return href ? (
+                <Link key={title as string} href={href as string} aria-label={`${title} — pet memorial page and memorial book`} style={{ ...cardStyle, display: "block", color: "inherit", textDecoration: "none" }}>
+                  {inner}
+                </Link>
+              ) : (
+                <div key={title as string} style={cardStyle}>{inner}</div>
+              );
+            })}
             {/* Gift card, standalone with CTA */}
             <div style={{ background: "#F7F2EA", borderRadius: 20, padding: "1.75rem", display: "flex", flexDirection: "column" }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", marginBottom: "1rem" }}>🎁</div>
