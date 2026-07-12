@@ -8,10 +8,15 @@ import { generateAndSaveStory } from "@/lib/story";
 import { getProfileLocaleById } from "@/lib/locale";
 import { baseLayout, emoji, eyebrow, heading, paragraph, ctaButton, unsubscribeLink } from "@/lib/email-templates";
 
+// Sequential AI generation across N pets, each callClaude up to ~30s. Needs the Pro
+// function limit; keep in sync with the Vercel plan (Hobby caps at 60s).
+export const maxDuration = 300;
+
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
   if (authError) return authError;
 
+  const startedAt = Date.now();
   const supabase = getServiceSupabase();
   const resend = getResendClient();
 
@@ -24,7 +29,9 @@ export async function GET(req: Request) {
   const monthEnd = `${monthKey}-${String(lastDay).padStart(2, "0")}`;
 
   // Fetch eligible pets in a single query:
-  // - owner on digital or print plan, email_reminders = true
+  // - owner on digital or print plan (email_reminders is NOT an eligibility gate:
+  //   a paying user who muted emails still gets their chapter generated in-app;
+  //   only the notification email below respects email_reminders)
   // - pet not deceased
   const { data: candidates, error: queryError } = await supabase
     .from("pets")
@@ -43,8 +50,7 @@ export async function GET(req: Request) {
       )
     `)
     .is("deceased_at", null)
-    .in("profiles.plan", ["digital", "print"])
-    .eq("profiles.email_reminders", true);
+    .in("profiles.plan", ["digital", "print"]);
 
   if (queryError) {
     log.error("[monthly-story] candidates query error:", queryError);
@@ -54,7 +60,7 @@ export async function GET(req: Request) {
   let processed = 0;
   let generated = 0;
   let skipped = 0;
-  let errors = 0;
+  let failed = 0;
 
   // Sequential loop with max 2 concurrent Anthropic calls, enforced by awaiting each
   // pet before the next. For true p-limit concurrency increase this loop can be batched,
@@ -73,8 +79,6 @@ export async function GET(req: Request) {
         };
       }
     ).profiles;
-
-    if (!profile?.email) { skipped++; continue; }
 
     // Gate: >= 3 entries in the previous month
     const { count: entryCount } = await supabase
@@ -129,6 +133,9 @@ export async function GET(req: Request) {
 
       generated++;
 
+      // Notification email respects the email opt-out (generation already happened above)
+      if (!profile.email_reminders || !profile.email) continue;
+
       // Build email, individual per pet, with chapter title + 2-sentence extract
       const petNameSafe = escapeHtml(pet.name);
       const titleSafe = escapeHtml(result.title);
@@ -168,9 +175,16 @@ export async function GET(req: Request) {
       });
     } catch (err) {
       log.error(`[monthly-story] error for pet ${pet.id}:`, err);
-      errors++;
+      failed++;
     }
   }
 
-  return NextResponse.json({ processed, generated, skipped, errors, monthKey });
+  return NextResponse.json({
+    processed,
+    generated,
+    skipped,
+    failed,
+    durationMs: Date.now() - startedAt,
+    monthKey,
+  });
 }
