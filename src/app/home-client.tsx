@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { useLocale } from "@/hooks/useLocale";
-import { getTranslations } from "@/lib/i18n";
+import { getTranslations, type Locale } from "@/lib/i18n";
 import { formatPrice, type Currency } from "@/lib/currency";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
@@ -20,8 +19,8 @@ const FAQ_IDS = [
   "annuler-abonnement",
 ];
 
-export default function Home() {
-  const { t, locale } = useLocale();
+export default function Home({ locale }: { locale: Locale }) {
+  const t = getTranslations(locale);
   const isFR = locale === "fr";
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [demoSlide, setDemoSlide] = useState(0);
@@ -86,9 +85,13 @@ export default function Home() {
   const digitalFeatures = [t.landing.premium_f1, t.landing.premium_f2, t.landing.premium_f3, t.landing.premium_f4, t.landing.premium_f5];
   const printFeatures   = [t.landing.print_f1, t.landing.print_f2, t.landing.print_f3, t.landing.print_f4];
 
+  const localeSwitch = isFR
+    ? { href: "/", label: "English" }
+    : { href: "/fr", label: "Français" };
+
   return (
     <>
-      <PublicNav variant="full" fixed />
+      <PublicNav variant="full" fixed locale={locale} />
 
       {/* HERO */}
       <style>{`
@@ -694,7 +697,7 @@ export default function Home() {
         </div>
       </section>
 
-      <PublicFooter variant="full" />
+      <PublicFooter variant="full" locale={locale} localeSwitch={localeSwitch} />
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
+import { getTranslations, type Locale } from "@/lib/i18n";
 
 interface PublicFooterProps {
   /**
@@ -9,10 +10,24 @@ interface PublicFooterProps {
    * "minimal", just "© 2025 Everypaw" (legal, contact, gift…)
    */
   variant?: "full" | "minimal";
+  /** Explicit locale for server-rendered marketing pages; omit to auto-detect */
+  locale?: Locale;
+  /** Crawlable language switch link (marketing pages) — real <a href>, not a client toggle */
+  localeSwitch?: { href: string; label: string };
 }
 
-export default function PublicFooter({ variant = "minimal" }: PublicFooterProps) {
-  const { t } = useLocale();
+export default function PublicFooter({ variant = "minimal", locale, localeSwitch }: PublicFooterProps) {
+  const auto = useLocale();
+  const t = locale ? getTranslations(locale) : auto.t;
+
+  const switchLink = localeSwitch && (
+    <a
+      href={localeSwitch.href}
+      style={{ fontSize: ".72rem", color: "rgba(247,242,234,.4)", textDecoration: "underline", fontWeight: 300, whiteSpace: "nowrap" }}
+    >
+      {localeSwitch.label}
+    </a>
+  );
 
   if (variant === "minimal") {
     return (
@@ -26,6 +41,7 @@ export default function PublicFooter({ variant = "minimal" }: PublicFooterProps)
         <p style={{ fontSize: ".75rem", color: "rgba(247,242,234,.3)", margin: 0 }}>
           © {new Date().getFullYear()} Everypaw
         </p>
+        {switchLink && <div style={{ marginTop: ".5rem" }}>{switchLink}</div>}
       </footer>
     );
   }
@@ -113,6 +129,12 @@ export default function PublicFooter({ variant = "minimal" }: PublicFooterProps)
             )}
           </span>
         ))}
+        {switchLink && (
+          <span style={{ display: "flex", alignItems: "center", gap: ".1rem" }}>
+            <span style={{ fontSize: ".72rem", color: "rgba(247,242,234,.12)", userSelect: "none" }}>·</span>
+            <span style={{ padding: "0 .5rem" }}>{switchLink}</span>
+          </span>
+        )}
       </div>
     </footer>
   );
