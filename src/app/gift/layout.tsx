@@ -4,7 +4,14 @@ export const metadata: Metadata = {
   title: "Gift a Pet Journal & Memory Book | Everypaw",
   description:
     "Give the pet lover in your life 12 months of memories: an AI-crafted journal and a hardcover keepsake book, delivered by email, from $4.99.",
-  alternates: { canonical: "/gift" },
+  alternates: {
+    canonical: "/gift",
+    languages: {
+      "en": "/gift",
+      "fr": "/fr/gift",
+      "x-default": "/gift",
+    },
+  },
   openGraph: {
     title: "Gift a Pet Journal & Memory Book | Everypaw",
     description:
