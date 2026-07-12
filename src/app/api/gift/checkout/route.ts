@@ -70,8 +70,8 @@ export async function POST(req: Request) {
     custom_text: {
       terms_of_service_acceptance: {
         message: currency === "EUR"
-          ? "En finalisant votre commande, vous acceptez les [Conditions générales de vente](https://everypaw.app/legal/cgv)."
-          : "By completing your order, you agree to our [Terms of Service](https://everypaw.app/legal/cgv).",
+          ? "En finalisant votre commande, vous acceptez les [Conditions générales de vente](https://everypaw.app/legal/terms)."
+          : "By completing your order, you agree to our [Terms of Service](https://everypaw.app/legal/terms).",
       },
     },
     consent_collection: { terms_of_service: "required" },
