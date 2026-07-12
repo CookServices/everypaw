@@ -580,6 +580,6 @@ Commit `f01d59a`. Bug critique révélé par audit SEO : `alternates.canonical` 
 
 **Lot 3 — hygiène SEO / cohérence contenu (commit `a59e318`)** :
 - Architecture homepage : **aucun changement** — `page.tsx` server (metadata + JSON-LD server-rendered depuis lot 2), corps client SSR complet via force-dynamic ; split en îlots RSC = refactor lourd reporté (#4/#8), zéro gain SEO
-- Liens legacy 301 remplacés par liens directs : `/legal/cgv`→`terms`, `/legal/confidentialite`→`privacy` dans signup, settings, upgrade, CookieBanner (`/gift` était déjà propre)
+- Liens legacy 301 remplacés par liens directs : `/legal/cgv`→`terms`, `/legal/confidentialite`→`privacy` dans signup, settings, upgrade, CookieBanner (`/gift` était déjà propre) ; **aussi** dans les messages TOS Stripe checkout (`api/gift/checkout` + `api/stripe/checkout`, commit `8432574`)
 - `src/lib/legal.ts` : source ISO unique `LEGAL_LAST_UPDATE_ISO` + formateur → `LEGAL_LAST_UPDATE_EN` "May 26, 2026" sur terms/privacy/notices (affichaient "26 mai 2026"), const FR conservée pour les pages legacy
 - Gift "12 months" : affichage réel déjà dynamique (`step3_title_digital/print`) — clés mortes `step3_title/desc` réécrites avec la durée réelle, `redeem.subtitle` visible corrigé ("12 months" → formulation neutre), en+fr
