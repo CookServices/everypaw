@@ -261,6 +261,13 @@ Messages dans `messages/en.json` et `messages/fr.json`. `src/lib/i18n.ts` charge
 
 **Règle** : toujours ajouter les nouvelles clés dans les **deux** fichiers JSON.
 
+**Architecture i18n hybride (Session 57) — server pour le marketing, client pour l'app :**
+- **Pages marketing** (`/`, `/fr`, `/gift`, `/fr/gift`) : langue **figée par URL**, jamais par `navigator.language`. Un seul composant client locale-aware par page (`home-client.tsx` = `<Home locale>`, `gift/gift-client.tsx` = `<GiftContent locale>`) piloté par une prop `locale`, textes lus via `getTranslations(locale)`. Les routes serveur (`page.tsx`) exportent metadata + JSON-LD et rendent le composant avec `locale="en"` ou `"fr"`. Le FR est dans le HTML source (SSR sous `force-dynamic`), donc crawlable. **Plus de `useLocale` sur ces pages.**
+- **Dashboard + autres pages publiques** (contact, redeem, unsubscribe, memorial, legal…) : gardent `useLocale()` (détection `navigator.language`). `PublicNav`/`PublicFooter` acceptent une prop `locale` **optionnelle** : fournie → déterministe (marketing), absente → `useLocale` (le reste).
+- **Switch de langue** : lien crawlable `<a href>` dans le footer marketing (`PublicFooter localeSwitch={{ href, label }}`), pas de toggle client. `/`↔`/fr`, `/gift`↔`/fr/gift`.
+- **Jamais de redirect auto basé sur `Accept-Language`** (chaque URL = une langue stable pour les crawlers). Un bandeau de suggestion client (lien réel `<a>`, dismissible) reste acceptable mais ne modifie jamais le contenu rendu.
+- **Devise ≠ langue** : `getCurrencyFromCountry()` (géoloc `x-vercel-ip-country`) reste indépendant de la locale. Un visiteur FR sur `/` voit la page EN avec prix EUR — voulu.
+
 ### Dashboard layout & navigation
 
 `src/app/dashboard/layout.tsx` rend `<DashboardNav>` (sidebar fixe desktop, header + drawer mobile) + `{children}`.
@@ -426,9 +433,9 @@ currency: "USD"
 
 **Pages publiques** : profil animal `/pets/[id]`, mémorial `/memorial/[id]` (dark, OG meta, hommages modérés rate-limités), share card Instagram (`/api/share-card`, edge, PNG square/story).
 
-**i18n** : EN/FR auto via `navigator.language` (pas de switcher), `messages/{en,fr}.json`, landing FR autonome `/fr`.
+**i18n** : hybride (Session 57) — pages marketing (`/`, `/fr`, `/gift`, `/fr/gift`) en langue **figée par URL**, server-rendered, composants client locale-aware partagés (plus de duplication `/fr`) ; dashboard + reste en `useLocale` auto (`navigator.language`). `messages/{en,fr}.json`, lien switch crawlable dans le footer marketing.
 
-**SEO / RGPD** : canonicals par page (relatives, résolues via `metadataBase`), `app/robots.ts` + `app/sitemap.ts` (routes metadata Next), noindex sur login/signup, metas dédiées gift/legal, homepage optimisée "ai pet journal" / "pet memory book" (title + H2 hero + H2 livre + CTA gift), JSON-LD homepage dans le server `page.tsx` : Organization + SoftwareApplication (sans aggregateRating — placeholders interdits) + FAQPage construit dynamiquement depuis `messages/en.json` `faq.q1..q6/a1..a6` (zéro drift schema/contenu), hreflang (homepage + /fr), cookie banner, export données JSON, suppression de compte complète. ⚠️ `fr/page.tsx` garde encore un `aggregateRating` factice à retirer (lot FR).
+**SEO / RGPD** : canonicals par page (relatives, résolues via `metadataBase`), `app/robots.ts` + `app/sitemap.ts` (routes metadata Next), noindex sur login/signup, metas dédiées gift/legal, homepage optimisée "ai pet journal" / "pet memory book" (title + H2 hero + H2 livre + CTA gift), JSON-LD homepage dans le server `page.tsx` : Organization + SoftwareApplication (sans aggregateRating — placeholders interdits) + FAQPage construit dynamiquement depuis `messages/en.json` `faq.q1..q6/a1..a6` (zéro drift schema/contenu), hreflang réciproque sur les 4 routes marketing (`/`↔`/fr`, `/gift`↔`/fr/gift`), cookie banner, export données JSON, suppression de compte complète. `aggregateRating` factice retiré partout (Session 57).
 
 **Sécurité** : 13 rounds de review (détail dans docs/SESSIONS.md) — les règles qui en découlent sont codifiées dans « Conventions de code » ci-dessous.
 
@@ -516,11 +523,11 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 
 **Reportés — gros refactors (fort blast-radius) :**
 - **#4 Rendu statique CDN landing** — bloqué : root `layout.tsx` lit `headers()` (x-pathname) juste pour fixer `<html lang>` fr/en → force **tout** le site en dynamique. Fix = restructurer en `/[locale]/` (recoupe #6). Risque SEO bilingue (hreflang) si bricolé.
-- **#6 Dédup landing** — `/` (725 l) et `/fr` (570 l) = copie traduite manuelle → drift. Cible : 1 composant `<Landing locale>` piloté par `messages/*.json`.
+- ~~**#6 Dédup landing**~~ ✅ **résolu (Session 57)** — `/` et `/fr` partagent `home-client.tsx` (`<Home locale>`), plus de copie manuelle. Idem gift (`gift-client.tsx`).
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` en `useEffect` (waterfall, requêtes exposées client). Migration RSC = data au 1er paint, moins de surface.
 - **#9 Split god-components** — `pets/[id]/page.tsx` 131 Ko (308 `style={{}}` inline), `order` 81 Ko, `settings` 54 Ko. Extraire sous-composants + styles hors render.
 
-*Dernière mise à jour : 2026-07-11 (Session 56 — SEO lot 1 : canonicals/robots/sitemap · lot 2 : on-page homepage, JSON-LD i18n-driven · lot 3 : hygiène liens legacy, dates légales localisées, cohérence gift)*
+*Dernière mise à jour : 2026-07-12 (Session 57 — i18n hybride : /fr + /fr/gift server-rendered crawlables, composants locale-aware partagés, hreflang réciproque, dédup #6 résolue)*
 
 ---
 
@@ -528,6 +535,18 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 
 Historique complet (sessions 1 à 53, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
 Seules les 2 dernières sessions sont conservées ici ; à chaque nouvelle session, déplacer la plus ancienne vers l'archive.
+
+### ✅ Session 57 — i18n hybride : /fr crawlable server-rendered (2026-07-12)
+
+Chantier : rendre la version FR crawlable par Google sans réintroduire next-intl. Audit préalable : `/fr` existait déjà mais en copie manuelle client de 579 l (drift, dette #6) ; `/gift` en `useLocale` navigator (non crawlable FR) ; pas de `/fr/gift` ; aucun redirect auto Accept-Language (rien à retirer). Décision (validée user) : composant client locale-aware partagé + langue **figée par URL**, plutôt que RSC purs + îlots (blast-radius élevé, zéro gain SEO car le FR est déjà en source via `use client` + `force-dynamic`).
+
+**Commit 1 `79c1ca1` (refactor)** : `PublicNav`/`PublicFooter` acceptent une prop `locale` optionnelle (absente → `useLocale`, préserve dashboard + 19 autres pages publiques) + `localeSwitch` (lien crawlable `<a>` footer) ; `home-client.tsx` `<Home locale>` (drop `useLocale`) ; `gift/page.tsx` splitté en `gift-client.tsx` (`<GiftContent locale>`) + wrapper server ; liens nav internes locale-aware.
+
+**Commit 2 `0219982` (routes FR)** : `/fr` réécrit en server component (`<Home locale="fr">` + JSON-LD FR Org/App/FAQPage i18n-driven, **`aggregateRating` factice retiré**) ; nouveau `/fr/gift`. Supprime la copie manuelle de 579 l et corrige le drop de `premium_f5` côté FR.
+
+**Commit 3 `0584eaf` (SEO)** : metadata FR (`/fr` title « Journal animalier IA qui devient un livre imprimé | Everypaw », `/fr/gift` title « Offrir un journal animalier et un livre souvenir | Everypaw »), hreflang **réciproque** sur les 4 routes (canonicals relatives résolues via `metadataBase`), `sitemap.ts` + `/fr/gift`.
+
+**Vérifié** (`next start` + curl) : `/fr` rend du français dans le HTML source ✓ ; `/` reste EN sous `Accept-Language: fr` ✓ ; hreflang réciproques `/`↔`/fr` et `/gift`↔`/fr/gift` ✓ ; sitemap liste `/fr` + `/fr/gift` ✓ ; `npm run build` + `tsc --noEmit` verts. Dashboard `useLocale` intact. **Reste optionnel** : bandeau de suggestion de langue client (non implémenté — le lien switch footer crawlable suffit à l'objectif).
 
 ### ✅ Session 56 — SEO : canonicals par page, robots.ts, sitemap.ts (2026-07-11)
 
@@ -555,38 +574,3 @@ Commit `f01d59a`. Bug critique révélé par audit SEO : `alternates.canonical` 
 - Liens legacy 301 remplacés par liens directs : `/legal/cgv`→`terms`, `/legal/confidentialite`→`privacy` dans signup, settings, upgrade, CookieBanner (`/gift` était déjà propre)
 - `src/lib/legal.ts` : source ISO unique `LEGAL_LAST_UPDATE_ISO` + formateur → `LEGAL_LAST_UPDATE_EN` "May 26, 2026" sur terms/privacy/notices (affichaient "26 mai 2026"), const FR conservée pour les pages legacy
 - Gift "12 months" : affichage réel déjà dynamique (`step3_title_digital/print`) — clés mortes `step3_title/desc` réécrites avec la durée réelle, `redeem.subtitle` visible corrigé ("12 months" → formulation neutre), en+fr
-
-### ✅ Session 55 — Refonte config Stripe : 3 plans stricts + catalogue live (2026-07-07)
-
-Nettoyage complet variables/produits Stripe. `tsc --noEmit` OK, tests plan.test.ts 9/9 verts.
-
-**Code — système 3 plans strict (free, digital mensuel, print annuel) :**
-- `PRICE_MAP` (stripe-helpers.ts) réduit à `digital` + `print_annual` — `digital_annual` et `print_monthly` supprimés
-- Allowlists checkout/upgrade/upgrade-preview → `["digital", "print_annual"]`
-- `priceIdToPlan()` (plan.ts) → 4 price IDs ; vars legacy supprimées (`STRIPE_PRICE_ID`, `STRIPE_PRICE_DIGITAL_MONTHLY`, `STRIPE_PRICE_PRINT_MONTHLY`, `STRIPE_PRICE_PRINT_ANNUAL` sans devise)
-- Webhook : `printPriceIds` = annual EUR/USD seulement ; fallback metadata simplifié
-- Labels signup : entrées `digital_annual` + `print` mensuel retirées
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` supprimée partout (jamais utilisée — checkout 100% Stripe hosted, pas de Stripe.js client)
-- `STRIPE_PRICE_BOOK_ONCE*` confirmées mortes (livre = prix dynamique `calcGelatoBookPrice`)
-- `scripts/stripe-create-products.ts` réécrit : crée 2 produits × 2 prix (EUR/USD sous le même produit)
-- `.gitignore` réparé (contenu UTF-16 corrompu inséré par une session antérieure → réécrit ASCII)
-
-**Catalogue Stripe LIVE recréé (l'ancien catalogue live était vide — les vars Vercel pointaient vers des objets mode test) :**
-- `prod_UqDtaYROKVKI0W` "Everypaw Premium Digital" : mensuel 4,99 €/$4.99 + gift one-time 4,99 €/$4.99
-- `prod_UqDtrt2zti1g36` "Everypaw Premium Print" : annuel 79 €/$79 + gift one-time 79 €/$79
-- Coupon gift `fZf1Hxyy` : 100% off, `duration: once` (1 mois offert sur mensuel, 1 an sur annuel)
-
-**Vercel — 11 vars Stripe exactement** (voir section env plus haut) : 2 clés + 4 prix plans + 4 prix gift + 1 coupon. Supprimées : `STRIPE_PRICE_ID_PRINT_EUR/USD`, `STRIPE_PRICE_ID_DIGITAL_ANNUAL_EUR/USD`. Déployé + vérifié (endpoints répondent, vars présentes).
-
-**À tester manuellement :** checkout digital + print annuel + achat cadeau jusqu'à la page Stripe (vérifier montants affichés).
-
-**⚠️ Modes Stripe test/live :** erreur "No such price" post-deploy → `STRIPE_SECRET_KEY` Vercel était une `sk_test` alors que le nouveau catalogue (produits + prix + coupon) est en mode **live**. Les 2 catalogues sont séparés. Résolu : passage en live (sk_live + webhook live dans Vercel), page paiement Stripe fonctionnelle. Endpoint webhook live `we_1TqHQkRmAiDTHhpuLkV9Udz4` : il manquait `invoice.payment_succeeded` (traité par la route pour lever `payment_past_due` + créditer le livre au renouvellement annuel) — ajouté via API le 07-07.
-
-**Affichage prix (commits `071d356`, `5a06455`, `93505fe`) :**
-- Premium Print affiché **79 €/an** partout (le 9,99 €/mois n'existe plus) : bloc upsell dashboard, JSON-LD landings, CGV/Terms
-- CGV/Terms : mention plan digital annuel (2,99 €/35,88 €) retirée
-- Livre à la carte : plus aucun prix fixe affiché — prix calculé selon nombre de pages (`calcGelatoBookPrice`, minimum 28 €). CGV/Terms reformulées, tuile upgrade "dès 28 €", warning commande référence le montant affiché
-- `currency.ts` : clés mortes `print` (9,99), `digitalAnnual`, `digitalAnnualMonthly`, `book` supprimées de `PRICE_TABLE`
-- Clés `messages/*.json` mortes avec "29 €" (`free_book`, `order_book`, `pricing_book_note`, `product_price`) : non affichées, non corrigées — à corriger si réactivées
-
-**CLAUDE.md restructuré (commit `05e9016`)** : 2004 → ~590 lignes (−73% contexte/session). Historique sessions 1-53 + audit UX + détail features déplacés vers `docs/SESSIONS.md`. Règle de maintenance : garder ici les 2 dernières sessions seulement, < 700 lignes. Ajout au repo : `docs/charte-graphique.md` + logos (assets Instagram, créés 06-29).

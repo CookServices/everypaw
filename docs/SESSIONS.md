@@ -5,6 +5,44 @@
 
 ---
 
+### ✅ Session 55 — Refonte config Stripe : 3 plans stricts + catalogue live (2026-07-07)
+
+Nettoyage complet variables/produits Stripe. `tsc --noEmit` OK, tests plan.test.ts 9/9 verts.
+
+**Code — système 3 plans strict (free, digital mensuel, print annuel) :**
+- `PRICE_MAP` (stripe-helpers.ts) réduit à `digital` + `print_annual` — `digital_annual` et `print_monthly` supprimés
+- Allowlists checkout/upgrade/upgrade-preview → `["digital", "print_annual"]`
+- `priceIdToPlan()` (plan.ts) → 4 price IDs ; vars legacy supprimées (`STRIPE_PRICE_ID`, `STRIPE_PRICE_DIGITAL_MONTHLY`, `STRIPE_PRICE_PRINT_MONTHLY`, `STRIPE_PRICE_PRINT_ANNUAL` sans devise)
+- Webhook : `printPriceIds` = annual EUR/USD seulement ; fallback metadata simplifié
+- Labels signup : entrées `digital_annual` + `print` mensuel retirées
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` supprimée partout (jamais utilisée — checkout 100% Stripe hosted, pas de Stripe.js client)
+- `STRIPE_PRICE_BOOK_ONCE*` confirmées mortes (livre = prix dynamique `calcGelatoBookPrice`)
+- `scripts/stripe-create-products.ts` réécrit : crée 2 produits × 2 prix (EUR/USD sous le même produit)
+- `.gitignore` réparé (contenu UTF-16 corrompu inséré par une session antérieure → réécrit ASCII)
+
+**Catalogue Stripe LIVE recréé (l'ancien catalogue live était vide — les vars Vercel pointaient vers des objets mode test) :**
+- `prod_UqDtaYROKVKI0W` "Everypaw Premium Digital" : mensuel 4,99 €/$4.99 + gift one-time 4,99 €/$4.99
+- `prod_UqDtrt2zti1g36` "Everypaw Premium Print" : annuel 79 €/$79 + gift one-time 79 €/$79
+- Coupon gift `fZf1Hxyy` : 100% off, `duration: once` (1 mois offert sur mensuel, 1 an sur annuel)
+
+**Vercel — 11 vars Stripe exactement** (voir section env plus haut) : 2 clés + 4 prix plans + 4 prix gift + 1 coupon. Supprimées : `STRIPE_PRICE_ID_PRINT_EUR/USD`, `STRIPE_PRICE_ID_DIGITAL_ANNUAL_EUR/USD`. Déployé + vérifié (endpoints répondent, vars présentes).
+
+**À tester manuellement :** checkout digital + print annuel + achat cadeau jusqu'à la page Stripe (vérifier montants affichés).
+
+**⚠️ Modes Stripe test/live :** erreur "No such price" post-deploy → `STRIPE_SECRET_KEY` Vercel était une `sk_test` alors que le nouveau catalogue (produits + prix + coupon) est en mode **live**. Les 2 catalogues sont séparés. Résolu : passage en live (sk_live + webhook live dans Vercel), page paiement Stripe fonctionnelle. Endpoint webhook live `we_1TqHQkRmAiDTHhpuLkV9Udz4` : il manquait `invoice.payment_succeeded` (traité par la route pour lever `payment_past_due` + créditer le livre au renouvellement annuel) — ajouté via API le 07-07.
+
+**Affichage prix (commits `071d356`, `5a06455`, `93505fe`) :**
+- Premium Print affiché **79 €/an** partout (le 9,99 €/mois n'existe plus) : bloc upsell dashboard, JSON-LD landings, CGV/Terms
+- CGV/Terms : mention plan digital annuel (2,99 €/35,88 €) retirée
+- Livre à la carte : plus aucun prix fixe affiché — prix calculé selon nombre de pages (`calcGelatoBookPrice`, minimum 28 €). CGV/Terms reformulées, tuile upgrade "dès 28 €", warning commande référence le montant affiché
+- `currency.ts` : clés mortes `print` (9,99), `digitalAnnual`, `digitalAnnualMonthly`, `book` supprimées de `PRICE_TABLE`
+- Clés `messages/*.json` mortes avec "29 €" (`free_book`, `order_book`, `pricing_book_note`, `product_price`) : non affichées, non corrigées — à corriger si réactivées
+
+**CLAUDE.md restructuré (commit `05e9016`)** : 2004 → ~590 lignes (−73% contexte/session). Historique sessions 1-53 + audit UX + détail features déplacés vers `docs/SESSIONS.md`. Règle de maintenance : garder ici les 2 dernières sessions seulement, < 700 lignes. Ajout au repo : `docs/charte-graphique.md` + logos (assets Instagram, créés 06-29).
+
+---
+
+
 ## Fonctionnalités implémentées
 
 ### ✅ Sprint 1 — Core
