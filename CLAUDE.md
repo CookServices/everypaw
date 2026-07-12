@@ -546,7 +546,9 @@ Chantier : rendre la version FR crawlable par Google sans réintroduire next-int
 
 **Commit 3 `0584eaf` (SEO)** : metadata FR (`/fr` title « Journal animalier IA qui devient un livre imprimé | Everypaw », `/fr/gift` title « Offrir un journal animalier et un livre souvenir | Everypaw »), hreflang **réciproque** sur les 4 routes (canonicals relatives résolues via `metadataBase`), `sitemap.ts` + `/fr/gift`.
 
-**Vérifié** (`next start` + curl) : `/fr` rend du français dans le HTML source ✓ ; `/` reste EN sous `Accept-Language: fr` ✓ ; hreflang réciproques `/`↔`/fr` et `/gift`↔`/fr/gift` ✓ ; sitemap liste `/fr` + `/fr/gift` ✓ ; `npm run build` + `tsc --noEmit` verts. Dashboard `useLocale` intact. **Reste optionnel** : bandeau de suggestion de langue client (non implémenté — le lien switch footer crawlable suffit à l'objectif).
+**Vérifié** (`next start` + curl) : `/fr` rend du français dans le HTML source ✓ ; `/` reste EN sous `Accept-Language: fr` ✓ ; hreflang réciproques `/`↔`/fr` et `/gift`↔`/fr/gift` ✓ ; sitemap liste `/fr` + `/fr/gift` ✓ ; `npm run build` + `tsc --noEmit` verts. Dashboard `useLocale` intact.
+
+**Bandeau de suggestion de langue** (`LangSuggestBanner`, commit `dfafd65`) : client component monté sur les 4 pages marketing. Lit `navigator.language` **uniquement pour suggérer** (jamais de redirect, ne modifie jamais le contenu rendu). Affiché seulement si mismatch (page EN + navigator fr, ou page FR + navigator non-fr). Lien réel crawlable `<a href>` vers la même page dans l'autre langue. Fixed bottom, dismissible, dismiss mémorisé en `localStorage` (`ep_lang_suggest_dismissed`), rend `null` tant que non monté (pas de mismatch d'hydratation, pas de CLS). ⚠️ Vérifier l'interactivité client sur `next start` (prod) : le preview `next dev` du sandbox n'hydrate pas React.
 
 ### ✅ Session 56 — SEO : canonicals par page, robots.ts, sitemap.ts (2026-07-11)
 
