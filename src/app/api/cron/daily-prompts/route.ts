@@ -162,7 +162,7 @@ export async function GET(req: Request) {
       emoji("✍️") +
       eyebrow(isFR ? "Prompt du jour" : "Today's prompt") +
       quote(escapeHtml(prompt)) +
-      ctaButton("https://everypaw.app/dashboard", isFR ? `Écrire pour ${petName} →` : `Write for ${petName} →`),
+      ctaButton("https://everypaw.app/dashboard", isFR ? `Écrire pour ${petName}` : `Write for ${petName}`),
       unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
       isFR ? "fr" : "en",
     );

@@ -142,7 +142,7 @@ export async function GET(req: Request) {
         ? `C'est une belle occasion de noter ce moment dans son journal. Décrivez comment ${petName} est aujourd'hui, ce qu'il ou elle aime, ce qui a changé cette année, dans quelques ans, vous serez heureux de l'avoir noté.`
         : `Today is a perfect day to add a birthday entry to ${petName}'s journal. Describe how they are right now, what they love, what's changed this year, you'll be so glad you wrote it down.`) +
       letterBlock +
-      ctaButton("https://everypaw.app/dashboard", isFR ? "Écrire une entrée d'anniversaire →" : "Write a birthday entry →"),
+      ctaButton("https://everypaw.app/dashboard", isFR ? "Écrire une entrée d'anniversaire" : "Write a birthday entry"),
       unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
       isFR ? "fr" : "en",
     );

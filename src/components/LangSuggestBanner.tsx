@@ -32,7 +32,7 @@ export default function LangSuggestBanner({ pageLocale, altHref }: Props) {
   // Message written in the SUGGESTED language so the target reader understands it.
   const suggestFR = pageLocale === "en";
   const text = suggestFR ? "Ce site est aussi disponible en français." : "This site is also available in English.";
-  const linkLabel = suggestFR ? "Voir en français →" : "View in English →";
+  const linkLabel = suggestFR ? "Voir en français" : "View in English";
 
   const dismiss = () => {
     try { localStorage.setItem(DISMISS_KEY, "1"); } catch {}

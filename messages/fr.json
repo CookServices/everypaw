@@ -58,7 +58,7 @@
     "interview_upgrade_hint": "Passez à Premium pour continuer à répondre aux questions hebdomadaires.",
     "payment_issue_title": "Problème de paiement",
     "payment_issue_desc": "Nous n'avons pas pu traiter le dernier paiement de votre abonnement. Mettez à jour votre moyen de paiement pour conserver votre accès Premium.",
-    "payment_issue_cta": "Mettre à jour mon moyen de paiement →"
+    "payment_issue_cta": "Mettre à jour mon moyen de paiement"
   },
   "upgrade": {
     "title": "Passer à Premium",
@@ -110,7 +110,7 @@
     "month_progress_soon": "{count} moments ce mois · Génération imminente",
     "month_progress_done": "{count} moments ce mois · Chapitre généré ✓",
     "entry_counter": "{count}/10 entrées utilisées",
-    "upgrade_unlimited": "Passer à Premium →"
+    "upgrade_unlimited": "Passer à Premium"
   },
   "stories": {
     "preview_book": "📖 Aperçu de mon livre",
@@ -129,7 +129,7 @@
     "share_generating": "Génération de la carte…",
     "share_error": "Impossible de créer la carte. Veuillez réessayer.",
     "free_upsell_text": "C'était le Chapitre 1. Premium écrit le suivant chaque mois, et l'imprime.",
-    "free_upsell_cta": "Voir les plans →",
+    "free_upsell_cta": "Voir les plans",
     "free_upsell_refresh": "Déjà passé à Premium ? Rafraîchis la page."
   },
   "signup": {
@@ -570,7 +570,7 @@
   },
   "email": {
     "monthly_story_subject": "Le nouveau chapitre de {petName} est prêt 📖",
-    "monthly_story_cta": "Lire le chapitre →",
+    "monthly_story_cta": "Lire le chapitre",
     "monthly_story_unsubscribe": "Se désinscrire des emails d'histoires mensuelles",
     "stories_tab": "Histoires"
   },
@@ -671,7 +671,7 @@
     "cta_free_plan": "Premium"
   },
   "birthday": {
-    "letter_cta": "Lire la lettre de {petName} →",
+    "letter_cta": "Lire la lettre de {petName}",
     "letter_excerpt_label": "Une lettre d'anniversaire de {petName}"
   },
   "members": {

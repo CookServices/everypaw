@@ -79,8 +79,8 @@ export async function GET(req: Request) {
       { day: "numeric", month: "long", year: "numeric" },
     );
     const printPromo = isFR
-      ? `Ces souvenirs méritent d'être dans un livre. <a href="https://everypaw.app/dashboard" style="color:#C8813A;">Découvrez Everypaw Print →</a>`
-      : `These memories deserve to be in a book. <a href="https://everypaw.app/dashboard" style="color:#C8813A;">Discover Everypaw Print →</a>`;
+      ? `Ces souvenirs méritent d'être dans un livre. <a href="https://everypaw.app/dashboard" style="color:#C8813A;">Découvrez Everypaw Print</a>`
+      : `These memories deserve to be in a book. <a href="https://everypaw.app/dashboard" style="color:#C8813A;">Discover Everypaw Print</a>`;
 
     const html = baseLayout(
       emoji("🐾") +
@@ -89,7 +89,7 @@ export async function GET(req: Request) {
         : `${yearsAgo} year${yearsAgo > 1 ? "s" : ""} ago, ${petName}…`) +
       paragraph(dateLabel) +
       quote(`"${snippet}"`) +
-      ctaButton("https://everypaw.app/dashboard", isFR ? `Voir le journal de ${petName} →` : `See ${petName}'s journal →`),
+      ctaButton("https://everypaw.app/dashboard", isFR ? `Voir le journal de ${petName}` : `See ${petName}'s journal`),
       printPromo + "<br />" + unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
       isFR ? "fr" : "en",
     );

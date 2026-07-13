@@ -60,7 +60,7 @@ export default function BlogIndex() {
                 <p style={{ fontSize: ".92rem", fontWeight: 300, color: "#7A5C44", lineHeight: 1.6, margin: 0, flex: 1 }}>
                   {post.description}
                 </p>
-                <span style={{ marginTop: "1.25rem", fontSize: ".85rem", fontWeight: 500, color: "#C8813A" }}>Read →</span>
+                <span style={{ marginTop: "1.25rem", fontSize: ".85rem", fontWeight: 500, color: "#C8813A" }}>Read</span>
               </Link>
             ))}
           </div>

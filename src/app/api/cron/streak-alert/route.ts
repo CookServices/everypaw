@@ -95,7 +95,7 @@ export async function GET(req: Request) {
       paragraph(isFR
         ? `${petName} a vécu plein de choses depuis votre dernière entrée. Pas besoin d'un grand moment, une phrase ou une photo, et le souvenir est sauvé pour toujours.`
         : `${petName} has been up to so much since your last entry. It doesn't need to be big, one sentence or a quick photo, and the memory is saved forever.`) +
-      ctaButton("https://everypaw.app/dashboard", isFR ? "Ajouter un moment →" : "Add a moment →"),
+      ctaButton("https://everypaw.app/dashboard", isFR ? "Ajouter un moment" : "Add a moment"),
       unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
       isFR ? "fr" : "en",
     );
