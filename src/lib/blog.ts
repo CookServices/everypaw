@@ -22,6 +22,14 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-07-13",
     published: true,
   },
+  {
+    slug: "dog-memory-book-ideas",
+    title: "12 Dog Memory Book Ideas That Go Beyond Photos",
+    description:
+      "12 dog memory book ideas that go beyond photos: capture your dog's story, quirks, and everyday moments in a keepsake book you'll actually finish.",
+    datePublished: "2026-07-16",
+    published: true,
+  },
 ];
 
 /** Published posts, newest first. */
