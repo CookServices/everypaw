@@ -537,7 +537,7 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` en `useEffect` (waterfall, requêtes exposées client). Migration RSC = data au 1er paint, moins de surface.
 - **#9 Split god-components** — `pets/[id]/page.tsx` 131 Ko (308 `style={{}}` inline), `order` 81 Ko, `settings` 54 Ko. Extraire sous-composants + styles hors render.
 
-*Dernière mise à jour : 2026-07-12 (Session 57 — i18n hybride : /fr + /fr/gift server-rendered crawlables, composants locale-aware partagés, hreflang réciproque, dédup #6 résolue ; bandeau suggestion langue ; landing mémorial publique /memorial « pet memorial book » ; infra blog SEO /blog + ArticleLayout + registre)*
+*Dernière mise à jour : 2026-07-12 (Session 57 — i18n hybride : /fr + /fr/gift server-rendered crawlables, composants locale-aware partagés, hreflang réciproque, dédup #6 résolue ; bandeau suggestion langue ; landing mémorial publique /memorial « pet memorial book » ; infra blog SEO /blog + ArticleLayout + registre ; 1er article publié `pet-journal-prompts` "50 Pet Journal Prompts to Capture Your Pet's Story", registre `published:true`)*
 
 ---
 
