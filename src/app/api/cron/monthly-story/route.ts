@@ -8,9 +8,12 @@ import { generateAndSaveStory } from "@/lib/story";
 import { getProfileLocaleById } from "@/lib/locale";
 import { baseLayout, emoji, eyebrow, heading, paragraph, ctaButton, unsubscribeLink } from "@/lib/email-templates";
 
-// Sequential AI generation across N pets, each callClaude up to ~30s. Needs the Pro
-// function limit; keep in sync with the Vercel plan (Hobby caps at 60s).
-export const maxDuration = 300;
+// Sequential AI generation across N pets, each callClaude up to ~30s. Vercel Hobby
+// caps function duration at 60s, so the batch must fit there. If the eligible-pet
+// count grows past what fits in 60s, either move to Pro (raise this to 300) or
+// paginate the batch across invocations. The run is idempotent, so a timeout mid-batch
+// is safe: the next scheduled run (or a manual re-trigger) resumes the unprocessed pets.
+export const maxDuration = 60;
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
