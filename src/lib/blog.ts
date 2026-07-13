@@ -30,6 +30,14 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-07-16",
     published: true,
   },
+  {
+    slug: "puppy-first-year-memory-book",
+    title: "How to Make a Puppy's First Year Memory Book (Month by Month)",
+    description:
+      "A month-by-month guide to your puppy's first year memory book: what to photograph, what to write down, and how to turn it all into a real printed book.",
+    datePublished: "2026-07-20",
+    published: true,
+  },
 ];
 
 /** Published posts, newest first. */
