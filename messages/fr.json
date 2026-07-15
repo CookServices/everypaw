@@ -132,6 +132,16 @@
     "free_upsell_cta": "Voir les plans",
     "free_upsell_refresh": "Déjà passé à Premium ? Rafraîchis la page."
   },
+  "first_story_nudge": {
+    "card_title": "Ton premier chapitre est prêt à être écrit",
+    "card_subtitle": "Tu as déjà noté {count} moments. Laisse l'IA en faire un chapitre que tu garderas.",
+    "card_cta": "Écrire mon premier chapitre",
+    "email_subject": "Le premier chapitre de {petName} n'attend que toi",
+    "email_title": "Ton premier chapitre est prêt à être écrit",
+    "email_body": "Tu as déjà noté {count} moments de {petName}. Laisse l'IA en faire un chapitre que tu garderas pour toujours.",
+    "email_cta": "Écrire le premier chapitre",
+    "email_unsubscribe": "Se désinscrire de ces emails"
+  },
   "signup": {
     "reassurance_mobile": "Gratuit · Sans carte bancaire · L'histoire de votre animal en quelques minutes",
     "value_title": "Chaque moment gravé.",

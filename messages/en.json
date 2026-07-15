@@ -132,6 +132,16 @@
     "free_upsell_cta": "See plans",
     "free_upsell_refresh": "Already upgraded? Refresh the page."
   },
+  "first_story_nudge": {
+    "card_title": "Your first chapter is ready to be written",
+    "card_subtitle": "You've already logged {count} moments. Let AI turn them into a chapter you'll keep.",
+    "card_cta": "Write my first chapter",
+    "email_subject": "{petName}'s first chapter is waiting for you",
+    "email_title": "Your first chapter is ready to be written",
+    "email_body": "You've already logged {count} moments with {petName}. Let AI turn them into a chapter you'll keep forever.",
+    "email_cta": "Write the first chapter",
+    "email_unsubscribe": "Unsubscribe from these emails"
+  },
   "signup": {
     "reassurance_mobile": "Free · No credit card · Your pet's story in minutes",
     "value_title": "Every moment remembered.",

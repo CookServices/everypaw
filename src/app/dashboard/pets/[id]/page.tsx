@@ -9,6 +9,8 @@ import { detectMilestones, MILESTONE_TYPES, translateMilestone, MilestoneDefinit
 import { useLocale } from "@/hooks/useLocale";
 import { fmtDateOrdinal } from "@/lib/date";
 import CoachMark from "@/components/CoachMark";
+import { evaluateFirstStoryNudge } from "@/lib/story";
+import type { Plan } from "@/lib/plan";
 
 const MOOD_OPTIONS = [
   { value: "happy", emoji: "😄", label: "Happy" },
@@ -189,6 +191,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [isPremium, setIsPremium] = useState(false);
   const [userPlan, setUserPlan] = useState<string>("free");
   const [bookCredits, setBookCredits] = useState(0);
+  const [userTotalStoryCount, setUserTotalStoryCount] = useState(0);
   const [pendingTributes, setPendingTributes] = useState<{ id: string; author_name: string; message: string; created_at: string }[]>([]);
   const [tributesLoaded, setTributesLoaded] = useState(false);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
@@ -298,6 +301,15 @@ export default function PetPage({ params }: { params: { id: string } }) {
             setMemberProfiles(map);
           }
         }
+
+        // Total story count across all pets, excluding origins/birthday, mirrors
+        // the /api/generate plan gate (canGenerateStory) for the first-story nudge.
+        const { count: totalStoryCount } = await supabase
+          .from("stories")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", uid)
+          .not("story_type", "in", "(origins,birthday)");
+        setUserTotalStoryCount(totalStoryCount ?? 0);
       }
 
       setLoading(false);
@@ -712,6 +724,13 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const totalMilestoneCount = (milestoneDefinitions.length || MILESTONE_TYPES.length) + orphanMilestoneCount;
 
   const isOwner = !!pet && !!currentUserId && pet.user_id === currentUserId;
+  const showFirstStoryNudge = !!pet && evaluateFirstStoryNudge({
+    deceasedAt: pet.deceased_at,
+    plan: userPlan as Plan,
+    totalStories: userTotalStoryCount,
+    entryCount: allEntryDates.length,
+    existingStoryCount: stories.length,
+  });
   const tabs: { key: "journal" | "stories" | "milestones" | "tributes" | "members"; label: string }[] = [
     { key: "journal", label: t.pet.tab_journal },
     { key: "stories", label: t.pet.tab_stories },
@@ -1556,6 +1575,23 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "stories" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {/* First-story nudge, disappears for good once a story exists for this pet */}
+            {showFirstStoryNudge && pet && (
+              <div style={{ background: "rgba(200,129,58,.06)", borderRadius: 16, padding: "1.25rem 1.5rem", border: "1px solid rgba(200,129,58,.2)", display: "flex", flexDirection: "column", gap: ".5rem" }}>
+                <p style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "var(--ep-text)", margin: 0 }}>
+                  {t.first_story_nudge.card_title}
+                </p>
+                <p style={{ fontSize: ".85rem", color: "var(--ep-text-muted)", lineHeight: 1.6, margin: 0 }}>
+                  {t.first_story_nudge.card_subtitle.replace("{count}", String(allEntryDates.length))}
+                </p>
+                <button
+                  onClick={() => { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); }}
+                  style={{ alignSelf: "flex-start", marginTop: ".25rem", padding: ".625rem 1.25rem", borderRadius: 100, border: "none", background: "var(--ep-brand)", color: "#fff", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer" }}
+                >
+                  {t.first_story_nudge.card_cta}
+                </button>
+              </div>
+            )}
             {/* Next chapter indicator */}
             {(() => {
               const now = new Date();

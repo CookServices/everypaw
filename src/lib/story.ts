@@ -1,5 +1,6 @@
 import { escapeXml } from "@/lib/html";
 import { callClaude, parseStoryResponse } from "@/lib/anthropic";
+import { canGenerateStory, type Plan } from "@/lib/plan-guards";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Strip the em dash (—) from AI-generated text. The model is told never to use it; this guarantees it. */
@@ -285,4 +286,54 @@ export async function generateAndSaveStory(
   }
 
   return { id: saved.id, title, story };
+}
+
+// ── First-story nudge ────────────────────────────────────────────────────────
+// Encourages a free-plan user who's already logged 3+ moments to spend their
+// one included generation, in-app card first, reminder email if ignored.
+
+export interface FirstStoryNudgeConditions {
+  deceasedAt: string | null;
+  plan: Plan;
+  /** User's total story count, excluding story_type in (origins, birthday). */
+  totalStories: number;
+  /** This pet's entry count. */
+  entryCount: number;
+  /** This pet's story count, any status. */
+  existingStoryCount: number;
+}
+
+/** Pure eligibility check, shared by the dashboard card and the reminder cron. */
+export function evaluateFirstStoryNudge(c: FirstStoryNudgeConditions): boolean {
+  if (c.deceasedAt) return false;
+  if (canGenerateStory(c.plan, c.totalStories) !== null) return false;
+  if (c.entryCount < 3) return false;
+  if (c.existingStoryCount > 0) return false;
+  return true;
+}
+
+/** Server-side lookup for one (user, pet) pair. Used by the first-story-nudge cron. */
+export async function shouldShowFirstStoryNudge(
+  supabase: SupabaseClient,
+  userId: string,
+  petId: string,
+): Promise<boolean> {
+  const [{ data: pet }, { data: profile }, { count: entryCount }, { count: existingStoryCount }, { count: totalStories }] =
+    await Promise.all([
+      supabase.from("pets").select("id, user_id, deceased_at").eq("id", petId).single(),
+      supabase.from("profiles").select("plan").eq("id", userId).single(),
+      supabase.from("entries").select("*", { count: "exact", head: true }).eq("pet_id", petId),
+      supabase.from("stories").select("*", { count: "exact", head: true }).eq("pet_id", petId),
+      supabase.from("stories").select("*", { count: "exact", head: true }).eq("user_id", userId).not("story_type", "in", "(origins,birthday)"),
+    ]);
+
+  if (!pet || pet.user_id !== userId) return false;
+
+  return evaluateFirstStoryNudge({
+    deceasedAt: pet.deceased_at,
+    plan: (profile?.plan ?? "free") as Plan,
+    totalStories: totalStories ?? 0,
+    entryCount: entryCount ?? 0,
+    existingStoryCount: existingStoryCount ?? 0,
+  });
 }
