@@ -5,6 +5,35 @@
 
 ---
 
+### ✅ Session 56 — SEO : canonicals par page, robots.ts, sitemap.ts (2026-07-11)
+
+Commit `f01d59a`. Bug critique révélé par audit SEO : `alternates.canonical` + `openGraph.url` hardcodés `https://everypaw.app` dans le root layout → hérités par **toutes** les pages → Google considérait tout le site comme duplicata de la homepage.
+
+- **Root layout** : canonical, og:url et hreflang supprimés — `metadataBase` conservé (les canonicals par page sont relatives et résolues contre lui)
+- **Homepage** : `page.tsx` client déplacé → `src/app/home-client.tsx` ; nouveau `page.tsx` server wrapper qui exporte metadata (canonical `/`, hreflang en/fr/x-default, og complet avec `url: "/"`) et ré-exporte le composant client. Title/description homepage **inchangés** (lot suivant)
+- **Pages client** (metadata impossible) → layouts de segment : `gift/layout.tsx` (title "Gift a Pet Journal & Memory Book | Everypaw" + description dédiée + canonical `/gift`), `auth/login/layout.tsx` + `auth/signup/layout.tsx` (`robots: { index: false, follow: false }`)
+- **Legal terms/privacy/notices** : descriptions dédiées + canonical + og:url ; **contact** : canonical + og:url
+- **`/pets/[id]`** : canonical dynamique `/pets/${id}` ajoutée dans `generateMetadata`
+- **`src/app/robots.ts`** créé (allow `/`, disallow `/dashboard` `/api` `/auth` `/unsubscribe`, sitemap) ; `public/robots.txt` **supprimé** (conflit route metadata)
+- **`sitemap.ts`** réécrit : anciennes URLs FR 301-redirigées (`/legal/cgv|confidentialite|mentions`) remplacées par terms/privacy/notices, `/gift` ajouté, `/fr` conservé
+- Vérifié sur `next start` + curl : `/gift` canonical+title+desc propres ✓, `/` canonical+hreflang ✓, noindex login/signup ✓, robots.txt + sitemap.xml servis ✓. Build OK, 16 tests Vitest verts. Webhook Stripe + crons intacts.
+- **Note locale (résolu)** : login/signup rendaient le shell `__next_error__` en local (vars `NEXT_PUBLIC_SUPABASE_*` vides après `vercel env pull` — Sensitive). Fix : ces valeurs sont publiques par design → récupérées depuis le bundle JS prod et réinjectées dans `.env.local`. Astuce valable pour toute var `NEXT_PUBLIC_*` marquée Sensitive.
+
+**Lot 2 — on-page homepage (commit `52060fd`)** : optimisation "ai pet journal" (primaire) + "pet memory book" (secondaire) :
+- Title/description/og/twitter : "AI Pet Journal That Becomes a Printed Book | Everypaw" (`layout.tsx` + og homepage dans `page.tsx`)
+- H2 hero + H2 section livre + CTA carte gift ("Gift a pet memory book" / "Offrir un livre souvenir") : textes inline hardcodés migrés vers clés i18n `hero_sub`, `book_h2_1/2`, `f6_cta` (en+fr). H1 inchangé
+- JSON-LD déplacé de `home-client.tsx` (client) vers `page.tsx` (server) : Organization (nouveau) + SoftwareApplication (**`aggregateRating` factice 5★/3 retiré** — risque pénalité) + FAQPage **construit depuis les clés i18n** `faq.q1..q6/a1..a6` (mêmes clés que la section visible → jamais de drift)
+- Images landing : 6 SVG décoratifs `alt="" aria-hidden` = correct WCAG, aucun nom cryptique, rien à changer
+- Vérifié : 3 blocs JSON-LD `JSON.parse` OK, headings rendus, hero visuel intact (screenshot), build + 16 tests verts
+
+**Lot 3 — hygiène SEO / cohérence contenu (commit `a59e318`)** :
+- Architecture homepage : **aucun changement** — `page.tsx` server (metadata + JSON-LD server-rendered depuis lot 2), corps client SSR complet via force-dynamic ; split en îlots RSC = refactor lourd reporté (#4/#8), zéro gain SEO
+- Liens legacy 301 remplacés par liens directs : `/legal/cgv`→`terms`, `/legal/confidentialite`→`privacy` dans signup, settings, upgrade, CookieBanner (`/gift` était déjà propre) ; **aussi** dans les messages TOS Stripe checkout (`api/gift/checkout` + `api/stripe/checkout`, commit `8432574`)
+- `src/lib/legal.ts` : source ISO unique `LEGAL_LAST_UPDATE_ISO` + formateur → `LEGAL_LAST_UPDATE_EN` "May 26, 2026" sur terms/privacy/notices (affichaient "26 mai 2026"), const FR conservée pour les pages legacy
+- Gift "12 months" : affichage réel déjà dynamique (`step3_title_digital/print`) — clés mortes `step3_title/desc` réécrites avec la durée réelle, `redeem.subtitle` visible corrigé ("12 months" → formulation neutre), en+fr
+
+---
+
 ### ✅ Session 55 — Refonte config Stripe : 3 plans stricts + catalogue live (2026-07-07)
 
 Nettoyage complet variables/produits Stripe. `tsc --noEmit` OK, tests plan.test.ts 9/9 verts.

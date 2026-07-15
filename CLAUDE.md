@@ -204,14 +204,16 @@ Système **3 plans strict** (depuis 2026-07-07) :
 
 Livre supplémentaire (tout plan payant) : prix **dynamique** selon le nombre de pages (`calcGelatoBookPrice`, minimum 28 €/$28) — pas de Price ID Stripe. Les plans supprimés (`digital_annual`, `print_monthly`, livre à la carte à prix fixe) n'existent plus ni dans le code ni dans Stripe.
 
-### Guards d'accès (`src/lib/plan.ts`)
+### Guards d'accès
 
 ```ts
-getUserPlan(userId)          // retourne le plan actuel
-canGenerateStory(userId)     // Free: max 1 | autres: illimité
-canAddEntry(userId)          // Free: max 10 | autres: illimité
-canOrderBook(userId)         // Digital: non | Print: oui (1/an) | Book: oui (1 crédit)
+getUserPlan(userId)          // retourne le plan actuel — src/lib/plan.ts
+canGenerateStory(userId)     // Free: max 1 | autres: illimité — src/lib/plan-guards.ts
+canAddEntry(userId)          // Free: max 10 | autres: illimité — src/lib/plan-guards.ts
+canOrderBook(userId)         // Digital: non | Print: oui (1/an) | Book: oui (1 crédit) — src/lib/plan-guards.ts
 ```
+
+**`src/lib/plan-guards.ts`** (session 58) : guards purs (`canAddEntry`, `canGenerateStory`, `canOrderBook`, `priceIdToPlan`, types `Plan`/`PlanInfo`), **zéro import**. Extraits de `plan.ts` pour rester importables depuis un module utilisé par un composant `"use client"` (voir règle client/server ci-dessous). `plan.ts` fait `export * from "./plan-guards"` — tous les imports existants `from "@/lib/plan"` continuent de fonctionner sans changement.
 
 `priceIdToPlan()` mappe les Stripe price IDs (depuis env vars) aux plans.  
 Book credits : incrémentés via RPC `increment_book_credits`, consommés atomiquement via `try_consume_book_credit` (verrou `FOR UPDATE`) **avant** l'appel Gelato, restaurés via `restore_book_credit` en cas d'échec Gelato. Prévient les race conditions sur les commandes simultanées.
@@ -357,14 +359,15 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
     { "path": "/api/cron/streak-alert",    "schedule": "0 17 * * *" },
     { "path": "/api/cron/birthday-check",  "schedule": "0 8 * * *" },
     { "path": "/api/cron/daily-prompts",     "schedule": "0 7 * * *" },
-    { "path": "/api/cron/retention-emails", "schedule": "0 9 * * *" }
+    { "path": "/api/cron/retention-emails", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/first-story-nudge", "schedule": "0 10 * * *" }
   ]
 }
 ```
 
 Toutes les routes cron protégées par `Authorization: Bearer CRON_SECRET`.
 
-Les 7 routes existent (les 3 dernières créées en session 24, PR #51).
+Les 8 routes existent (les 3 de `on-this-day`/`streak-alert`/`birthday-check` créées en session 24, PR #51 ; `first-story-nudge` ajoutée session 58).
 
 ---
 
@@ -438,7 +441,7 @@ currency: "USD"
 
 **Monétisation** : checkout + upgrade avec proration preview, webhook idempotent (dedup `events_log` par `stripe_event_id`), achat livre one-time à prix dynamique, flow cadeau complet (achat one-time → code promo → redeem avec coupon 100%, schedule si déjà abonné), factures, réactivation, changement de plan fin de période, gestion `payment_past_due` (bannière + email dunning 1ère tentative).
 
-**Emails** (Resend) : templates harmonisés `src/lib/email-templates.ts` (`baseLayout`), auth hook Supabase (Standard Webhooks, HMAC fail-closed), crons rappel hebdo / histoire mensuelle / on-this-day / anniversaires / streak / prompts quotidiens / rétention D1-D7-D30, unsubscribe tokenisé.
+**Emails** (Resend) : templates harmonisés `src/lib/email-templates.ts` (`baseLayout`), auth hook Supabase (Standard Webhooks, HMAC fail-closed), crons rappel hebdo / histoire mensuelle / on-this-day / anniversaires / streak / prompts quotidiens / rétention D1-D7-D30 / nudge premier chapitre (J+2-3, `first-story-nudge`), unsubscribe tokenisé.
 
 **Pages publiques** : profil animal `/pets/[id]`, mémorial `/memorial/[id]` (dark, OG meta, hommages modérés rate-limités), share card Instagram (`/api/share-card`, edge, PNG square/story).
 
@@ -478,6 +481,7 @@ currency: "USD"
 - **`/api/generate`** : ne jamais faire confiance aux données du body client (petName, species, bio, entries). Re-fetcher depuis la DB après vérification de l'ownership du pet.
 - **`/api/gelato/order`** : toujours filtrer les updates de stories par `user_id` (même avec service role). Consommer les crédits via `try_consume_book_credit` **avant** l'appel Gelato, et restaurer via `restore_book_credit` en cas d'échec.
 - **`/api/preview-pdf`** : l'accès GET (Gelato) nécessite un token HMAC signé généré par `gelato/order`. L'accès POST (in-app) nécessite une session + vérification de l'ownership du pet. Ne jamais exposer le contenu du livre sans authentification. Les URLs insérées dans du CSS (`url('...')`) doivent être passées par `safeCssUrl()` qui échappe les apostrophes.
+- **Client vs server-only imports** : ne jamais faire importer, par un module utilisé dans un composant `"use client"`, un fichier dont la chaîne d'imports statique touche `supabase/server.ts` / `next/headers` (ex. `plan.ts`, `book.ts` avant son split). Casse le build (« importing a component that needs next/headers ... not supported in pages/ »). Pattern de fix : extraire la logique pure (zéro import) dans un module frère (`book-pages.ts`, `plan-guards.ts`) et faire réexporter par l'original pour compat. Un `import type { ... }` est toujours sûr (effacé à la compilation) — seuls les imports de valeurs/fonctions posent problème.
 - **Helpers partagés** : pour escaper du HTML → `escapeHtml()` dans `src/lib/html.ts`. Pour escaper du XML dans les prompts IA → `escapeXml()` dans `src/lib/html.ts`. Pour détecter la locale d'un profil → `src/lib/locale.ts` (utilise `getServiceSupabase()` — pas de session requise). Pour le calcul du nombre de pages → `src/lib/book.ts`. Pour les tokens PDF → `src/lib/pdf-token.ts`. Pour mapper les erreurs Supabase Auth → messages FR/EN → `src/lib/auth-errors.ts` (`getSignupError`). Pour `verifyBearer` (Bearer token constant-time) et `validateRedirectTo` (open redirect guard) → `src/lib/auth.ts`. Ne pas réimplémenter ces fonctions inline.
 - **Rate limiting** : le rate limiter in-memory (`src/lib/rate-limit.ts`) n'est PAS fiable sur Vercel serverless (cold start = reset, pas de partage entre instances). Pour les limites critiques, utiliser un count DB (voir `/api/generate`) ou Upstash Redis.
 - **Comparaisons de secrets** : toujours utiliser `timingSafeEqual` de `node:crypto` pour comparer des tokens/secrets (Bearer, HMAC, etc.). Ne jamais utiliser `===` pour ces comparaisons — vulnérable aux attaques par timing.
@@ -546,6 +550,19 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 Historique complet (sessions 1 à 53, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
 Seules les 2 dernières sessions sont conservées ici ; à chaque nouvelle session, déplacer la plus ancienne vers l'archive.
 
+### ✅ Session 58 — Nudge premier chapitre gratuit (2026-07-15)
+
+Problème : un free user qui écrit 3 entrées dès sa 1ère semaine n'a aucun signal poussant à utiliser sa génération IA gratuite incluse (`canGenerateStory`) → risque de churn avant le "wow moment".
+
+**Commit `94bc2e4`** :
+- **`src/lib/plan-guards.ts`** (nouveau) : `canAddEntry`/`canGenerateStory`/`canOrderBook`/`priceIdToPlan`/`Plan`/`PlanInfo` extraits de `plan.ts` vers un module **zéro import**. Raison : `plan.ts` importe `supabase/server` (→ `next/headers`) en tête de fichier ; `pets/[id]/page.tsx` est `"use client"`. Faire importer `canGenerateStory` par `lib/story.ts` (lui-même importé par cette page client) via `plan.ts` aurait réintroduit le bug RSC de la Session ~50 (`BookProgressWidget` → `book.ts` → `plan.ts` → crash build). `plan.ts` fait `export * from "./plan-guards"` : aucun des ~15 call sites existants n'a changé. Même patron que le split `book.ts`/`book-pages.ts`.
+- **`src/lib/story.ts`** : `evaluateFirstStoryNudge(conditions)` — pure, appelle `canGenerateStory` de `plan-guards.ts` (pas de duplication) — et `shouldShowFirstStoryNudge(supabase, userId, petId)` — lookup DB, utilisée par le cron.
+- **`pets/[id]/page.tsx`**, onglet Histoires IA : carte nudge au-dessus de l'indicateur "prochain chapitre", calcule l'éligibilité côté client à partir de l'état déjà chargé (`pet.deceased_at`, `stories.length`, `allEntryDates.length`) + un nouveau count `userTotalStoryCount` (stories hors origins/birthday, tout animal confondu — même filtre que `/api/generate`). CTA = même handler que le bouton "Générer" existant (ouvre `showGenerateModal`), aucune logique de génération dupliquée. Disparaît automatiquement une fois `stories.length > 0`.
+- **`/api/cron/first-story-nudge`** (nouveau, `0 10 * * *`) : email de relance si la carte in-app a été ignorée 2-3 jours. Dédup via `events_log` (`user_id, pet_id, event_type='first_story_nudge_email'`) — **aucune migration SQL** : la table avait déjà `pet_id` + contrainte unique `(user_id, pet_id, event_type)`. Respecte `email_reminders` (contrairement à `monthly-story` qui ignore ce flag pour la génération elle-même — ici il n'y a que l'email, pas de fonctionnalité produit derrière).
+- i18n : clés `first_story_nudge.*` (fr+en). Tests : `src/lib/story.test.ts`, 5 cas sur `evaluateFirstStoryNudge`. `tsc --noEmit` + 21/21 tests verts.
+
+Non testé en navigateur (nécessite un compte free avec 3 entrées fraîches — laissé à Julien).
+
 ### ✅ Session 57 — i18n hybride : /fr crawlable server-rendered (2026-07-12)
 
 Chantier : rendre la version FR crawlable par Google sans réintroduire next-intl. Audit préalable : `/fr` existait déjà mais en copie manuelle client de 579 l (drift, dette #6) ; `/gift` en `useLocale` navigator (non crawlable FR) ; pas de `/fr/gift` ; aucun redirect auto Accept-Language (rien à retirer). Décision (validée user) : composant client locale-aware partagé + langue **figée par URL**, plutôt que RSC purs + îlots (blast-radius élevé, zéro gain SEO car le FR est déjà en source via `use client` + `force-dynamic`).
@@ -564,29 +581,4 @@ Chantier : rendre la version FR crawlable par Google sans réintroduire next-int
 
 **Landing mémorial publique** (`/memorial`, commit `e1620ba`) : page marketing SEO « pet memorial book », **server component pur** (pas de `"use client"`, zéro interactivité) — distincte des pages user `/memorial/[id]`. Ton sobre (deuil animalier) : palette cream + sage, pas d'amber criard sur le contenu (le dot logo nav + cookie banner restent en amber = chrome global), aucune image, aucun schema Review, CTA unique discret `/auth/signup`. Textes en `memorial_landing` (en+fr, la page rend EN ; `/fr/memorial` non créé). Metadata title/description dédiées + canonical `/memorial`, ajouté au sitemap. Carte homepage « A legacy that lasts » (f5) devient un lien descriptif vers `/memorial` (`aria-label`, ancre SEO).
 
-### ✅ Session 56 — SEO : canonicals par page, robots.ts, sitemap.ts (2026-07-11)
-
-Commit `f01d59a`. Bug critique révélé par audit SEO : `alternates.canonical` + `openGraph.url` hardcodés `https://everypaw.app` dans le root layout → hérités par **toutes** les pages → Google considérait tout le site comme duplicata de la homepage.
-
-- **Root layout** : canonical, og:url et hreflang supprimés — `metadataBase` conservé (les canonicals par page sont relatives et résolues contre lui)
-- **Homepage** : `page.tsx` client déplacé → `src/app/home-client.tsx` ; nouveau `page.tsx` server wrapper qui exporte metadata (canonical `/`, hreflang en/fr/x-default, og complet avec `url: "/"`) et ré-exporte le composant client. Title/description homepage **inchangés** (lot suivant)
-- **Pages client** (metadata impossible) → layouts de segment : `gift/layout.tsx` (title "Gift a Pet Journal & Memory Book | Everypaw" + description dédiée + canonical `/gift`), `auth/login/layout.tsx` + `auth/signup/layout.tsx` (`robots: { index: false, follow: false }`)
-- **Legal terms/privacy/notices** : descriptions dédiées + canonical + og:url ; **contact** : canonical + og:url
-- **`/pets/[id]`** : canonical dynamique `/pets/${id}` ajoutée dans `generateMetadata`
-- **`src/app/robots.ts`** créé (allow `/`, disallow `/dashboard` `/api` `/auth` `/unsubscribe`, sitemap) ; `public/robots.txt` **supprimé** (conflit route metadata)
-- **`sitemap.ts`** réécrit : anciennes URLs FR 301-redirigées (`/legal/cgv|confidentialite|mentions`) remplacées par terms/privacy/notices, `/gift` ajouté, `/fr` conservé
-- Vérifié sur `next start` + curl : `/gift` canonical+title+desc propres ✓, `/` canonical+hreflang ✓, noindex login/signup ✓, robots.txt + sitemap.xml servis ✓. Build OK, 16 tests Vitest verts. Webhook Stripe + crons intacts.
-- **Note locale (résolu)** : login/signup rendaient le shell `__next_error__` en local (vars `NEXT_PUBLIC_SUPABASE_*` vides après `vercel env pull` — Sensitive). Fix : ces valeurs sont publiques par design → récupérées depuis le bundle JS prod et réinjectées dans `.env.local`. Astuce valable pour toute var `NEXT_PUBLIC_*` marquée Sensitive.
-
-**Lot 2 — on-page homepage (commit `52060fd`)** : optimisation "ai pet journal" (primaire) + "pet memory book" (secondaire) :
-- Title/description/og/twitter : "AI Pet Journal That Becomes a Printed Book | Everypaw" (`layout.tsx` + og homepage dans `page.tsx`)
-- H2 hero + H2 section livre + CTA carte gift ("Gift a pet memory book" / "Offrir un livre souvenir") : textes inline hardcodés migrés vers clés i18n `hero_sub`, `book_h2_1/2`, `f6_cta` (en+fr). H1 inchangé
-- JSON-LD déplacé de `home-client.tsx` (client) vers `page.tsx` (server) : Organization (nouveau) + SoftwareApplication (**`aggregateRating` factice 5★/3 retiré** — risque pénalité) + FAQPage **construit depuis les clés i18n** `faq.q1..q6/a1..a6` (mêmes clés que la section visible → jamais de drift)
-- Images landing : 6 SVG décoratifs `alt="" aria-hidden` = correct WCAG, aucun nom cryptique, rien à changer
-- Vérifié : 3 blocs JSON-LD `JSON.parse` OK, headings rendus, hero visuel intact (screenshot), build + 16 tests verts
-
-**Lot 3 — hygiène SEO / cohérence contenu (commit `a59e318`)** :
-- Architecture homepage : **aucun changement** — `page.tsx` server (metadata + JSON-LD server-rendered depuis lot 2), corps client SSR complet via force-dynamic ; split en îlots RSC = refactor lourd reporté (#4/#8), zéro gain SEO
-- Liens legacy 301 remplacés par liens directs : `/legal/cgv`→`terms`, `/legal/confidentialite`→`privacy` dans signup, settings, upgrade, CookieBanner (`/gift` était déjà propre) ; **aussi** dans les messages TOS Stripe checkout (`api/gift/checkout` + `api/stripe/checkout`, commit `8432574`)
-- `src/lib/legal.ts` : source ISO unique `LEGAL_LAST_UPDATE_ISO` + formateur → `LEGAL_LAST_UPDATE_EN` "May 26, 2026" sur terms/privacy/notices (affichaient "26 mai 2026"), const FR conservée pour les pages legacy
-- Gift "12 months" : affichage réel déjà dynamique (`step3_title_digital/print`) — clés mortes `step3_title/desc` réécrites avec la durée réelle, `redeem.subtitle` visible corrigé ("12 months" → formulation neutre), en+fr
+Session 56 (SEO canonicals/robots.ts/sitemap.ts) archivée dans [docs/SESSIONS.md](docs/SESSIONS.md).
