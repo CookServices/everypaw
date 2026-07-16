@@ -116,12 +116,18 @@ STRIPE_GIFT_COUPON_ID          # coupon 100% off, duration "once" (1ère facture
 RESEND_API_KEY
 WAITLIST_TO_EMAIL              # email destinataire waitlist (optionnel — warn si absent)
 
+GELATO_API_KEY                  # print-on-demand — requis par /api/gelato/order et /api/gelato/status/[orderId]
+
+NEXT_PUBLIC_APP_URL             # base URL utilisée pour les liens absolus (emails, redirects Stripe/Gelato)
+PDF_ACCESS_SECRET                # signe le token HMAC court-terme de /api/book-pdf — fallback sur SUPABASE_SERVICE_ROLE_KEY si absent (le renseigner explicitement en prod)
 CRON_SECRET                    # protège les routes /api/cron/*
 
 # Auth Hook (Supabase → /api/emails/auth-hook)
 SUPABASE_HOOK_SECRET           # format "v1,whsec_<base64>" — copier depuis Supabase > Auth > Hooks > Send Email > Reveal
                                # Si absent → hook retourne 401 → Supabase retourne 500 sur signup/reset
 ```
+
+Liste tenue à jour depuis `.env.local.example` (source de vérité — vérifier ce fichier en cas de doute, il est plus facile à garder synchrone que ce tableau).
 
 ---
 
@@ -254,9 +260,15 @@ Le webhook (`/api/stripe/webhook`) gère :
 - `src/lib/supabase/server.ts` — client serveur (anon key + cookie auth), utilisé dans les routes API et le middleware
 - `getServiceSupabase()` dans `src/lib/supabase/service.ts` (ré-exporté par `src/lib/plan.ts` pour compat) — client service role (bypass RLS) — utilisé dans le webhook Stripe, les cron jobs, gelato/order, preview-pdf (GET), les pages publiques `/pets/[id]` et `/memorial/[id]` (toutes deux restreintes aux animaux décédés). `service.ts` n'a aucune dépendance server-only → importable en edge runtime.
 
-**Règle** : ne jamais instancier `createClient` depuis `@supabase/supabase-js` directement dans une route. Importer `getServiceSupabase()` (`@/lib/supabase/service` ou `@/lib/plan`) pour le service role. Pour Stripe, importer le singleton `stripe` de `@/lib/stripe` (jamais `new Stripe(...)` en ligne). Pour les regex UUID/email et redirects relatifs sûrs, utiliser `@/lib/validation`.
+**Règle** : ne jamais instancier `createClient` depuis `@supabase/supabase-js` directement dans une route. Importer `getServiceSupabase()` (`@/lib/supabase/service` ou `@/lib/plan`) pour le service role. Pour Stripe, importer le singleton `stripe` de `@/lib/stripe` (jamais `new Stripe(...)` en ligne) ; pour le `PRICE_MAP` (digital/print_annual → price ID par devise) et `resolveSubscriptionId()`, importer depuis `@/lib/stripe-helpers` — source unique, ne pas redéfinir un mapping price ID → plan ailleurs que `priceIdToPlan()` (`plan-guards.ts`). Pour les regex UUID/email et redirects relatifs sûrs, utiliser `@/lib/validation`.
 
-Auth enforced dans `src/middleware.ts` : les requêtes non authentifiées vers `/dashboard/*` redirigent vers `/auth/login`.
+`src/middleware.ts` fait **quatre choses**, pas seulement l'auth — à connaître avant d'y toucher :
+1. Auth guard : non authentifié sur `/dashboard/*` → redirect `/auth/login` ; authentifié sur `/auth/login` ou `/auth/signup` → redirect `/dashboard`.
+2. Legacy redirect : `/app` et `/app/*` → `/dashboard` (authentifié) ou `/auth/login` (non authentifié).
+3. **Fail-closed** : si `supabase.auth.getUser()` throw, les routes `/dashboard/*` redirigent vers `/auth/login` par défaut (on ne sait pas si l'utilisateur est authentifié → on refuse) ; les autres routes passent (`NextResponse.next`).
+4. Pose le header `x-pathname` sur **toute** requête matchée (y compris `/fr/:path*`) — **c'est ce qui permet au root `layout.tsx` de fixer `<html lang="fr"|"en">`**. Le supprimer casse le `lang` HTML sans erreur visible ailleurs.
+
+`matcher` actuel : `/app`, `/app/:path*`, `/dashboard/:path*`, `/auth/:path*`, `/fr/:path*`, `/fr`, `/invite/:path*`. Étendre le matcher à une nouvelle route = vérifier qu'elle a bien besoin d'une de ces 4 responsabilités (sinon le middleware ajoute une requête Supabase inutile sur chaque hit).
 
 ### i18n
 
@@ -316,7 +328,7 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/api/book-configs` | GET (liste par petId) + POST (create/update, max 15 drafts) |
 | `/api/book-configs/[id]` | DELETE (owner-only) |
 | `/api/share-card` | Génération image PNG partage Instagram — edge runtime, auth session + ownership, `?story_id=&format=square\|story` |
-| `/api/cron/monthly-story` | Auto-génération chapitre mensuel IA (actif) — voir règles d'éligibilité dans Conventions ; `maxDuration=300`, réponse `{ processed, generated, skipped, failed, durationMs, monthKey }` |
+| `/api/cron/monthly-story` | Auto-génération chapitre mensuel IA (actif) — voir règles d'éligibilité dans Conventions ; `maxDuration=60` (plan Vercel Hobby), réponse `{ processed, generated, skipped, failed, durationMs, monthKey }` |
 | `/api/cron/weekly-reminder` | Rappels email via Resend |
 | `/api/gift/create`, `/api/gift/redeem` | Flow carte cadeau |
 | `/api/currency` | Retourne `{ currency: "EUR"\|"USD" }` via `x-vercel-ip-country` (le champ `country` a été supprimé — privacy) |
@@ -379,7 +391,7 @@ pageCount: 28   // OBLIGATOIRE — sans ça Gelato retourne BAD_REQUEST
 currency: "USD"
 ```
 
-**Pricing livre dynamique** : `calcGelatoBookPrice(pageCount)` dans `src/lib/gelato-pricing.ts`. COGS Gelato : `15.46 + max(0,(n-30)/2)×0.395`. Marge fixe : +12€/USD. Prix minimum (28 pages) : ~27,46€.
+**Pricing livre dynamique** : `calcGelatoBookPrice(pageCount)` dans `src/lib/gelato-pricing.ts`. COGS Gelato : `15.46 + max(0,(n-30)/2)×0.395`. Marge fixe : +12€/USD. Résultat passé par `Math.ceil` → prix minimum (28 pages) = **28€/$28** (pas 27,46 — le COGS brut est 27.46, le prix affiché/facturé est arrondi au-dessus). Cohérent avec le tableau des plans plus haut.
 
 **pageCount** : calculé par `calcPageCount(storiesCount, hasOrphanPhotos, hasDedication)` dans `src/lib/book.ts`. Doit correspondre exactement entre `gelato/order` et `book-pdf` (même algo best-match pour `hasOrphanPhotos`). Format Gelato : multiple de 4, minimum 28.
 
@@ -449,7 +461,7 @@ currency: "USD"
 
 **SEO / RGPD** : canonicals par page (relatives, résolues via `metadataBase`), `app/robots.ts` + `app/sitemap.ts` (routes metadata Next), noindex sur login/signup, metas dédiées gift/legal, homepage optimisée "ai pet journal" / "pet memory book" (title + H2 hero + H2 livre + CTA gift), JSON-LD homepage dans le server `page.tsx` : Organization + SoftwareApplication (sans aggregateRating — placeholders interdits) + FAQPage construit dynamiquement depuis `messages/en.json` `faq.q1..q6/a1..a6` (zéro drift schema/contenu), hreflang réciproque sur les 4 routes marketing (`/`↔`/fr`, `/gift`↔`/fr/gift`), cookie banner, export données JSON, suppression de compte complète. `aggregateRating` factice retiré partout (Session 57).
 
-**Sécurité** : 13 rounds de review (détail dans docs/SESSIONS.md) — les règles qui en découlent sont codifiées dans « Conventions de code » ci-dessous.
+**Sécurité** : 13 rounds de review (détail dans docs/SESSIONS.md) — les règles qui en découlent sont codifiées dans « Conventions de code » ci-dessous. Un audit indépendant plus récent (2026-07-06, root `AUDIT_REPORT.md` + `AUDIT_PLAN.md` + `AUDIT_REPORT_QUALITY.md`, non lié depuis ce fichier jusqu'ici) a trouvé 13 findings dont 1 CRITIQUE (RPC crédits-livre exposées à tout utilisateur authentifié, self-crediting possible) ; 12/13 corrigés le jour même, dont le critique via `revoke_book_credit_rpc_2026_07_06.sql`. **Avant tout nouveau round de sécurité, lire ces 3 fichiers** — ils documentent aussi les zones volontairement non auditées (composants client Z8, scripts one-shot).
 
 **Qualité** : logs gatés (`src/lib/log.ts`, `DEBUG_LOGS=1`), rate-limit persistant Postgres (`checkRateLimitDb`), tests Vitest (plan guards, priceIdToPlan, calcPageCount, parseStoryResponse), hook SessionStart `npm install`.
 
@@ -488,11 +500,39 @@ currency: "USD"
 - **Validation dates** : les paramètres `periodStart`/`periodEnd` reçus du client doivent être validés comme `YYYY-MM-DD` avant usage comme filtre DB.
 - **Cookies** : tout cookie sensible posé via API doit avoir `httpOnly: true`, `secure: process.env.NODE_ENV === "production"`, `sameSite: "lax"`. **Exception** : le cookie `locale` (préférence de langue) est intentionnellement sans `httpOnly` — il doit être lisible par `document.cookie` dans `useLocale`. La convention ne s'applique qu'aux données sensibles (session, tokens).
 - **Prompts IA avec données utilisateur** : isoler les données dans des balises XML (`<pet_details>`, `<journal_entries>`) pour prévenir les injections de prompt ET appliquer `escapeXml()` sur chaque valeur insérée dans les balises. Voir `cron/monthly-story` et `/api/generate` pour le pattern.
-- **Cron chapitre mensuel** (`/api/cron/monthly-story`, actif — sched `0 8 1 * *`) : génère le chapitre du **mois écoulé** (le cron fire le 1er). Éligibilité d'un pet = **TOUTES** : `deceased_at IS NULL` + owner plan ∈ `digital`/`print` (jamais free/book_only) + **≥3 entrées** avec `entry_date` dans le mois écoulé + **aucune story existante pour (pet, month_key)**. Idempotence garantie au niveau DB par l'index unique `stories_pet_id_story_type_month_key_unique` (+ gestion `23505` dans `generateAndSaveStory`) → un retry Vercel ne produit **aucun doublon**. **`email_reminders` n'est PAS un critère d'éligibilité** : un payant qui a coupé les emails obtient quand même son chapitre in-app ; seul l'email de notification respecte l'opt-out. Génération via le service partagé `generateAndSaveStory` (`src/lib/story.ts`, même prompt/modèle que la génération manuelle — ne jamais dupliquer la logique IA). try/catch **par pet** (une erreur loggue et continue, ne fait pas échouer le batch). `maxDuration=300` (aligné plan Vercel Pro ; Hobby plafonne à 60s).
+- **Cron chapitre mensuel** (`/api/cron/monthly-story`, actif — sched `0 8 1 * *`) : génère le chapitre du **mois écoulé** (le cron fire le 1er). Éligibilité d'un pet = **TOUTES** : `deceased_at IS NULL` + owner plan ∈ `digital`/`print` (jamais free/book_only) + **≥3 entrées** avec `entry_date` dans le mois écoulé + **aucune story existante pour (pet, month_key)**. Idempotence garantie au niveau DB par l'index unique `stories_pet_id_story_type_month_key_unique` (+ gestion `23505` dans `generateAndSaveStory`) → un retry Vercel ne produit **aucun doublon**. **`email_reminders` n'est PAS un critère d'éligibilité** : un payant qui a coupé les emails obtient quand même son chapitre in-app ; seul l'email de notification respecte l'opt-out. Génération via le service partagé `generateAndSaveStory` (`src/lib/story.ts`, même prompt/modèle que la génération manuelle — ne jamais dupliquer la logique IA). try/catch **par pet** (une erreur loggue et continue, ne fait pas échouer le batch). `maxDuration=60` (plafond du plan Vercel Hobby actuel — repasser à 300 seulement après upgrade Pro confirmé, et mettre à jour cette ligne en même temps que le code).
 - **Réponses API erreurs** : ne jamais retourner des détails d'erreurs internes (Stripe, Gelato, Anthropic) au client — les logger côté serveur et retourner uniquement un message générique.
+- **Copie visible utilisateur** : pas de caractère flèche (`→`, `->`) dans les textes affichés (titres, boutons, emails, i18n) — convention établie session 58 (commit `cc72a8b`), appliquée rétroactivement à tout le texte existant. Les flèches restent acceptables dans le code/commentaires/CLAUDE.md.
 - **UUID validation** : toujours valider `petId`, `storyId` et tout autre identifiant reçu du client via `UUID_REGEX` avant usage en DB ou en URL. La route `gelato/order` et `preview-pdf` font référence.
 - **`/auth/callback` redirect** : `next` doit commencer par `/` ET ne pas commencer par `//` pour bloquer les redirects protocol-relative vers des domaines externes.
 - **SEO / metadata** : ne jamais mettre de `alternates.canonical` ni `openGraph.url` dans le root layout — hérités par toutes les pages (bug duplicata homepage, corrigé session 56). Canonicals **relatives** (`/gift`), résolues via `metadataBase`. Le merge metadata Next est **shallow par clé top-level** : une page qui définit `openGraph` remplace **tout** l'objet og du layout → toujours fournir un og complet (title/url/siteName/type) quand on override. Pages `"use client"` : metadata via `layout.tsx` de segment (gift, auth) ou wrapper server `page.tsx` + composant client séparé (homepage → `home-client.tsx`). Jamais de `public/robots.txt` — conflit avec `app/robots.ts`.
+
+---
+
+## Definition of Done
+
+Une tâche (feature, fix, refacto) n'est **pas terminée** tant que les checks ci-dessous n'ont pas tous été faits — indépendamment de qui l'écrit.
+
+### Checks à exécuter avant de déclarer un travail fini
+
+1. `npx tsc --noEmit` → zéro erreur.
+2. `npm test` → tous les tests verts, pas seulement ceux du fichier touché (couvre les guards de plan, `priceIdToPlan`, `calcPageCount`, `parseStoryResponse`, `evaluateFirstStoryNudge`).
+3. `npm run build` avant tout push sur `main` ou toute PR — attrape les erreurs que `tsc --noEmit` seul ne voit pas (imports client/server incompatibles, edge runtime).
+4. Nouvelles clés i18n → présentes dans `messages/en.json` **et** `messages/fr.json` (jamais une seule).
+5. Route API nouvelle/modifiée → ownership vérifié (le `petId`/`storyId` du body/params appartient à l'utilisateur authentifié), identifiants validés via `UUID_REGEX`, aucun détail d'erreur interne (Stripe/Gelato/Anthropic) renvoyé au client.
+6. Migration SQL nouvelle → `IF NOT EXISTS` / bloc `DO $$ … $$` (idempotente, un ré-run ne doit rien casser), nommée `<description>_YYYY_MM_DD.sql`.
+7. Comparaison de secret/token → `timingSafeEqual`, jamais `===`.
+8. Texte visible utilisateur nouveau/modifié → pas de caractère flèche, i18n dans les 2 fichiers, ton conforme à DESIGN.md (pas de SaaS bleu générique, Georgia pour l'émotionnel, tokens `--ep-*` plutôt que hex inline hors exceptions listées plus haut).
+9. Changement UI/frontend → `npm run dev`, ouvrir la page dans un navigateur, tester le golden path + au moins un edge case, avant de dire que c'est fait. Si l'environnement ne permet pas de driver un navigateur, le dire explicitement plutôt que de prétendre avoir vérifié visuellement.
+10. CLAUDE.md mis à jour si la tâche a changé une convention, un schéma, une route, une variable d'env, ou le nombre de tests/migrations — voir « Instructions pour Claude » en tête de fichier.
+
+### Zones à ne jamais casser silencieusement
+
+Un bug ici est soit un bug financier, soit un doublon visible côté client — vérifier explicitement qu'aucune régression n'a été introduite :
+- Guards de plan (`canAddEntry` / `canGenerateStory` / `canOrderBook`) et leur exclusion des stories `origins`/`birthday` du quota.
+- Idempotence webhook Stripe (dedup `events_log` par `stripe_event_id`) et source unique des book credits Print (`invoice.payment_succeeded`).
+- Cohérence `pageCount` entre `gelato/order` et `book-pdf` (même algo `hasOrphanPhotos`), et cohérence du prix livre (`calcGelatoBookPrice`) avec le tableau des plans.
+- `x-pathname` posé par `src/middleware.ts` (utilisé par le root layout pour `<html lang>`).
 
 ---
 
@@ -531,7 +571,7 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 - **#3 Client Anthropic unique** — `src/lib/anthropic.ts` : `callClaude()` (model `claude-sonnet-4-6`, version, timeout 30s, 1 retry sur 429/5xx/network) + `parseStoryResponse()`. Refacto des 4 sites (generate, generate-origins, story.ts ×2). Model id défini **une seule fois**.
 - **#5 Singleton Supabase browser** — `src/lib/supabase/client.ts` réutilise une instance au lieu d'en créer une par render.
 - **#7 Rate-limit persistant** — `checkRateLimitDb()` via RPC Postgres atomique `check_rate_limit` (migration `add_rate_limits_2026_06_18.sql` **appliquée en prod ✓**). Table `rate_limits` RLS-on sans policy, fonction SECURITY DEFINER, **fail-open**. Rewire 7 routes (contact, waitlist, gift-checkout, export-data, memorial tributes, suggestion, unsubscribe). L'ancien limiter in-memory (`checkRateLimit`) reste dispo mais non fiable serverless.
-- **#10 Tests Vitest** — `npm test` ; `vitest.config.ts` avec alias `@`→`src` **manuel** (⚠️ PAS `vite-tsconfig-paths` : ESM-only, casse le config loader CJS). 16 tests : plan guards, priceIdToPlan, calcPageCount, parseStoryResponse.
+- **#10 Tests Vitest** — `npm test` ; `vitest.config.ts` avec alias `@`→`src` **manuel** (⚠️ PAS `vite-tsconfig-paths` : ESM-only, casse le config loader CJS). 4 fichiers (`plan.test.ts`, `book-pages.test.ts`, `anthropic.test.ts`, `story.test.ts`), 21 cas au 2026-07-15 — ne pas figer ce nombre dans la doc, se fier à `npm test` pour l'état réel.
 
 **Écarté — #2 `select("*")` → colonnes explicites :** analysé, **aucun gain réel**, non appliqué. Toutes les occurrences restantes sont soit `select("*", { count, head: true })` (zéro ligne transférée), soit des selects dont **toutes les colonnes sont consommées** (PDF book/preview, gelato/order, book-configs, pet detail). Le seul candidat (5 entries récentes dashboard) gardait `content` (affiché) et cassait le type `Entry` → revert. Ne pas re-tenter sans nouveau besoin.
 
@@ -577,7 +617,7 @@ Chantier : rendre la version FR crawlable par Google sans réintroduire next-int
 
 **Bandeau de suggestion de langue** (`LangSuggestBanner`, commit `dfafd65`) : client component monté sur les 4 pages marketing. Lit `navigator.language` **uniquement pour suggérer** (jamais de redirect, ne modifie jamais le contenu rendu). Affiché seulement si mismatch (page EN + navigator fr, ou page FR + navigator non-fr). Lien réel crawlable `<a href>` vers la même page dans l'autre langue. Fixed bottom, dismissible, dismiss mémorisé en `localStorage` (`ep_lang_suggest_dismissed`), rend `null` tant que non monté (pas de mismatch d'hydratation, pas de CLS). ⚠️ Vérifier l'interactivité client sur `next start` (prod) : le preview `next dev` du sandbox n'hydrate pas React.
 
-**Infra blog SEO** (commit `2489c7f`) : cluster de contenu « pet memory ». `src/lib/blog.ts` = registre unique (`BLOG_POSTS[]` : slug, title, description, datePublished, `published`) — pilote l'index `/blog`, l'inclusion sitemap et le noindex par article. Chaque article = `app/blog/<slug>/page.tsx` écrit à la main : metadata (canonical `/blog/<slug>`, `robots` dérivé du flag `published`), JSON-LD Article (author/publisher Organization Everypaw) **émis seulement si publié**, corps H2/H3 dans `<ArticleLayout post>` (`src/components/blog/ArticleLayout.tsx` : fil d'ariane, colonne lecture ~680px, typo Georgia/DM Sans, CTA final discret vers `/`). **Workflow pour ajouter/publier un article** : (1) écrire le corps dans `app/blog/<slug>/page.tsx`, (2) passer `published: true` dans `blog.ts` → l'article entre dans l'index + le sitemap et perd le noindex, le JSON-LD s'active. Placeholder actuel `pet-journal-prompts` (`published: false`, noindex). Lien « Blog » dans le footer full (landing).
+**Infra blog SEO** (commit `2489c7f`) : cluster de contenu « pet memory ». `src/lib/blog.ts` = registre unique (`BLOG_POSTS[]` : slug, title, description, datePublished, `published`) — pilote l'index `/blog`, l'inclusion sitemap et le noindex par article. Chaque article = `app/blog/<slug>/page.tsx` écrit à la main : metadata (canonical `/blog/<slug>`, `robots` dérivé du flag `published`), JSON-LD Article (author/publisher Organization Everypaw) **émis seulement si publié**, corps H2/H3 dans `<ArticleLayout post>` (`src/components/blog/ArticleLayout.tsx` : fil d'ariane, colonne lecture ~680px, typo Georgia/DM Sans, CTA final discret vers `/`). **Workflow pour ajouter/publier un article** : (1) écrire le corps dans `app/blog/<slug>/page.tsx`, (2) passer `published: true` dans `blog.ts` → l'article entre dans l'index + le sitemap et perd le noindex, le JSON-LD s'active. Les 3 articles listés ci-dessus (`pet-journal-prompts`, `dog-memory-book-ideas`, `puppy-first-year-memory-book`) sont **tous `published: true`** depuis les commits `16d6a1e`/`1493184`/`08a79b1` (2026-07-15) — plus de placeholder non publié à ce jour. Lien « Blog » dans le footer full (landing).
 
 **Landing mémorial publique** (`/memorial`, commit `e1620ba`) : page marketing SEO « pet memorial book », **server component pur** (pas de `"use client"`, zéro interactivité) — distincte des pages user `/memorial/[id]`. Ton sobre (deuil animalier) : palette cream + sage, pas d'amber criard sur le contenu (le dot logo nav + cookie banner restent en amber = chrome global), aucune image, aucun schema Review, CTA unique discret `/auth/signup`. Textes en `memorial_landing` (en+fr, la page rend EN ; `/fr/memorial` non créé). Metadata title/description dédiées + canonical `/memorial`, ajouté au sitemap. Carte homepage « A legacy that lasts » (f5) devient un lien descriptif vers `/memorial` (`aria-label`, ancre SEO).
 
