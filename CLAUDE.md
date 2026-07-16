@@ -317,7 +317,7 @@ Messages dans `messages/en.json` et `messages/fr.json`, chargés au build par `s
 - **Switch de langue** : lien crawlable `<a href>` dans le footer marketing (`PublicFooter localeSwitch={{ href, label }}`). `/`↔`/fr`, `/gift`↔`/fr/gift`. `LangSuggestBanner` (4 pages marketing) suggère l'autre langue si mismatch navigator — lien réel, jamais de redirect, ne modifie jamais le contenu rendu.
 - **Jamais de redirect auto basé sur `Accept-Language`** (chaque URL = une langue stable pour les crawlers).
 - **Devise ≠ langue** : `getCurrencyFromCountry()` (géoloc `x-vercel-ip-country`) est indépendant de la locale. Un visiteur FR sur `/` voit la page EN avec prix EUR — voulu.
-- Dead code connu : la route `/api/locale` (setter cookie) n'est plus appelée nulle part — safe to delete. `LanguageSwitcher.tsx` a déjà été supprimé.
+- L'ancien mécanisme cookie (`/api/locale` + `LanguageSwitcher.tsx`) a été entièrement supprimé — ne pas le réintroduire.
 
 **Règle** : toujours ajouter les nouvelles clés dans les **deux** fichiers JSON, au même chemin.
 
@@ -369,7 +369,6 @@ Labels de navigation définitifs : « Livre » (ex-Commander), « Histoires IA �
 | `/api/contact`, `/api/waitlist`, `/api/suggestion` | Formulaires publics | Rate limit DB |
 | `/api/unsubscribe` | Désinscription emails | Token |
 | `/api/currency` | `{ currency: "EUR"\|"USD" }` via `x-vercel-ip-country` (pas de champ `country` — privacy) | Public |
-| `/api/locale` | ⚠️ Dead code — plus appelé, safe to delete | — |
 
 ### Checklist nouvelle route API (obligatoire)
 
@@ -559,7 +558,8 @@ Audit du CLAUDE.md contre l'état réel du repo + réécriture complète (branch
 - **Nouveau** : section « Definition of Done » (8 checks explicites avant de déclarer un travail fini), « Checklist nouvelle route API » (7 points : modèle d'auth, UUID, ownership, re-fetch DB, rate limit, erreurs génériques, logs), règles migrations (naming + application manuelle Supabase), règles git/deploy (push main = prod immédiate), table « Helpers partagés » exhaustive (dont `verifyCronRoute`, non documenté avant).
 - **Dédup** : les deux sections couleurs (tokens `--ep-*` réels vs ancienne palette `--cream/--amber/--sage` qui n'a jamais existé dans `globals.css`) fusionnées en une seule, complétée des tokens radius/shadow/transition/border.
 - **Complétude** : table routes API passée de ~15 à ~28 entrées (exhaustive), colonne Auth ajoutée ; table cron synchronisée avec `vercel.json` ; CSP `next.config.js` documentée (ajout de ressource externe = mise à jour CSP obligatoire).
-- Aucun changement de code. `tsc --noEmit` + 21 tests verts (état de départ vérifié).
+- **Suite (décisions Julien)** : `/api/locale` supprimée (dead code confirmé) ; `AUDIT_PLAN.md`/`AUDIT_REPORT*.md` déplacés vers `docs/` ; item checklist prod « webhook Live avec vrai paiement » toujours ouvert ; règle « jamais de hex inline » s'applique au **nouveau** code (l'existant sera repris avec la dette #9).
+- `tsc --noEmit` + 21 tests + `npm run build` verts.
 
 ### ✅ Session 58 — Nudge premier chapitre gratuit (2026-07-15)
 
