@@ -1,20 +1,53 @@
 # CLAUDE.md — Everypaw
 
 > Fichier de contexte projet pour Claude Code. Maintenu à la racine du repo.
+> Objectif : un agent qui n'a **que ce fichier** doit pouvoir travailler au niveau attendu, sans connaissance implicite du projet.
 
 ---
 
 ## Instructions pour Claude
 
-En fin de session, si des décisions importantes ont été prises ou du code significatif a été produit :
-1. Ajoute une entrée session dans "Historique des sessions" (en bas) et déplace la plus ancienne des 2 vers `docs/SESSIONS.md` — CLAUDE.md ne garde que les 2 dernières
-2. Mets à jour "État actuel" si une fonctionnalité majeure a changé
-3. Note les décisions d'architecture dans "Conventions de code"
-4. Mets à jour la date de dernière session
+### En début de tâche (obligatoire)
 
-Ne demande pas confirmation — fais-le directement avant de clore. Garder ce fichier < 700 lignes : tout historique détaillé va dans `docs/SESSIONS.md`.
+1. Lire `package.json` et les fichiers que tu vas toucher **avant** de modifier quoi que ce soit.
+2. Avant d'écrire un helper (escape, validation, auth, formatting…), vérifier qu'il n'existe pas déjà : `grep` dans `src/lib/` d'abord. La liste des helpers canoniques est dans « Conventions de code › Helpers partagés ».
+3. Pour toute nouvelle feature, suivre l'ordre : schéma DB → migration SQL → logique métier (`src/lib/`) → route API → UI. Jamais l'UI d'abord.
+4. Pour tout travail UI, lire d'abord `PRODUCT.md` + `DESIGN.md` (voir « Design Context »).
 
-Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suivre l'ordre d'implémentation recommandé pour toute nouvelle feature (voir section dédiée).
+### Definition of Done — checks avant de déclarer un travail terminé
+
+Un changement n'est **pas fini** tant que tout ceci n'est pas vrai :
+
+| # | Check | Commande / critère |
+|---|---|---|
+| 1 | Type-check vert | `npx tsc --noEmit` — zéro erreur |
+| 2 | Tests unitaires verts | `npm test` — actuellement 21 tests, aucun ne doit casser |
+| 3 | Build vert si le changement est structurel | `npm run build` obligatoire si : nouvelle route/page, changement de chaîne d'imports (risque client/server, voir règle dédiée), changement metadata/SEO, nouveau package |
+| 4 | i18n complet | Toute nouvelle clé existe dans `messages/en.json` **ET** `messages/fr.json` |
+| 5 | Migration livrée ET signalée | Fichier dans `supabase/migrations/`, idempotent (`IF NOT EXISTS`, `DO $$`), et **dire explicitement à l'utilisateur qu'il doit l'exécuter à la main dans Supabase** — rien n'applique les migrations automatiquement |
+| 6 | Sécurité de route respectée | Toute nouvelle route API suit la « Checklist nouvelle route API » ci-dessous |
+| 7 | Logique pure testée | Toute nouvelle fonction pure dans `src/lib/` avec de la logique non triviale a un test dans `src/lib/<module>.test.ts` |
+| 8 | Pas de vérification navigateur possible en sandbox ? Le dire | Si le test manuel nécessite un vrai compte / Stripe live / emails, l'écrire explicitement dans le résumé (« non testé en navigateur, à valider : … ») au lieu de laisser croire que c'est validé |
+
+**Ce qui ne compte PAS comme vérification** : « le code a l'air correct », un build lancé mais pas terminé, un test manuel non fait mais supposé passer.
+
+### En fin de session
+
+Si des décisions importantes ont été prises ou du code significatif produit :
+
+1. Ajouter une entrée dans « Historique des sessions » (en bas) et déplacer la plus ancienne des 2 vers `docs/SESSIONS.md` — CLAUDE.md ne garde que les 2 dernières.
+2. Mettre à jour « État actuel » si une fonctionnalité majeure a changé.
+3. Codifier les décisions d'architecture dans « Conventions de code » (une règle = une ligne actionnable, pas un récit).
+4. Mettre à jour la date de dernière session (fin de section « Optimisation & dette technique »).
+
+Ne pas demander confirmation — le faire directement avant de clore. Garder ce fichier **< 700 lignes** : tout historique détaillé va dans `docs/SESSIONS.md`.
+
+### Git & déploiement — règles de travail
+
+- **`git push` sur `main` = déploiement production immédiat** (Vercel auto-deploy, Stripe en mode Live, vrais clients). Pas d'environnement de staging.
+- Pour tout changement risqué (paiements, webhook, auth, migrations) : travailler sur une branche + PR, ne merger qu'après review.
+- Ne jamais committer `.env.local`, ni aucune clé/secret.
+- Messages de commit : préfixe conventionnel (`feat:`, `fix:`, `docs:`, `style:`, `refactor:`), impératif, en anglais (convention observée dans l'historique).
 
 ---
 
@@ -36,24 +69,35 @@ Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suiv
 Contexte design à la racine, à lire avant tout travail UI :
 
 - **`PRODUCT.md`** — stratégie : register (`product`, override `brand` pour la landing `/`, `/fr`), users, anti-références (pas de dashboard SaaS, pas d'outil véto), 5 principes design.
-- **`DESIGN.md`** — système visuel : North Star « The Hearthside Journal ». Tokens — terracotta `#C8813A`, fonds sable `#F7F2EA`/ivoire `#FDFAF5`, ink cocoa `#3D2B1F`, paire Georgia (display) + DM Sans (body), boutons pill, ombres cocoa chaudes.
+- **`DESIGN.md`** — système visuel : North Star « The Hearthside Journal ». Paire Georgia (display) + DM Sans (body), boutons pill, ombres cocoa chaudes.
 - **`.impeccable/design.json`** — sidecar : rampes tonales, tokens ombres/motion, snippets composants.
 
-Règles clés : terracotta = seul accent (One Voice) · texte émotionnel en Georgia italique (Serif-for-Soul) · body DM Sans 300 mais ≥4.5:1 contraste (Contrast Floor) · ombres toujours cocoa, jamais grises (Warm-Shadow) · pas d'eyebrow uppercase tracked au-dessus de chaque section (la hiérarchie passe par Georgia).
+Règles clés : terracotta = seul accent (One Voice) · texte émotionnel en Georgia italique (Serif-for-Soul) · body DM Sans 300 mais ≥4.5:1 contraste (Contrast Floor) · ombres toujours cocoa (`rgba(61,43,31,…)`), jamais grises (Warm-Shadow) · pas d'eyebrow uppercase tracked au-dessus des sections (la hiérarchie passe par Georgia).
 
-### Tokens couleur (`globals.css` `:root`) — utiliser `var(--ep-*)`, jamais de hex inline
+### Tokens CSS (`globals.css` `:root`) — utiliser `var(--ep-*)`, jamais de hex inline
 
-- Base : `--ep-bg` `#F7F2EA` · `--ep-bg-card` `#FDFAF5` · `--ep-brand` `#C8813A` · `--ep-brand-dark` `#B5712E` · `--ep-text` `#3D2B1F` · `--ep-text-muted` `#7A5C44` · `--ep-text-faint` `#9A8070` (décor seulement, échoue le contraste body).
-- Erreur : `--ep-error-bg` `#FEF2F2` · `--ep-error-border` `#FCA5A5` · `--ep-error-ink` `#991B1B` · `--ep-alert` `#A32D2D`.
-- Statut commande Gelato : `--ep-status-print` `#5880B8` (imprimé/transit) · `--ep-status-ship` `#6A9E78` (expédié/livré) · `--ep-status-ship-ink` `#3A6A48`.
-- Mémorial : `--ep-memorial` `#8B6B4A`.
-- **Exception** (hex inline tolérés) : palettes produit — les 5 thèmes de couverture livre (order), couleurs mood/milestone (pets), ombres `rgba(0,0,0,…)`. Ce sont des données design, pas des tokens.
+Source de vérité : le bloc `:root` de `src/app/globals.css`. Tokens disponibles :
+
+- **Couleurs base** : `--ep-bg` `#F7F2EA` (fond) · `--ep-bg-card` `#FDFAF5` (cartes/sidebar) · `--ep-brand` `#C8813A` (terracotta, accent/CTA) · `--ep-brand-dark` `#B5712E` (hover) · `--ep-text` `#3D2B1F` (ink cocoa) · `--ep-text-muted` `#7A5C44` · `--ep-text-faint` `#9A8070` (décor seulement — échoue le contraste body) · `--ep-border` `rgba(61,43,31,.1)`.
+- **Erreur** : `--ep-error-bg` `#FEF2F2` · `--ep-error-border` `#FCA5A5` · `--ep-error-ink` `#991B1B` · `--ep-alert` `#A32D2D`.
+- **Statut commande Gelato** : `--ep-status-print` `#5880B8` (imprimé/transit) · `--ep-status-ship` `#6A9E78` (expédié/livré) · `--ep-status-ship-ink` `#3A6A48`.
+- **Mémorial** : `--ep-memorial` `#8B6B4A`.
+- **Radius** : `--ep-radius-sm` 8px (badges, inputs) · `--ep-radius-md` 14px (cartes moyennes) · `--ep-radius-lg` 20px (grandes cartes) · `--ep-radius-pill` 100px (boutons, pills).
+- **Ombres/motion** : `--ep-shadow-sm/md/lg` (toutes cocoa) · `--ep-transition` 150ms ease.
+
+**Exception** (hex inline tolérés) : palettes produit — les 5 thèmes de couverture livre (order), couleurs mood/milestone (pets), ombres `rgba(0,0,0,…)`. Ce sont des données design, pas des tokens. Le vert sage `#6B7B5E` (accents ponctuels, landing mémorial) est aussi une donnée design, pas un token.
+
+### Règles d'implémentation UI
+
+- Tous les styles sont **inline** (`style={{}}`) — Tailwind est installé mais **non utilisé** ; ne pas introduire de classes Tailwind.
+- Hover states via `onMouseEnter` / `onMouseLeave` (handlers React), pas de `:hover` CSS sauf dans `globals.css`.
+- Media queries : uniquement dans `src/app/globals.css` via classes `.ep-*` (`.ep-sidebar`, `.ep-mobile-header`, `.ep-dashboard-main`).
+- Progress bars animées : `transform: scaleX(…)`, jamais `width` (perf).
+- Titres : `Georgia, serif` (400 & 600). Corps : `'DM Sans', sans-serif` (300/400/500). Ne jamais partir dans une direction SaaS bleue générique.
 
 ### Surfaces passées à la chaîne impeccable
 
-Landing hero (`/`+`/fr`), `/dashboard`, et les 5 pages animal (`pets/[id]` Journal/Histoires/Étapes, `order` Livre, `books` Bibliothèque). Conventions appliquées : eyebrows supprimés, héros agrandis (Georgia), couleurs tokenisées, progress bars en `transform: scaleX` (pas `width`).
-
-Skill `/impeccable <command>` pour critique/audit/polish/live. Snapshots de critique sous `.impeccable/critique/`.
+Landing hero (`/`+`/fr`), `/dashboard`, et les 5 pages animal (`pets/[id]` Journal/Histoires/Étapes, `order` Livre, `books` Bibliothèque). Skill `/impeccable <command>` pour critique/audit/polish/live. Snapshots sous `.impeccable/critique/`.
 
 ---
 
@@ -61,16 +105,18 @@ Skill `/impeccable <command>` pour critique/audit/polish/live. Snapshots de crit
 
 | Couche | Techno | Notes |
 |---|---|---|
-| Framework | Next.js 14.2 (App Router) | Pas de `output: standalone` dans next.config.js |
+| Framework | Next.js 14.2 (App Router) | Pas de `output: standalone` ; `serverExternalPackages: ["@react-pdf/renderer"]` |
 | Base de données | Supabase (PostgreSQL) | Auth + DB + Storage photos |
 | Auth | Supabase Auth | Google OAuth + email/password — Google OAuth **en production** ✅ |
 | Paiements | Stripe | Webhooks dans `/api/stripe/webhook` |
-| IA | Anthropic Claude API | Modèle : `claude-sonnet-4-6` pour la génération de stories |
+| IA | Anthropic Claude API | Modèle : `claude-sonnet-4-6`, défini **une seule fois** dans `src/lib/anthropic.ts` (`ANTHROPIC_MODEL`) |
 | Impression | Gelato | Print-on-demand livres |
 | Emails | Resend | 3 000/mois gratuit |
 | Hébergement | Vercel | Cron jobs configurés dans `vercel.json` |
 | Langage | TypeScript | |
 | Style | Inline styles | Tailwind installé mais non utilisé en pratique |
+
+**CSP stricte dans `next.config.js`** : `connect-src` limité à self + Supabase + Anthropic + Stripe ; scripts externes bloqués. **Tout ajout de ressource externe (script, font, API tierce) exige de mettre à jour la CSP**, sinon ça casse silencieusement en prod. Redirects permanents : `/en/*` → `/*`, anciennes URLs legal FR → EN.
 
 **Coût infra mois 1-2 : ~30-50€/mois** (Anthropic API principal poste)
 
@@ -79,15 +125,15 @@ Skill `/impeccable <command>` pour critique/audit/polish/live. Snapshots de crit
 ## Commandes
 
 ```bash
-npm run dev        # Start dev server on localhost:3000
-npm run build      # Production build (also validates TypeScript)
-npx tsc --noEmit   # Type-check without building
-npm test           # Run Vitest unit tests (vitest run)
+npm run dev        # Dev server localhost:3000 (⚠️ prend le 1er port libre, souvent 3001)
+npm run build      # Production build (valide aussi TypeScript)
+npx tsc --noEmit   # Type-check sans build
+npm test           # Vitest (vitest run) — 21 tests sur la logique pure src/lib/*.test.ts
 ```
 
-Pas de lint script. Tests unitaires via **Vitest** (`npm test`) sur la logique pure critique (`src/lib/*.test.ts`). Type-checker avec `npx tsc --noEmit` avant tout commit.
+Pas de script lint. Fichiers de test existants : `plan.test.ts`, `book-pages.test.ts`, `anthropic.test.ts`, `story.test.ts`.
 
-Déploiement sur **Vercel** — push sur `main` = auto-deploy. Les variables d'environnement (Supabase, Stripe, Gelato, Resend) vivent sur Vercel. En local : `npx vercel env pull .env.local` récupère les noms, mais les vars "Sensitive" reviennent **vides** (write-only) — les renseigner à la main si besoin (clé test Stripe recommandée en local).
+Déploiement sur **Vercel** — push sur `main` = auto-deploy prod. Les variables d'environnement vivent sur Vercel. En local : `npx vercel env pull .env.local` récupère les noms, mais les vars « Sensitive » reviennent **vides** (write-only) — les renseigner à la main (clé test Stripe recommandée en local). Astuce : les valeurs `NEXT_PUBLIC_*` sont publiques par design → récupérables depuis le bundle JS prod si besoin.
 
 ---
 
@@ -121,6 +167,8 @@ CRON_SECRET                    # protège les routes /api/cron/*
 # Auth Hook (Supabase → /api/emails/auth-hook)
 SUPABASE_HOOK_SECRET           # format "v1,whsec_<base64>" — copier depuis Supabase > Auth > Hooks > Send Email > Reveal
                                # Si absent → hook retourne 401 → Supabase retourne 500 sur signup/reset
+
+DEBUG_LOGS                     # optionnel — "1" active log.debug/log.info (src/lib/log.ts)
 ```
 
 ---
@@ -137,6 +185,7 @@ profiles: id, email, full_name, avatar_url,
           email_reminders,   -- boolean — consentement emails hebdomadaires
           onboarding_completed,
           payment_past_due,  -- boolean — set par invoice.payment_failed, cleared par invoice.payment_succeeded
+          language,          -- locale préférée pour les emails (détection via src/lib/locale.ts)
           created_at
 
 -- pets
@@ -148,10 +197,12 @@ pets: id, user_id, name, species, breed, birthdate, photo_url, bio,
 
 -- entries (journal)
 entries: id, pet_id, user_id, content, photo_urls[], mood, tags[], entry_date, created_at
+-- Limite 10 entrées plan free enforced par trigger Postgres (enforce_free_entry_limit)
 
 -- stories (chapitres IA)
 stories: id, pet_id, user_id, title, content, cover_url,
          status,             -- 'draft' | 'ready' | 'ordered'
+         story_type, month_key,  -- index unique (pet_id, story_type, month_key) = idempotence cron
          created_at
 
 -- milestones
@@ -163,32 +214,37 @@ book_configs: id, user_id, pet_id, name, status ('draft'|'ordered'),
               cover_photo_url, story_layouts (jsonb), dedication_text,
               gelato_order_id, ordered_at, page_count,
               created_at, updated_at
--- RLS : owner uniquement (select/insert/update/delete)
--- Max 15 drafts par utilisateur (enforced API)
--- updated_at auto via trigger book_configs_updated_at
+-- RLS : owner uniquement · Max 15 drafts/user (enforced API) · updated_at auto via trigger
 
 -- milestone_definitions (extensibilité sans déploiement)
 milestone_definitions: id, key (unique), name_fr, name_en, keywords text[], icon, order_index
 -- RLS : SELECT public, pas d'écriture client
--- Utilisée en priorité par detectMilestones() et translateMilestone() ; fallback sur MILESTONE_TYPES hardcodé
+-- Utilisée en priorité par detectMilestones() et translateMilestone() ; fallback MILESTONE_TYPES hardcodé
 -- Clé spéciale "first_memory" : déclenche sur existingEntries.length === 0
 
 -- memorial_tributes (hommages publics sur pages mémorial)
 memorial_tributes: id, pet_id, author_name (1–100), message (1–1000),
                    status ('pending'|'approved'|'rejected'), created_at
--- RLS : tributes_public_read (approved + pet décédé), tributes_owner_read (owner voit tout)
+-- RLS : lecture publique (approved + pet décédé), owner voit tout
 -- Écriture client uniquement via POST route API (rate limit 3/h IP + honeypot)
 
 -- pet_members (journal partagé foyer)
 pet_members: id, pet_id, user_id (null jusqu'à acceptation), invited_email,
              invited_by, role ('contributor'), status ('pending'|'accepted'|'revoked'),
              invite_token (64 hex, unique), invite_token_expires_at, accepted_at, created_at
--- RLS : pet_members_owner_select (owner voit ses membres), pet_members_self_select (membre voit sa propre ligne)
+-- RLS : owner voit ses membres, membre voit sa propre ligne
 -- Aucun INSERT/UPDATE/DELETE client — service role uniquement via routes API
 -- Max 5 membres non-révoqués par animal (enforced API) ; token TTL 7 jours
+
+-- events_log : trace d'idempotence (stripe_event_id, nudges…) — contrainte unique (user_id, pet_id, event_type)
+-- rate_limits : compteurs persistants pour checkRateLimitDb (RPC check_rate_limit, SECURITY DEFINER, fail-open)
 ```
 
-SQL migrations dans `supabase/migrations/`. Toujours utiliser `IF NOT EXISTS` et blocs `DO $$ … $$` pour rester idempotent.
+### Règles migrations
+
+- Fichiers dans `supabase/migrations/`, nommés `<description>_YYYY_MM_DD.sql` (convention observée).
+- Toujours idempotent : `IF NOT EXISTS`, blocs `DO $$ … $$`, `CREATE OR REPLACE`.
+- **Aucune migration ne s'applique automatiquement** : l'utilisateur les exécute à la main dans le SQL editor Supabase. Toujours le signaler explicitement en livrant une migration.
 
 ---
 
@@ -202,45 +258,36 @@ Système **3 plans strict** (depuis 2026-07-07) :
 | **Premium Digital** | 4,99 €/mois · $4.99/mo | IA illimitée, multi-profils, pas de livre inclus |
 | **Premium Print** | 79 €/an · $79/yr (annuel uniquement) | Tout le digital + 1 livre hardcover annuel |
 
-Livre supplémentaire (tout plan payant) : prix **dynamique** selon le nombre de pages (`calcGelatoBookPrice`, minimum 28 €/$28) — pas de Price ID Stripe. Les plans supprimés (`digital_annual`, `print_monthly`, livre à la carte à prix fixe) n'existent plus ni dans le code ni dans Stripe.
+Livre supplémentaire (tout plan payant) : prix **dynamique** selon le nombre de pages (`calcGelatoBookPrice`, minimum ~28 €/$28) — pas de Price ID Stripe. Les plans supprimés (`digital_annual`, `print_monthly`, livre à la carte à prix fixe) n'existent plus ni dans le code ni dans Stripe.
 
 ### Guards d'accès
 
 ```ts
-getUserPlan(userId)          // retourne le plan actuel — src/lib/plan.ts
-canGenerateStory(userId)     // Free: max 1 | autres: illimité — src/lib/plan-guards.ts
+getUserPlan(userId)          // retourne le plan actuel — src/lib/plan.ts (server-only)
+canGenerateStory(userId)     // Free: max 1 | autres: illimité — src/lib/plan-guards.ts (pur, zéro import)
 canAddEntry(userId)          // Free: max 10 | autres: illimité — src/lib/plan-guards.ts
 canOrderBook(userId)         // Digital: non | Print: oui (1/an) | Book: oui (1 crédit) — src/lib/plan-guards.ts
 ```
 
-**`src/lib/plan-guards.ts`** (session 58) : guards purs (`canAddEntry`, `canGenerateStory`, `canOrderBook`, `priceIdToPlan`, types `Plan`/`PlanInfo`), **zéro import**. Extraits de `plan.ts` pour rester importables depuis un module utilisé par un composant `"use client"` (voir règle client/server ci-dessous). `plan.ts` fait `export * from "./plan-guards"` — tous les imports existants `from "@/lib/plan"` continuent de fonctionner sans changement.
+**`src/lib/plan-guards.ts`** : guards purs (`canAddEntry`, `canGenerateStory`, `canOrderBook`, `priceIdToPlan`, types `Plan`/`PlanInfo`), **zéro import** — importable depuis des composants `"use client"` (voir règle client/server). `plan.ts` fait `export * from "./plan-guards"` : les imports existants `from "@/lib/plan"` fonctionnent sans changement.
 
-`priceIdToPlan()` mappe les Stripe price IDs (depuis env vars) aux plans.  
+`priceIdToPlan()` mappe les Stripe price IDs (depuis env vars) aux plans.
 Book credits : incrémentés via RPC `increment_book_credits`, consommés atomiquement via `try_consume_book_credit` (verrou `FOR UPDATE`) **avant** l'appel Gelato, restaurés via `restore_book_credit` en cas d'échec Gelato. Prévient les race conditions sur les commandes simultanées.
 
-Le webhook (`/api/stripe/webhook`) gère :
+### Webhook Stripe (`/api/stripe/webhook`)
+
+Events gérés :
 - `checkout.session.completed`
 - `customer.subscription.deleted` — downgrade plan free + clear `payment_past_due`
 - `customer.subscription.updated`
-- `invoice.payment_succeeded` — source unique pour les book credits Print (ajouté 2026-05-28) ; remet `payment_past_due: false` en tête de handler pour **tout** paiement réussi (avant les gates Print/365j qui return early)
-- `invoice.payment_failed` — set `payment_past_due: true` + log `events_log` (type `stripe_payment_failed`, idempotent par `stripe_event_id`) + email Resend avec lien billing portal Stripe (`return_url` → `/dashboard/settings`) **uniquement à la 1ère tentative** (`attempt_count <= 1`, les retries dunning Stripe ne re-spamment pas) ; ne downgrade pas (Stripe gère les retries, `customer.subscription.deleted` gère le downgrade final). Note : `invoice.payment_failed` doit être activé dans la config webhook Stripe (fait 2026-06-11, migration appliquée). Côté UI, le dashboard (`/dashboard`) lit `payment_past_due` et affiche une bannière rouge bilingue (clés i18n `dashboard.payment_issue_*`) avec lien vers `/dashboard/settings`.
+- `invoice.payment_succeeded` — **source unique** des book credits Print (conditions : `billing_reason` ∈ `subscription_create`/`subscription_cycle` + price ID Print annuel). `checkout.session.completed` n'attribue **plus** de crédit Print (race condition corrigée 2026-06-01). Remet `payment_past_due: false` en tête de handler pour **tout** paiement réussi (avant les gates Print/365j qui return early).
+- `invoice.payment_failed` — set `payment_past_due: true` + log `events_log` (idempotent par `stripe_event_id`) + email Resend avec lien billing portal (**uniquement 1ère tentative**, `attempt_count <= 1`). Ne downgrade pas (Stripe gère les retries ; `customer.subscription.deleted` gère le downgrade final). Côté UI : bannière rouge bilingue sur `/dashboard` (clés `dashboard.payment_issue_*`).
 
-  **Test webhook via Stripe CLI (2026-07-13)** — procédure locale réutilisable :
-  1. `stripe login` (compte Everypaw `acct_...RmAiDTHhpu`). 2. `.env.local` : `SUPABASE_SERVICE_ROLE_KEY` (depuis Supabase → Settings → API `service_role`) + `STRIPE_WEBHOOK_SECRET` = le `whsec_` affiché par `stripe listen`. 3. `npm run dev` (⚠️ prend le 1er port libre, souvent **3001** si 3000 occupé — le `stripe listen --forward-to` doit viser le **bon port**). 4. `stripe listen --forward-to localhost:3001/api/stripe/webhook` (le `whsec_` est **stable par compte**, inchangé entre relances). 5. `stripe trigger invoice.payment_failed` (3e terminal).
-  - **Résultat Niveau 1 validé** : event `invoice.payment_failed` → `[200]`, log `[webhook] invoice.payment_failed: no profile for customer: cus_...` → **signature vérifiée fail-closed + 200 + chemin "profil introuvable" sans crash**. Le customer jetable du `trigger` ne matche aucun profil → 0 write DB (retour avant l'insert `events_log`).
-  - **Niveau 2 (flag + events_log + email + idempotence par `stripe events resend`) non exécuté** : requiert `STRIPE_SECRET_KEY` en **`sk_test`** (le billing portal du mail cible un customer test — une `sk_live` échoue « No such customer », l'email est capté par le try/catch, non-fatal) + un profil dont `stripe_customer_id` matche l'event (toucherait un profil prod). Le flag/events_log/email reste validé par revue de code + le handler tourne en prod sur les vrais échecs de paiement live.
-  - ⚠️ En local, `NEXT_PUBLIC_SUPABASE_URL` pointe la **prod** : rester au Niveau 1 (aucun write) sauf projet Supabase de test dédié.
+**Idempotence** : abonnement → compare `stripe_subscription_id` en DB avant d'agir ; crédits livre → vérifie `events_log` via `metadata @> { stripe_event_id }` avant d'incrémenter ; tous les événements loggent le Stripe event ID dès réception.
 
-**Idempotence webhook (2026-05-22)** : protection contre les retries Stripe.
-- Abonnement : compare `stripe_subscription_id` en DB avant d'agir — skip si déjà activé.
-- Achat livre : vérifie `events_log` via `metadata @> { stripe_event_id }` avant d'incrémenter les crédits ; insère une trace après succès.
-- `subscription.updated` : loggé dans `events_log` (plan change + cancellation) depuis Round 2.
-- `invoice.payment_succeeded` : idem — vérifie `events_log` par `stripe_event_id` avant `increment_book_credits`.
-- Tous les événements loggent le Stripe event ID dès réception (`[webhook] event: evt_xxx …`).
+**Test local via Stripe CLI** (procédure validée 2026-07-13) : `stripe login` (compte `acct_...RmAiDTHhpu`) → `.env.local` avec `SUPABASE_SERVICE_ROLE_KEY` + `STRIPE_WEBHOOK_SECRET` = le `whsec_` de `stripe listen` (stable par compte) → `npm run dev` (vérifier le **port réel**) → `stripe listen --forward-to localhost:<port>/api/stripe/webhook` → `stripe trigger invoice.payment_failed`. ⚠️ En local, `NEXT_PUBLIC_SUPABASE_URL` pointe la **prod** : rester au « Niveau 1 » (événements dont le customer ne matche aucun profil → 0 write DB). Ne jamais déclencher d'events qui écriraient sur un profil prod sans projet Supabase de test dédié.
 
-**Book credits Print — source unique (2026-05-28)** : `invoice.payment_succeeded` est la seule source d'attribution des crédits livre pour les abonnés Print. `checkout.session.completed` n'attribue plus de crédit Print (race condition corrigée 2026-06-01). Conditions : `billing_reason === "subscription_create"` (1ère souscription) OU `"subscription_cycle"` (renouvellement) + price ID Print annuel (EUR/USD). Note : `invoice.payment_succeeded` doit être activé dans la config webhook Stripe.
-
-**Prix livre dynamique (2026-06-01)** : `src/lib/gelato-pricing.ts` — `calcGelatoBookPrice(pageCount)` : `15.46 + max(0, (pages-30)/2) × 0.395 + 12€ marge fixe`. Même valeur EUR/USD. Utilisé par `/api/stripe/book-checkout` (achat one-time avec `price_data` Stripe) et affiché dans les encarts upsell de la page order.
+**Prix livre dynamique** : `src/lib/gelato-pricing.ts` — `calcGelatoBookPrice(pageCount)` = `15.46 + max(0, (pages-30)/2) × 0.395 + 12` (COGS Gelato + 12 €/USD de marge fixe, même valeur EUR/USD). Utilisé par `/api/stripe/book-checkout` (one-time avec `price_data`) et affiché dans les encarts upsell de la page order.
 
 ---
 
@@ -248,82 +295,91 @@ Le webhook (`/api/stripe/webhook`) gère :
 
 **Next.js 14 App Router** — toutes les pages dans `src/app/`. Toutes les pages dashboard sont `"use client"` ; elles fetchent les données dans `useEffect` via le client Supabase browser.
 
-### Supabase — trois clients
+### Supabase — trois clients (ne jamais en créer un quatrième)
 
-- `src/lib/supabase/client.ts` — client browser, utilisé dans toutes les pages `"use client"`
-- `src/lib/supabase/server.ts` — client serveur (anon key + cookie auth), utilisé dans les routes API et le middleware
-- `getServiceSupabase()` dans `src/lib/supabase/service.ts` (ré-exporté par `src/lib/plan.ts` pour compat) — client service role (bypass RLS) — utilisé dans le webhook Stripe, les cron jobs, gelato/order, preview-pdf (GET), les pages publiques `/pets/[id]` et `/memorial/[id]` (toutes deux restreintes aux animaux décédés). `service.ts` n'a aucune dépendance server-only → importable en edge runtime.
+| Client | Fichier | Usage |
+|---|---|---|
+| Browser | `src/lib/supabase/client.ts` (singleton) | Pages `"use client"` |
+| Server (anon + cookies) | `src/lib/supabase/server.ts` | Routes API avec session utilisateur, middleware |
+| Service role (bypass RLS) | `getServiceSupabase()` dans `src/lib/supabase/service.ts` (ré-exporté par `plan.ts`) | Webhook Stripe, crons, gelato/order, book-pdf, pages publiques `/pets/[id]` et `/memorial/[id]`. Zéro dépendance server-only → importable en edge runtime |
 
-**Règle** : ne jamais instancier `createClient` depuis `@supabase/supabase-js` directement dans une route. Importer `getServiceSupabase()` (`@/lib/supabase/service` ou `@/lib/plan`) pour le service role. Pour Stripe, importer le singleton `stripe` de `@/lib/stripe` (jamais `new Stripe(...)` en ligne). Pour les regex UUID/email et redirects relatifs sûrs, utiliser `@/lib/validation`.
+**Règle** : ne jamais instancier `createClient` de `@supabase/supabase-js` directement dans une route. Pour Stripe, importer le singleton `stripe` de `@/lib/stripe` (jamais `new Stripe(...)` inline).
 
-Auth enforced dans `src/middleware.ts` : les requêtes non authentifiées vers `/dashboard/*` redirigent vers `/auth/login`.
+Auth enforced dans `src/middleware.ts` (matcher : `/dashboard/*`, `/auth/*`, `/fr/*`, `/invite/*`) : non-authentifié sur `/dashboard/*` → redirect `/auth/login`.
 
-### i18n
+### i18n — architecture hybride (Session 57)
 
-Messages dans `messages/en.json` et `messages/fr.json`. `src/lib/i18n.ts` charge les deux au build. `src/hooks/useLocale.ts` détecte `navigator.language` côté client et expose `{ t, locale }` — **plus de cookie locale, plus de `setLocale`**.
+Messages dans `messages/en.json` et `messages/fr.json`, chargés au build par `src/lib/i18n.ts`.
 
-- FR si `navigator.language.startsWith("fr")`, EN sinon — détection automatique, pas de switcher manuel.
-- `LanguageSwitcher.tsx` existe encore dans le repo mais n'est plus importé nulle part (safe to delete).
-- `CookieBanner` suit la même logique pour afficher FR ou EN automatiquement.
-- `/api/locale` existe encore mais n'est plus appelé côté client.
+- **Pages marketing** (`/`, `/fr`, `/gift`, `/fr/gift`) : langue **figée par URL**, jamais par `navigator.language`. Un composant client locale-aware partagé par page (`home-client.tsx` = `<Home locale>`, `gift/gift-client.tsx` = `<GiftContent locale>`) piloté par une prop `locale`, textes via `getTranslations(locale)`. Les `page.tsx` serveur exportent metadata + JSON-LD et rendent avec `locale="en"|"fr"`. **Jamais de `useLocale` sur ces pages.**
+- **Dashboard + autres pages publiques** (contact, redeem, unsubscribe, memorial, legal…) : `useLocale()` de `src/hooks/useLocale.ts` — détection `navigator.language` au mount, FR si commence par `fr`, EN sinon. Pas de cookie, pas de `setLocale`, pas de switcher manuel.
+- `PublicNav`/`PublicFooter` acceptent une prop `locale` **optionnelle** : fournie → déterministe (marketing), absente → `useLocale` (le reste).
+- **Switch de langue** : lien crawlable `<a href>` dans le footer marketing (`PublicFooter localeSwitch={{ href, label }}`). `/`↔`/fr`, `/gift`↔`/fr/gift`. `LangSuggestBanner` (4 pages marketing) suggère l'autre langue si mismatch navigator — lien réel, jamais de redirect, ne modifie jamais le contenu rendu.
+- **Jamais de redirect auto basé sur `Accept-Language`** (chaque URL = une langue stable pour les crawlers).
+- **Devise ≠ langue** : `getCurrencyFromCountry()` (géoloc `x-vercel-ip-country`) est indépendant de la locale. Un visiteur FR sur `/` voit la page EN avec prix EUR — voulu.
+- Dead code connu : la route `/api/locale` (setter cookie) n'est plus appelée nulle part — safe to delete. `LanguageSwitcher.tsx` a déjà été supprimé.
 
-**Règle** : toujours ajouter les nouvelles clés dans les **deux** fichiers JSON.
-
-**Architecture i18n hybride (Session 57) — server pour le marketing, client pour l'app :**
-- **Pages marketing** (`/`, `/fr`, `/gift`, `/fr/gift`) : langue **figée par URL**, jamais par `navigator.language`. Un seul composant client locale-aware par page (`home-client.tsx` = `<Home locale>`, `gift/gift-client.tsx` = `<GiftContent locale>`) piloté par une prop `locale`, textes lus via `getTranslations(locale)`. Les routes serveur (`page.tsx`) exportent metadata + JSON-LD et rendent le composant avec `locale="en"` ou `"fr"`. Le FR est dans le HTML source (SSR sous `force-dynamic`), donc crawlable. **Plus de `useLocale` sur ces pages.**
-- **Dashboard + autres pages publiques** (contact, redeem, unsubscribe, memorial, legal…) : gardent `useLocale()` (détection `navigator.language`). `PublicNav`/`PublicFooter` acceptent une prop `locale` **optionnelle** : fournie → déterministe (marketing), absente → `useLocale` (le reste).
-- **Switch de langue** : lien crawlable `<a href>` dans le footer marketing (`PublicFooter localeSwitch={{ href, label }}`), pas de toggle client. `/`↔`/fr`, `/gift`↔`/fr/gift`.
-- **Jamais de redirect auto basé sur `Accept-Language`** (chaque URL = une langue stable pour les crawlers). Un bandeau de suggestion client (lien réel `<a>`, dismissible) reste acceptable mais ne modifie jamais le contenu rendu.
-- **Devise ≠ langue** : `getCurrencyFromCountry()` (géoloc `x-vercel-ip-country`) reste indépendant de la locale. Un visiteur FR sur `/` voit la page EN avec prix EUR — voulu.
+**Règle** : toujours ajouter les nouvelles clés dans les **deux** fichiers JSON, au même chemin.
 
 ### Dashboard layout & navigation
 
 `src/app/dashboard/layout.tsx` rend `<DashboardNav>` (sidebar fixe desktop, header + drawer mobile) + `{children}`.
 
-`src/components/DashboardNav.tsx` — composant central de navigation :
-- **PetSelector** : liste tous les pets + "Tous mes animaux". Persiste le dernier pet visité dans `localStorage` (`lastPetId`)
-- `showAll` state : `true` quand on est sur `/dashboard` (vue globale)
-- Navigation tab-aware : les liens sidebar utilisent `?tab=journal|stories|milestones`
-- Le switch de pet préserve l'onglet actif
-- **Sidebar desktop** (≥768px) : sélecteur animal → nav 6 items → bouton Suggestion → section secondaire (Paramètres, Déconnexion)
-- **Mobile** : header fixe en haut (burger gauche + logo centré) + drawer slide-in depuis la gauche contenant PetSelector + 6 items nav + Suggestion + Paramètres + Déconnexion. Pas de bottom nav ni de FAB.
-- Drawer : `aria-hidden` + `inert` quand fermé, `body.overflow = hidden` quand ouvert, `padding safe-area-inset-top` pour les notches, tap targets 44×44px sur burger et bouton X.
+`src/components/DashboardNav.tsx` — composant central :
+- **PetSelector** : liste les pets + « Tous mes animaux ». Persiste le dernier pet visité dans `localStorage` (`lastPetId`).
+- `showAll` state : `true` sur `/dashboard` (vue globale).
+- Navigation tab-aware : liens sidebar avec `?tab=journal|stories|milestones` ; le switch de pet préserve l'onglet actif.
+- **Desktop** (≥768px) : sélecteur animal → nav 6 items → Suggestion → section secondaire (Paramètres, Déconnexion).
+- **Mobile** : header fixe (burger + logo) + drawer slide-in gauche. Pas de bottom nav ni de FAB. Drawer : `aria-hidden` + `inert` fermé, `body.overflow = hidden` ouvert, safe-area-inset-top, tap targets 44×44px.
 
-### Labels de navigation (nommage définitif)
-
-| Ancien | Actuel |
-|---|---|
-| Commander | Livre |
-| Histoires | Histoires IA |
+Labels de navigation définitifs : « Livre » (ex-Commander), « Histoires IA » (ex-Histoires).
 
 ### Pet page tabs
 
-`/dashboard/pets/[id]` utilise `?tab=journal|stories|milestones` (pas de tab = journal).  
-Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state local** (correction importante : un state local avec `useEffect` vide ne se mettait pas à jour sur navigation client-side).
+`/dashboard/pets/[id]` utilise `?tab=journal|stories|milestones` (pas de tab = journal). Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, jamais un state local** (un state local + `useEffect` vide ne se met pas à jour sur navigation client-side).
 
 ---
 
-## Routes API
+## Routes API (exhaustif au 2026-07-16)
 
-| Route | Rôle |
-|---|---|
-| `/api/generate` | Génération histoire IA — gate plan server-side via `getUserPlan()` + rate limit 10/jour/user (UTC) |
-| `/api/stripe/checkout` | Checkout abonnement (accepte `{ plan: "digital" \| "print_annual" }`) |
-| `/api/stripe/book-checkout` | Achat livre one-time — prix dynamique via `calcGelatoBookPrice(pageCount)` + `price_data` Stripe, accepte `{ petId, pageCount }` |
-| `/api/stripe/webhook` | Webhook Stripe (doit utiliser le client Supabase service role) |
-| `/api/gelato/order` | Envoi commande à Gelato — sauvegarde/met à jour `book_configs` (status→ordered) après succès, accepte `bookConfigId` optionnel |
-| `/api/gelato/status/[orderId]` | Proxy statut commande Gelato — ownership vérifié via `book_configs.gelato_order_id` |
-| `/api/book-configs` | GET (liste par petId) + POST (create/update, max 15 drafts) |
-| `/api/book-configs/[id]` | DELETE (owner-only) |
-| `/api/share-card` | Génération image PNG partage Instagram — edge runtime, auth session + ownership, `?story_id=&format=square\|story` |
-| `/api/cron/monthly-story` | Auto-génération chapitre mensuel IA (actif) — voir règles d'éligibilité dans Conventions ; `maxDuration=300`, réponse `{ processed, generated, skipped, failed, durationMs, monthKey }` |
-| `/api/cron/weekly-reminder` | Rappels email via Resend |
-| `/api/gift/create`, `/api/gift/redeem` | Flow carte cadeau |
-| `/api/currency` | Retourne `{ currency: "EUR"\|"USD" }` via `x-vercel-ip-country` (le champ `country` a été supprimé — privacy) |
-| `/api/book-pdf` | **Génération PDF réel** (200×200mm, `application/pdf`) — `GET` pour Gelato (token HMAC signé requis), `@react-pdf/renderer`, même params que `preview-pdf` |
-| `/api/preview-pdf` | Preview PDF HTML — `POST` pour l'aperçu in-app (session utilisateur requise, vérifie ownership du pet). `GET` (anciennement pour Gelato) remplacé par `book-pdf` |
-| `/api/locale` | Setter cookie i18n |
-| `/api/export-data` | Export RGPD — `GET` (session requise) retourne JSON avec toutes les données utilisateur : profil, pets, entrées, histoires, milestones, book_configs |
+| Route | Rôle | Auth |
+|---|---|---|
+| `/api/generate` | Génération histoire IA — re-fetch DB après ownership check, rate limit 10/jour/user (count DB, UTC) | Session + gate plan |
+| `/api/generate-origins` | Génération histoire « origins » (onboarding) | Session + ownership |
+| `/api/stripe/checkout` | Checkout abonnement (`{ plan: "digital" \| "print_annual" }`) | Session |
+| `/api/stripe/book-checkout` | Achat livre one-time — `calcGelatoBookPrice(pageCount)` + `price_data`, accepte `{ petId, pageCount }` | Session |
+| `/api/stripe/webhook` | Webhook Stripe — **ne jamais déplacer** | Signature Stripe |
+| `/api/stripe/upgrade`, `/upgrade-preview` | Changement de plan + preview proration | Session |
+| `/api/stripe/cancel`, `/reactivate`, `/subscription`, `/invoices` | Gestion abonnement + factures | Session |
+| `/api/gelato/order` | Commande Gelato — met à jour `book_configs` (status→ordered), accepte `bookConfigId` optionnel | Session + crédits atomiques |
+| `/api/gelato/status/[orderId]` | Proxy statut Gelato — ownership via `book_configs.gelato_order_id` | Session |
+| `/api/book-configs` (+`/[id]`) | GET liste par petId, POST create/update (max 15 drafts), DELETE owner-only | Session |
+| `/api/book-pdf` | **PDF réel** Gelato (200×200mm) — `@react-pdf/renderer` | Token HMAC (`src/lib/pdf-token.ts`) |
+| `/api/book-pdf-link` | Génère le lien signé vers book-pdf | Session |
+| `/api/preview-pdf` | Preview HTML in-app (POST) | Session + ownership pet |
+| `/api/share-card` | PNG partage Instagram — edge runtime, `?story_id=&format=square\|story` | Session + ownership |
+| `/api/cron/*` (8 routes) | Voir section Cron jobs | `verifyCronRoute` (Bearer CRON_SECRET) |
+| `/api/gift/checkout`, `/complete`, `/redeem` | Flow carte cadeau (achat one-time → code → redeem coupon 100%) | Selon route : session ou post-Stripe |
+| `/api/pet-members` (+`/[id]`), `/api/invite/[token]` | Journal partagé foyer — invitations, accept/revoke | Session ; écriture via service role uniquement |
+| `/api/memorial/tributes` | POST hommage public — rate limit 3/h IP + honeypot | Public (rate-limité) |
+| `/api/emails/auth-hook` | Hook Supabase Send Email — Standard Webhooks HMAC fail-closed | `SUPABASE_HOOK_SECRET` |
+| `/api/emails/confirm-signup`, `/change-email`, `/reset-password` | Envoi emails auth | `Bearer SUPABASE_HOOK_SECRET` fail-closed |
+| `/api/account/delete` | Suppression complète de compte (RGPD) | Session |
+| `/api/export-data` | Export RGPD JSON (profil, pets, entries, stories, milestones, book_configs) | Session |
+| `/api/contact`, `/api/waitlist`, `/api/suggestion` | Formulaires publics | Rate limit DB |
+| `/api/unsubscribe` | Désinscription emails | Token |
+| `/api/currency` | `{ currency: "EUR"\|"USD" }` via `x-vercel-ip-country` (pas de champ `country` — privacy) | Public |
+| `/api/locale` | ⚠️ Dead code — plus appelé, safe to delete | — |
+
+### Checklist nouvelle route API (obligatoire)
+
+1. **Choisir le modèle d'auth** : session utilisateur (`supabase/server.ts`) / cron (`verifyCronRoute`) / webhook signé (HMAC fail-closed) / public rate-limité. Une route sans auth doit être une décision explicite, justifiée.
+2. **Valider tout identifiant client** (`petId`, `storyId`…) via `isUuid`/`UUID_REGEX` de `@/lib/validation` **avant** usage en DB ou URL.
+3. **Vérifier l'ownership** de la ressource (le pet appartient-il au user ?) même quand la RLS protégerait — les routes service role bypassent la RLS.
+4. **Ne jamais faire confiance au body client** pour des données qui existent en DB : re-fetcher après l'ownership check (référence : `/api/generate`).
+5. **Rate limit** : `checkRateLimitDb()` (Postgres, fiable) pour tout endpoint public ou coûteux. Le limiter in-memory (`checkRateLimit`) n'est **pas fiable** sur Vercel serverless (cold start = reset, pas de partage entre instances).
+6. **Erreurs** : logger le détail côté serveur (`log.error`), retourner un message **générique** au client — jamais de détails Stripe/Gelato/Anthropic.
+7. **Logs** : `log.*` de `src/lib/log.ts`, jamais `console.*` (fuite d'ids/payloads en prod).
 
 ---
 
@@ -331,43 +387,40 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 
 | Route | Description |
 |---|---|
-| `/` | Landing page (EN par défaut) |
-| `/auth/signup` | Inscription |
-| `/dashboard` | Dashboard principal |
-| `/dashboard/pets/[id]` | Profil animal + journal (tabs: journal / histoires IA / étapes) |
-| `/dashboard/pets/[id]/order` | Commande livre — bouton "Sauvegarder cette config" (brouillon), chargement config via `?configId=`, CTA redirige vers Stripe si `plan=print && book_credits=0` |
-| `/dashboard/pets/[id]/books` | Historique livres & brouillons — liste `book_configs`, statut Gelato temps réel, tracking, reprendre/recommander/supprimer |
-| `/dashboard/settings` | Préférences utilisateur |
-| `/pets/[id]` | Profil public animal |
-| `/memorial/[id]` | Page mémorial publique ✅ — design dark, photo, message, histoires IA, OG meta |
-| `/memorial` | Landing marketing publique « pet memorial book » (server component, ton sobre, palette cream+sage) — distincte des pages user `/memorial/[id]` |
-| `/blog` | Index blog SEO (cluster « pet memory ») — cards des articles publiés, empty state si aucun |
-| `/blog/[slug]` | Article : 1 `page.tsx` écrit à la main par slug, via `ArticleLayout` + JSON-LD Article |
-| `/gift` | Page cadeau |
-| `/unsubscribe` | Désinscription emails (token) |
+| `/` , `/fr` | Landing (langue figée par URL, server-rendered) |
+| `/auth/signup`, `/auth/login` | Auth (noindex) |
+| `/dashboard` | Dashboard principal (bannière `payment_past_due` le cas échéant) |
+| `/dashboard/pets/[id]` | Profil animal + journal (tabs journal / histoires IA / étapes) |
+| `/dashboard/pets/[id]/order` | Commande livre — brouillons (`?configId=`), CTA → Stripe si `plan=print && book_credits=0` |
+| `/dashboard/pets/[id]/books` | Historique livres & brouillons — statut Gelato temps réel, tracking, reprendre/recommander/supprimer |
+| `/dashboard/settings`, `/dashboard/upgrade` | Préférences / changement de plan |
+| `/pets/[id]` | Profil public animal (restreint aux animaux décédés) |
+| `/memorial/[id]` | Page mémorial publique — dark, photo, message, histoires, OG meta, hommages modérés |
+| `/memorial` | Landing marketing SEO « pet memorial book » — server component pur, palette cream+sage |
+| `/blog`, `/blog/[slug]` | Blog SEO — registre `src/lib/blog.ts` (voir workflow ci-dessous) |
+| `/gift`, `/fr/gift` | Page cadeau (langue figée par URL) |
+| `/contact`, `/redeem`, `/invite/[token]`, `/unsubscribe`, `/legal/*` | Pages publiques secondaires (`useLocale`) |
+
+**Workflow blog** : (1) écrire le corps dans `app/blog/<slug>/page.tsx` (metadata + JSON-LD Article + `<ArticleLayout post>`), (2) passer `published: true` dans `src/lib/blog.ts` → entre dans l'index + sitemap, perd le noindex, JSON-LD activé. Le registre `BLOG_POSTS[]` est la seule source de vérité.
 
 ---
 
-## Cron jobs (`vercel.json`)
+## Cron jobs (`vercel.json` — source de vérité, garder cette table synchronisée)
 
-```json
-{
-  "crons": [
-    { "path": "/api/cron/weekly-reminder", "schedule": "0 8 * * 1" },
-    { "path": "/api/cron/monthly-story",   "schedule": "0 8 1 * *" },
-    { "path": "/api/cron/on-this-day",     "schedule": "0 9 * * *" },
-    { "path": "/api/cron/streak-alert",    "schedule": "0 17 * * *" },
-    { "path": "/api/cron/birthday-check",  "schedule": "0 8 * * *" },
-    { "path": "/api/cron/daily-prompts",     "schedule": "0 7 * * *" },
-    { "path": "/api/cron/retention-emails", "schedule": "0 9 * * *" },
-    { "path": "/api/cron/first-story-nudge", "schedule": "0 10 * * *" }
-  ]
-}
-```
+| Route | Schedule | Rôle |
+|---|---|---|
+| `/api/cron/weekly-reminder` | `0 8 * * 1` | Rappels email hebdo (Resend) |
+| `/api/cron/monthly-story` | `0 8 1 * *` | Chapitre mensuel auto (règles ci-dessous) |
+| `/api/cron/streak-alert` | `0 17 * * *` | Alerte streak |
+| `/api/cron/birthday-check` | `0 8 * * *` | Anniversaires |
+| `/api/cron/daily-prompts` | `0 7 * * *` | Prompts quotidiens |
+| `/api/cron/on-this-day` | `0 9 * * *` | « Il y a un an » |
+| `/api/cron/retention-emails` | `0 9 * * *` | Rétention D1-D7-D30 |
+| `/api/cron/first-story-nudge` | `0 10 * * *` | Relance premier chapitre (J+2-3) |
 
-Toutes les routes cron protégées par `Authorization: Bearer CRON_SECRET`.
+Toutes protégées par `verifyCronRoute(req)` de `@/lib/auth` (Bearer `CRON_SECRET`, constant-time). **Toute nouvelle route cron doit l'utiliser** et être ajoutée à `vercel.json` ET à cette table.
 
-Les 8 routes existent (les 3 de `on-this-day`/`streak-alert`/`birthday-check` créées en session 24, PR #51 ; `first-story-nudge` ajoutée session 58).
+**Règles `monthly-story`** : génère le chapitre du **mois écoulé** (fire le 1er). Éligibilité pet = TOUTES : `deceased_at IS NULL` + owner plan ∈ `digital`/`print` + ≥3 entrées dans le mois écoulé + aucune story existante pour (pet, month_key). Idempotence DB par index unique `stories_pet_id_story_type_month_key_unique` (+ gestion `23505` dans `generateAndSaveStory`). **`email_reminders` n'est PAS un critère** : un payant qui a coupé les emails obtient son chapitre in-app ; seul l'email respecte l'opt-out. Génération via `generateAndSaveStory` (`src/lib/story.ts` — ne jamais dupliquer la logique IA). try/catch **par pet** (une erreur loggue et continue). `maxDuration=300` (plan Vercel Pro).
 
 ---
 
@@ -379,134 +432,91 @@ pageCount: 28   // OBLIGATOIRE — sans ça Gelato retourne BAD_REQUEST
 currency: "USD"
 ```
 
-**Pricing livre dynamique** : `calcGelatoBookPrice(pageCount)` dans `src/lib/gelato-pricing.ts`. COGS Gelato : `15.46 + max(0,(n-30)/2)×0.395`. Marge fixe : +12€/USD. Prix minimum (28 pages) : ~27,46€.
-
-**pageCount** : calculé par `calcPageCount(storiesCount, hasOrphanPhotos, hasDedication)` dans `src/lib/book.ts`. Doit correspondre exactement entre `gelato/order` et `book-pdf` (même algo best-match pour `hasOrphanPhotos`). Format Gelato : multiple de 4, minimum 28.
-
----
-
-## Design system
-
-### Palette de couleurs
-
-```css
---cream:        #F7F2EA   /* fond principal dashboard */
---cream-card:   #FDFAF5   /* fond cartes / sidebar */
---cream-dark:   #EDE5D4   /* fond secondaire */
---brown:        #3D2B1F   /* texte principal */
---brown-mid:    #7A5C44   /* texte secondaire / muted */
---brown-light:  #9A8070   /* très muted */
---amber:        #C8813A   /* accent / CTA / états actifs */
---amber-light:  #E8A96A   /* hover accent */
---sage:         #6B7B5E   /* accents verts */
---error:        #A32D2D   /* erreurs / danger */
-```
-
-### Typographie
-
-- **Titres** : `Georgia, serif` (ou Playfair Display) — 400 & 600
-- **Corps** : `'DM Sans', sans-serif` — 300 / 400 / 500
-- Style éditorial et chaleureux — évoque le papier, la mémoire, le vivant
-
-### Border-radius
-
-- 8px → petits éléments (badges, inputs)
-- 10–12px → nav items, dropdowns
-- 14–16px → cartes moyennes
-- 20px → grandes cartes
-- 100px → pills, boutons principaux
-
-### Règles de design
-
-- Ne jamais partir dans une direction SaaS bleue générique
-- Toujours conserver la palette beige/crème/marron/orange
-- Border-radius généreux, ombres douces
-- Tous les styles sont **inline** (`style={{}}`), pas de classes Tailwind
-- Hover states via `onMouseEnter` / `onMouseLeave` handlers React
-- Media queries dans `src/app/globals.css` (`.ep-sidebar`, `.ep-mobile-header`, `.ep-dashboard-main`) — `.ep-bottom-nav` et `.ep-fab` supprimés
+**pageCount** : calculé par `calcPageCount(storiesCount, hasOrphanPhotos, hasDedication)` dans `src/lib/book.ts`. Doit correspondre **exactement** entre `gelato/order` et `book-pdf` (même algo best-match pour `hasOrphanPhotos`). Format Gelato : multiple de 4, minimum 28.
 
 ---
 
 ## État actuel (résumé des fonctionnalités)
 
-> Détail complet de chaque session/feature : [docs/SESSIONS.md](docs/SESSIONS.md)
+> Détail complet : [docs/SESSIONS.md](docs/SESSIONS.md)
 
-**Journal** : entrées + photos (compression canvas), moods, tags, filtres année/mois, entrées antidatées, timeline par mois, limite 10 entrées plan free (trigger Postgres), journal partagé foyer (`pet_members`, invitations token 7j, max 5 membres).
+**Journal** : entrées + photos (compression canvas), moods, tags, filtres année/mois, entrées antidatées, timeline par mois, limite 10 entrées free (trigger Postgres), journal partagé foyer (`pet_members`, invitations token 7j, max 5 membres).
 
-**Histoires IA** : génération gated par plan (`getUserPlan`), rate limit 10/jour/user (count DB), client Anthropic unique `src/lib/anthropic.ts` (`callClaude`, `claude-sonnet-4-6`), prompts protégés injection (balises XML + `escapeXml`), cron mensuel auto, onboarding "origins", interview hebdo.
+**Histoires IA** : génération gated par plan (`getUserPlan`), rate limit 10/jour/user (count DB), client Anthropic unique `src/lib/anthropic.ts` (`callClaude`, timeout 30s, 1 retry 429/5xx), prompts protégés injection (balises XML + `escapeXml`), cron mensuel auto, onboarding « origins », interview hebdo, nudge premier chapitre (carte in-app + email J+2-3).
 
-**Milestones** : détection auto à la création d'entrée (`src/lib/milestones.ts`), définitions extensibles en DB (`milestone_definitions`), fallback hardcodé.
+**Milestones** : détection auto à la création d'entrée (`src/lib/milestones.ts`), définitions extensibles en DB, fallback hardcodé.
 
-**Livre imprimé** : page order avec personnalisations (5 thèmes couverture, titre custom, dédicace, sélection chapitres, filtre année, photo couverture custom, 4 layouts/chapitre), brouillons `book_configs` (max 15), aperçu HTML (`preview-pdf` POST session) + PDF réel Gelato (`book-pdf`, `@react-pdf/renderer`, token HMAC), commande Gelato (devise dynamique, pageCount calculé), crédits livre atomiques (RPC `try_consume_book_credit` verrou FOR UPDATE avant Gelato, `restore_book_credit` si échec), statut commande temps réel, historique/duplication/re-commande (`books`).
+**Livre imprimé** : page order (5 thèmes couverture, titre custom, dédicace, sélection chapitres, filtre année, photo couverture, 4 layouts/chapitre), brouillons `book_configs` (max 15), aperçu HTML + PDF réel Gelato, crédits atomiques (RPC FOR UPDATE avant Gelato, restore si échec), statut temps réel, historique/duplication/re-commande.
 
-**Monétisation** : checkout + upgrade avec proration preview, webhook idempotent (dedup `events_log` par `stripe_event_id`), achat livre one-time à prix dynamique, flow cadeau complet (achat one-time → code promo → redeem avec coupon 100%, schedule si déjà abonné), factures, réactivation, changement de plan fin de période, gestion `payment_past_due` (bannière + email dunning 1ère tentative).
+**Monétisation** : checkout + upgrade avec proration preview, webhook idempotent, achat livre one-time à prix dynamique, flow cadeau complet, factures, réactivation, changement de plan fin de période, `payment_past_due` (bannière + email dunning 1ère tentative).
 
-**Emails** (Resend) : templates harmonisés `src/lib/email-templates.ts` (`baseLayout`), auth hook Supabase (Standard Webhooks, HMAC fail-closed), crons rappel hebdo / histoire mensuelle / on-this-day / anniversaires / streak / prompts quotidiens / rétention D1-D7-D30 / nudge premier chapitre (J+2-3, `first-story-nudge`), unsubscribe tokenisé.
+**Emails** (Resend) : templates harmonisés `src/lib/email-templates.ts` (`baseLayout`), auth hook Supabase (Standard Webhooks, HMAC fail-closed), 8 crons, unsubscribe tokenisé.
 
-**Pages publiques** : profil animal `/pets/[id]`, mémorial `/memorial/[id]` (dark, OG meta, hommages modérés rate-limités), share card Instagram (`/api/share-card`, edge, PNG square/story).
+**Pages publiques** : profil animal, mémorial (hommages modérés rate-limités), share card Instagram (edge, PNG).
 
-**i18n** : hybride (Session 57) — pages marketing (`/`, `/fr`, `/gift`, `/fr/gift`) en langue **figée par URL**, server-rendered, composants client locale-aware partagés (plus de duplication `/fr`) ; dashboard + reste en `useLocale` auto (`navigator.language`). `messages/{en,fr}.json`, lien switch crawlable dans le footer marketing.
+**i18n** : hybride — marketing figé par URL server-rendered, reste en `useLocale` auto.
 
-**SEO / RGPD** : canonicals par page (relatives, résolues via `metadataBase`), `app/robots.ts` + `app/sitemap.ts` (routes metadata Next), noindex sur login/signup, metas dédiées gift/legal, homepage optimisée "ai pet journal" / "pet memory book" (title + H2 hero + H2 livre + CTA gift), JSON-LD homepage dans le server `page.tsx` : Organization + SoftwareApplication (sans aggregateRating — placeholders interdits) + FAQPage construit dynamiquement depuis `messages/en.json` `faq.q1..q6/a1..a6` (zéro drift schema/contenu), hreflang réciproque sur les 4 routes marketing (`/`↔`/fr`, `/gift`↔`/fr/gift`), cookie banner, export données JSON, suppression de compte complète. `aggregateRating` factice retiré partout (Session 57).
+**SEO / RGPD** : canonicals relatives par page (via `metadataBase`), `app/robots.ts` + `app/sitemap.ts`, noindex login/signup, JSON-LD homepage (Organization + SoftwareApplication sans aggregateRating + FAQPage i18n-driven), hreflang réciproque sur les 4 routes marketing, cookie banner, export données, suppression de compte.
 
-**Sécurité** : 13 rounds de review (détail dans docs/SESSIONS.md) — les règles qui en découlent sont codifiées dans « Conventions de code » ci-dessous.
+**Sécurité** : 13 rounds de review — les règles qui en découlent sont codifiées dans « Conventions de code ».
 
-**Qualité** : logs gatés (`src/lib/log.ts`, `DEBUG_LOGS=1`), rate-limit persistant Postgres (`checkRateLimitDb`), tests Vitest (plan guards, priceIdToPlan, calcPageCount, parseStoryResponse), hook SessionStart `npm install`.
+**Qualité** : logs gatés (`src/lib/log.ts`), rate-limit persistant Postgres, 21 tests Vitest, hook SessionStart `npm install`.
 
 ---
 
 ## Conventions de code
 
-### Ordre d'implémentation pour toute nouvelle feature
-
-1. Lire `package.json` + fichiers de layout existants
-2. Lire le schéma Supabase actuel
-3. Proposer la migration SQL si nécessaire
-4. Implémenter la logique métier
-5. Implémenter l'UI en dernier
-
 ### Règles critiques
 
-- Routes API dans `/app/api/`
-- Webhook Stripe : `/api/stripe/webhook` — **ne jamais déplacer**
-- Auth middleware : vérifier via Supabase server client uniquement
-- Ne jamais supprimer un ancien Price ID Stripe avant que le nouveau soit testé en Live
-- Tab actif dans la pet page : **lire depuis `useSearchParams()`**, jamais un `useState` avec `useEffect` vide (ne se met pas à jour sur navigation client-side)
-- Toujours ajouter les nouvelles clés i18n dans `messages/en.json` ET `messages/fr.json`
-- **Milestones** : utiliser `localTitle` directement dans l'affichage — ne pas découper par espaces pour retirer l'emoji (l'icône est rendue séparément via le champ `icon`)
-- **Auth sécurité** : tout changement de mot de passe doit vérifier le mot de passe actuel via `signInWithPassword` avant `updateUser`
-- **Devise** : utiliser `getCurrencyFromCountry` + `formatPrice` de `src/lib/currency.ts` pour tout affichage de prix. Ne jamais utiliser `isFR` comme proxy de devise — langue ≠ pays. Les routes Stripe lisent `x-vercel-ip-country` (checkout) ou `subscription.currency` (upgrade).
-- **Webhooks entrants** (Supabase auth hook) : Supabase suit le spec **Standard Webhooks**. Headers à lire : `webhook-id`, `webhook-timestamp`, `webhook-signature`. Contenu signé : `{id}.{timestamp}.{body}`. Secret : strip le préfixe `v1,whsec_` (ou `v1,` ou `whsec_`) puis `Buffer.from(rest, "base64")` comme clé HMAC-SHA256. Signature = `v1,<base64_hmac>`. Fail-closed : si `SUPABASE_HOOK_SECRET` absent → 401 immédiat. Comparer avec `timingSafeEqual` sur les buffers. Voir `src/app/api/emails/auth-hook/route.ts` pour l'implémentation de référence.
-- **Routes email hooks** (`confirm-signup`, `change-email`, `reset-password`) : vérification `Bearer ${SUPABASE_HOOK_SECRET}` fail-closed — retourner 401 immédiatement si la variable est absente.
-- **`/api/generate`** : ne jamais faire confiance aux données du body client (petName, species, bio, entries). Re-fetcher depuis la DB après vérification de l'ownership du pet.
-- **`/api/gelato/order`** : toujours filtrer les updates de stories par `user_id` (même avec service role). Consommer les crédits via `try_consume_book_credit` **avant** l'appel Gelato, et restaurer via `restore_book_credit` en cas d'échec.
-- **`/api/preview-pdf`** : l'accès GET (Gelato) nécessite un token HMAC signé généré par `gelato/order`. L'accès POST (in-app) nécessite une session + vérification de l'ownership du pet. Ne jamais exposer le contenu du livre sans authentification. Les URLs insérées dans du CSS (`url('...')`) doivent être passées par `safeCssUrl()` qui échappe les apostrophes.
-- **Client vs server-only imports** : ne jamais faire importer, par un module utilisé dans un composant `"use client"`, un fichier dont la chaîne d'imports statique touche `supabase/server.ts` / `next/headers` (ex. `plan.ts`, `book.ts` avant son split). Casse le build (« importing a component that needs next/headers ... not supported in pages/ »). Pattern de fix : extraire la logique pure (zéro import) dans un module frère (`book-pages.ts`, `plan-guards.ts`) et faire réexporter par l'original pour compat. Un `import type { ... }` est toujours sûr (effacé à la compilation) — seuls les imports de valeurs/fonctions posent problème.
-- **Helpers partagés** : pour escaper du HTML → `escapeHtml()` dans `src/lib/html.ts`. Pour escaper du XML dans les prompts IA → `escapeXml()` dans `src/lib/html.ts`. Pour détecter la locale d'un profil → `src/lib/locale.ts` (utilise `getServiceSupabase()` — pas de session requise). Pour le calcul du nombre de pages → `src/lib/book.ts`. Pour les tokens PDF → `src/lib/pdf-token.ts`. Pour mapper les erreurs Supabase Auth → messages FR/EN → `src/lib/auth-errors.ts` (`getSignupError`). Pour `verifyBearer` (Bearer token constant-time) et `validateRedirectTo` (open redirect guard) → `src/lib/auth.ts`. Ne pas réimplémenter ces fonctions inline.
-- **Rate limiting** : le rate limiter in-memory (`src/lib/rate-limit.ts`) n'est PAS fiable sur Vercel serverless (cold start = reset, pas de partage entre instances). Pour les limites critiques, utiliser un count DB (voir `/api/generate`) ou Upstash Redis.
-- **Comparaisons de secrets** : toujours utiliser `timingSafeEqual` de `node:crypto` pour comparer des tokens/secrets (Bearer, HMAC, etc.). Ne jamais utiliser `===` pour ces comparaisons — vulnérable aux attaques par timing.
-- **Validation dates** : les paramètres `periodStart`/`periodEnd` reçus du client doivent être validés comme `YYYY-MM-DD` avant usage comme filtre DB.
-- **Cookies** : tout cookie sensible posé via API doit avoir `httpOnly: true`, `secure: process.env.NODE_ENV === "production"`, `sameSite: "lax"`. **Exception** : le cookie `locale` (préférence de langue) est intentionnellement sans `httpOnly` — il doit être lisible par `document.cookie` dans `useLocale`. La convention ne s'applique qu'aux données sensibles (session, tokens).
-- **Prompts IA avec données utilisateur** : isoler les données dans des balises XML (`<pet_details>`, `<journal_entries>`) pour prévenir les injections de prompt ET appliquer `escapeXml()` sur chaque valeur insérée dans les balises. Voir `cron/monthly-story` et `/api/generate` pour le pattern.
-- **Cron chapitre mensuel** (`/api/cron/monthly-story`, actif — sched `0 8 1 * *`) : génère le chapitre du **mois écoulé** (le cron fire le 1er). Éligibilité d'un pet = **TOUTES** : `deceased_at IS NULL` + owner plan ∈ `digital`/`print` (jamais free/book_only) + **≥3 entrées** avec `entry_date` dans le mois écoulé + **aucune story existante pour (pet, month_key)**. Idempotence garantie au niveau DB par l'index unique `stories_pet_id_story_type_month_key_unique` (+ gestion `23505` dans `generateAndSaveStory`) → un retry Vercel ne produit **aucun doublon**. **`email_reminders` n'est PAS un critère d'éligibilité** : un payant qui a coupé les emails obtient quand même son chapitre in-app ; seul l'email de notification respecte l'opt-out. Génération via le service partagé `generateAndSaveStory` (`src/lib/story.ts`, même prompt/modèle que la génération manuelle — ne jamais dupliquer la logique IA). try/catch **par pet** (une erreur loggue et continue, ne fait pas échouer le batch). `maxDuration=300` (aligné plan Vercel Pro ; Hobby plafonne à 60s).
-- **Réponses API erreurs** : ne jamais retourner des détails d'erreurs internes (Stripe, Gelato, Anthropic) au client — les logger côté serveur et retourner uniquement un message générique.
-- **UUID validation** : toujours valider `petId`, `storyId` et tout autre identifiant reçu du client via `UUID_REGEX` avant usage en DB ou en URL. La route `gelato/order` et `preview-pdf` font référence.
-- **`/auth/callback` redirect** : `next` doit commencer par `/` ET ne pas commencer par `//` pour bloquer les redirects protocol-relative vers des domaines externes.
-- **SEO / metadata** : ne jamais mettre de `alternates.canonical` ni `openGraph.url` dans le root layout — hérités par toutes les pages (bug duplicata homepage, corrigé session 56). Canonicals **relatives** (`/gift`), résolues via `metadataBase`. Le merge metadata Next est **shallow par clé top-level** : une page qui définit `openGraph` remplace **tout** l'objet og du layout → toujours fournir un og complet (title/url/siteName/type) quand on override. Pages `"use client"` : metadata via `layout.tsx` de segment (gift, auth) ou wrapper server `page.tsx` + composant client séparé (homepage → `home-client.tsx`). Jamais de `public/robots.txt` — conflit avec `app/robots.ts`.
+- Routes API dans `/app/api/`. Webhook Stripe : `/api/stripe/webhook` — **ne jamais déplacer**.
+- Ne jamais supprimer un ancien Price ID Stripe avant que le nouveau soit testé en Live.
+- Tab actif pet page : **lire depuis `useSearchParams()`**, jamais un `useState` + `useEffect` vide.
+- **Milestones** : utiliser `localTitle` directement dans l'affichage — ne pas découper par espaces pour retirer l'emoji (l'icône est rendue séparément via le champ `icon`).
+- **Auth sécurité** : tout changement de mot de passe vérifie d'abord le mot de passe actuel via `signInWithPassword` avant `updateUser`.
+- **Devise** : `getCurrencyFromCountry` + `formatPrice` de `src/lib/currency.ts` pour tout affichage de prix. Ne jamais utiliser la langue comme proxy de devise. Routes Stripe : `x-vercel-ip-country` (checkout) ou `subscription.currency` (upgrade).
+- **Webhooks entrants** (Supabase auth hook) : spec **Standard Webhooks**. Headers `webhook-id`/`webhook-timestamp`/`webhook-signature` ; contenu signé `{id}.{timestamp}.{body}` ; secret : strip `v1,whsec_` puis `Buffer.from(rest, "base64")` comme clé HMAC-SHA256 ; signature `v1,<base64_hmac>`. **Fail-closed** : secret absent → 401 immédiat. Comparaison `timingSafeEqual`. Référence : `src/app/api/emails/auth-hook/route.ts`.
+- **Comparaisons de secrets** : toujours `timingSafeEqual` de `node:crypto` — jamais `===` (timing attack).
+- **`/api/gelato/order`** : filtrer les updates de stories par `user_id` même avec service role. Crédits : `try_consume_book_credit` **avant** Gelato, `restore_book_credit` si échec.
+- **`/api/preview-pdf` / `book-pdf`** : jamais de contenu livre sans auth (token HMAC pour Gelato, session + ownership pour l'aperçu). URLs insérées en CSS → `safeCssUrl()` (échappe les apostrophes).
+- **Client vs server-only imports** : un module utilisé par un composant `"use client"` ne doit **jamais** avoir dans sa chaîne d'imports statique `supabase/server.ts` / `next/headers` (ex. `plan.ts`, `book.ts`). Casse le build (« importing a component that needs next/headers »). Fix pattern : extraire la logique pure dans un module frère **zéro import** (`book-pages.ts`, `plan-guards.ts`) et faire réexporter par l'original. Un `import type` est toujours sûr (effacé à la compilation).
+- **Validation dates** : `periodStart`/`periodEnd` client validés comme `YYYY-MM-DD` avant usage en filtre DB.
+- **Cookies** : tout cookie sensible posé via API → `httpOnly: true`, `secure: NODE_ENV === "production"`, `sameSite: "lax"`. (Il n'existe actuellement aucun cookie de préférence côté app — la locale est détectée via `navigator.language`, sans cookie.)
+- **Prompts IA avec données utilisateur** : isoler dans des balises XML (`<pet_details>`, `<journal_entries>`) + `escapeXml()` sur chaque valeur insérée. Références : `cron/monthly-story`, `/api/generate`.
+- **`/auth/callback` redirect** : `next` doit commencer par `/` ET pas par `//` (bloque les redirects protocol-relative). Helper : `validateRedirectTo` / `isSafeRelativePath`.
+- **SEO / metadata** : jamais de `alternates.canonical` ni `openGraph.url` dans le root layout (hérités partout → duplicata). Canonicals **relatives** (`/gift`) résolues via `metadataBase`. Le merge metadata Next est **shallow par clé top-level** : une page qui définit `openGraph` remplace tout l'objet og du layout → fournir un og complet (title/url/siteName/type). Pages `"use client"` : metadata via `layout.tsx` de segment ou wrapper server `page.tsx` + composant client séparé. Jamais de `public/robots.txt` (conflit `app/robots.ts`). Jamais d'`aggregateRating` factice dans les JSON-LD.
+
+### Helpers partagés — ne jamais réimplémenter inline
+
+| Besoin | Helper | Fichier |
+|---|---|---|
+| Escape HTML | `escapeHtml()` | `src/lib/html.ts` |
+| Escape XML (prompts IA) | `escapeXml()` | `src/lib/html.ts` |
+| UUID / email / path relatif sûr | `UUID_REGEX`, `isUuid`, `isEmail`, `isSafeRelativePath` | `src/lib/validation.ts` |
+| Bearer token constant-time | `verifyBearer()` | `src/lib/auth.ts` |
+| Protection route cron | `verifyCronRoute(req)` | `src/lib/auth.ts` |
+| Open redirect guard | `validateRedirectTo()` | `src/lib/auth.ts` |
+| Locale d'un profil (emails) | — | `src/lib/locale.ts` (service role, pas de session) |
+| Nombre de pages livre | `calcPageCount()` | `src/lib/book.ts` (logique pure : `book-pages.ts`) |
+| Tokens PDF signés | — | `src/lib/pdf-token.ts` |
+| Erreurs Supabase Auth → FR/EN | `getSignupError()` | `src/lib/auth-errors.ts` |
+| Appel Claude + parse | `callClaude()`, `parseStoryResponse()` | `src/lib/anthropic.ts` |
+| Génération + save story | `generateAndSaveStory()` | `src/lib/story.ts` |
+| Logs gatés | `log.debug/info/warn/error` | `src/lib/log.ts` |
+| Rate limit fiable | `checkRateLimitDb()` | `src/lib/rate-limit.ts` |
+| Prix livre | `calcGelatoBookPrice()` | `src/lib/gelato-pricing.ts` |
+| Devise + format prix | `getCurrencyFromCountry()`, `formatPrice()` | `src/lib/currency.ts` |
 
 ---
 
 ## Checklist avant mise en production
 
-- [x] Passer `STRIPE_SECRET_KEY` de `sk_test_...` à `sk_live_...` ✅ (2026-07-07, session 55)
-- [x] Mettre à jour les `STRIPE_PRICE_ID_*` et `STRIPE_WEBHOOK_SECRET` en mode Live ✅ (2026-07-07 — catalogue live + endpoint webhook live `we_1TqHQk…`, 6 events dont `invoice.payment_succeeded` ajouté après coup, il manquait)
-- [x] Publier l'application Google OAuth (retirer le mode Test) ✅
-- [ ] Tester le webhook Stripe en mode Live avec un vrai paiement (page paiement OK 07-07 ; reste à valider l'activation du plan après paiement réel)
-- [x] Vérifier que le cron weekly-reminder envoie bien les emails ✅ (sent:1 + email FR reçu, après fix `profiles.language` commit `c50bffc`)
-- [x] Vérifier que Gelato est configuré avec une carte de paiement valide ✅
-- [x] Exécuter `round2_security_fixes_2026_05_23.sql` + `round3_security_fixes_2026_05_26.sql` dans Supabase ✅
-- [x] ~~Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` + `STRIPE_PRICE_BOOK_ONCE_USD` dans Vercel~~ (obsolète — prix livre dynamique, vars supprimées)
-- [x] Exécuter `fix_book_credits_print_plan_2026_05_27.sql` dans Supabase ✅
+- [x] `STRIPE_SECRET_KEY` en `sk_live_...` ✅ (2026-07-07)
+- [x] `STRIPE_PRICE_ID_*` + `STRIPE_WEBHOOK_SECRET` en mode Live ✅ (endpoint `we_1TqHQk…`, 6 events)
+- [x] Google OAuth publié (hors mode Test) ✅
+- [ ] Tester le webhook Stripe en Live avec un vrai paiement (page paiement OK 07-07 ; reste à valider l'activation du plan après paiement réel)
+- [x] Cron weekly-reminder envoie les emails ✅
+- [x] Gelato configuré avec carte de paiement valide ✅
+- [x] Migrations sécurité round2/round3 + fix book credits exécutées dans Supabase ✅
 
 ---
 
@@ -520,65 +530,46 @@ currency: "USD"
 
 ---
 
----
-
 ## Optimisation & dette technique (audit Pareto 2026-06-18)
 
-Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10 items.
+**Livré** : #1 logs gatés (`src/lib/log.ts`) · #3 client Anthropic unique (`src/lib/anthropic.ts`) · #5 singleton Supabase browser · #7 rate-limit persistant Postgres (RPC `check_rate_limit`, fail-open, migration appliquée en prod ✓) · #10 tests Vitest (21 tests ; ⚠️ `vitest.config.ts` a un alias `@`→`src` **manuel** — PAS `vite-tsconfig-paths`, ESM-only, casse le config loader CJS).
 
-**Livré (commits sur `main`) :**
-- **#1 Logs gatés** — `src/lib/log.ts` : `log.debug/info` silencieux sauf `DEBUG_LOGS=1` ; `warn/error` toujours. `console.*` → `log.*` sur 30 routes API (stop fuite user ids/payloads en logs prod).
-- **#3 Client Anthropic unique** — `src/lib/anthropic.ts` : `callClaude()` (model `claude-sonnet-4-6`, version, timeout 30s, 1 retry sur 429/5xx/network) + `parseStoryResponse()`. Refacto des 4 sites (generate, generate-origins, story.ts ×2). Model id défini **une seule fois**.
-- **#5 Singleton Supabase browser** — `src/lib/supabase/client.ts` réutilise une instance au lieu d'en créer une par render.
-- **#7 Rate-limit persistant** — `checkRateLimitDb()` via RPC Postgres atomique `check_rate_limit` (migration `add_rate_limits_2026_06_18.sql` **appliquée en prod ✓**). Table `rate_limits` RLS-on sans policy, fonction SECURITY DEFINER, **fail-open**. Rewire 7 routes (contact, waitlist, gift-checkout, export-data, memorial tributes, suggestion, unsubscribe). L'ancien limiter in-memory (`checkRateLimit`) reste dispo mais non fiable serverless.
-- **#10 Tests Vitest** — `npm test` ; `vitest.config.ts` avec alias `@`→`src` **manuel** (⚠️ PAS `vite-tsconfig-paths` : ESM-only, casse le config loader CJS). 16 tests : plan guards, priceIdToPlan, calcPageCount, parseStoryResponse.
+**Écarté — #2 `select("*")` → colonnes explicites** : analysé, aucun gain réel (occurrences restantes = counts `head:true` ou colonnes toutes consommées). Ne pas re-tenter sans nouveau besoin.
 
-**Écarté — #2 `select("*")` → colonnes explicites :** analysé, **aucun gain réel**, non appliqué. Toutes les occurrences restantes sont soit `select("*", { count, head: true })` (zéro ligne transférée), soit des selects dont **toutes les colonnes sont consommées** (PDF book/preview, gelato/order, book-configs, pet detail). Le seul candidat (5 entries récentes dashboard) gardait `content` (affiché) et cassait le type `Entry` → revert. Ne pas re-tenter sans nouveau besoin.
+**Reportés — gros refactors (fort blast-radius)** :
+- **#4 Rendu statique CDN landing** — bloqué : root `layout.tsx` lit `headers()` (x-pathname) pour `<html lang>` → force tout le site en dynamique. Fix = restructurer en `/[locale]/`. Risque SEO bilingue si bricolé.
+- ~~#6 Dédup landing~~ ✅ résolu (Session 57).
+- **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` en `useEffect` (waterfall).
+- **#9 Split god-components** — `pets/[id]/page.tsx` 131 Ko (308 `style={{}}`), `order` 81 Ko, `settings` 54 Ko.
 
-**Reportés — gros refactors (fort blast-radius) :**
-- **#4 Rendu statique CDN landing** — bloqué : root `layout.tsx` lit `headers()` (x-pathname) juste pour fixer `<html lang>` fr/en → force **tout** le site en dynamique. Fix = restructurer en `/[locale]/` (recoupe #6). Risque SEO bilingue (hreflang) si bricolé.
-- ~~**#6 Dédup landing**~~ ✅ **résolu (Session 57)** — `/` et `/fr` partagent `home-client.tsx` (`<Home locale>`), plus de copie manuelle. Idem gift (`gift-client.tsx`).
-- **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` en `useEffect` (waterfall, requêtes exposées client). Migration RSC = data au 1er paint, moins de surface.
-- **#9 Split god-components** — `pets/[id]/page.tsx` 131 Ko (308 `style={{}}` inline), `order` 81 Ko, `settings` 54 Ko. Extraire sous-composants + styles hors render.
-
-*Dernière mise à jour : 2026-07-12 (Session 57 — i18n hybride : /fr + /fr/gift server-rendered crawlables, composants locale-aware partagés, hreflang réciproque, dédup #6 résolue ; bandeau suggestion langue ; landing mémorial publique /memorial « pet memorial book » ; infra blog SEO /blog + ArticleLayout + registre ; articles publiés : `pet-journal-prompts` "50 Pet Journal Prompts to Capture Your Pet's Story", `dog-memory-book-ideas` "12 Dog Memory Book Ideas That Go Beyond Photos", `puppy-first-year-memory-book` "How to Make a Puppy's First Year Memory Book")*
+*Dernière mise à jour : 2026-07-16 (Session 59 — refonte CLAUDE.md : definition of done, checklists actionnables, purge des infos obsolètes)*
 
 ---
 
 ## Historique des sessions
 
-Historique complet (sessions 1 à 53, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
+Historique complet (sessions 1 à 57, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
 Seules les 2 dernières sessions sont conservées ici ; à chaque nouvelle session, déplacer la plus ancienne vers l'archive.
+
+### ✅ Session 59 — Refonte CLAUDE.md pour agents non-Fable (2026-07-16)
+
+Audit du CLAUDE.md contre l'état réel du repo + réécriture complète (branche `claude/upgrade-claude-md-ofhqli`). Objectif : qu'un modèle moins capable (Opus/Sonnet) produise un travail conforme en suivant le fichier seul.
+
+- **Corrections factuelles** : `/api/gift/create` n'existe pas → `/api/gift/checkout` ; `LanguageSwitcher.tsx` déjà supprimé (la note « safe to delete » traînait) ; exception cookie `locale` obsolète (useLocale ne lit plus aucun cookie, `/api/locale` = dead code) ; « 16 tests » → 21.
+- **Nouveau** : section « Definition of Done » (8 checks explicites avant de déclarer un travail fini), « Checklist nouvelle route API » (7 points : modèle d'auth, UUID, ownership, re-fetch DB, rate limit, erreurs génériques, logs), règles migrations (naming + application manuelle Supabase), règles git/deploy (push main = prod immédiate), table « Helpers partagés » exhaustive (dont `verifyCronRoute`, non documenté avant).
+- **Dédup** : les deux sections couleurs (tokens `--ep-*` réels vs ancienne palette `--cream/--amber/--sage` qui n'a jamais existé dans `globals.css`) fusionnées en une seule, complétée des tokens radius/shadow/transition/border.
+- **Complétude** : table routes API passée de ~15 à ~28 entrées (exhaustive), colonne Auth ajoutée ; table cron synchronisée avec `vercel.json` ; CSP `next.config.js` documentée (ajout de ressource externe = mise à jour CSP obligatoire).
+- Aucun changement de code. `tsc --noEmit` + 21 tests verts (état de départ vérifié).
 
 ### ✅ Session 58 — Nudge premier chapitre gratuit (2026-07-15)
 
 Problème : un free user qui écrit 3 entrées dès sa 1ère semaine n'a aucun signal poussant à utiliser sa génération IA gratuite incluse (`canGenerateStory`) → risque de churn avant le "wow moment".
 
 **Commit `94bc2e4`** :
-- **`src/lib/plan-guards.ts`** (nouveau) : `canAddEntry`/`canGenerateStory`/`canOrderBook`/`priceIdToPlan`/`Plan`/`PlanInfo` extraits de `plan.ts` vers un module **zéro import**. Raison : `plan.ts` importe `supabase/server` (→ `next/headers`) en tête de fichier ; `pets/[id]/page.tsx` est `"use client"`. Faire importer `canGenerateStory` par `lib/story.ts` (lui-même importé par cette page client) via `plan.ts` aurait réintroduit le bug RSC de la Session ~50 (`BookProgressWidget` → `book.ts` → `plan.ts` → crash build). `plan.ts` fait `export * from "./plan-guards"` : aucun des ~15 call sites existants n'a changé. Même patron que le split `book.ts`/`book-pages.ts`.
-- **`src/lib/story.ts`** : `evaluateFirstStoryNudge(conditions)` — pure, appelle `canGenerateStory` de `plan-guards.ts` (pas de duplication) — et `shouldShowFirstStoryNudge(supabase, userId, petId)` — lookup DB, utilisée par le cron.
-- **`pets/[id]/page.tsx`**, onglet Histoires IA : carte nudge au-dessus de l'indicateur "prochain chapitre", calcule l'éligibilité côté client à partir de l'état déjà chargé (`pet.deceased_at`, `stories.length`, `allEntryDates.length`) + un nouveau count `userTotalStoryCount` (stories hors origins/birthday, tout animal confondu — même filtre que `/api/generate`). CTA = même handler que le bouton "Générer" existant (ouvre `showGenerateModal`), aucune logique de génération dupliquée. Disparaît automatiquement une fois `stories.length > 0`.
-- **`/api/cron/first-story-nudge`** (nouveau, `0 10 * * *`) : email de relance si la carte in-app a été ignorée 2-3 jours. Dédup via `events_log` (`user_id, pet_id, event_type='first_story_nudge_email'`) — **aucune migration SQL** : la table avait déjà `pet_id` + contrainte unique `(user_id, pet_id, event_type)`. Respecte `email_reminders` (contrairement à `monthly-story` qui ignore ce flag pour la génération elle-même — ici il n'y a que l'email, pas de fonctionnalité produit derrière).
-- i18n : clés `first_story_nudge.*` (fr+en). Tests : `src/lib/story.test.ts`, 5 cas sur `evaluateFirstStoryNudge`. `tsc --noEmit` + 21/21 tests verts.
+- **`src/lib/plan-guards.ts`** (nouveau) : `canAddEntry`/`canGenerateStory`/`canOrderBook`/`priceIdToPlan`/`Plan`/`PlanInfo` extraits de `plan.ts` vers un module **zéro import**. Raison : `plan.ts` importe `supabase/server` (→ `next/headers`) en tête de fichier ; `pets/[id]/page.tsx` est `"use client"`. `plan.ts` fait `export * from "./plan-guards"` : aucun des ~15 call sites existants n'a changé. Même patron que le split `book.ts`/`book-pages.ts`.
+- **`src/lib/story.ts`** : `evaluateFirstStoryNudge(conditions)` — pure — et `shouldShowFirstStoryNudge(supabase, userId, petId)` — lookup DB, utilisée par le cron.
+- **`pets/[id]/page.tsx`**, onglet Histoires IA : carte nudge au-dessus de l'indicateur « prochain chapitre », éligibilité calculée côté client + count `userTotalStoryCount` (stories hors origins/birthday, tout animal — même filtre que `/api/generate`). CTA = même handler que le bouton « Générer ». Disparaît une fois `stories.length > 0`.
+- **`/api/cron/first-story-nudge`** (nouveau, `0 10 * * *`) : email de relance si la carte in-app ignorée 2-3 jours. Dédup via `events_log` (`user_id, pet_id, event_type='first_story_nudge_email'`) — aucune migration nécessaire. Respecte `email_reminders` (il n'y a que l'email, pas de fonctionnalité produit derrière).
+- i18n : clés `first_story_nudge.*` (fr+en). Tests : `src/lib/story.test.ts`, 5 cas. `tsc --noEmit` + 21/21 verts.
 
 Non testé en navigateur (nécessite un compte free avec 3 entrées fraîches — laissé à Julien).
-
-### ✅ Session 57 — i18n hybride : /fr crawlable server-rendered (2026-07-12)
-
-Chantier : rendre la version FR crawlable par Google sans réintroduire next-intl. Audit préalable : `/fr` existait déjà mais en copie manuelle client de 579 l (drift, dette #6) ; `/gift` en `useLocale` navigator (non crawlable FR) ; pas de `/fr/gift` ; aucun redirect auto Accept-Language (rien à retirer). Décision (validée user) : composant client locale-aware partagé + langue **figée par URL**, plutôt que RSC purs + îlots (blast-radius élevé, zéro gain SEO car le FR est déjà en source via `use client` + `force-dynamic`).
-
-**Commit 1 `79c1ca1` (refactor)** : `PublicNav`/`PublicFooter` acceptent une prop `locale` optionnelle (absente → `useLocale`, préserve dashboard + 19 autres pages publiques) + `localeSwitch` (lien crawlable `<a>` footer) ; `home-client.tsx` `<Home locale>` (drop `useLocale`) ; `gift/page.tsx` splitté en `gift-client.tsx` (`<GiftContent locale>`) + wrapper server ; liens nav internes locale-aware.
-
-**Commit 2 `0219982` (routes FR)** : `/fr` réécrit en server component (`<Home locale="fr">` + JSON-LD FR Org/App/FAQPage i18n-driven, **`aggregateRating` factice retiré**) ; nouveau `/fr/gift`. Supprime la copie manuelle de 579 l et corrige le drop de `premium_f5` côté FR.
-
-**Commit 3 `0584eaf` (SEO)** : metadata FR (`/fr` title « Journal animalier IA qui devient un livre imprimé | Everypaw », `/fr/gift` title « Offrir un journal animalier et un livre souvenir | Everypaw »), hreflang **réciproque** sur les 4 routes (canonicals relatives résolues via `metadataBase`), `sitemap.ts` + `/fr/gift`.
-
-**Vérifié** (`next start` + curl) : `/fr` rend du français dans le HTML source ✓ ; `/` reste EN sous `Accept-Language: fr` ✓ ; hreflang réciproques `/`↔`/fr` et `/gift`↔`/fr/gift` ✓ ; sitemap liste `/fr` + `/fr/gift` ✓ ; `npm run build` + `tsc --noEmit` verts. Dashboard `useLocale` intact.
-
-**Bandeau de suggestion de langue** (`LangSuggestBanner`, commit `dfafd65`) : client component monté sur les 4 pages marketing. Lit `navigator.language` **uniquement pour suggérer** (jamais de redirect, ne modifie jamais le contenu rendu). Affiché seulement si mismatch (page EN + navigator fr, ou page FR + navigator non-fr). Lien réel crawlable `<a href>` vers la même page dans l'autre langue. Fixed bottom, dismissible, dismiss mémorisé en `localStorage` (`ep_lang_suggest_dismissed`), rend `null` tant que non monté (pas de mismatch d'hydratation, pas de CLS). ⚠️ Vérifier l'interactivité client sur `next start` (prod) : le preview `next dev` du sandbox n'hydrate pas React.
-
-**Infra blog SEO** (commit `2489c7f`) : cluster de contenu « pet memory ». `src/lib/blog.ts` = registre unique (`BLOG_POSTS[]` : slug, title, description, datePublished, `published`) — pilote l'index `/blog`, l'inclusion sitemap et le noindex par article. Chaque article = `app/blog/<slug>/page.tsx` écrit à la main : metadata (canonical `/blog/<slug>`, `robots` dérivé du flag `published`), JSON-LD Article (author/publisher Organization Everypaw) **émis seulement si publié**, corps H2/H3 dans `<ArticleLayout post>` (`src/components/blog/ArticleLayout.tsx` : fil d'ariane, colonne lecture ~680px, typo Georgia/DM Sans, CTA final discret vers `/`). **Workflow pour ajouter/publier un article** : (1) écrire le corps dans `app/blog/<slug>/page.tsx`, (2) passer `published: true` dans `blog.ts` → l'article entre dans l'index + le sitemap et perd le noindex, le JSON-LD s'active. Placeholder actuel `pet-journal-prompts` (`published: false`, noindex). Lien « Blog » dans le footer full (landing).
-
-**Landing mémorial publique** (`/memorial`, commit `e1620ba`) : page marketing SEO « pet memorial book », **server component pur** (pas de `"use client"`, zéro interactivité) — distincte des pages user `/memorial/[id]`. Ton sobre (deuil animalier) : palette cream + sage, pas d'amber criard sur le contenu (le dot logo nav + cookie banner restent en amber = chrome global), aucune image, aucun schema Review, CTA unique discret `/auth/signup`. Textes en `memorial_landing` (en+fr, la page rend EN ; `/fr/memorial` non créé). Metadata title/description dédiées + canonical `/memorial`, ajouté au sitemap. Carte homepage « A legacy that lasts » (f5) devient un lien descriptif vers `/memorial` (`aria-label`, ancre SEO).
-
-Session 56 (SEO canonicals/robots.ts/sitemap.ts) archivée dans [docs/SESSIONS.md](docs/SESSIONS.md).
