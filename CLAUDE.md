@@ -535,6 +535,14 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 
 **Écarté — #2 `select("*")` → colonnes explicites :** analysé, **aucun gain réel**, non appliqué. Toutes les occurrences restantes sont soit `select("*", { count, head: true })` (zéro ligne transférée), soit des selects dont **toutes les colonnes sont consommées** (PDF book/preview, gelato/order, book-configs, pet detail). Le seul candidat (5 entries récentes dashboard) gardait `content` (affiché) et cassait le type `Entry` → revert. Ne pas re-tenter sans nouveau besoin.
 
+**Pages légales FR — décision produit en attente (relevé 2026-07-17) :**
+
+État actuel : `/legal/cgv`, `/legal/confidentialite` et `/legal/mentions` sont des **redirects 308 permanents** vers `/legal/terms`, `/legal/privacy`, `/legal/notices` (déclarés dans `next.config.js` `redirects()`). Un visiteur français lit donc les CGV, la politique de confidentialité et les mentions légales **en anglais**. Leur absence du sitemap est **volontaire et correcte** : un sitemap ne liste que des URLs finales en 200, y mettre des redirects génère des erreurs « Page avec redirection » dans Search Console. Ne pas les y rajouter.
+
+Deux sujets ouverts, liés :
+- **Légal FR réel** — sujet produit et potentiellement de **conformité** (vente en France, CGV en anglais). Si on le fait : écrire de vraies pages FR à des URLs distinctes, **retirer les 3 redirects** de `next.config.js`, poser un **hreflang réciproque** EN↔FR, puis seulement ajouter les URLs FR au sitemap. Les 3 pages EN ont des metadata complètes (canonical + og, session 56) ; les FR n'ont qu'un `title`, à compléter si on les ressuscite.
+- **Code mort** — `src/app/legal/{cgv,confidentialite,mentions}/page.tsx` existent toujours mais ne sont **jamais servis** (le redirect les court-circuite). À supprimer si on renonce au légal FR, à reprendre comme base si on le fait. Ne rien supprimer sans arbitrage sur le point ci-dessus.
+
 **Reportés — gros refactors (fort blast-radius) :**
 - **#4 Rendu statique CDN landing** — bloqué : root `layout.tsx` lit `headers()` (x-pathname) juste pour fixer `<html lang>` fr/en → force **tout** le site en dynamique. Fix = restructurer en `/[locale]/` (recoupe #6). Risque SEO bilingue (hreflang) si bricolé.
 - ~~**#6 Dédup landing**~~ ✅ **résolu (Session 57)** — `/` et `/fr` partagent `home-client.tsx` (`<Home locale>`), plus de copie manuelle. Idem gift (`gift-client.tsx`).
