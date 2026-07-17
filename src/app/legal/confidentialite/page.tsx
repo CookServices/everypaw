@@ -3,15 +3,31 @@ import { LEGAL_LAST_UPDATE } from "@/lib/legal";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
-export const metadata = { title: "Politique de confidentialité, Everypaw" };
+export const metadata = {
+  title: "Politique de confidentialité, Everypaw",
+  description:
+    "Comment Everypaw collecte, utilise et protège vos données : photos, entrées de journal, paiements et vos droits (RGPD).",
+  alternates: {
+    canonical: "/legal/confidentialite",
+    languages: { en: "/legal/privacy", fr: "/legal/confidentialite", "x-default": "/legal/privacy" },
+  },
+  openGraph: {
+    title: "Politique de confidentialité, Everypaw",
+    description:
+      "Comment Everypaw collecte, utilise et protège vos données : photos, entrées de journal, paiements et vos droits (RGPD).",
+    url: "/legal/confidentialite",
+    siteName: "Everypaw",
+    type: "website",
+  },
+};
 
 export default function Confidentialite() {
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <PublicNav variant="simple" />
+      <PublicNav variant="simple" locale="fr" />
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "4rem 2rem 6rem" }}>
-        <Link href="/" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>Retour</Link>
+        <Link href="/fr" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>Retour</Link>
 
         <h1 style={{ fontFamily: "Georgia, serif", fontSize: "2rem", fontWeight: 600, color: "#3D2B1F", margin: "2rem 0 .75rem" }}>
           Politique de confidentialité
@@ -23,7 +39,7 @@ export default function Confidentialite() {
           ["2. Données collectées", "Nous collectons : votre adresse email et mot de passe (authentification), le nom et les informations de votre animal, les entrées de journal et photos que vous publiez, les données de paiement traitées par Stripe (nous n'y avons pas accès directement), et les données d'utilisation anonymisées à des fins d'amélioration du service."],
           ["3. Finalités", "Vos données sont utilisées pour : vous fournir le service Everypaw, générer les histoires IA et les livres imprimés, vous envoyer des notifications de service (rappels hebdomadaires si activés), et prévenir la fraude."],
           ["4. Base légale", "Le traitement repose sur l'exécution du contrat (fourniture du service), votre consentement (communications marketing optionnelles), et nos intérêts légitimes (sécurité, amélioration du service)."],
-          ["5. Sous-traitants", "Nous utilisons : Supabase (hébergement et base de données, UE), Stripe (paiement, certifié PCI DSS), OpenAI (génération IA, données pseudonymisées), Gelato (impression et expédition du livre)."],
+          ["5. Sous-traitants", "Nous utilisons : Supabase (hébergement et base de données, UE), Stripe (paiement, certifié PCI DSS), Anthropic (génération IA, données pseudonymisées), Gelato (impression et expédition du livre)."],
           ["6. Conservation", "Vos données sont conservées pendant toute la durée de votre compte, puis supprimées dans les 30 jours suivant la fermeture, sauf obligation légale contraire."],
           ["7. Vos droits", "Vous disposez des droits d'accès, de rectification, d'effacement, de portabilité et d'opposition. Exercez-les à hello@everypaw.app. Vous pouvez également contacter la CNIL (www.cnil.fr)."],
           ["8. Cookies", "Nous utilisons un cookie de session pour l'authentification et un cookie de préférence de langue. Aucun cookie publicitaire ou de tracking tiers n'est utilisé."],
@@ -35,7 +51,7 @@ export default function Confidentialite() {
         ))}
       </main>
 
-      <PublicFooter variant="minimal" />
+      <PublicFooter variant="minimal" locale="fr" />
     </div>
   );
 }

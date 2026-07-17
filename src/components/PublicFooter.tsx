@@ -19,6 +19,7 @@ interface PublicFooterProps {
 export default function PublicFooter({ variant = "minimal", locale, localeSwitch }: PublicFooterProps) {
   const auto = useLocale();
   const t = locale ? getTranslations(locale) : auto.t;
+  const effLocale: Locale = locale ?? auto.locale;
 
   const switchLink = localeSwitch && (
     <a
@@ -46,12 +47,13 @@ export default function PublicFooter({ variant = "minimal", locale, localeSwitch
     );
   }
 
-  // "full" variant
+  // "full" variant — legal links point to the locale-matched pages
+  const isFr = effLocale === "fr";
   const links = [
     { label: "Blog",                   href: "/blog" },
-    { label: t.landing.legal_cgv,      href: "/legal/terms" },
-    { label: t.landing.legal_privacy,  href: "/legal/privacy" },
-    { label: t.landing.legal_mentions, href: "/legal/notices" },
+    { label: t.landing.legal_cgv,      href: isFr ? "/legal/cgv" : "/legal/terms" },
+    { label: t.landing.legal_privacy,  href: isFr ? "/legal/confidentialite" : "/legal/privacy" },
+    { label: t.landing.legal_mentions, href: isFr ? "/legal/mentions" : "/legal/notices" },
     { label: t.landing.legal_contact,  href: "/contact" },
   ];
 

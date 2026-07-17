@@ -29,9 +29,6 @@ const nextConfig = {
     return [
       { source: "/en", destination: "/", permanent: true },
       { source: "/en/:path*", destination: "/:path*", permanent: true },
-      { source: "/legal/cgv", destination: "/legal/terms", permanent: true },
-      { source: "/legal/confidentialite", destination: "/legal/privacy", permanent: true },
-      { source: "/legal/mentions", destination: "/legal/notices", permanent: true },
     ];
   },
   async headers() {

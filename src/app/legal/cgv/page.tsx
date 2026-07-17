@@ -3,7 +3,23 @@ import { LEGAL_LAST_UPDATE } from "@/lib/legal";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
-export const metadata = { title: "Conditions générales de vente, Everypaw" };
+export const metadata = {
+  title: "Conditions générales de vente, Everypaw",
+  description:
+    "Conditions générales de vente d'Everypaw : formules d'abonnement et tarifs, commande de livres imprimés, résiliation et droit de rétractation.",
+  alternates: {
+    canonical: "/legal/cgv",
+    languages: { en: "/legal/terms", fr: "/legal/cgv", "x-default": "/legal/terms" },
+  },
+  openGraph: {
+    title: "Conditions générales de vente, Everypaw",
+    description:
+      "Conditions générales de vente d'Everypaw : formules d'abonnement et tarifs, commande de livres imprimés, résiliation et droit de rétractation.",
+    url: "/legal/cgv",
+    siteName: "Everypaw",
+    type: "website",
+  },
+};
 
 const bodyStyle: React.CSSProperties = {
   fontSize: ".95rem", color: "#7A5C44", lineHeight: 1.75, fontWeight: 300,
@@ -56,10 +72,10 @@ const sections: Array<{ title: string; body: React.ReactNode }> = [
 export default function CGV() {
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <PublicNav variant="simple" />
+      <PublicNav variant="simple" locale="fr" />
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "4rem 2rem 6rem" }}>
-        <Link href="/" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>Retour</Link>
+        <Link href="/fr" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>Retour</Link>
 
         <h1 style={{ fontFamily: "Georgia, serif", fontSize: "2rem", fontWeight: 600, color: "#3D2B1F", margin: "2rem 0 .75rem" }}>
           Conditions générales de vente
@@ -78,7 +94,7 @@ export default function CGV() {
         ))}
       </main>
 
-      <PublicFooter variant="minimal" />
+      <PublicFooter variant="minimal" locale="fr" />
     </div>
   );
 }

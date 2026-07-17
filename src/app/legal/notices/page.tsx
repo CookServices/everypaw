@@ -6,14 +6,17 @@ import PublicFooter from "@/components/PublicFooter";
 export const metadata = {
   title: "Legal Notices · Everypaw",
   description: "Legal notices for Everypaw: publisher information, hosting provider, and intellectual property.",
-  alternates: { canonical: "/legal/notices" },
+  alternates: {
+    canonical: "/legal/notices",
+    languages: { en: "/legal/notices", fr: "/legal/mentions", "x-default": "/legal/notices" },
+  },
   openGraph: { title: "Legal Notices · Everypaw", url: "/legal/notices", siteName: "Everypaw", type: "website" },
 };
 
 export default function Notices() {
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <PublicNav variant="simple" />
+      <PublicNav variant="simple" locale="en" />
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "4rem 2rem 6rem" }}>
         <Link href="/" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>Back</Link>
@@ -39,7 +42,7 @@ export default function Notices() {
         ))}
       </main>
 
-      <PublicFooter variant="minimal" />
+      <PublicFooter variant="minimal" locale="en" />
     </div>
   );
 }

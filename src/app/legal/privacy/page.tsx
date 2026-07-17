@@ -6,14 +6,17 @@ import PublicFooter from "@/components/PublicFooter";
 export const metadata = {
   title: "Privacy Policy · Everypaw",
   description: "How Everypaw collects, uses, and protects your data: photos, journal entries, payments, and your privacy rights (GDPR).",
-  alternates: { canonical: "/legal/privacy" },
+  alternates: {
+    canonical: "/legal/privacy",
+    languages: { en: "/legal/privacy", fr: "/legal/confidentialite", "x-default": "/legal/privacy" },
+  },
   openGraph: { title: "Privacy Policy · Everypaw", url: "/legal/privacy", siteName: "Everypaw", type: "website" },
 };
 
 export default function Privacy() {
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <PublicNav variant="simple" />
+      <PublicNav variant="simple" locale="en" />
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "4rem 2rem 6rem" }}>
         <Link href="/" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>Back</Link>
@@ -40,7 +43,7 @@ export default function Privacy() {
         ))}
       </main>
 
-      <PublicFooter variant="minimal" />
+      <PublicFooter variant="minimal" locale="en" />
     </div>
   );
 }

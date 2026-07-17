@@ -3,15 +3,31 @@ import { LEGAL_LAST_UPDATE } from "@/lib/legal";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
-export const metadata = { title: "Mentions légales, Everypaw" };
+export const metadata = {
+  title: "Mentions légales, Everypaw",
+  description:
+    "Mentions légales d'Everypaw : éditeur du site, hébergeur et propriété intellectuelle.",
+  alternates: {
+    canonical: "/legal/mentions",
+    languages: { en: "/legal/notices", fr: "/legal/mentions", "x-default": "/legal/notices" },
+  },
+  openGraph: {
+    title: "Mentions légales, Everypaw",
+    description:
+      "Mentions légales d'Everypaw : éditeur du site, hébergeur et propriété intellectuelle.",
+    url: "/legal/mentions",
+    siteName: "Everypaw",
+    type: "website",
+  },
+};
 
 export default function Mentions() {
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <PublicNav variant="simple" />
+      <PublicNav variant="simple" locale="fr" />
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "4rem 2rem 6rem" }}>
-        <Link href="/" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>Retour</Link>
+        <Link href="/fr" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>Retour</Link>
 
         <h1 style={{ fontFamily: "Georgia, serif", fontSize: "2rem", fontWeight: 600, color: "#3D2B1F", margin: "2rem 0 .75rem" }}>
           Mentions légales
@@ -34,7 +50,7 @@ export default function Mentions() {
         ))}
       </main>
 
-      <PublicFooter variant="minimal" />
+      <PublicFooter variant="minimal" locale="fr" />
     </div>
   );
 }

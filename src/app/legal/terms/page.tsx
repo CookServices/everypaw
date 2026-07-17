@@ -6,7 +6,10 @@ import PublicFooter from "@/components/PublicFooter";
 export const metadata = {
   title: "Terms of Sale · Everypaw",
   description: "Terms of sale for Everypaw: subscription plans and pricing, printed book orders, cancellation and refund policy.",
-  alternates: { canonical: "/legal/terms" },
+  alternates: {
+    canonical: "/legal/terms",
+    languages: { en: "/legal/terms", fr: "/legal/cgv", "x-default": "/legal/terms" },
+  },
   openGraph: { title: "Terms of Sale · Everypaw", url: "/legal/terms", siteName: "Everypaw", type: "website" },
 };
 
@@ -61,7 +64,7 @@ const sections: Array<{ title: string; body: React.ReactNode }> = [
 export default function Terms() {
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <PublicNav variant="simple" />
+      <PublicNav variant="simple" locale="en" />
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "4rem 2rem 6rem" }}>
         <Link href="/" style={{ fontSize: ".85rem", color: "#7A5C44", textDecoration: "none" }}>Back</Link>
@@ -83,7 +86,7 @@ export default function Terms() {
         ))}
       </main>
 
-      <PublicFooter variant="minimal" />
+      <PublicFooter variant="minimal" locale="en" />
     </div>
   );
 }
