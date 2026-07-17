@@ -4,12 +4,12 @@ import PublicFooter from "@/components/PublicFooter";
 import { getPublishedPosts } from "@/lib/blog";
 
 export const metadata = {
-  title: "Blog — Pet Memory & Journaling Tips | Everypaw",
+  title: "Blog: Pet Memory & Journaling Tips | Everypaw",
   description:
     "Ideas and guides on capturing your pet's story: journaling prompts, memory keeping, and making a printed pet memory book that lasts.",
   alternates: { canonical: "/blog" },
   openGraph: {
-    title: "Blog — Pet Memory & Journaling Tips | Everypaw",
+    title: "Blog: Pet Memory & Journaling Tips | Everypaw",
     description:
       "Ideas and guides on capturing your pet's story: journaling prompts, memory keeping, and making a printed pet memory book that lasts.",
     url: "/blog",
@@ -35,7 +35,7 @@ export default function BlogIndex() {
             The Everypaw Journal
           </h1>
           <p style={{ fontSize: "1.05rem", fontWeight: 300, color: "#7A5C44", lineHeight: 1.7, margin: 0, maxWidth: 560 }}>
-            Ideas and guides on capturing your pet&rsquo;s story — journaling prompts, memory keeping, and pet memory books.
+            Ideas and guides on capturing your pet&rsquo;s story: journaling prompts, memory keeping, and pet memory books.
           </p>
         </header>
 
