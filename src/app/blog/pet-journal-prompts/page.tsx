@@ -98,6 +98,11 @@ export default function Page() {
         </ul>
 
         <h2>Firsts and milestones (prompts 21-30)</h2>
+        <p>
+          If you&rsquo;re in the first twelve months, a{" "}
+          <a href="/blog/puppy-first-year-memory-book">month-by-month puppy memory book guide</a> can help you structure
+          the whole year around these firsts.
+        </p>
         <ul>
           <li>21. Write the story of the day you brought them home, with every detail you still have.</li>
           <li>22. How did their first night go, honestly?</li>
@@ -168,7 +173,9 @@ export default function Page() {
           Individually, these entries are small. Together, they&rsquo;re the story of a life: the walks, the quirks, the
           hard days, the ridiculous ones. That&rsquo;s the idea behind Everypaw: you write the one-sentence moments, and
           every month they&rsquo;re turned into a story chapter, then at the end of the year into a printed hardcover
-          book. But whatever tool you use, the principle is the same: one honest sentence at a time, starting today.
+          book. If you want to go further, here are{" "}
+          <a href="/blog/dog-memory-book-ideas">12 dog memory book ideas</a> that turn these entries into pages worth
+          keeping. But whatever tool you use, the principle is the same: one honest sentence at a time, starting today.
         </p>
       </ArticleLayout>
     </>
