@@ -406,7 +406,7 @@ export default function Home({ locale }: { locale: Locale }) {
                 </>
               );
               return href ? (
-                <Link key={title as string} href={href as string} aria-label={`${title} — pet memorial page and memorial book`} style={{ ...cardStyle, display: "block", color: "inherit", textDecoration: "none" }}>
+                <Link key={title as string} href={href as string} aria-label={`${title}, pet memorial page and memorial book`} style={{ ...cardStyle, display: "block", color: "inherit", textDecoration: "none" }}>
                   {inner}
                 </Link>
               ) : (

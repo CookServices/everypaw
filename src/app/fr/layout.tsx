@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 const TITLE = "Journal animalier IA qui devient un livre imprimé | Everypaw";
 const DESCRIPTION =
-  "Le journal animalier IA qui transforme les moments de votre animal en chapitres d'histoire — et en un livre souvenir imprimé chaque année. Gratuit, sans carte.";
+  "Le journal animalier IA qui transforme les moments de votre animal en chapitres d'histoire, et en un livre souvenir imprimé chaque année. Gratuit, sans carte.";
 
 export const metadata: Metadata = {
   title: TITLE,

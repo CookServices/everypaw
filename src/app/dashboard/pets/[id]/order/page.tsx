@@ -1372,7 +1372,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           <p style={{ fontSize: ".9rem", color: textMuted, fontWeight: 300, lineHeight: 1.6, marginBottom: "1.5rem", maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
             {locale === "fr"
               ? "Ton paiement est bien passé, mais la commande n'a pas encore pu être envoyée à l'impression (traitement en cours). Clique pour réessayer, aucun nouveau paiement ne sera demandé."
-              : "Your payment went through, but the order couldn't be sent to print yet (still processing). Tap to retry — you will not be charged again."}
+              : "Your payment went through, but the order couldn't be sent to print yet (still processing). Tap to retry, you will not be charged again."}
           </p>
           <button
             onClick={handleOrder}
@@ -1385,7 +1385,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           <p style={{ fontSize: ".78rem", color: textMuted, fontWeight: 300, margin: "1rem 0 0" }}>
             {locale === "fr"
               ? "Le problème persiste ? Écris-nous depuis Réglages, ta commande sera honorée."
-              : "Still stuck? Contact us from Settings — your order will be honored."}
+              : "Still stuck? Contact us from Settings, your order will be honored."}
           </p>
         </div>
       )}

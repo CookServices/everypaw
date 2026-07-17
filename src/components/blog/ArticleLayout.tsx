@@ -49,7 +49,7 @@ export default function ArticleLayout({ post, children }: { post: BlogPost; chil
         {/* Discreet closing CTA → homepage */}
         <aside style={{ marginTop: "3.5rem", padding: "1.75rem", background: "#FDFAF5", border: "1px solid rgba(61,43,31,.08)", borderRadius: 16, textAlign: "center" }}>
           <p style={{ fontSize: ".95rem", fontWeight: 300, color: "#7A5C44", lineHeight: 1.6, margin: "0 0 1rem" }}>
-            Everypaw turns your pet&rsquo;s daily moments into an AI-written story — and a printed book each year.
+            Everypaw turns your pet&rsquo;s daily moments into an AI-written story, and a printed book each year.
           </p>
           <Link
             href="/"

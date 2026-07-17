@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "AI Pet Journal That Becomes a Printed Book | Everypaw",
-    description: "Everypaw is the AI pet journal that turns your daily moments into story chapters — and a printed pet memory book every year. Start free, no credit card.",
+    description: "Everypaw is the AI pet journal that turns your daily moments into story chapters, and a printed pet memory book every year. Start free, no credit card.",
     url: "/",
     siteName: "Everypaw",
     type: "website",
