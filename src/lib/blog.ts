@@ -38,6 +38,14 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-07-17",
     published: true,
   },
+  {
+    slug: "how-to-keep-a-pet-memory-journal",
+    title: "How to Keep a Pet Memory Journal (and Why It Matters)",
+    description:
+      "A practical guide to keeping a pet memory journal: what to write, how often, and how to turn everyday notes into a story you'll keep forever.",
+    datePublished: "2026-07-21",
+    published: true,
+  },
 ];
 
 /** Published posts, newest first. */
