@@ -47,6 +47,11 @@ export default function Page() {
         </p>
 
         <h2>Before they even come home</h2>
+        <p>
+          This guide focuses on puppies, but if you just brought home a kitten, the same month-by-month approach applies.
+          The <a href="/blog/cat-memory-book">cat memory book guide</a> covers what&rsquo;s different about capturing a
+          cat&rsquo;s first year.
+        </p>
         <p>The book starts before the puppy does. Capture, while it&rsquo;s still fresh:</p>
         <ul>
           <li>The day you decided. What tipped it: the conversation, the photo, the visit?</li>
@@ -151,7 +156,10 @@ export default function Page() {
         <p>
           Here&rsquo;s the classic failure mode: hundreds of photos, zero notes, and a &ldquo;someday&rdquo; assembly
           project that never happens. The way around it is to build the book as you go, a sentence or two per moment,
-          written when it happens, so that by the first birthday the story already exists and only needs printing.
+          written when it happens, so that by the first birthday the story already exists and only needs printing. For
+          the general principles behind consistent journaling, the{" "}
+          <a href="/blog/how-to-keep-a-pet-memory-journal">pet memory journal guide</a> covers how to write entries that
+          age well beyond the first year.
         </p>
         <p>
           That&rsquo;s exactly what Everypaw is built for: you journal the small moments, AI turns them into monthly
