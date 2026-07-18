@@ -5,6 +5,24 @@
 
 ---
 
+### ✅ Session 57 — i18n hybride : /fr crawlable server-rendered (2026-07-12)
+
+Chantier : rendre la version FR crawlable par Google sans réintroduire next-intl. Audit préalable : `/fr` existait déjà mais en copie manuelle client de 579 l (drift, dette #6) ; `/gift` en `useLocale` navigator (non crawlable FR) ; pas de `/fr/gift` ; aucun redirect auto Accept-Language (rien à retirer). Décision (validée user) : composant client locale-aware partagé + langue **figée par URL**, plutôt que RSC purs + îlots (blast-radius élevé, zéro gain SEO car le FR est déjà en source via `use client` + `force-dynamic`).
+
+**Commit 1 `79c1ca1` (refactor)** : `PublicNav`/`PublicFooter` acceptent une prop `locale` optionnelle (absente → `useLocale`, préserve dashboard + 19 autres pages publiques) + `localeSwitch` (lien crawlable `<a>` footer) ; `home-client.tsx` `<Home locale>` (drop `useLocale`) ; `gift/page.tsx` splitté en `gift-client.tsx` (`<GiftContent locale>`) + wrapper server ; liens nav internes locale-aware.
+
+**Commit 2 `0219982` (routes FR)** : `/fr` réécrit en server component (`<Home locale="fr">` + JSON-LD FR Org/App/FAQPage i18n-driven, **`aggregateRating` factice retiré**) ; nouveau `/fr/gift`. Supprime la copie manuelle de 579 l et corrige le drop de `premium_f5` côté FR.
+
+**Commit 3 `0584eaf` (SEO)** : metadata FR (`/fr` title « Journal animalier IA qui devient un livre imprimé | Everypaw », `/fr/gift` title « Offrir un journal animalier et un livre souvenir | Everypaw »), hreflang **réciproque** sur les 4 routes (canonicals relatives résolues via `metadataBase`), `sitemap.ts` + `/fr/gift`.
+
+**Vérifié** (`next start` + curl) : `/fr` rend du français dans le HTML source ✓ ; `/` reste EN sous `Accept-Language: fr` ✓ ; hreflang réciproques `/`↔`/fr` et `/gift`↔`/fr/gift` ✓ ; sitemap liste `/fr` + `/fr/gift` ✓ ; `npm run build` + `tsc --noEmit` verts. Dashboard `useLocale` intact.
+
+**Bandeau de suggestion de langue** (`LangSuggestBanner`, commit `dfafd65`) : client component monté sur les 4 pages marketing. Lit `navigator.language` **uniquement pour suggérer** (jamais de redirect, ne modifie jamais le contenu rendu). Affiché seulement si mismatch (page EN + navigator fr, ou page FR + navigator non-fr). Lien réel crawlable `<a href>` vers la même page dans l'autre langue. Fixed bottom, dismissible, dismiss mémorisé en `localStorage` (`ep_lang_suggest_dismissed`), rend `null` tant que non monté (pas de mismatch d'hydratation, pas de CLS). ⚠️ Vérifier l'interactivité client sur `next start` (prod) : le preview `next dev` du sandbox n'hydrate pas React.
+
+**Infra blog SEO** (commit `2489c7f`) : cluster de contenu « pet memory ». `src/lib/blog.ts` = registre unique (`BLOG_POSTS[]` : slug, title, description, datePublished, `published`) — pilote l'index `/blog`, l'inclusion sitemap et le noindex par article. Chaque article = `app/blog/<slug>/page.tsx` écrit à la main : metadata (canonical `/blog/<slug>`, `robots` dérivé du flag `published`), JSON-LD Article (author/publisher Organization Everypaw) **émis seulement si publié**, corps H2/H3 dans `<ArticleLayout post>` (`src/components/blog/ArticleLayout.tsx` : fil d'ariane, colonne lecture ~680px, typo Georgia/DM Sans, CTA final discret vers `/`). **Workflow pour ajouter/publier un article** : (1) écrire le corps dans `app/blog/<slug>/page.tsx`, (2) passer `published: true` dans `blog.ts` → l'article entre dans l'index + le sitemap et perd le noindex, le JSON-LD s'active. Le cluster complet (6 articles publiés, maillés entre eux) a été livré en Session 59 : `pet-journal-prompts`, `dog-memory-book-ideas`, `puppy-first-year-memory-book` (2026-07-15), `how-to-keep-a-pet-memory-journal` (pilier), `cat-memory-book`, `pet-loss-keepsake-ideas` (2026-07-18). Lien « Blog » dans le footer full (landing).
+
+**Landing mémorial publique** (`/memorial`, commit `e1620ba`) : page marketing SEO « pet memorial book », **server component pur** (pas de `"use client"`, zéro interactivité) — distincte des pages user `/memorial/[id]`. Ton sobre (deuil animalier) : palette cream + sage, pas d'amber criard sur le contenu (le dot logo nav + cookie banner restent en amber = chrome global), aucune image, aucun schema Review, CTA unique discret `/auth/signup`. Textes en `memorial_landing` (en+fr, la page rend EN ; `/fr/memorial` non créé). Metadata title/description dédiées + canonical `/memorial`, ajouté au sitemap. Carte homepage « A legacy that lasts » (f5) devient un lien descriptif vers `/memorial` (`aria-label`, ancre SEO).
+
 ### ✅ Session 56 — SEO : canonicals par page, robots.ts, sitemap.ts (2026-07-11)
 
 Commit `f01d59a`. Bug critique révélé par audit SEO : `alternates.canonical` + `openGraph.url` hardcodés `https://everypaw.app` dans le root layout → hérités par **toutes** les pages → Google considérait tout le site comme duplicata de la homepage.

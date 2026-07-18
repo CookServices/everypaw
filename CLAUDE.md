@@ -461,6 +461,8 @@ currency: "USD"
 
 **SEO / RGPD** : canonicals par page (relatives, résolues via `metadataBase`), `app/robots.ts` + `app/sitemap.ts` (routes metadata Next), noindex sur login/signup, metas dédiées gift/legal, homepage optimisée "ai pet journal" / "pet memory book" (title + H2 hero + H2 livre + CTA gift), JSON-LD homepage dans le server `page.tsx` : Organization + SoftwareApplication (sans aggregateRating — placeholders interdits) + FAQPage construit dynamiquement depuis `messages/en.json` `faq.q1..q6/a1..a6` (zéro drift schema/contenu), hreflang réciproque sur les 4 routes marketing (`/`↔`/fr`, `/gift`↔`/fr/gift`), cookie banner, export données JSON, suppression de compte complète. `aggregateRating` factice retiré partout (Session 57).
 
+**Blog / contenu SEO** : cluster « pet memory » complet (6 articles publiés). Registre unique `src/lib/blog.ts` (`BLOG_POSTS[]` : slug, title, description, datePublished, `published`) pilote l'index `/blog`, l'inclusion sitemap et le noindex par article. Chaque article = `app/blog/<slug>/page.tsx` écrit à la main via `<ArticleLayout post>` (`src/components/blog/ArticleLayout.tsx` : fil d'ariane, colonne ~680px, Georgia/DM Sans, H1 = `post.title`, corps en `<h2>/<h3>/<p>/<ul>` sans styles inline via `.ep-article`), metadata (canonical `/blog/<slug>`, `robots` dérivé du flag `published`), JSON-LD Article (author/publisher Organization Everypaw) **émis seulement si publié**. **Workflow ajouter/publier** : (1) écrire le corps dans `app/blog/<slug>/page.tsx`, (2) ajouter l'entrée `published: true` dans `blog.ts` → l'article entre dans l'index + sitemap, perd le noindex, active le JSON-LD. Articles : `pet-journal-prompts`, `dog-memory-book-ideas`, `puppy-first-year-memory-book`, le pilier `how-to-keep-a-pet-memory-journal`, `cat-memory-book`, `pet-loss-keepsake-ideas` — tous maillés entre eux (les 6 pointent les uns vers les autres + `/memorial`). Détail infra dans docs/SESSIONS.md (Session 57).
+
 **Sécurité** : 13 rounds de review (détail dans docs/SESSIONS.md) — les règles qui en découlent sont codifiées dans « Conventions de code » ci-dessous. Un audit indépendant plus récent (2026-07-06, root `AUDIT_REPORT.md` + `AUDIT_PLAN.md` + `AUDIT_REPORT_QUALITY.md`, non lié depuis ce fichier jusqu'ici) a trouvé 13 findings dont 1 CRITIQUE (RPC crédits-livre exposées à tout utilisateur authentifié, self-crediting possible) ; 12/13 corrigés le jour même, dont le critique via `revoke_book_credit_rpc_2026_07_06.sql`. **Avant tout nouveau round de sécurité, lire ces 3 fichiers** — ils documentent aussi les zones volontairement non auditées (composants client Z8, scripts one-shot).
 
 **Qualité** : logs gatés (`src/lib/log.ts`, `DEBUG_LOGS=1`), rate-limit persistant Postgres (`checkRateLimitDb`), tests Vitest (plan guards, priceIdToPlan, calcPageCount, parseStoryResponse), hook SessionStart `npm install`.
@@ -589,7 +591,7 @@ Deux sujets ouverts, liés :
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` en `useEffect` (waterfall, requêtes exposées client). Migration RSC = data au 1er paint, moins de surface.
 - **#9 Split god-components** — `pets/[id]/page.tsx` 131 Ko (308 `style={{}}` inline), `order` 81 Ko, `settings` 54 Ko. Extraire sous-composants + styles hors render.
 
-*Dernière mise à jour : 2026-07-12 (Session 57 — i18n hybride : /fr + /fr/gift server-rendered crawlables, composants locale-aware partagés, hreflang réciproque, dédup #6 résolue ; bandeau suggestion langue ; landing mémorial publique /memorial « pet memorial book » ; infra blog SEO /blog + ArticleLayout + registre ; articles publiés : `pet-journal-prompts` "50 Pet Journal Prompts to Capture Your Pet's Story", `dog-memory-book-ideas` "12 Dog Memory Book Ideas That Go Beyond Photos", `puppy-first-year-memory-book` "How to Make a Puppy's First Year Memory Book")*
+*Dernière mise à jour : 2026-07-18 (Session 59 — cluster blog « pet memory » complété : articles 4-6 publiés (`how-to-keep-a-pet-memory-journal` pilier, `cat-memory-book`, `pet-loss-keepsake-ideas`), maillage interne bidirectionnel des 6 articles ; PRs #76/#77/#78 mergées. Convention : jamais de tiret cadratin dans le contenu blog. Sessions 56 et 57 archivées dans docs/SESSIONS.md)*
 
 ---
 
@@ -597,6 +599,18 @@ Deux sujets ouverts, liés :
 
 Historique complet (sessions 1 à 53, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
 Seules les 2 dernières sessions sont conservées ici ; à chaque nouvelle session, déplacer la plus ancienne vers l'archive.
+
+### ✅ Session 59 — Cluster blog « pet memory » complété : articles 4-6 + maillage (2026-07-18)
+
+Suite de l'infra blog SEO (Session 57). Publication des 3 derniers articles du cluster « pet memory » puis équilibrage du maillage interne. Chaque article = une PR mergée séparément (#76, #77, #78), branche redémarrée depuis `main` à chaque fois (la PR précédente étant mergée = terminée).
+
+- **Article 4 — pilier** `how-to-keep-a-pet-memory-journal` "How to Keep a Pet Memory Journal (and Why It Matters)" (PR #76, mot-clé "pet memory journal"). Hub du cluster : lie vers les 5 autres articles + `/memorial`.
+- **Article 5** `cat-memory-book` "Cat Memory Book: How to Capture Your Cat's Quiet Story" (PR #77, mot-clé "cat memory book"). Contrepoids au biais dog du contenu existant.
+- **Article 6** `pet-loss-keepsake-ideas` "Pet Loss Keepsake Ideas: 9 Ways to Honor a Pet You've Lost" (PR #78, mot-clé "pet loss keepsake ideas"). **Sujet sensible (deuil)** : ton sobre, non commercial, mention Everypaw limitée à la section memorial (idée #3), aucune mention dans la conclusion.
+- **Maillage retour** (même PR #78) : les articles 1-3 ne pointaient pas vers 4-6. Ajout de 6 liens (2 par article) dans `pet-journal-prompts`, `dog-memory-book-ideas`, `puppy-first-year-memory-book` → pilier + cat/pet-loss selon pertinence. Commit chirurgical, 3 fichiers, aucune copie existante modifiée hors insertion des phrases.
+- Chaque article suit le pattern exact (`getPost(slug)!`, metadata canonical + `robots` du flag `published`, JSON-LD Article gated, corps `<h2>/<h3>/<p>/<ul>` dans `<ArticleLayout>`). Registre `blog.ts` : 3 nouvelles entrées `published: true`.
+- **Convention de style** : jamais de tiret cadratin (em dash, U+2014) dans le contenu blog ni le code — vérifié par `grep $'—'` sur chaque fichier.
+- Vérifié à chaque PR (`next start` + curl) : canonical correcte, pas de noindex, H1 = titre, liens internes présents dans la source, JSON-LD `JSON.parse` OK, `/blog` liste l'article, `sitemap.xml` l'inclut. `npm run build` vert.
 
 ### ✅ Session 58 — Nudge premier chapitre gratuit (2026-07-15)
 
@@ -611,22 +625,4 @@ Problème : un free user qui écrit 3 entrées dès sa 1ère semaine n'a aucun s
 
 Non testé en navigateur (nécessite un compte free avec 3 entrées fraîches — laissé à Julien).
 
-### ✅ Session 57 — i18n hybride : /fr crawlable server-rendered (2026-07-12)
-
-Chantier : rendre la version FR crawlable par Google sans réintroduire next-intl. Audit préalable : `/fr` existait déjà mais en copie manuelle client de 579 l (drift, dette #6) ; `/gift` en `useLocale` navigator (non crawlable FR) ; pas de `/fr/gift` ; aucun redirect auto Accept-Language (rien à retirer). Décision (validée user) : composant client locale-aware partagé + langue **figée par URL**, plutôt que RSC purs + îlots (blast-radius élevé, zéro gain SEO car le FR est déjà en source via `use client` + `force-dynamic`).
-
-**Commit 1 `79c1ca1` (refactor)** : `PublicNav`/`PublicFooter` acceptent une prop `locale` optionnelle (absente → `useLocale`, préserve dashboard + 19 autres pages publiques) + `localeSwitch` (lien crawlable `<a>` footer) ; `home-client.tsx` `<Home locale>` (drop `useLocale`) ; `gift/page.tsx` splitté en `gift-client.tsx` (`<GiftContent locale>`) + wrapper server ; liens nav internes locale-aware.
-
-**Commit 2 `0219982` (routes FR)** : `/fr` réécrit en server component (`<Home locale="fr">` + JSON-LD FR Org/App/FAQPage i18n-driven, **`aggregateRating` factice retiré**) ; nouveau `/fr/gift`. Supprime la copie manuelle de 579 l et corrige le drop de `premium_f5` côté FR.
-
-**Commit 3 `0584eaf` (SEO)** : metadata FR (`/fr` title « Journal animalier IA qui devient un livre imprimé | Everypaw », `/fr/gift` title « Offrir un journal animalier et un livre souvenir | Everypaw »), hreflang **réciproque** sur les 4 routes (canonicals relatives résolues via `metadataBase`), `sitemap.ts` + `/fr/gift`.
-
-**Vérifié** (`next start` + curl) : `/fr` rend du français dans le HTML source ✓ ; `/` reste EN sous `Accept-Language: fr` ✓ ; hreflang réciproques `/`↔`/fr` et `/gift`↔`/fr/gift` ✓ ; sitemap liste `/fr` + `/fr/gift` ✓ ; `npm run build` + `tsc --noEmit` verts. Dashboard `useLocale` intact.
-
-**Bandeau de suggestion de langue** (`LangSuggestBanner`, commit `dfafd65`) : client component monté sur les 4 pages marketing. Lit `navigator.language` **uniquement pour suggérer** (jamais de redirect, ne modifie jamais le contenu rendu). Affiché seulement si mismatch (page EN + navigator fr, ou page FR + navigator non-fr). Lien réel crawlable `<a href>` vers la même page dans l'autre langue. Fixed bottom, dismissible, dismiss mémorisé en `localStorage` (`ep_lang_suggest_dismissed`), rend `null` tant que non monté (pas de mismatch d'hydratation, pas de CLS). ⚠️ Vérifier l'interactivité client sur `next start` (prod) : le preview `next dev` du sandbox n'hydrate pas React.
-
-**Infra blog SEO** (commit `2489c7f`) : cluster de contenu « pet memory ». `src/lib/blog.ts` = registre unique (`BLOG_POSTS[]` : slug, title, description, datePublished, `published`) — pilote l'index `/blog`, l'inclusion sitemap et le noindex par article. Chaque article = `app/blog/<slug>/page.tsx` écrit à la main : metadata (canonical `/blog/<slug>`, `robots` dérivé du flag `published`), JSON-LD Article (author/publisher Organization Everypaw) **émis seulement si publié**, corps H2/H3 dans `<ArticleLayout post>` (`src/components/blog/ArticleLayout.tsx` : fil d'ariane, colonne lecture ~680px, typo Georgia/DM Sans, CTA final discret vers `/`). **Workflow pour ajouter/publier un article** : (1) écrire le corps dans `app/blog/<slug>/page.tsx`, (2) passer `published: true` dans `blog.ts` → l'article entre dans l'index + le sitemap et perd le noindex, le JSON-LD s'active. Les articles publiés (`published: true`) : `pet-journal-prompts`, `dog-memory-book-ideas`, `puppy-first-year-memory-book` (commits `16d6a1e`/`1493184`/`08a79b1`, 2026-07-15), le **pilier** `how-to-keep-a-pet-memory-journal` "How to Keep a Pet Memory Journal (and Why It Matters)" (2026-07-18) qui lie vers les 5 autres articles du cluster + `/memorial`, `cat-memory-book` "Cat Memory Book: How to Capture Your Cat's Quiet Story" (2026-07-18), et `pet-loss-keepsake-ideas` "Pet Loss Keepsake Ideas: 9 Ways to Honor a Pet You've Lost" (2026-07-18, ton sobre deuil, mention Everypaw limitée à la section memorial). Plus de placeholder non publié à ce jour. Lien « Blog » dans le footer full (landing).
-
-**Landing mémorial publique** (`/memorial`, commit `e1620ba`) : page marketing SEO « pet memorial book », **server component pur** (pas de `"use client"`, zéro interactivité) — distincte des pages user `/memorial/[id]`. Ton sobre (deuil animalier) : palette cream + sage, pas d'amber criard sur le contenu (le dot logo nav + cookie banner restent en amber = chrome global), aucune image, aucun schema Review, CTA unique discret `/auth/signup`. Textes en `memorial_landing` (en+fr, la page rend EN ; `/fr/memorial` non créé). Metadata title/description dédiées + canonical `/memorial`, ajouté au sitemap. Carte homepage « A legacy that lasts » (f5) devient un lien descriptif vers `/memorial` (`aria-label`, ancre SEO).
-
-Session 56 (SEO canonicals/robots.ts/sitemap.ts) archivée dans [docs/SESSIONS.md](docs/SESSIONS.md).
+Sessions 56 et 57 (SEO canonicals/robots.ts/sitemap.ts ; i18n hybride /fr + infra blog SEO + landing mémorial `/memorial`) archivées dans [docs/SESSIONS.md](docs/SESSIONS.md).
