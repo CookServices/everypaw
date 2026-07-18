@@ -46,6 +46,14 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-07-21",
     published: true,
   },
+  {
+    slug: "cat-memory-book",
+    title: "Cat Memory Book: How to Capture Your Cat's Quiet Story",
+    description:
+      "How to make a cat memory book that captures the subtle moments: the slow blinks, the chosen spots, the 3am chaos, and everything in between.",
+    datePublished: "2026-07-21",
+    published: true,
+  },
 ];
 
 /** Published posts, newest first. */
