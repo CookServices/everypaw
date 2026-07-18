@@ -131,7 +131,9 @@ export default function Page() {
         <h3>12. Letters to them</h3>
         <p>
           A short letter on each birthday. Watch how your own voice changes over the years; this quietly becomes a
-          journal about you, too.
+          journal about you, too. If you&rsquo;re writing letters to a pet who&rsquo;s gone, the{" "}
+          <a href="/blog/pet-loss-keepsake-ideas">pet loss keepsake ideas</a> article has other ways to honor their
+          memory.
         </p>
 
         <h2>Make it feel like them, not like a template</h2>
@@ -157,7 +159,8 @@ export default function Page() {
           Most memory book projects don&rsquo;t fail at the design stage. They fail at &ldquo;I&rsquo;ll sort through my
           photos someday.&rdquo; The way around it is to build the book as you live it: one short note per moment,
           written the day it happens. Do that, and assembling a dog memory book becomes an afternoon instead of a
-          mountain.
+          mountain. The <a href="/blog/how-to-keep-a-pet-memory-journal">pet memory journal guide</a> has more on
+          building that daily habit and making entries that hold up years later.
         </p>
         <p>
           That&rsquo;s how Everypaw approaches it: you jot down the small moments, AI turns them into monthly story

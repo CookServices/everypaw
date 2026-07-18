@@ -54,6 +54,14 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-07-21",
     published: true,
   },
+  {
+    slug: "pet-loss-keepsake-ideas",
+    title: "Pet Loss Keepsake Ideas: 9 Ways to Honor a Pet You've Lost",
+    description:
+      "Nine pet loss keepsake ideas to honor a pet you've lost: memory books, journals, memorial pages, and other ways to keep their story close.",
+    datePublished: "2026-07-21",
+    published: true,
+  },
 ];
 
 /** Published posts, newest first. */

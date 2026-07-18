@@ -83,7 +83,11 @@ export default function Page() {
         </ul>
 
         <h2>Personality and quirks (prompts 11-20)</h2>
-        <p>This is the section future-you will reread the most.</p>
+        <p>
+          This is the section future-you will reread the most. If you have a cat and these prompts feel dog-heavy, the{" "}
+          <a href="/blog/cat-memory-book">cat memory book guide</a> has prompts and structures designed for quieter
+          companions.
+        </p>
         <ul>
           <li>11. List their nicknames and how each one started.</li>
           <li>12. What are they completely, irrationally afraid of?</li>
@@ -167,6 +171,11 @@ export default function Page() {
           <li>Don&rsquo;t backfill out of guilt. You missed three weeks? Fine. Start with today.</li>
           <li>Let entries be unpolished. Typos, fragments, half-thoughts: this is a journal, not an essay.</li>
         </ul>
+        <p>
+          For a deeper look at building a sustainable habit, the{" "}
+          <a href="/blog/how-to-keep-a-pet-memory-journal">pet memory journal guide</a> covers frequency, format, and how
+          to make entries that age well.
+        </p>
 
         <h2>From scattered notes to their story</h2>
         <p>
