@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { Resend } from "resend";
 import { stripe } from "@/lib/stripe";
 import { escapeHtml } from "@/lib/html";
-import { baseLayout, emoji, heading, paragraph, quote, codeBox, ctaButton, finePrint } from "@/lib/email-templates";
+import { baseLayout, emoji, heading, paragraph, quote, codeBox, ctaButton, finePrint, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 
 const copy = {
   fr: {
@@ -42,12 +42,19 @@ function buildEmailHtml({
 }): string {
   const c = copy[locale] ?? copy.en;
   return baseLayout(
-    emoji("🎁") +
-    heading(c.heading) +
+    heroSection("🎁", c.heading) +
     paragraph(c.body(escapeHtml(senderName))) +
     (message ? quote(`"${escapeHtml(message)}"`) : "") +
-    paragraph(c.codeLabel) +
+    divider() +
+    paragraph(`<strong>${c.codeLabel}</strong>`) +
     codeBox(code) +
+    colorSection(
+      locale === "en"
+        ? `<strong>Ready to get started?</strong> Click below to activate your gift and start capturing your pet's story.`
+        : `<strong>Prêt(e) à commencer ?</strong> Cliquez ci-dessous pour activer votre cadeau et commencer à capturer l'histoire de votre animal.`,
+      BRAND.accent,
+      "#FDFAF5"
+    ) +
     ctaButton(redeemUrl, c.cta) +
     finePrint(c.footer),
     "",

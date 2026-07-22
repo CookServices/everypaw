@@ -4,7 +4,7 @@ import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
 import { getWeeklyQuestion, currentISOWeekBounds } from "@/lib/interview";
-import { baseLayout, emoji, eyebrow, quote, ctaButton, paragraph, unsubscribeLink } from "@/lib/email-templates";
+import { baseLayout, emoji, eyebrow, quote, ctaButton, paragraph, unsubscribeLink, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -76,11 +76,16 @@ export async function GET(req: Request) {
     const unsubLabel = isFrench ? "Se désabonner des rappels hebdomadaires" : "Unsubscribe from weekly reminders";
 
     const html = baseLayout(
-      emoji("🐾") +
-      eyebrow(isFrench ? "Question de la semaine" : "Question of the week") +
+      heroSection("✍️", isFrench ? "Question de la semaine" : "Question of the week") +
       quote(questionHtml) +
-      ctaButton("https://everypaw.app/dashboard", ctaLabel) +
-      paragraph(escapeHtml(weekNote)),
+      divider() +
+      colorSection(
+        `<strong>${escapeHtml(weekNote)}</strong>`,
+        BRAND.accent,
+        "#FDFAF5"
+      ) +
+      paragraph(isFrench ? "Prenez une minute pour répondre — chaque détail compte !" : "Take a moment to answer — every detail matters!") +
+      ctaButton("https://everypaw.app/dashboard", ctaLabel),
       unsubscribeLink(unsubscribeUrl, unsubLabel),
       isFrench ? "fr" : "en",
     );

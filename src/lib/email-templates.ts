@@ -85,6 +85,32 @@ export function finePrint(html: string): string {
   return `<p style="font-size:.78rem;color:${BRAND.faint};margin:16px 0 0;line-height:1.5;">${html}</p>`;
 }
 
+// Visual separators & sections
+export function divider(): string {
+  return `<div style="border-top:1px solid rgba(61,43,31,.12);margin:24px 0;"></div>`;
+}
+
+export function card(html: string, bgColor?: string): string {
+  return `<div style="background:${bgColor || BRAND.quoteBg};border:1px solid rgba(61,43,31,.08);border-radius:12px;padding:20px 24px;margin:0 0 24px;">${html}</div>`;
+}
+
+export function colorSection(html: string, bgColor = BRAND.accent, textColor = "#FDFAF5"): string {
+  return `<div style="background:${bgColor};color:${textColor};border-radius:12px;padding:20px 24px;margin:0 0 24px;font-size:.95rem;line-height:1.65;">${html}</div>`;
+}
+
+export function list(items: string[]): string {
+  return `<ul style="font-size:.9rem;color:${BRAND.muted};line-height:1.75;margin:0 0 24px 24px;padding-left:0;">${items
+    .map((item) => `<li style="margin-bottom:8px;">${item}</li>`)
+    .join("")}</ul>`;
+}
+
+export function heroSection(emoji_char: string, heading_text: string): string {
+  return `<div style="text-align:center;margin:0 0 24px;">
+    <p style="font-size:2.5rem;margin:0 0 12px;line-height:1;">${emoji_char}</p>
+    <h1 style="font-family:Georgia,serif;font-size:1.6rem;font-weight:600;color:${BRAND.text};margin:0;letter-spacing:-.02em;">${heading_text}</h1>
+  </div>`;
+}
+
 // Footer helper for an unsubscribe link (use as `footerExtra`).
 export function unsubscribeLink(url: string, label: string): string {
   return `<a href="${url}" style="color:${BRAND.muted};text-decoration:underline;">${escapeHtml(label)}</a>`;

@@ -5,7 +5,7 @@ import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
 import { shouldShowFirstStoryNudge } from "@/lib/story";
-import { baseLayout, emoji, heading, paragraph, ctaButton, unsubscribeLink } from "@/lib/email-templates";
+import { baseLayout, emoji, heading, paragraph, ctaButton, unsubscribeLink, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 import { getTranslations } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 
@@ -111,9 +111,16 @@ export async function GET(req: Request) {
         to: profile.email,
         subject,
         html: baseLayout(
-          emoji("✨") +
-          heading(escapeHtml(nudge.email_title)) +
+          heroSection("✨", escapeHtml(nudge.email_title)) +
           paragraph(escapeHtml(body)) +
+          divider() +
+          colorSection(
+            locale === "en"
+              ? `<strong>Ready to see ${pet.name}'s story?</strong> Our AI has been learning from your entries and is ready to create something special.`
+              : `<strong>Prêt(e) à lire l'histoire de ${pet.name} ?</strong> Notre IA a appris de vos entrées et est prête à créer quelque chose de spécial.`,
+            BRAND.accent,
+            "#FDFAF5"
+          ) +
           ctaButton(`https://everypaw.app/dashboard/pets/${pet.id}?tab=stories`, escapeHtml(nudge.email_cta)),
           unsubscribeLink(unsubscribeUrl, nudge.email_unsubscribe),
           locale,
