@@ -94,6 +94,14 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-09-04",
     published: true,
   },
+  {
+    slug: "best-pet-journal-app",
+    title: "Best Pet Journal Apps in 2026: What They Actually Do (and Don't)",
+    description:
+      "An honest comparison of pet journal apps in 2026: what each one does well, what it skips, and how to pick the right one for the way you want to remember your pet.",
+    datePublished: "2026-09-04",
+    published: true,
+  },
 ];
 
 /** Published posts, newest first. */
