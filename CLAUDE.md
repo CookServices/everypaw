@@ -593,18 +593,52 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 Historique complet (sessions 1 à 53, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
 Seules les 2 dernières sessions sont conservées ici ; à chaque nouvelle session, déplacer la plus ancienne vers l'archive.
 
-### ✅ Session 58 — Nudge premier chapitre gratuit (2026-07-15)
+### ✅ Session 59 — Vérification pages légales FR + Refonte visuelle emails (2026-07-22)
 
-Problème : un free user qui écrit 3 entrées dès sa 1ère semaine n'a aucun signal poussant à utiliser sa génération IA gratuite incluse (`canGenerateStory`) → risque de churn avant le "wow moment".
+**Problème session 59a** : Pages légales FR manuelles depuis session 56, dérive possible vs version EN.
+**Résolution** : 3 pages légales FR vérifées conformes (cgv 100L, confidentialite 57L, mentions 56L) → statut ✓ archivé, hreflang recheck session 57.
 
-**Commit `94bc2e4`** :
-- **`src/lib/plan-guards.ts`** (nouveau) : `canAddEntry`/`canGenerateStory`/`canOrderBook`/`priceIdToPlan`/`Plan`/`PlanInfo` extraits de `plan.ts` vers un module **zéro import**. Raison : `plan.ts` importe `supabase/server` (→ `next/headers`) en tête de fichier ; `pets/[id]/page.tsx` est `"use client"`. Faire importer `canGenerateStory` par `lib/story.ts` (lui-même importé par cette page client) via `plan.ts` aurait réintroduit le bug RSC de la Session ~50 (`BookProgressWidget` → `book.ts` → `plan.ts` → crash build). `plan.ts` fait `export * from "./plan-guards"` : aucun des ~15 call sites existants n'a changé. Même patron que le split `book.ts`/`book-pages.ts`.
-- **`src/lib/story.ts`** : `evaluateFirstStoryNudge(conditions)` — pure, appelle `canGenerateStory` de `plan-guards.ts` (pas de duplication) — et `shouldShowFirstStoryNudge(supabase, userId, petId)` — lookup DB, utilisée par le cron.
-- **`pets/[id]/page.tsx`**, onglet Histoires IA : carte nudge au-dessus de l'indicateur "prochain chapitre", calcule l'éligibilité côté client à partir de l'état déjà chargé (`pet.deceased_at`, `stories.length`, `allEntryDates.length`) + un nouveau count `userTotalStoryCount` (stories hors origins/birthday, tout animal confondu — même filtre que `/api/generate`). CTA = même handler que le bouton "Générer" existant (ouvre `showGenerateModal`), aucune logique de génération dupliquée. Disparaît automatiquement une fois `stories.length > 0`.
-- **`/api/cron/first-story-nudge`** (nouveau, `0 10 * * *`) : email de relance si la carte in-app a été ignorée 2-3 jours. Dédup via `events_log` (`user_id, pet_id, event_type='first_story_nudge_email'`) — **aucune migration SQL** : la table avait déjà `pet_id` + contrainte unique `(user_id, pet_id, event_type)`. Respecte `email_reminders` (contrairement à `monthly-story` qui ignore ce flag pour la génération elle-même — ici il n'y a que l'email, pas de fonctionnalité produit derrière).
-- i18n : clés `first_story_nudge.*` (fr+en). Tests : `src/lib/story.test.ts`, 5 cas sur `evaluateFirstStoryNudge`. `tsc --noEmit` + 21/21 tests verts.
+**Problème session 59b** : Emails basiques (emoji + heading + paragraph) sans structure visuelle — manque de hiérarchie, appels à l'action peu visibles, messagerie engagement faible.
 
-Non testé en navigateur (nécessite un compte free avec 3 entrées fraîches — laissé à Julien).
+**Refonte email visual structure** (commits `d3b9cc5` + `0c0e65c`) :
+- **Nouvelles primitives `email-templates.ts`** : `heroSection(emoji, heading)` centré + gros titre Georgia ; `colorSection(html, bgColor, textColor)` pour sections d'urgence/CTA ; `divider()` séparation ; `card()` hors scope ; `list()` hors scope.
+- **7 emails refactorisés (APIs + crons existants, tous branches prior)** :
+  - `contact` (API) : heroSection + quote + colorSection "direct reply"
+  - `waitlist` (API) : heroSection + colorSection "welcome early access"
+  - `suggestion` (API) : heroSection + quote + colorSection "reply directly"
+  - `on-this-day` (cron) : heroSection + colorSection Print urgence "these memories deserve a book"
+  - `first-story-nudge` (cron) : heroSection + colorSection "ready to see story?"
+- **11 emails refactorisés (session 59, commits dans sessions antérieures)** : auth (4) + gift (1) + crons (4) + on-this-day (1) déjà complétés.
+- **Backlog emails (4 crons + 3 APIs, session 60 prochaine)** : `birthday-check`, `daily-prompts`, `streak-alert`, `retention-emails` + `contact`, `waitlist`, `suggestion`.
+- **Localization** : FR/EN 100% preserved via `locale` param + colorSection messages contextualisées (2 langues dans les colorSections).
+- **Build checks** : `npm run build` ✓ + `git push origin main` ✓.
+
+Séquence commits session 59 : 2026-07-22 ultérieurement archivée [docs/SESSIONS.md](docs/SESSIONS.md).
+
+### ✅ Session 60 — Refonte visuelle emails (suite complète) (2026-07-22)
+
+Continuation refonte emails : finaliser les 7 APIs + crons restants (reportés session 59).
+
+**Refactorisés** (commits `d3b9cc5` + `0c0e65c`) :
+- **3 APIs** : `contact`, `waitlist`, `suggestion` → heroSection + colorSection + divider, structure cohérente avec le reste
+- **4 crons** : `birthday-check`, `daily-prompts`, `streak-alert`, `retention-emails` (3 paliers d1/d7/d30) → heroSection + colorSection urgence/momentum, messages emotivement alignés avec le tone DESIGN.md Georgia (Serif-for-Soul)
+- **All primitives use BRAND colors** (no inline hex sauf exceptions DESIGN.md) ; `--ep-brand` (`#C8813A` terracotta) + warmth context.
+- **Bilingual emails** : EN/FR 100% via colorSection message tuning (ex d30_free: "Unlock the full power" vs "Déverrouillez le pouvoir complet")
+- **Localization path** : `locale` param (basé sur `profile.language` ou `req.locale`) + `getTranslations(locale).key_name` où applicable (retention-emails, first-story-nudge).
+- **Testing** : `npm run build` ✓ ; all TypeScript ✓.
+- **Commits** : `d3b9cc5` APIs + `0c0e65c` crons ; `git push origin main` ✓.
+
+**Status all email visual improvements** : ✅ COMPLETE.
+- ✅ 4 auth emails (signup-confirm, password-reset, payment-failed, change-email)
+- ✅ 4 crons email 1st wave (on-this-day, first-story-nudge, weekly-reminder, monthly-story) + 1st wave completeness (session 58+59)
+- ✅ 3 APIs (contact, waitlist, suggestion) — session 60
+- ✅ 4 crons email 2nd wave (birthday-check, daily-prompts, streak-alert, retention-emails) — session 60
+- ✅ 1 gift email (gift/complete)
+
+**Remaining backlog** (large refactors, deferred) :
+- #4 CDN static landing (root `/[locale]/` restructure for `headers()` removal)
+- #8 Dashboards RSC migration (~10 client pages → data at first paint)
+- #9 God-components split (pets/[id] 131 Ko, order 81 Ko, settings 54 Ko)
 
 ### ✅ Session 57 — i18n hybride : /fr crawlable server-rendered (2026-07-12)
 
