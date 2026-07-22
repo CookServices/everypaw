@@ -355,6 +355,9 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/memorial` | Landing marketing publique « pet memorial book » (server component, ton sobre, palette cream+sage) — distincte des pages user `/memorial/[id]` |
 | `/blog` | Index blog SEO (cluster « pet memory ») — cards des articles publiés, empty state si aucun |
 | `/blog/[slug]` | Article : 1 `page.tsx` écrit à la main par slug, via `ArticleLayout` + JSON-LD Article |
+| `/fr/blog` | Index blog FR — mêmes 9 articles, slugs traduits |
+| `/fr/blog/[slug-fr]` | Article FR : `page.tsx` par slug FR, `ArticleLayout locale="fr"`, hreflang réciproque vers l'article EN |
+| `/fr/memorial` | Landing mémorial FR, réutilise `getTranslations("fr").memorial_landing`, hreflang réciproque avec `/memorial` |
 | `/gift` | Page cadeau |
 | `/unsubscribe` | Désinscription emails (token) |
 
@@ -640,6 +643,19 @@ Chantier : rendre la version FR crawlable par Google sans réintroduire next-int
 
 Maillage : pilier (4) → 5 autres + `/memorial` ; retour 1-3 → 4-6 (commit `e296866`) ; retour 1,3,5,6 → 7,8,9 (commit `e0b67b1`). Plus de placeholder non publié, plus de lien interne cassé à ce jour. Lien « Blog » dans le footer full (landing).
 
-**Landing mémorial publique** (`/memorial`, commit `e1620ba`) : page marketing SEO « pet memorial book », **server component pur** (pas de `"use client"`, zéro interactivité) — distincte des pages user `/memorial/[id]`. Ton sobre (deuil animalier) : palette cream + sage, pas d'amber criard sur le contenu (le dot logo nav + cookie banner restent en amber = chrome global), aucune image, aucun schema Review, CTA unique discret `/auth/signup`. Textes en `memorial_landing` (en+fr, la page rend EN ; `/fr/memorial` non créé). Metadata title/description dédiées + canonical `/memorial`, ajouté au sitemap. Carte homepage « A legacy that lasts » (f5) devient un lien descriptif vers `/memorial` (`aria-label`, ancre SEO).
+**Cluster blog FR** (`/fr/blog`, session 2026-07-22) : les 9 articles ont une édition française sous `/fr/blog/<slug-fr>`, avec des **slugs traduits** (SEO FR), pas les mêmes slugs qu'EN. `src/lib/blog.ts` : `BLOG_POSTS_FR[]` (interface `BlogPostFr` avec `slugEn` pour le mapping hreflang) + `getPublishedPostsFr()`/`getPostFr()`/`getFrSlugForEn()`. `ArticleLayout` accepte désormais `locale?: "en" | "fr"` (défaut `"en"`) : breadcrumb, CTA de clôture et format de date localisés via une table `CHROME`. Chaque article FR = `app/fr/blog/<slug-fr>/page.tsx`, traduction fidèle (même structure H2/H3, vouvoiement), maillage interne identique à la version EN mais entre slugs FR, liens `/memorial` remplacés par `/fr/memorial`. Hreflang réciproque posé des deux côtés (`alternates.languages` sur les 9 pages EN + les 9 pages FR + les deux index `/blog`/`/fr/blog`). Sitemap inclut les 9 URLs FR + `/fr/blog`. Mapping slugs EN → FR :
+- `pet-journal-prompts` → `prompts-journal-animalier`
+- `dog-memory-book-ideas` → `idees-livre-souvenir-chien`
+- `puppy-first-year-memory-book` → `livre-souvenir-premiere-annee-chiot`
+- `how-to-keep-a-pet-memory-journal` → `comment-tenir-journal-animalier` (pilier)
+- `cat-memory-book` → `livre-souvenir-chat`
+- `pet-loss-keepsake-ideas` → `idees-souvenirs-deuil-animal`
+- `write-your-pets-life-story` → `ecrire-histoire-de-vie-animal`
+- `kitten-first-year-memory-book` → `livre-souvenir-premiere-annee-chaton`
+- `pet-memorial-gifts` → `cadeaux-deuil-animalier`
+
+**Landing mémorial publique** (`/memorial`, commit `e1620ba`) : page marketing SEO « pet memorial book », **server component pur** (pas de `"use client"`, zéro interactivité) — distincte des pages user `/memorial/[id]`. Ton sobre (deuil animalier) : palette cream + sage, pas d'amber criard sur le contenu (le dot logo nav + cookie banner restent en amber = chrome global), aucune image, aucun schema Review, CTA unique discret `/auth/signup`. Textes en `memorial_landing` (en+fr dans `messages/*.json`). Metadata title/description dédiées + canonical `/memorial`, ajouté au sitemap. Carte homepage « A legacy that lasts » (f5) devient un lien descriptif vers `/memorial` (`aria-label`, ancre SEO). **`/fr/memorial` créé (session 2026-07-22)** : réutilise `getTranslations("fr").memorial_landing` (déjà traduit), hreflang réciproque avec `/memorial`, ajouté au sitemap. Les 2 tirets cadratins pré-existants dans `memorial_landing` (fr.json) ont été corrigés à cette occasion.
+
+⚠️ **Tiret cadratin résiduel hors scope** (repéré 2026-07-22, non corrigé) : `messages/fr.json` ligne ~377, clé `step3_desc` (page gift) — `"Le cadeau est activé pour toute la période — un mois de Digital ou un an de Print."`. Pas touché car hors périmètre de la tâche blog FR ; à nettoyer dans une prochaine session dédiée au contenu.
 
 Session 56 (SEO canonicals/robots.ts/sitemap.ts) archivée dans [docs/SESSIONS.md](docs/SESSIONS.md).
