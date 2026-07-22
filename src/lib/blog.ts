@@ -78,6 +78,14 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-07-22",
     published: true,
   },
+  {
+    slug: "pet-memorial-gifts",
+    title: "Pet Memorial Gifts: 7 Thoughtful Ideas for a Grieving Friend",
+    description:
+      "Seven thoughtful pet memorial gift ideas for a friend who has lost a pet: what actually helps, what to avoid, and how to show you understand.",
+    datePublished: "2026-07-22",
+    published: true,
+  },
 ];
 
 /** Published posts, newest first. */
