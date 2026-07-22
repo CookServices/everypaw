@@ -62,6 +62,14 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-07-21",
     published: true,
   },
+  {
+    slug: "write-your-pets-life-story",
+    title: "How to Write Your Pet's Life Story (Even If You're Not a Writer)",
+    description:
+      "A step-by-step guide to writing your pet's life story: how to find the structure, what to include, and why you don't need to be a writer to do it well.",
+    datePublished: "2026-07-22",
+    published: true,
+  },
 ];
 
 /** Published posts, newest first. */
