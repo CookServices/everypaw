@@ -3,7 +3,7 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
-import { baseLayout, emoji, heading, paragraph, quote, ctaButton, unsubscribeLink } from "@/lib/email-templates";
+import { baseLayout, emoji, heading, paragraph, quote, ctaButton, unsubscribeLink, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -83,14 +83,24 @@ export async function GET(req: Request) {
       : `These memories deserve to be in a book. <a href="https://everypaw.app/dashboard" style="color:#C8813A;">Discover Everypaw Print</a>`;
 
     const html = baseLayout(
-      emoji("🐾") +
-      heading(isFR
-        ? `Il y a ${yearsAgo} an${yearsAgo > 1 ? "s" : ""}, ${petName}…`
-        : `${yearsAgo} year${yearsAgo > 1 ? "s" : ""} ago, ${petName}…`) +
+      heroSection(
+        "🐾",
+        isFR
+          ? `Il y a ${yearsAgo} an${yearsAgo > 1 ? "s" : ""}, ${petName}…`
+          : `${yearsAgo} year${yearsAgo > 1 ? "s" : ""} ago, ${petName}…`
+      ) +
       paragraph(dateLabel) +
       quote(`"${snippet}"`) +
+      divider() +
+      colorSection(
+        isFR
+          ? `<strong>Ces souvenirs méritent d'être conservés.</strong> Créez un livre photo imprimé de ${petName} et gardez ces moments à jamais.`
+          : `<strong>These memories deserve to be preserved.</strong> Create a printed photo book for ${petName} and keep these moments forever.`,
+        BRAND.accent,
+        "#FDFAF5"
+      ) +
       ctaButton("https://everypaw.app/dashboard", isFR ? `Voir le journal de ${petName}` : `See ${petName}'s journal`),
-      printPromo + "<br />" + unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
+      `${printPromo}<br />${unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders")}`,
       isFR ? "fr" : "en",
     );
 
