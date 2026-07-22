@@ -70,6 +70,14 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-07-22",
     published: true,
   },
+  {
+    slug: "kitten-first-year-memory-book",
+    title: "Kitten First Year Memory Book: A Month-by-Month Guide",
+    description:
+      "A month-by-month guide to your kitten's first year memory book: what to notice, what to write down, and how to capture a cat's story from day one.",
+    datePublished: "2026-07-22",
+    published: true,
+  },
 ];
 
 /** Published posts, newest first. */
