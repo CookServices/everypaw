@@ -628,7 +628,7 @@ Chantier : rendre la version FR crawlable par Google sans réintroduire next-int
 
 **Infra blog SEO** (commit `2489c7f`) : cluster de contenu « pet memory ». `src/lib/blog.ts` = registre unique (`BLOG_POSTS[]` : slug, title, description, datePublished, `published`) — pilote l'index `/blog`, l'inclusion sitemap et le noindex par article. Chaque article = `app/blog/<slug>/page.tsx` écrit à la main : metadata (canonical `/blog/<slug>`, `robots` dérivé du flag `published`), JSON-LD Article (author/publisher Organization Everypaw) **émis seulement si publié**, corps H2/H3 dans `<ArticleLayout post>` (`src/components/blog/ArticleLayout.tsx` : fil d'ariane, colonne lecture ~680px, typo Georgia/DM Sans, CTA final discret vers `/`). **Workflow pour ajouter/publier un article** : (1) écrire le corps dans `app/blog/<slug>/page.tsx`, (2) passer `published: true` dans `blog.ts` → l'article entre dans l'index + le sitemap et perd le noindex, le JSON-LD s'active.
 
-**9 articles publiés** (`published: true`), tous dans le cluster « pet memory » :
+**12 articles publiés** (`published: true`), tous dans le cluster « pet memory » :
 1. `pet-journal-prompts` — "50 Pet Journal Prompts to Capture Your Pet's Story" (`16d6a1e`)
 2. `dog-memory-book-ideas` — "12 Dog Memory Book Ideas That Go Beyond Photos" (`1493184`)
 3. `puppy-first-year-memory-book` — "How to Make a Puppy's First Year Memory Book" (`08a79b1`)
@@ -638,8 +638,13 @@ Chantier : rendre la version FR crawlable par Google sans réintroduire next-int
 7. `write-your-pets-life-story` — "How to Write Your Pet's Life Story (Even If You're Not a Writer)" (2026-07-22)
 8. `kitten-first-year-memory-book` — "Kitten First Year Memory Book: A Month-by-Month Guide" (2026-07-22, guide mémoire pur, aucun conseil vétérinaire/éducation féline)
 9. `pet-memorial-gifts` — "Pet Memorial Gifts: 7 Thoughtful Ideas for a Grieving Friend" (2026-07-22, perspective de l'ami qui offre, ton sobre deuil, mention Everypaw limitée au point 7/memorial)
+10. `gifts-for-pet-parents` — "Unique Gifts for Pet Parents Who Already Have Everything" (`datePublished` 2026-09-04, timing Q4, commit `2c2e5c8`)
+11. `best-pet-journal-app` — "Best Pet Journal Apps in 2026: What They Actually Do (and Don't)" (`datePublished` 2026-09-04, comparatif honnête DogNote/PetDesk/Everypaw/Voyage/notes apps, commit `6d48a67`)
+12. `pet-journal-app-vs-photo-book` — "Pet Journal App vs Photo Book Service: Which One Actually Keeps the Memories?" (`datePublished` 2026-09-04, commit `19423e7`)
 
-Maillage : pilier (4) → 5 autres + `/memorial` ; retour 1-3 → 4-6 (commit `e296866`) ; retour 1,3,5,6 → 7,8,9 (commit `e0b67b1`). Plus de placeholder non publié, plus de lien interne cassé à ce jour. Lien « Blog » dans le footer full (landing).
+Maillage : pilier (4) → 5 autres + `/memorial` ; retour 1-3 → 4-6 (commit `e296866`) ; retour 1,3,5,6 → 7,8,9 (commit `e0b67b1`) ; retour 2,4,7,9 → 10,11,12 (commit à venir). Plus de placeholder non publié, plus de lien interne cassé à ce jour. Lien « Blog » dans le footer full (landing).
+
+**Note article 11** : la description de l'app tierce Voyage a été corrigée par rapport au brief initial lors de la rédaction — recherche web (2026-07-22) a montré que Voyage est en réalité une app pet-spécifique ("Voyage: Pet Health & Diary") combinant génération IA de journal ET tracking santé, pas une app généraliste adaptée par les users comme supposé. DogNote et PetDesk confirmés conformes au brief.
 
 **Cluster blog FR** (`/fr/blog`, session 2026-07-22) : les 9 articles ont une édition française sous `/fr/blog/<slug-fr>`, avec des **slugs traduits** (SEO FR), pas les mêmes slugs qu'EN. `src/lib/blog.ts` : `BLOG_POSTS_FR[]` (interface `BlogPostFr` avec `slugEn` pour le mapping hreflang) + `getPublishedPostsFr()`/`getPostFr()`/`getFrSlugForEn()`. `ArticleLayout` accepte désormais `locale?: "en" | "fr"` (défaut `"en"`) : breadcrumb, CTA de clôture et format de date localisés via une table `CHROME`. Chaque article FR = `app/fr/blog/<slug-fr>/page.tsx`, traduction fidèle (même structure H2/H3, vouvoiement), maillage interne identique à la version EN mais entre slugs FR, liens `/memorial` remplacés par `/fr/memorial`. Hreflang réciproque posé des deux côtés (`alternates.languages` sur les 9 pages EN + les 9 pages FR + les deux index `/blog`/`/fr/blog`). Sitemap inclut les 9 URLs FR + `/fr/blog`. Mapping slugs EN → FR :
 - `pet-journal-prompts` → `prompts-journal-animalier`
