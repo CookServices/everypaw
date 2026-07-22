@@ -184,7 +184,9 @@ export default function Page() {
           every month they&rsquo;re turned into a story chapter, then at the end of the year into a printed hardcover
           book. If you want to go further, here are{" "}
           <a href="/blog/dog-memory-book-ideas">12 dog memory book ideas</a> that turn these entries into pages worth
-          keeping. But whatever tool you use, the principle is the same: one honest sentence at a time, starting today.
+          keeping. And if you&rsquo;re ready to turn those entries into a complete narrative, here&rsquo;s a guide to{" "}
+          <a href="/blog/write-your-pets-life-story">writing your pet&rsquo;s life story</a>, step by step. But
+          whatever tool you use, the principle is the same: one honest sentence at a time, starting today.
         </p>
       </ArticleLayout>
     </>

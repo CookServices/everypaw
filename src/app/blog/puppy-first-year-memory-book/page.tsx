@@ -50,7 +50,9 @@ export default function Page() {
         <p>
           This guide focuses on puppies, but if you just brought home a kitten, the same month-by-month approach applies.
           The <a href="/blog/cat-memory-book">cat memory book guide</a> covers what&rsquo;s different about capturing a
-          cat&rsquo;s first year.
+          cat&rsquo;s first year, and the{" "}
+          <a href="/blog/kitten-first-year-memory-book">kitten first year memory book guide</a> walks through the same
+          month-by-month structure built specifically for cats.
         </p>
         <p>The book starts before the puppy does. Capture, while it&rsquo;s still fresh:</p>
         <ul>

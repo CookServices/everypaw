@@ -139,6 +139,11 @@ export default function Page() {
           whatever feels manageable: one photo with a caption, one paragraph, one sentence. The rest can come later, or
           not at all. The point was never the object. The point was them.
         </p>
+        <p>
+          If you&rsquo;re looking for a gift for someone else who has lost a pet, the{" "}
+          <a href="/blog/pet-memorial-gifts">pet memorial gifts guide</a> covers what actually helps from the
+          friend&rsquo;s side.
+        </p>
       </ArticleLayout>
     </>
   );

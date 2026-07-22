@@ -160,6 +160,11 @@ export default function Page() {
           <a href="/blog/pet-loss-keepsake-ideas">pet loss keepsake ideas</a> article covers several approaches, and the{" "}
           <a href="/memorial">Everypaw memorial page</a> was designed for exactly that kind of remembering.
         </p>
+        <p>
+          If your cat is still in their first year, the{" "}
+          <a href="/blog/kitten-first-year-memory-book">kitten first year memory book guide</a> has a month-by-month
+          structure designed for that fastest phase.
+        </p>
 
         <h2>Start with what&rsquo;s in front of you</h2>
         <p>
