@@ -4,7 +4,7 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
-import { baseLayout, heading, paragraph, ctaButton, emoji, quote, unsubscribeLink } from "@/lib/email-templates";
+import { baseLayout, heading, paragraph, ctaButton, heroSection, quote, unsubscribeLink, divider, colorSection, BRAND } from "@/lib/email-templates";
 import { estimateBookPages } from "@/lib/book";
 import { getTranslations } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
@@ -114,8 +114,16 @@ export async function GET(req: Request) {
         // No pet yet, encourage creation
         subject = re.d1_subject_no_pet;
         body = wrap(
-          h1(re.d1_no_pet_title) +
+          heroSection("🐾", re.d1_no_pet_title) +
           p(re.d1_no_pet_body) +
+          divider() +
+          colorSection(
+            locale === "en"
+              ? "<strong>Get started in seconds.</strong> Add your first pet and start building their story today."
+              : "<strong>Commencez en quelques secondes.</strong> Ajoutez votre premier animal et commencez à construire son histoire dès aujourd'hui.",
+            BRAND.accent,
+            "#FDFAF5"
+          ) +
           btn("https://everypaw.app/dashboard/pets/new", re.d1_no_pet_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
         );
@@ -133,9 +141,16 @@ export async function GET(req: Request) {
         if (ec === 0) {
           subject = re.d1_subject_no_entry.replace("{petName}", firstPet.name);
           body = wrap(
-            emoji("🐾") +
-            h1(re.d1_no_entry_title) +
+            heroSection("🐾", re.d1_no_entry_title) +
             p(re.d1_no_entry_body) +
+            divider() +
+            colorSection(
+              locale === "en"
+                ? `<strong>Start ${petNameSafe}'s story.</strong> Your first entry will be the foundation of their digital journal.`
+                : `<strong>Commencez l'histoire de ${petNameSafe}.</strong> Votre première entrée sera le fondement de son journal numérique.`,
+              BRAND.accent,
+              "#FDFAF5"
+            ) +
             btn(`https://everypaw.app/dashboard/pets/${firstPet.id}`, re.d1_no_entry_cta),
             unsubscribeUrl, re.unsubscribe,
           );
@@ -145,11 +160,16 @@ export async function GET(req: Request) {
             .replace("{remaining}", String(remaining))
             .replace("{petName}", firstPet.name);
           body = wrap(
-            emoji("🐾") +
-            h1(re.d1_entry_title.replace("{remaining}", String(remaining))) +
-            `<p style="font-size:16px;line-height:1.6;color:#7A5C44;margin:0 0 24px;">` +
-              `${escapeHtml(re.d1_entry_body)}, <strong>${escapeHtml(petNameSafe)}</strong>` +
-            `</p>` +
+            heroSection("🐾", re.d1_entry_title.replace("{remaining}", String(remaining))) +
+            p(re.d1_entry_body + ", " + petNameSafe) +
+            divider() +
+            colorSection(
+              locale === "en"
+                ? "<strong>Keep the momentum.</strong> A few more entries and you'll unlock stories and prints."
+                : "<strong>Continuez l'élan.</strong> Quelques entrées de plus et vous débloquerez les histoires et les impressions.",
+              BRAND.accent,
+              "#FDFAF5"
+            ) +
             btn(`https://everypaw.app/dashboard/pets/${firstPet.id}`, re.d1_entry_cta),
             unsubscribeUrl, re.unsubscribe,
           );
@@ -237,11 +257,17 @@ export async function GET(req: Request) {
 
         subject = re.d7_story_subject.replace("{petName}", storyPet.name);
         body = wrap(
-          emoji("📖") +
-          h1(re.d7_story_title) +
-          `<h2 style="font-family:Georgia,serif;font-size:1.1rem;font-weight:600;color:#3D2B1F;margin:0 0 8px;">${titleSafe}</h2>` +
+          heroSection("📖", re.d7_story_title) +
+          `<h2 style="font-family:Georgia,serif;font-size:1.1rem;font-weight:600;color:${BRAND.text};margin:0 0 8px;">${titleSafe}</h2>` +
           quote(excerpt) +
-          paragraph(escapeHtml(re.d7_story_pages.replace("{petName}", storyPet.name).replace("{pages}", String(pages)))) +
+          divider() +
+          colorSection(
+            locale === "en"
+              ? `<strong>Your story is ready.</strong> ${titleSafe} has grown to <strong>${pages} pages</strong> of memories waiting to be preserved.`
+              : `<strong>Votre histoire est prête.</strong> ${titleSafe} a grandi à <strong>${pages} pages</strong> de souvenirs en attente de préservation.`,
+            BRAND.accent,
+            "#FDFAF5"
+          ) +
           btn(`https://everypaw.app/dashboard/pets/${storyPet.id}?tab=stories`, re.d7_story_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
         );
@@ -271,10 +297,17 @@ export async function GET(req: Request) {
           : "";
 
         body = wrap(
-          emoji("🌿") +
-          h1(re.d7_no_story_title) +
+          heroSection("🌿", re.d7_no_story_title) +
           photoImg +
           entryText +
+          (entryText ? divider() : "") +
+          colorSection(
+            locale === "en"
+              ? "<strong>More entries unlock more stories.</strong> Keep adding moments and watch AI chapters emerge from your memories."
+              : "<strong>Plus d'entrées déverrouillent plus d'histoires.</strong> Continuez à ajouter des moments et regardez les chapitres IA émerger de vos souvenirs.",
+            BRAND.accent,
+            "#FDFAF5"
+          ) +
           p(re.d7_no_story_body) +
           btn(`https://everypaw.app/dashboard/pets/${entryPet.id}`, re.d7_no_story_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
@@ -366,13 +399,20 @@ export async function GET(req: Request) {
 
         subject = re.d30_free_subject.replace("{petName}", firstPet.name);
         body = wrap(
-          emoji("📚") +
-          h1(re.d30_free_title.replace("{petName}", firstPet.name)) +
+          heroSection("📚", re.d30_free_title.replace("{petName}", firstPet.name)) +
           p(
             re.d30_free_body
               .replace("{entries}", String(ec))
               .replace("{photos}", String(photoCount))
               .replace("{petName}", firstPet.name),
+          ) +
+          divider() +
+          colorSection(
+            locale === "en"
+              ? "<strong>Unlock the full power of Everypaw.</strong> Upgrade to create printed books, AI chapters, and preserve memories forever."
+              : "<strong>Déverrouillez le pouvoir complet d'Everypaw.</strong> Mettez à niveau pour créer des livres imprimés, des chapitres IA et préserver les souvenirs pour toujours.",
+            BRAND.accent,
+            "#FDFAF5"
           ) +
           btn("https://everypaw.app/dashboard/settings", re.d30_free_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
@@ -387,12 +427,19 @@ export async function GET(req: Request) {
 
         subject = re.d30_paid_subject.replace("{date}", nextDate);
         body = wrap(
-          emoji("✨") +
-          h1(re.d30_paid_title) +
+          heroSection("✨", re.d30_paid_title) +
           p(
             re.d30_paid_body
               .replace("{petName}", firstPet.name)
               .replace("{pages}", String(pages)),
+          ) +
+          divider() +
+          colorSection(
+            locale === "en"
+              ? `<strong>Your book is growing.</strong> ${firstPet.name}'s next chapter will be added on ${nextDate}. Keep adding moments!`
+              : `<strong>Votre livre grandit.</strong> Le prochain chapitre de ${firstPet.name} sera ajouté le ${nextDate}. Continuez à ajouter des moments !`,
+            BRAND.accent,
+            "#FDFAF5"
           ) +
           btn(`https://everypaw.app/dashboard/pets/${firstPet.id}`, re.d30_paid_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",

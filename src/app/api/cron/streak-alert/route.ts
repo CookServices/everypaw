@@ -3,7 +3,7 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
-import { baseLayout, emoji, heading, paragraph, ctaButton, unsubscribeLink } from "@/lib/email-templates";
+import { baseLayout, heroSection, paragraph, ctaButton, unsubscribeLink, divider, colorSection, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -90,11 +90,18 @@ export async function GET(req: Request) {
       : `🐾 ${daysSince} days without an entry for ${petName}`;
 
     const html = baseLayout(
-      emoji("🐾") +
-      heading(isFR ? `Ça fait ${daysSince} jours…` : `It's been ${daysSince} days…`) +
+      heroSection("🐾", isFR ? `Ça fait ${daysSince} jours…` : `It's been ${daysSince} days…`) +
       paragraph(isFR
         ? `${petName} a vécu plein de choses depuis votre dernière entrée. Pas besoin d'un grand moment, une phrase ou une photo, et le souvenir est sauvé pour toujours.`
         : `${petName} has been up to so much since your last entry. It doesn't need to be big, one sentence or a quick photo, and the memory is saved forever.`) +
+      divider() +
+      colorSection(
+        isFR
+          ? `<strong>La mémoire s'oublie.</strong> Notez juste un petit détail pour garder ce moment vivant.`
+          : `<strong>Memory fades.</strong> Just jot down one small detail to keep this moment alive.`,
+        BRAND.accent,
+        "#FDFAF5"
+      ) +
       ctaButton("https://everypaw.app/dashboard", isFR ? "Ajouter un moment" : "Add a moment"),
       unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
       isFR ? "fr" : "en",

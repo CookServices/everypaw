@@ -5,7 +5,7 @@ import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
 import { generateAndSaveBirthdayLetter } from "@/lib/story";
-import { baseLayout, emoji, heading, paragraph, quote, ctaButton, ctaButtonOutline, unsubscribeLink } from "@/lib/email-templates";
+import { baseLayout, heroSection, paragraph, quote, ctaButton, ctaButtonOutline, unsubscribeLink, divider, colorSection, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -128,20 +128,27 @@ export async function GET(req: Request) {
     const excerptEscaped = letterExcerpt ? escapeHtml(letterExcerpt) : null;
 
     const letterBlock = excerptEscaped
-      ? quote(isFR ? `« ${excerptEscaped}… »` : `"${excerptEscaped}…"`) +
-        ctaButtonOutline(storyUrl, isFR ? `Lire la lettre de ${petName}` : `Read ${petName}'s letter`) +
-        "<br>"
+      ? divider() +
+        quote(isFR ? `« ${excerptEscaped}… »` : `"${excerptEscaped}…"`) +
+        ctaButtonOutline(storyUrl, isFR ? `Lire la lettre de ${petName}` : `Read ${petName}'s letter`)
       : "";
 
     const html = baseLayout(
-      emoji("🎂") +
-      heading(isFR
+      heroSection("🎂", isFR
         ? `Joyeux anniversaire, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !`
         : `Happy birthday, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !`) +
       paragraph(isFR
         ? `C'est une belle occasion de noter ce moment dans son journal. Décrivez comment ${petName} est aujourd'hui, ce qu'il ou elle aime, ce qui a changé cette année, dans quelques ans, vous serez heureux de l'avoir noté.`
         : `Today is a perfect day to add a birthday entry to ${petName}'s journal. Describe how they are right now, what they love, what's changed this year, you'll be so glad you wrote it down.`) +
       letterBlock +
+      (letterBlock ? "<br>" : "") +
+      colorSection(
+        isFR
+          ? `<strong>Écrire maintenant.</strong> Chaque mot que vous ajoutez devient une partie permanente de son histoire.`
+          : `<strong>Write now.</strong> Every word you add becomes a permanent part of their story.`,
+        BRAND.accent,
+        "#FDFAF5"
+      ) +
       ctaButton("https://everypaw.app/dashboard", isFR ? "Écrire une entrée d'anniversaire" : "Write a birthday entry"),
       unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
       isFR ? "fr" : "en",

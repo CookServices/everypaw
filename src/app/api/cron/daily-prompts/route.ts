@@ -3,7 +3,7 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
-import { baseLayout, emoji, eyebrow, quote, ctaButton, unsubscribeLink } from "@/lib/email-templates";
+import { baseLayout, heroSection, quote, ctaButton, unsubscribeLink, divider, colorSection, BRAND } from "@/lib/email-templates";
 
 // Prompts rotate daily by day-of-year index
 const PROMPTS_EN: Record<string, string[]> = {
@@ -159,9 +159,16 @@ export async function GET(req: Request) {
       : `✍️ Today's writing prompt for ${petName}`;
 
     const html = baseLayout(
-      emoji("✍️") +
-      eyebrow(isFR ? "Prompt du jour" : "Today's prompt") +
+      heroSection("✍️", isFR ? "Prompt du jour" : "Today's prompt") +
       quote(escapeHtml(prompt)) +
+      divider() +
+      colorSection(
+        isFR
+          ? `<strong>Une minute pour écrire,</strong> une histoire pour la vie. Qu'en est-il de ${petName} aujourd'hui ?`
+          : `<strong>One minute to write,</strong> a memory for life. What about ${petName} today?`,
+        BRAND.accent,
+        "#FDFAF5"
+      ) +
       ctaButton("https://everypaw.app/dashboard", isFR ? `Écrire pour ${petName}` : `Write for ${petName}`),
       unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
       isFR ? "fr" : "en",
