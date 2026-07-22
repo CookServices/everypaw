@@ -177,6 +177,11 @@ export default function Page() {
           well in any pet&rsquo;s story. And if your pet is a cat, the{" "}
           <a href="/blog/cat-memory-book">cat memory book guide</a> covers how to capture a quieter kind of narrative.
         </p>
+        <p>
+          Not sure which approach suits you? The{" "}
+          <a href="/blog/pet-journal-app-vs-photo-book">journal app vs photo book comparison</a> covers the
+          trade-offs between writing-first and photos-first workflows.
+        </p>
 
         <h2>Start with one scene</h2>
         <p>

@@ -157,6 +157,11 @@ export default function Page() {
             Choose real routines over posed shots. The way they actually sleep beats the way they sit for treats.
           </li>
         </ul>
+        <p>
+          A dog memory book also makes a meaningful gift. If you&rsquo;re looking for present ideas for someone who
+          already has everything, the <a href="/blog/gifts-for-pet-parents">gifts for pet parents guide</a> has more
+          in that spirit.
+        </p>
 
         <h2>The habit that decides everything</h2>
         <p>

@@ -157,6 +157,11 @@ export default function Page() {
           The most thoughtful pet memorial gift isn&rsquo;t something you buy. It&rsquo;s proof that you noticed who
           was missing.
         </p>
+        <p>
+          If your friend hasn&rsquo;t lost a pet but you still want something meaningful, the{" "}
+          <a href="/blog/gifts-for-pet-parents">gifts for pet parents guide</a> has ideas built around the same
+          principle: capturing the story, not adding to the pile.
+        </p>
       </ArticleLayout>
     </>
   );

@@ -179,6 +179,12 @@ export default function Page() {
           finished version looks like, these <a href="/blog/dog-memory-book-ideas">dog memory book ideas</a> show the
           kinds of pages that emerge from consistent journaling.
         </p>
+        <p>
+          If you&rsquo;re not sure which tool fits your style, the{" "}
+          <a href="/blog/best-pet-journal-app">comparison of pet journal apps</a> breaks down what each type does and
+          doesn&rsquo;t do. And if you&rsquo;re deciding between a journal app and a photo book service, here&rsquo;s a{" "}
+          <a href="/blog/pet-journal-app-vs-photo-book">side-by-side look at what each one captures</a>.
+        </p>
 
         <h2>Start tonight</h2>
         <p>
