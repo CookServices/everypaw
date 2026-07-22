@@ -4,29 +4,30 @@ import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
 export const metadata = {
-  title: "Pet Memorial Book & Memorial Page | Everypaw",
+  title: "Livre mémorial pour animaux & page mémorial | Everypaw",
   description:
-    "A gentle way to remember a pet you've lost: a dedicated memorial page and a hardcover pet memorial book gathering the stories of their life.",
+    "Une façon douce de se souvenir d'un animal perdu : une page mémorial dédiée et un livre mémorial relié rassemblant les histoires de sa vie.",
   alternates: {
-    canonical: "/memorial",
+    canonical: "/fr/memorial",
     languages: { en: "/memorial", fr: "/fr/memorial", "x-default": "/memorial" },
   },
   openGraph: {
-    title: "Pet Memorial Book & Memorial Page | Everypaw",
+    title: "Livre mémorial pour animaux & page mémorial | Everypaw",
     description:
-      "A gentle way to remember a pet you've lost: a dedicated memorial page and a hardcover pet memorial book gathering the stories of their life.",
-    url: "/memorial",
+      "Une façon douce de se souvenir d'un animal perdu : une page mémorial dédiée et un livre mémorial relié rassemblant les histoires de sa vie.",
+    url: "/fr/memorial",
     siteName: "Everypaw",
     type: "website",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Everypaw pet memorial" }],
+    locale: "fr_FR",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Everypaw, mémorial animalier" }],
   },
 };
 
 const SAGE = "#6B7B5E";
 const SAGE_DARK = "#566349";
 
-export default function MemorialLanding() {
-  const t = getTranslations("en").memorial_landing;
+export default function MemorialLandingFr() {
+  const t = getTranslations("fr").memorial_landing;
 
   const sections = [
     { title: t.s1_title, body: t.s1_body },
@@ -36,7 +37,7 @@ export default function MemorialLanding() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <PublicNav variant="simple" locale="en" />
+      <PublicNav variant="simple" locale="fr" />
 
       {/* Hero */}
       <section style={{ maxWidth: 640, margin: "0 auto", padding: "5rem 1.5rem 3.5rem", textAlign: "center" }}>
@@ -93,7 +94,7 @@ export default function MemorialLanding() {
         </Link>
       </section>
 
-      <PublicFooter variant="minimal" locale="en" />
+      <PublicFooter variant="minimal" locale="fr" />
     </div>
   );
 }
