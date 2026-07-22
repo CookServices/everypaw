@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
 import ArticleLayout from "@/components/blog/ArticleLayout";
-import { getPost } from "@/lib/blog";
+import { getPost, getFrSlugForEn } from "@/lib/blog";
 
 const post = getPost("cat-memory-book")!;
+const frSlug = getFrSlugForEn(post.slug);
 
 export const metadata: Metadata = {
   title: `${post.title} | Everypaw`,
   description: post.description,
-  alternates: { canonical: `/blog/${post.slug}` },
+  alternates: {
+    canonical: `/blog/${post.slug}`,
+    languages: { en: `/blog/${post.slug}`, fr: frSlug ? `/fr/blog/${frSlug}` : undefined, "x-default": `/blog/${post.slug}` },
+  },
   // noindex while unpublished; flip via the registry `published` flag once content lands
   robots: post.published ? undefined : { index: false, follow: false },
 };

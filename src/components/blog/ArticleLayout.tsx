@@ -1,15 +1,28 @@
 import Link from "next/link";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
-import type { BlogPost } from "@/lib/blog";
+
+const CHROME = {
+  en: { home: "Home", blog: "Blog", blogHref: "/blog", homeHref: "/", cta: "Everypaw turns your pet’s daily moments into an AI-written story, and a printed book each year.", ctaBtn: "Discover Everypaw", dateLocale: "en-US" },
+  fr: { home: "Accueil", blog: "Blog", blogHref: "/fr/blog", homeHref: "/fr", cta: "Everypaw transforme les moments du quotidien de votre animal en une histoire écrite par IA, et en un livre imprimé chaque année.", ctaBtn: "Découvrir Everypaw", dateLocale: "fr-FR" },
+} as const;
 
 /**
  * Shared article chrome: breadcrumb, ~680px reading column, readable typography
  * (Georgia titles / DM Sans body — codebase convention), and a discreet closing CTA.
  * Article pages provide only the body (H2/H3/p) as children; the H1 is the post title.
  */
-export default function ArticleLayout({ post, children }: { post: BlogPost; children: React.ReactNode }) {
-  const dateFmt = new Date(`${post.datePublished}T00:00:00Z`).toLocaleDateString("en-US", {
+export default function ArticleLayout({
+  post,
+  locale = "en",
+  children,
+}: {
+  post: { title: string; datePublished: string };
+  locale?: "en" | "fr";
+  children: React.ReactNode;
+}) {
+  const c = CHROME[locale];
+  const dateFmt = new Date(`${post.datePublished}T00:00:00Z`).toLocaleDateString(c.dateLocale, {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -18,7 +31,7 @@ export default function ArticleLayout({ post, children }: { post: BlogPost; chil
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
-      <PublicNav variant="simple" locale="en" />
+      <PublicNav variant="simple" locale={locale} />
 
       <style>{`
         .ep-article h1 { font-family: Georgia, serif; font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 600; line-height: 1.15; color: #3D2B1F; margin: 0 0 .5rem; }
@@ -33,9 +46,9 @@ export default function ArticleLayout({ post, children }: { post: BlogPost; chil
       <main style={{ maxWidth: 680, margin: "0 auto", padding: "2.5rem 1.5rem 5rem" }}>
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" style={{ fontSize: ".8rem", color: "#7A5C44", marginBottom: "2.5rem" }}>
-          <Link href="/" style={{ color: "#7A5C44", textDecoration: "none" }}>Home</Link>
+          <Link href={c.homeHref} style={{ color: "#7A5C44", textDecoration: "none" }}>{c.home}</Link>
           <span style={{ opacity: 0.5, margin: "0 .35rem" }}>/</span>
-          <Link href="/blog" style={{ color: "#7A5C44", textDecoration: "none" }}>Blog</Link>
+          <Link href={c.blogHref} style={{ color: "#7A5C44", textDecoration: "none" }}>{c.blog}</Link>
           <span style={{ opacity: 0.5, margin: "0 .35rem" }}>/</span>
           <span style={{ color: "#3D2B1F" }}>{post.title}</span>
         </nav>
@@ -49,18 +62,18 @@ export default function ArticleLayout({ post, children }: { post: BlogPost; chil
         {/* Discreet closing CTA → homepage */}
         <aside style={{ marginTop: "3.5rem", padding: "1.75rem", background: "#FDFAF5", border: "1px solid rgba(61,43,31,.08)", borderRadius: 16, textAlign: "center" }}>
           <p style={{ fontSize: ".95rem", fontWeight: 300, color: "#7A5C44", lineHeight: 1.6, margin: "0 0 1rem" }}>
-            Everypaw turns your pet&rsquo;s daily moments into an AI-written story, and a printed book each year.
+            {c.cta}
           </p>
           <Link
-            href="/"
+            href={c.homeHref}
             style={{ display: "inline-block", padding: ".7rem 2rem", borderRadius: 100, border: "1.5px solid #C8813A", background: "transparent", color: "#C8813A", fontSize: ".9rem", fontWeight: 500, textDecoration: "none" }}
           >
-            Discover Everypaw
+            {c.ctaBtn}
           </Link>
         </aside>
       </main>
 
-      <PublicFooter variant="minimal" locale="en" />
+      <PublicFooter variant="minimal" locale={locale} />
     </div>
   );
 }

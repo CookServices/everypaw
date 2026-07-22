@@ -98,3 +98,117 @@ export function getPublishedPosts(): BlogPost[] {
 export function getPost(slug: string): BlogPost | undefined {
   return BLOG_POSTS.find((p) => p.slug === slug);
 }
+
+/**
+ * French edition of the same cluster. `slugEn` maps back to the matching `BlogPost.slug`
+ * for reciprocal hreflang. French articles use their own (French) slugs for SEO.
+ */
+export interface BlogPostFr {
+  slug: string;
+  slugEn: string;
+  title: string;
+  description: string;
+  /** ISO date YYYY-MM-DD */
+  datePublished: string;
+  published: boolean;
+}
+
+export const BLOG_POSTS_FR: BlogPostFr[] = [
+  {
+    slug: "prompts-journal-animalier",
+    slugEn: "pet-journal-prompts",
+    title: "50 idées de prompts pour votre journal animalier",
+    description:
+      "Ne restez plus jamais devant une page blanche : 50 prompts pour capturer les moments, les manies et les étapes importantes de votre chien ou chat, une phrase à la fois.",
+    datePublished: "2026-07-22",
+    published: true,
+  },
+  {
+    slug: "idees-livre-souvenir-chien",
+    slugEn: "dog-memory-book-ideas",
+    title: "12 idées de livre souvenir pour votre chien, au-delà des photos",
+    description:
+      "12 idées de livre souvenir pour votre chien qui vont au-delà des photos : racontez son histoire, ses manies et ses moments du quotidien dans un livre que vous finirez vraiment.",
+    datePublished: "2026-07-22",
+    published: true,
+  },
+  {
+    slug: "livre-souvenir-premiere-annee-chiot",
+    slugEn: "puppy-first-year-memory-book",
+    title: "Le livre souvenir de la première année de votre chiot (mois par mois)",
+    description:
+      "Un guide mois par mois pour le livre souvenir de la première année de votre chiot : quoi photographier, quoi écrire, et comment en faire un vrai livre imprimé.",
+    datePublished: "2026-07-22",
+    published: true,
+  },
+  {
+    slug: "comment-tenir-journal-animalier",
+    slugEn: "how-to-keep-a-pet-memory-journal",
+    title: "Comment tenir un journal animalier (et pourquoi c'est important)",
+    description:
+      "Un guide pratique pour tenir un journal animalier : quoi écrire, à quelle fréquence, et comment transformer des notes du quotidien en une histoire que vous garderez pour toujours.",
+    datePublished: "2026-07-22",
+    published: true,
+  },
+  {
+    slug: "livre-souvenir-chat",
+    slugEn: "cat-memory-book",
+    title: "Livre souvenir pour chat : capturer l'histoire discrète de votre chat",
+    description:
+      "Comment créer un livre souvenir pour chat qui capture les moments subtils : les clignements lents, les coins préférés, le chaos de 3h du matin, et tout le reste.",
+    datePublished: "2026-07-22",
+    published: true,
+  },
+  {
+    slug: "idees-souvenirs-deuil-animal",
+    slugEn: "pet-loss-keepsake-ideas",
+    title: "Idées de souvenirs après la perte d'un animal : 9 façons d'honorer sa mémoire",
+    description:
+      "Neuf idées de souvenirs pour honorer un animal que vous avez perdu : livres souvenirs, journaux, pages mémorial, et d'autres façons de garder son histoire près de vous.",
+    datePublished: "2026-07-22",
+    published: true,
+  },
+  {
+    slug: "ecrire-histoire-de-vie-animal",
+    slugEn: "write-your-pets-life-story",
+    title: "Comment écrire l'histoire de vie de votre animal (même si vous n'êtes pas écrivain)",
+    description:
+      "Un guide étape par étape pour écrire l'histoire de vie de votre animal : comment trouver la structure, quoi inclure, et pourquoi vous n'avez pas besoin d'être écrivain pour bien le faire.",
+    datePublished: "2026-07-22",
+    published: true,
+  },
+  {
+    slug: "livre-souvenir-premiere-annee-chaton",
+    slugEn: "kitten-first-year-memory-book",
+    title: "Le livre souvenir de la première année de votre chaton : le guide mois par mois",
+    description:
+      "Un guide mois par mois pour le livre souvenir de la première année de votre chaton : quoi remarquer, quoi écrire, et comment capturer l'histoire d'un chat dès le premier jour.",
+    datePublished: "2026-07-22",
+    published: true,
+  },
+  {
+    slug: "cadeaux-deuil-animalier",
+    slugEn: "pet-memorial-gifts",
+    title: "Cadeaux pour un deuil animalier : 7 idées attentionnées pour un ami endeuillé",
+    description:
+      "Sept idées de cadeaux attentionnés pour un ami qui a perdu son animal : ce qui aide vraiment, ce qu'il faut éviter, et comment montrer que vous comprenez.",
+    datePublished: "2026-07-22",
+    published: true,
+  },
+];
+
+/** Published French posts, newest first. */
+export function getPublishedPostsFr(): BlogPostFr[] {
+  return BLOG_POSTS_FR.filter((p) => p.published).sort((a, b) =>
+    b.datePublished.localeCompare(a.datePublished)
+  );
+}
+
+export function getPostFr(slug: string): BlogPostFr | undefined {
+  return BLOG_POSTS_FR.find((p) => p.slug === slug);
+}
+
+/** French slug for a given English slug, for reciprocal hreflang on EN article pages. */
+export function getFrSlugForEn(enSlug: string): string | undefined {
+  return BLOG_POSTS_FR.find((p) => p.slugEn === enSlug)?.slug;
+}
