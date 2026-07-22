@@ -86,6 +86,14 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-07-22",
     published: true,
   },
+  {
+    slug: "gifts-for-pet-parents",
+    title: "Unique Gifts for Pet Parents Who Already Have Everything",
+    description:
+      "Eleven gift ideas for pet parents who already have every toy, treat, and bandana: meaningful presents that capture their pet's story, not their closet.",
+    datePublished: "2026-09-04",
+    published: true,
+  },
 ];
 
 /** Published posts, newest first. */
