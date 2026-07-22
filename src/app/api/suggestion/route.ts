@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { escapeHtml } from "@/lib/html";
+import { baseLayout, heroSection, paragraph, quote, divider, colorSection, BRAND } from "@/lib/email-templates";
 
 export async function POST(req: Request) {
   const { allowed } = await checkRateLimitDb(`suggestion:${getClientIp(req)}`, 3, 60_000);
@@ -37,15 +38,19 @@ export async function POST(req: Request) {
       to: "julien.mauduit@gmail.com",
       reply_to: userEmail !== "unknown" ? userEmail : undefined,
       subject: "💡 Nouvelle suggestion Everypaw",
-      html: `
-        <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-          <p style="font-size: 28px; margin: 0 0 8px;">🐾</p>
-          <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 16px;">Nouvelle suggestion Everypaw</h1>
-          <p style="font-size: 13px; color: #9A8070; margin: 0 0 20px;">De : <strong>${escapeHtml(userEmail)}</strong></p>
-          <div style="background: #FAF6EF; border-left: 3px solid #C8813A; padding: 16px 20px; border-radius: 8px; font-size: 15px; line-height: 1.7; color: #3D2B1F; white-space: pre-wrap;">${escapeHtml(message)}</div>
-          ${userEmail !== "unknown" ? `<p style="font-size: 13px; color: #9A8070; margin: 20px 0 0;">Répondre directement à : <a href="mailto:${escapeHtml(userEmail)}" style="color: #C8813A;">${escapeHtml(userEmail)}</a></p>` : ""}
-        </div>
-      `,
+      html: baseLayout(
+        heroSection("💡", "Nouvelle suggestion Everypaw") +
+        paragraph(`<strong>From:</strong> ${escapeHtml(userEmail)}`) +
+        quote(`"${escapeHtml(message)}"`) +
+        divider() +
+        (userEmail !== "unknown" ? colorSection(
+          `<strong>Reply directly:</strong> <a href="mailto:${escapeHtml(userEmail)}" style="color:#FDFAF5;text-decoration:underline;">${escapeHtml(userEmail)}</a>`,
+          BRAND.accent,
+          "#FDFAF5"
+        ) : ""),
+        "",
+        "fr"
+      ),
     });
     if (resendError) {
       log.error("[suggestion] Resend error:", resendError);

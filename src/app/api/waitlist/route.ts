@@ -3,7 +3,7 @@ import { Resend } from "resend";
 import { NextResponse } from "next/server";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 import { escapeHtml } from "@/lib/html";
-import { baseLayout, emoji, heading, paragraph } from "@/lib/email-templates";
+import { baseLayout, heroSection, paragraph, divider, colorSection, ctaButton, BRAND } from "@/lib/email-templates";
 import { EMAIL_REGEX } from "@/lib/validation";
 
 export async function POST(req: Request) {
@@ -30,10 +30,14 @@ export async function POST(req: Request) {
       to: email,
       subject: "You're on the list 🐾",
       html: baseLayout(
-        emoji("🐾") +
-        heading("You're on the Everypaw waitlist.") +
+        heroSection("🐾", "You're on the Everypaw waitlist.") +
         paragraph("We're building something special, an AI journal that turns your pet's daily moments into a beautiful printed book.") +
-        paragraph(`As one of our first members, you'll get <strong style="color:#C8813A;">50% off</strong> when we launch. We'll be in touch soon.`) +
+        divider() +
+        colorSection(
+          `<strong>Welcome to the early access.</strong> As one of our first members, you'll get <strong>50% off</strong> when we launch. We'll be in touch soon.`,
+          BRAND.accent,
+          "#FDFAF5"
+        ) +
         paragraph("The Everypaw team"),
         "",
         "en",
