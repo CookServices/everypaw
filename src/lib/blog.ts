@@ -102,6 +102,14 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-09-04",
     published: true,
   },
+  {
+    slug: "pet-journal-app-vs-photo-book",
+    title: "Pet Journal App vs Photo Book Service: Which One Actually Keeps the Memories?",
+    description:
+      "Pet journal app or photo book service? A side-by-side look at what each one captures, what it misses, and which approach keeps the real story of your pet.",
+    datePublished: "2026-09-04",
+    published: true,
+  },
 ];
 
 /** Published posts, newest first. */
