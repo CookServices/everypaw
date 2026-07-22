@@ -655,4 +655,11 @@ Maillage : pilier (4) → 5 autres + `/memorial` ; retour 1-3 → 4-6 (commit `e
 
 ⚠️ **Tiret cadratin résiduel hors scope** (repéré 2026-07-22, non corrigé) : `messages/fr.json` ligne ~377, clé `step3_desc` (page gift) — `"Le cadeau est activé pour toute la période — un mois de Digital ou un an de Print."`. Pas touché car hors périmètre de la tâche blog FR ; à nettoyer dans une prochaine session dédiée au contenu.
 
+**Suivi Search Console (2026-07-22)** :
+- **Sitemap** `everypaw.app/sitemap.xml` : "Opération effectuée", 21 URLs découvertes, dernière lecture 22 juil. (erreur fetch du 07-12 résolue ✓)
+- **Pages indexées** (2) : `https://everypaw.app/` (3 juil.), `/auth/login` (28 juin)
+- **Pages non-indexées** (2) : `http://everypaw.app/` (redirection 308 HTTP→HTTPS), `https://everypaw.app/fr` (explorée, actuellement non-indexée, 29 juin)
+- **Articles blog + pages légales FR** : non crawlés par Google encore (hors GSC)
+- **Action** : `/fr` soumis pour indexation manuelle (22 juil.)
+
 Session 56 (SEO canonicals/robots.ts/sitemap.ts) archivée dans [docs/SESSIONS.md](docs/SESSIONS.md).
