@@ -662,12 +662,13 @@ Maillage : pilier (4) → 5 autres + `/memorial` ; retour 1-3 → 4-6 (commit `e
 - **Articles blog + pages légales FR** : non crawlés par Google encore (hors GSC)
 - **Action** : `/fr` soumis pour indexation manuelle (22 juil.)
 
-**Session 2026-07-22 — Améliorations rendus visuels emails** :
+**Session 2026-07-22 — Amélioration rendus visuels emails** :
 - **Nouvelles primitives** `email-templates.ts` : `divider()`, `card()`, `colorSection()`, `list()`, `heroSection()` → riche structure visuelle sans briser compatibilité
-- **Refonte crons** (3 fichiers) :
+- **Refonte crons** (4 fichiers) :
   - `weekly-reminder` : `heroSection("✍️")` + `colorSection` engagement + divider séparation
   - `monthly-story` : `heroSection("📖")` + section urgence "nouvelle histoire lue cette semaine"
   - `first-story-nudge` : `heroSection("✨")` + section "prêt(e) à voir l'histoire?"
+  - `on-this-day` : `heroSection` + colorSection urgence Print "ces souvenirs méritent un livre"
 - **Refonte auth emails** (4 types) :
   - Signup confirm : heroSection + colorSection "confirmez votre email"
   - Password reset : heroSection + section timeout (rouge pale)
@@ -675,6 +676,7 @@ Maillage : pilier (4) → 5 autres + `/memorial` ; retour 1-3 → 4-6 (commit `e
   - Change email : heroSection + section "confirmer maintenant"
 - **Gift email** : heroSection + divider + section CTA urgence
 - **Localization** : EN/FR préservée 100% via `locale` param + traductions contextuelles dans colorSections
-- **Commits** : `edaea6c` (GSC suivi), `58cdbc0` (email visuals)
+- **Backlog emails restants** (4 crons + 3 APIs) — reportés : `birthday-check`, `daily-prompts`, `streak-alert`, `retention-emails` + `contact`, `waitlist`, `suggestion`
+- **Commits** : `edaea6c` (GSC suivi), `58cdbc0` (email templates), `92849ab` (doc session), `c75ab98` (on-this-day)
 
 Session 56 (SEO canonicals/robots.ts/sitemap.ts) archivée dans [docs/SESSIONS.md](docs/SESSIONS.md).
