@@ -642,7 +642,7 @@ Chantier : rendre la version FR crawlable par Google sans réintroduire next-int
 11. `best-pet-journal-app` — "Best Pet Journal Apps in 2026: What They Actually Do (and Don't)" (`datePublished` 2026-09-04, comparatif honnête DogNote/PetDesk/Everypaw/Voyage/notes apps, commit `6d48a67`)
 12. `pet-journal-app-vs-photo-book` — "Pet Journal App vs Photo Book Service: Which One Actually Keeps the Memories?" (`datePublished` 2026-09-04, commit `19423e7`)
 
-Maillage : pilier (4) → 5 autres + `/memorial` ; retour 1-3 → 4-6 (commit `e296866`) ; retour 1,3,5,6 → 7,8,9 (commit `e0b67b1`) ; retour 2,4,7,9 → 10,11,12 (commit à venir). Plus de placeholder non publié, plus de lien interne cassé à ce jour. Lien « Blog » dans le footer full (landing).
+Maillage : pilier (4) → 5 autres + `/memorial` ; retour 1-3 → 4-6 (commit `e296866`) ; retour 1,3,5,6 → 7,8,9 (commit `e0b67b1`) ; retour 2,4,7,9 → 10,11,12 (commit `7aff546`). Plus de placeholder non publié, plus de lien interne cassé à ce jour. Lien « Blog » dans le footer full (landing).
 
 **Note article 11** : la description de l'app tierce Voyage a été corrigée par rapport au brief initial lors de la rédaction — recherche web (2026-07-22) a montré que Voyage est en réalité une app pet-spécifique ("Voyage: Pet Health & Diary") combinant génération IA de journal ET tracking santé, pas une app généraliste adaptée par les users comme supposé. DogNote et PetDesk confirmés conformes au brief.
 
