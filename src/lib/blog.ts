@@ -219,6 +219,15 @@ export const BLOG_POSTS_FR: BlogPostFr[] = [
     datePublished: "2026-07-22",
     published: true,
   },
+  {
+    slug: "idees-cadeaux-maitres-animaux",
+    slugEn: "gifts-for-pet-parents",
+    title: "Idées de cadeaux originaux pour les maîtres d'animaux qui ont déjà tout",
+    description:
+      "Onze idées de cadeaux pour les maîtres d'animaux qui ont déjà tous les jouets, friandises et bandanas : des présents qui capturent l'histoire de leur animal, pas leur placard.",
+    datePublished: "2026-09-04",
+    published: true,
+  },
 ];
 
 /** Published French posts, newest first. */
