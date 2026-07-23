@@ -364,9 +364,9 @@ export default function SignupPage() {
               <span style={{ fontSize: ".78rem", color: "#7A5C44", lineHeight: 1.55, fontWeight: 300 }}>
                 {isFR ? (
                   <>En créant un compte, j'accepte les{" "}
-                    <Link href="/legal/terms" target="_blank" style={{ color: "#C8813A", textDecoration: "underline" }}>Conditions générales de vente</Link>
+                    <Link href="/legal/cgv" target="_blank" style={{ color: "#C8813A", textDecoration: "underline" }}>Conditions générales de vente</Link>
                     {" "}et la{" "}
-                    <Link href="/legal/privacy" target="_blank" style={{ color: "#C8813A", textDecoration: "underline" }}>Politique de confidentialité</Link>.
+                    <Link href="/legal/confidentialite" target="_blank" style={{ color: "#C8813A", textDecoration: "underline" }}>Politique de confidentialité</Link>.
                   </>
                 ) : (
                   <>By creating an account, I agree to the{" "}

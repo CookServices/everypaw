@@ -54,7 +54,7 @@ export default function Home({ locale }: { locale: Locale }) {
     ["✨", t.landing.f2_title, t.landing.f2_desc],
     ["📖", t.landing.f3_title, t.landing.f3_desc],
     ["🐾", t.landing.f4_title, t.landing.f4_desc],
-    ["🕊️", t.landing.f5_title, t.landing.f5_desc, "/memorial"],
+    ["🕊️", t.landing.f5_title, t.landing.f5_desc, locale === "fr" ? "/fr/memorial" : "/memorial"],
   ];
 
   const steps = [
@@ -418,7 +418,7 @@ export default function Home({ locale }: { locale: Locale }) {
               <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", marginBottom: "1rem" }}>🎁</div>
               <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, marginBottom: ".5rem" }}>{t.landing.f6_title}</h3>
               <p style={{ fontSize: ".875rem", color: "#7A5C44", lineHeight: 1.6, fontWeight: 300, flex: 1 }}>{t.landing.f6_desc}</p>
-              <Link href="/gift" style={{ display: "block", marginTop: "1.25rem", padding: ".75rem 1.75rem", borderRadius: "100px", background: "#C8813A", color: "#FDFAF5", fontSize: ".875rem", fontWeight: 500, textDecoration: "none", textAlign: "center", boxShadow: "0 4px 20px rgba(200,129,58,.35)" }}>
+              <Link href={locale === "fr" ? "/fr/gift" : "/gift"} style={{ display: "block", marginTop: "1.25rem", padding: ".75rem 1.75rem", borderRadius: "100px", background: "#C8813A", color: "#FDFAF5", fontSize: ".875rem", fontWeight: 500, textDecoration: "none", textAlign: "center", boxShadow: "0 4px 20px rgba(200,129,58,.35)" }}>
                 {t.landing.f6_cta}
               </Link>
             </div>

@@ -188,7 +188,7 @@ export default function GiftContent({ locale }: { locale: Locale }) {
           <p style={{ fontSize: ".75rem", color: "#9A8070", margin: "0 0 1.5rem", fontWeight: 300 }}>
             {t.gift.code_validity}
           </p>
-          <Link href="/" style={{ background: "#C8813A", color: "#FDFAF5", padding: ".75rem 2rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
+          <Link href={isFR ? "/fr" : "/"} style={{ background: "#C8813A", color: "#FDFAF5", padding: ".75rem 2rem", borderRadius: 100, fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}>
             {t.gift.back}
           </Link>
         </div>
@@ -297,7 +297,7 @@ export default function GiftContent({ locale }: { locale: Locale }) {
                     {authError ? (
                       <>
                         {isFR ? "Vous devez être connecté pour offrir un cadeau." : "You must be signed in to send a gift."}{" "}
-                        <a href="/auth/login?redirect=/gift" style={{ color: "#991B1B", fontWeight: 600, textDecoration: "underline" }}>
+                        <a href={`/auth/login?redirect=${isFR ? "/fr/gift" : "/gift"}`} style={{ color: "#991B1B", fontWeight: 600, textDecoration: "underline" }}>
                           {isFR ? "Se connecter" : "Sign in"}
                         </a>
                       </>
@@ -438,7 +438,7 @@ export default function GiftContent({ locale }: { locale: Locale }) {
               </p>
               <p style={{ fontSize: ".72rem", color: "#9A8070", margin: 0, lineHeight: 1.5, fontWeight: 300, textAlign: "center" }}>
                 {isFR ? (
-                  <>En continuant, vous acceptez les <a href="/legal/terms" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>CGV</a>.</>
+                  <>En continuant, vous acceptez les <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>CGV</a>.</>
                 ) : (
                   <>By continuing, you agree to our <a href="/legal/terms" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Terms of Sale</a>.</>
                 )}
