@@ -228,6 +228,15 @@ export const BLOG_POSTS_FR: BlogPostFr[] = [
     datePublished: "2026-09-04",
     published: true,
   },
+  {
+    slug: "meilleure-application-journal-animalier",
+    slugEn: "best-pet-journal-app",
+    title: "Meilleures applications de journal animalier en 2026 : ce qu'elles font vraiment (et ce qu'elles ne font pas)",
+    description:
+      "Une comparaison honnête des applications de journal animalier en 2026 : ce que chacune fait bien, ce qu'elle laisse de côté, et comment choisir celle qui correspond à votre façon de vous souvenir de votre animal.",
+    datePublished: "2026-09-04",
+    published: true,
+  },
 ];
 
 /** Published French posts, newest first. */
