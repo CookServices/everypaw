@@ -14,6 +14,13 @@ import type { Plan } from "@/lib/plan";
 import { compressImage } from "@/lib/image";
 import { MOOD_OPTIONS, EMOJI_CATEGORIES, ALL_EMOJIS, SPECIES_EMOJI, STORY_STYLES } from "./constants";
 import { groupEntriesByMonth } from "./utils";
+import MemorialModal from "./components/MemorialModal";
+import UpsellModal from "./components/UpsellModal";
+import ShareCardModal from "./components/ShareCardModal";
+import DeleteEntryModal from "./components/DeleteEntryModal";
+import EditEntryModal from "./components/EditEntryModal";
+import GenerateStoryModal from "./components/GenerateStoryModal";
+import Lightbox from "./components/Lightbox";
 
 export default function PetPage({ params }: { params: { id: string } }) {
   const { id } = params;
@@ -637,441 +644,69 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
       {/* Memorial modal */}
       {showMemorialModal && (
-        <div onClick={() => setShowMemorialModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(28,20,16,.75)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "var(--ep-bg-card)", borderRadius: 24, padding: "2rem", maxWidth: 400, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,.25)" }}>
-            <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-              <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>🕊️</div>
-              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .4rem" }}>{t.memorial.modal_title.replace("{name}", pet.name)}</h2>
-              <p style={{ fontSize: ".8rem", color: "var(--ep-text-muted)", fontWeight: 300, margin: 0 }}>{t.memorial.modal_subtitle}</p>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div>
-                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "var(--ep-text-muted)", display: "block", marginBottom: ".4rem" }}>{t.memorial.date_label}</label>
-                <input type="date" value={deceasedAt} onChange={e => setDeceasedAt(e.target.value)} style={{ width: "100%", padding: ".75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "var(--ep-bg)", fontFamily: "inherit", fontSize: ".9rem", color: "var(--ep-text)", outline: "none", boxSizing: "border-box" as const }} />
-              </div>
-              <div>
-                <label style={{ fontSize: ".75rem", fontWeight: 500, color: "var(--ep-text-muted)", display: "block", marginBottom: ".4rem" }}>{t.memorial.message_label}</label>
-                <textarea value={memorialMessage} onChange={e => setMemorialMessage(e.target.value)} placeholder={t.memorial.message_placeholder} rows={3} style={{ width: "100%", padding: ".75rem 1rem", borderRadius: 12, border: "1.5px solid rgba(61,43,31,.15)", background: "var(--ep-bg)", fontFamily: "inherit", fontSize: ".9rem", color: "var(--ep-text)", outline: "none", resize: "none", boxSizing: "border-box" as const, lineHeight: 1.6 }} />
-              </div>
-
-              {/* Photo du mémorial */}
-              {(() => {
-                const entryPhotos = Array.from(new Set(entries.flatMap(e => e.photo_urls ?? []).filter(Boolean)));
-                const displaySrc = memorialPhotoPreview ?? memorialPhotoUrl;
-                return (
-                  <div>
-                    <label style={{ fontSize: ".75rem", fontWeight: 500, color: "var(--ep-text-muted)", display: "block", marginBottom: ".75rem" }}>
-                      {isFR ? "Photo du mémorial (optionnel)" : "Memorial photo (optional)"}
-                    </label>
-                    <div style={{ display: "flex", gap: "1rem", alignItems: "center", marginBottom: showMemorialPhotoGrid ? ".75rem" : 0 }}>
-                      {/* Preview */}
-                      <div style={{ width: 76, height: 76, borderRadius: 14, overflow: "hidden", background: "rgba(61,43,31,.07)", border: "1.5px solid rgba(61,43,31,.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        {displaySrc
-                          ? <img src={displaySrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                          : <span style={{ fontSize: "1.75rem" }}>🕊️</span>}
-                      </div>
-                      {/* Actions */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: ".4rem" }}>
-                        <button
-                          type="button"
-                          onClick={() => memorialPhotoInputRef.current?.click()}
-                          style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".375rem .75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "var(--ep-text-muted)", cursor: "pointer" }}
-                        >
-                          {isFR ? "Uploader une photo" : "Upload a photo"}
-                        </button>
-                        {entryPhotos.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setShowMemorialPhotoGrid(v => !v)}
-                            style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".375rem .75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "var(--ep-text-muted)", cursor: "pointer" }}
-                          >
-                            {isFR ? "Choisir dans le journal" : "Pick from journal"} {showMemorialPhotoGrid ? "▲" : "▼"}
-                          </button>
-                        )}
-                        {displaySrc && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setMemorialPhotoUrl(null);
-                              setMemorialPhotoFile(null);
-                              if (memorialPhotoPreview) URL.revokeObjectURL(memorialPhotoPreview);
-                              setMemorialPhotoPreview(null);
-                            }}
-                            style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", padding: ".375rem .5rem", borderRadius: 100, border: "none", background: "transparent", fontFamily: "inherit", fontSize: ".72rem", color: "var(--ep-text-faint)", cursor: "pointer" }}
-                          >
-                            × {isFR ? "Retirer" : "Remove"}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Grid de photos du journal */}
-                    {showMemorialPhotoGrid && entryPhotos.length > 0 && (
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4, maxHeight: 168, overflowY: "auto", borderRadius: 10, padding: 2 }}>
-                        {entryPhotos.map((url, i) => (
-                          <div
-                            key={i}
-                            onClick={() => {
-                              setMemorialPhotoUrl(url);
-                              setMemorialPhotoFile(null);
-                              if (memorialPhotoPreview) URL.revokeObjectURL(memorialPhotoPreview);
-                              setMemorialPhotoPreview(null);
-                              setShowMemorialPhotoGrid(false);
-                            }}
-                            style={{ position: "relative", cursor: "pointer", borderRadius: 6, overflow: "hidden", border: `2px solid ${memorialPhotoUrl === url ? "var(--ep-brand)" : "transparent"}`, aspectRatio: "1 / 1" }}
-                          >
-                            <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <input
-                      ref={memorialPhotoInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={e => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        if (memorialPhotoPreview) URL.revokeObjectURL(memorialPhotoPreview);
-                        setMemorialPhotoFile(file);
-                        setMemorialPhotoPreview(URL.createObjectURL(file));
-                        setMemorialPhotoUrl(null);
-                        e.target.value = "";
-                      }}
-                      style={{ display: "none" }}
-                    />
-                  </div>
-                );
-              })()}
-            </div>
-            <div style={{ display: "flex", gap: ".75rem", marginTop: "1.5rem" }}>
-              <button onClick={() => setShowMemorialModal(false)} style={{ flex: 1, padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", fontFamily: "inherit", fontSize: ".875rem", color: "var(--ep-text-muted)", cursor: "pointer" }}>
-                {t.memorial.cancel}
-              </button>
-              <button onClick={saveMemorial} disabled={savingMemorial || !deceasedAt} style={{ flex: 2, padding: ".75rem", borderRadius: 100, border: "none", background: "var(--ep-memorial)", color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: savingMemorial || !deceasedAt ? .6 : 1 }}>
-                {savingMemorial ? t.memorial.saving : t.memorial.save}
-              </button>
-            </div>
-          </div>
-        </div>
+        <MemorialModal
+          t={t} isFR={isFR} petName={pet.name} entries={entries}
+          deceasedAt={deceasedAt} setDeceasedAt={setDeceasedAt}
+          memorialMessage={memorialMessage} setMemorialMessage={setMemorialMessage}
+          memorialPhotoUrl={memorialPhotoUrl} setMemorialPhotoUrl={setMemorialPhotoUrl}
+          setMemorialPhotoFile={setMemorialPhotoFile}
+          memorialPhotoPreview={memorialPhotoPreview} setMemorialPhotoPreview={setMemorialPhotoPreview}
+          showMemorialPhotoGrid={showMemorialPhotoGrid} setShowMemorialPhotoGrid={setShowMemorialPhotoGrid}
+          memorialPhotoInputRef={memorialPhotoInputRef} savingMemorial={savingMemorial}
+          onSave={saveMemorial} onClose={() => setShowMemorialModal(false)}
+        />
       )}
 
       {/* Upsell modal */}
       {showUpsellModal && (
-        <div onClick={() => setShowUpsellModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.55)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "var(--ep-bg-card)", borderRadius: 24, padding: "2rem", maxWidth: 400, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,.2)", textAlign: "center" }}>
-            <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>✦</div>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.2rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .75rem" }}>
-              {t.dashboard.upsell_title}
-            </h2>
-            <p style={{ fontSize: ".875rem", color: "var(--ep-text-muted)", fontWeight: 300, lineHeight: 1.65, margin: "0 0 1.75rem" }}>
-              {t.dashboard.upsell_desc.replace("{name}", pet?.name ?? "")}
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-              <Link href="/dashboard/upgrade" style={{ display: "block", padding: ".75rem 1.5rem", borderRadius: 100, background: "var(--ep-brand)", color: "var(--ep-bg-card)", textDecoration: "none", fontSize: ".875rem", fontWeight: 500 }}>
-                {t.dashboard.upsell_cta}
-              </Link>
-              <button onClick={() => setShowUpsellModal(false)} style={{ padding: ".75rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "var(--ep-text-muted)", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer" }}>
-                {t.dashboard.upsell_later}
-              </button>
-            </div>
-          </div>
-        </div>
+        <UpsellModal t={t} petName={pet?.name ?? ""} onClose={() => setShowUpsellModal(false)} />
       )}
 
       {/* Share card modal */}
       {shareCardStory && (
-        <div onClick={() => setShareCardStory(null)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.6)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "var(--ep-bg-card)", borderRadius: 24, padding: "1.75rem", maxWidth: 420, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,.22)" }}>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 1.25rem", textAlign: "center" }}>
-              {t.stories.share_card_modal_title}
-            </h2>
-            {/* Format picker */}
-            <div style={{ display: "flex", gap: ".625rem", marginBottom: "1.25rem" }}>
-              {(["square", "story"] as const).map(fmt => (
-                <button
-                  key={fmt}
-                  onClick={() => setShareCardFormat(fmt)}
-                  style={{
-                    flex: 1, padding: ".625rem .5rem",
-                    borderRadius: 12,
-                    border: `1.5px solid ${shareCardFormat === fmt ? "var(--ep-brand)" : "rgba(61,43,31,.15)"}`,
-                    background: shareCardFormat === fmt ? "rgba(200,129,58,.08)" : "transparent",
-                    color: shareCardFormat === fmt ? "var(--ep-brand)" : "var(--ep-text-muted)",
-                    fontSize: ".78rem", fontWeight: shareCardFormat === fmt ? 600 : 400,
-                    cursor: "pointer", fontFamily: "inherit",
-                    transition: "all .15s",
-                  }}
-                >
-                  {fmt === "square" ? t.stories.share_card_format_square : t.stories.share_card_format_story}
-                </button>
-              ))}
-            </div>
-            {/* Preview thumbnail */}
-            <div style={{
-              background: "#FAF6F0",
-              borderRadius: 14,
-              marginBottom: "1.25rem",
-              overflow: "hidden",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              aspectRatio: shareCardFormat === "story" ? "9/16" : "1/1",
-              border: "1px solid rgba(61,43,31,.08)",
-              maxHeight: 240,
-            }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/api/share-card?story_id=${shareCardStory.id}&format=${shareCardFormat}`}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                onError={() => setShareCardError(true)}
-              />
-            </div>
-            {shareCardError && (
-              <p style={{ fontSize: ".78rem", color: "#C0392B", textAlign: "center", margin: "0 0 1rem" }}>
-                {t.stories.share_error}
-              </p>
-            )}
-            {/* Actions */}
-            <div style={{ display: "flex", gap: ".625rem" }}>
-              <button
-                onClick={downloadShareCard}
-                disabled={shareCardLoading || !shareCardBlob}
-                style={{
-                  flex: 1, padding: ".75rem", borderRadius: 100,
-                  background: "var(--ep-brand)", color: "var(--ep-bg-card)",
-                  border: "none", fontSize: ".875rem", fontWeight: 500,
-                  cursor: shareCardLoading ? "wait" : "pointer",
-                  fontFamily: "inherit", opacity: (shareCardLoading || !shareCardBlob) ? .65 : 1,
-                  transition: "opacity .15s",
-                }}
-              >
-                {shareCardLoading ? t.stories.share_generating : t.stories.share_card_share}
-              </button>
-              <button
-                onClick={() => setShareCardStory(null)}
-                style={{
-                  padding: ".75rem 1.25rem", borderRadius: 100,
-                  border: "1.5px solid rgba(61,43,31,.15)",
-                  background: "transparent", color: "var(--ep-text-muted)",
-                  fontSize: ".875rem", cursor: "pointer", fontFamily: "inherit",
-                }}
-              >
-                {t.stories.share_card_close}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ShareCardModal
+          t={t} story={shareCardStory}
+          format={shareCardFormat} setFormat={setShareCardFormat}
+          error={shareCardError} setError={setShareCardError}
+          loading={shareCardLoading} blob={shareCardBlob}
+          onDownload={downloadShareCard} onClose={() => setShareCardStory(null)}
+        />
       )}
 
       {/* Delete entry confirmation modal */}
       {deletingEntryId && (
-        <div onClick={() => setDeletingEntryId(null)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "var(--ep-bg-card)", borderRadius: 20, padding: "1.75rem", maxWidth: 360, width: "100%", boxShadow: "0 8px 40px rgba(61,43,31,.18)" }}>
-            <p style={{ fontSize: ".9rem", color: "var(--ep-text)", margin: "0 0 1.25rem", lineHeight: 1.5 }}>
-              {isFR ? "Voulez-vous vraiment supprimer ce moment ?" : "Are you sure you want to delete this moment?"}
-            </p>
-            <div style={{ display: "flex", gap: ".625rem" }}>
-              <button onClick={() => setDeletingEntryId(null)} style={{ flex: 1, padding: ".6rem 1rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "var(--ep-text-muted)", fontFamily: "inherit", fontSize: ".85rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
-                {isFR ? "Annuler" : "Cancel"}
-              </button>
-              <button onClick={() => deleteEntry(deletingEntryId)} style={{ flex: 1, padding: ".6rem 1rem", borderRadius: 100, border: "none", background: "var(--ep-alert)", color: "#fff", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
-                {isFR ? "Supprimer" : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteEntryModal isFR={isFR} onCancel={() => setDeletingEntryId(null)} onConfirm={() => deleteEntry(deletingEntryId)} />
       )}
 
       {/* Edit entry modal */}
       {editingEntry && (
-        <div onClick={() => setEditingEntry(null)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "var(--ep-bg-card)", borderRadius: 20, padding: "1.75rem", maxWidth: 440, width: "100%", boxShadow: "0 8px 40px rgba(61,43,31,.18)", maxHeight: "90vh", overflowY: "auto" }}>
-            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 1rem" }}>
-              {isFR ? "Modifier ce moment" : "Edit this moment"}
-            </h3>
-            <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4} maxLength={1000}
-              style={{ width: "100%", boxSizing: "border-box", padding: ".75rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "var(--ep-bg)", fontFamily: "inherit", fontSize: ".9rem", color: "var(--ep-text)", resize: "none", outline: "none", lineHeight: 1.6 }} />
-
-            {/* Emoji / mood */}
-            <div style={{ margin: ".75rem 0 1rem" }}>
-              <div ref={editEmojiPickerRef} style={{ position: "relative", display: "inline-block" }}>
-                <div style={{ position: "relative", display: "inline-block" }}>
-                  <button onClick={() => setShowEditEmojiPicker(v => !v)}
-                    style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${editMood ? "var(--ep-brand)" : "rgba(61,43,31,.2)"}`, background: editMood ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset" }}
-                    title={isFR ? "Ajouter une émoticône" : "Add an emoji"}>
-                    {editMood ? (ALL_EMOJIS.find(e => e.value === editMood)?.emoji ?? "😊") : "😊"}
-                  </button>
-                  {editMood && (
-                    <button onClick={e => { e.stopPropagation(); setEditMood(null); }}
-                      style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: "50%", background: "rgba(61,43,31,.25)", color: "var(--ep-text)", border: "none", cursor: "pointer", fontSize: "9px", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, padding: 0, fontWeight: 700, minHeight: "unset" }}>
-                      ✕
-                    </button>
-                  )}
-                </div>
-                {showEditEmojiPicker && (
-                  <div style={{ position: "absolute", top: "calc(100% + .5rem)", left: 0, background: "var(--ep-bg-card)", border: "1px solid rgba(61,43,31,.1)", borderRadius: 16, boxShadow: "0 8px 30px rgba(61,43,31,.15)", padding: "1rem", zIndex: 60, width: 280, maxHeight: 300, overflowY: "auto" }}>
-                    {EMOJI_CATEGORIES.map(cat => (
-                      <div key={cat.label} style={{ marginBottom: ".75rem" }}>
-                        <p style={{ fontSize: ".65rem", fontWeight: 600, color: "var(--ep-text-faint)", margin: "0 0 .4rem" }}>{cat.label}</p>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: ".2rem" }}>
-                          {cat.emojis.map(e => (
-                            <button key={e.value} onClick={() => { setEditMood(editMood === e.value ? null : e.value); setShowEditEmojiPicker(false); }}
-                              title={e.label}
-                              style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${editMood === e.value ? "var(--ep-brand)" : "transparent"}`, background: editMood === e.value ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              {e.emoji}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Existing photos */}
-            {editPhotos.length > 0 && (
-              <div style={{ marginBottom: ".75rem" }}>
-                <p style={{ fontSize: ".72rem", fontWeight: 500, color: "var(--ep-text-muted)", margin: "0 0 .5rem" }}>{isFR ? "Photos existantes" : "Existing photos"}</p>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {editPhotos.map((url, i) => (
-                    <div key={i} style={{ position: "relative", width: 64, height: 64 }}>
-                      <img src={url} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8 }} />
-                      <button onClick={() => setEditPhotos(prev => prev.filter((_, idx) => idx !== i))} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "var(--ep-alert)", color: "#fff", border: "none", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset", padding: 0 }}>×</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* New pending photos */}
-            {editPendingPhotos.length > 0 && (
-              <div style={{ marginBottom: ".75rem" }}>
-                <p style={{ fontSize: ".72rem", fontWeight: 500, color: "var(--ep-text-muted)", margin: "0 0 .5rem" }}>{isFR ? "Nouvelles photos" : "New photos"}</p>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {editPendingPhotos.map((p, i) => (
-                    <div key={i} style={{ position: "relative", width: 64, height: 64 }}>
-                      <img src={p.preview} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8 }} />
-                      <button onClick={() => setEditPendingPhotos(prev => { URL.revokeObjectURL(prev[i].preview); return prev.filter((_, idx) => idx !== i); })} style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: "var(--ep-text)", color: "#fff", border: "none", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Add photo button */}
-            {editPhotos.length + editPendingPhotos.length < 5 && (
-              <button
-                onClick={() => editFileInputRef.current?.click()}
-                style={{ display: "flex", alignItems: "center", gap: ".4rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "var(--ep-text-muted)", fontFamily: "inherit", fontSize: ".8rem", cursor: "pointer", marginBottom: ".75rem" }}
-              >
-                <span>{isFR ? "Ajouter une photo" : "Add a photo"}</span>
-              </button>
-            )}
-            <input
-              ref={editFileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={e => {
-                const files = Array.from(e.target.files || []);
-                const remaining = 5 - editPhotos.length - editPendingPhotos.length;
-                const newPhotos = files.slice(0, remaining).map(f => ({ file: f, preview: URL.createObjectURL(f) }));
-                setEditPendingPhotos(prev => [...prev, ...newPhotos]);
-                e.target.value = "";
-              }}
-              style={{ display: "none" }}
-            />
-
-            <div style={{ display: "flex", gap: ".625rem", marginTop: ".5rem" }}>
-              <button onClick={() => setEditingEntry(null)} style={{ flex: 1, padding: ".6rem 1rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", color: "var(--ep-text-muted)", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
-                {isFR ? "Annuler" : "Cancel"}
-              </button>
-              <button onClick={updateEntry} disabled={savingEdit} style={{ flex: 2, padding: ".6rem 1rem", borderRadius: 100, border: "none", background: "var(--ep-brand)", color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: "pointer", opacity: savingEdit ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>
-                {savingEdit ? (isFR ? "Enregistrement…" : "Saving…") : (isFR ? "Enregistrer" : "Save")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditEntryModal
+          isFR={isFR}
+          editContent={editContent} setEditContent={setEditContent}
+          editMood={editMood} setEditMood={setEditMood}
+          showEditEmojiPicker={showEditEmojiPicker} setShowEditEmojiPicker={setShowEditEmojiPicker}
+          editEmojiPickerRef={editEmojiPickerRef}
+          editPhotos={editPhotos} setEditPhotos={setEditPhotos}
+          editPendingPhotos={editPendingPhotos} setEditPendingPhotos={setEditPendingPhotos}
+          editFileInputRef={editFileInputRef}
+          savingEdit={savingEdit} onSave={updateEntry} onClose={() => setEditingEntry(null)}
+        />
       )}
 
       {/* Generate story modal */}
       {showGenerateModal && (
-        <div onClick={() => setShowGenerateModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(61,43,31,.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "var(--ep-bg-card)", borderRadius: 24, padding: "2rem", maxWidth: 480, width: "100%", boxShadow: "0 16px 60px rgba(61,43,31,.2)", maxHeight: "90vh", overflowY: "auto" }}>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.2rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 1.5rem" }}>
-              {isFR ? "Créer une histoire" : "Create a story"}
-            </h2>
-
-            {/* Style selector */}
-            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "var(--ep-text-muted)", margin: "0 0 .75rem" }}>
-              {isFR ? "Style narratif" : "Narrative style"}
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: ".5rem", marginBottom: "1.5rem" }}>
-              {STORY_STYLES.map(s => (
-                <button key={s.value} onClick={() => setStoryStyle(storyStyle === s.value ? null : s.value)}
-                  style={{ display: "flex", alignItems: "center", gap: ".875rem", padding: ".75rem 1rem", borderRadius: 12, border: `1.5px solid ${storyStyle === s.value ? "var(--ep-brand)" : "rgba(61,43,31,.12)"}`, background: storyStyle === s.value ? "rgba(200,129,58,.08)" : "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", transition: "all .12s" }}>
-                  <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>{s.icon}</span>
-                  <div>
-                    <p style={{ fontSize: ".875rem", fontWeight: 600, color: storyStyle === s.value ? "var(--ep-brand)" : "var(--ep-text)", margin: "0 0 .15rem" }}>{isFR ? s.labelFR : s.labelEN}</p>
-                    <p style={{ fontSize: ".75rem", color: "var(--ep-text-muted)", margin: 0, fontWeight: 300 }}>{isFR ? s.descFR : s.descEN}</p>
-                  </div>
-                  {storyStyle === s.value && <span style={{ marginLeft: "auto", fontSize: ".85rem", color: "var(--ep-brand)", flexShrink: 0 }}>✓</span>}
-                </button>
-              ))}
-            </div>
-
-            {/* Period selector */}
-            <p style={{ fontSize: ".72rem", fontWeight: 600, color: "var(--ep-text-muted)", margin: "0 0 .75rem" }}>
-              {isFR ? "Période (optionnel)" : "Period (optional)"}
-            </p>
-            {(() => {
-              const firstEntry = entries.length > 0 ? entries[entries.length - 1].entry_date : undefined;
-              const lastEntry = entries.length > 0 ? entries[0].entry_date : undefined;
-              const today = new Date().toISOString().split("T")[0];
-              const maxDate = lastEntry && lastEntry < today ? lastEntry : today;
-              return (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".625rem", marginBottom: "1.5rem" }}>
-                  <div>
-                    <label style={{ fontSize: ".72rem", color: "var(--ep-text-muted)", display: "block", marginBottom: ".3rem" }}>{isFR ? "Du" : "From"}</label>
-                    <input type="date" value={genPeriodStart} min={firstEntry} max={maxDate}
-                      onChange={e => setGenPeriodStart(e.target.value)}
-                      style={{ width: "100%", padding: ".625rem .875rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "var(--ep-bg)", fontFamily: "inherit", fontSize: ".85rem", color: "var(--ep-text)", outline: "none", boxSizing: "border-box" as const }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: ".72rem", color: "var(--ep-text-muted)", display: "block", marginBottom: ".3rem" }}>{isFR ? "Au" : "To"}</label>
-                    <input type="date" value={genPeriodEnd} min={firstEntry} max={maxDate}
-                      onChange={e => setGenPeriodEnd(e.target.value)}
-                      style={{ width: "100%", padding: ".625rem .875rem", borderRadius: 10, border: "1.5px solid rgba(61,43,31,.15)", background: "var(--ep-bg)", fontFamily: "inherit", fontSize: ".85rem", color: "var(--ep-text)", outline: "none", boxSizing: "border-box" as const }} />
-                  </div>
-                </div>
-              );
-            })()}
-            <p style={{ fontSize: ".75rem", color: "var(--ep-text-faint)", margin: "-.5rem 0 1.5rem", lineHeight: 1.5 }}>
-              {isFR ? "Sans période : toutes les entrées sont utilisées." : "Without a period: all entries are used."}
-            </p>
-
-            <div style={{ display: "flex", gap: ".75rem" }}>
-              <button onClick={() => setShowGenerateModal(false)} style={{ flex: 1, padding: ".75rem 1rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.15)", background: "transparent", color: "var(--ep-text-muted)", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 44 }}>
-                {isFR ? "Annuler" : "Cancel"}
-              </button>
-              <button onClick={generateStory} style={{ flex: 2, padding: ".75rem 1rem", borderRadius: 100, border: "none", background: "var(--ep-brand)", color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 44 }}>
-                {isFR ? "Générer ✨" : "Generate ✨"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <GenerateStoryModal
+          isFR={isFR} entries={entries}
+          storyStyle={storyStyle} setStoryStyle={setStoryStyle}
+          genPeriodStart={genPeriodStart} setGenPeriodStart={setGenPeriodStart}
+          genPeriodEnd={genPeriodEnd} setGenPeriodEnd={setGenPeriodEnd}
+          onGenerate={generateStory} onClose={() => setShowGenerateModal(false)}
+        />
       )}
 
       {/* Lightbox */}
       {lightboxUrl && (
-        <div onClick={() => setLightboxUrl(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", cursor: "pointer" }}>
-          <img src={lightboxUrl} alt="" style={{ maxWidth: "100%", maxHeight: "90vh", borderRadius: 12, objectFit: "contain" }} />
-          <button onClick={() => setLightboxUrl(null)} style={{ position: "absolute", top: "1rem", right: "1rem", background: "rgba(255,255,255,.15)", border: "none", color: "#fff", width: 36, height: 36, borderRadius: "50%", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
-        </div>
+        <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
       )}
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2rem 1.5rem" }}>
