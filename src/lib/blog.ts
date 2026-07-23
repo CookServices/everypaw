@@ -3,6 +3,8 @@
  * Drives the /blog index listing, sitemap inclusion, and per-article noindex.
  * `published: false` → article renders with noindex, excluded from index + sitemap.
  * Flip to `true` (and fill the article body) once the content is ready.
+ * A future `datePublished` also holds the article back (noindex, excluded from index +
+ * sitemap) until that date, even with `published: true` — see `isLive()`.
  */
 export interface BlogPost {
   slug: string;
@@ -112,15 +114,24 @@ export const BLOG_POSTS: BlogPost[] = [
   },
 ];
 
-/** Published posts, newest first. */
+/** True once `published` is set AND `datePublished` has arrived (UTC "today"). */
+function isLive(post: { datePublished: string; published: boolean }): boolean {
+  if (!post.published) return false;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  return post.datePublished <= todayIso;
+}
+
+/** Published posts, newest first. Excludes posts whose `datePublished` is still in the future. */
 export function getPublishedPosts(): BlogPost[] {
-  return BLOG_POSTS.filter((p) => p.published).sort((a, b) =>
+  return BLOG_POSTS.filter(isLive).sort((a, b) =>
     b.datePublished.localeCompare(a.datePublished)
   );
 }
 
+/** `published` reflects live status (registry flag AND date arrived), not just the raw flag. */
 export function getPost(slug: string): BlogPost | undefined {
-  return BLOG_POSTS.find((p) => p.slug === slug);
+  const post = BLOG_POSTS.find((p) => p.slug === slug);
+  return post && { ...post, published: isLive(post) };
 }
 
 /**
@@ -248,18 +259,21 @@ export const BLOG_POSTS_FR: BlogPostFr[] = [
   },
 ];
 
-/** Published French posts, newest first. */
+/** Published French posts, newest first. Excludes posts whose `datePublished` is still in the future. */
 export function getPublishedPostsFr(): BlogPostFr[] {
-  return BLOG_POSTS_FR.filter((p) => p.published).sort((a, b) =>
+  return BLOG_POSTS_FR.filter(isLive).sort((a, b) =>
     b.datePublished.localeCompare(a.datePublished)
   );
 }
 
+/** `published` reflects live status (registry flag AND date arrived), not just the raw flag. */
 export function getPostFr(slug: string): BlogPostFr | undefined {
-  return BLOG_POSTS_FR.find((p) => p.slug === slug);
+  const post = BLOG_POSTS_FR.find((p) => p.slug === slug);
+  return post && { ...post, published: isLive(post) };
 }
 
-/** French slug for a given English slug, for reciprocal hreflang on EN article pages. */
+/** French slug for a given English slug, for reciprocal hreflang on EN article pages. Only once live. */
 export function getFrSlugForEn(enSlug: string): string | undefined {
-  return BLOG_POSTS_FR.find((p) => p.slugEn === enSlug)?.slug;
+  const post = BLOG_POSTS_FR.find((p) => p.slugEn === enSlug);
+  return post && isLive(post) ? post.slug : undefined;
 }
