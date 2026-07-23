@@ -50,7 +50,7 @@ export default function PublicFooter({ variant = "minimal", locale, localeSwitch
   // "full" variant — legal links point to the locale-matched pages
   const isFr = effLocale === "fr";
   const links = [
-    { label: "Blog",                   href: "/blog" },
+    { label: "Blog",                   href: isFr ? "/fr/blog" : "/blog" },
     { label: t.landing.legal_cgv,      href: isFr ? "/legal/cgv" : "/legal/terms" },
     { label: t.landing.legal_privacy,  href: isFr ? "/legal/confidentialite" : "/legal/privacy" },
     { label: t.landing.legal_mentions, href: isFr ? "/legal/mentions" : "/legal/notices" },
