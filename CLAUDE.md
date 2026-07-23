@@ -91,6 +91,54 @@ Déploiement sur **Vercel** — push sur `main` = auto-deploy. Les variables d'e
 
 ---
 
+## Deployment & Staging
+
+**Architecture: Vercel Preview Deployments (free)**
+
+Everypaw uses auto-preview per PR (no persistent staging DB). Production uses `main` branch.
+
+### Workflow
+
+```
+1. Feature branch → Push to GitHub
+2. Create PR → Vercel auto deploys preview URL (*.vercel.app)
+3. Test on preview (shares prod Supabase DB)
+4. Review + Approve PR (GitHub ruleset required)
+5. Merge main → Auto deploy prod (everypaw.app)
+```
+
+### GitHub Branch Protection (`main`)
+
+Ruleset `main-protection` (configured 2026-07-23):
+- ✓ Require PR review before merge
+- ✓ Block force pushes
+- ✓ No status checks required (TODO: add after Vercel build status configured)
+
+### Test Data Discipline
+
+Preview deployments share production Supabase (no separate staging DB = free tier limitation).
+
+**Rules:**
+- Use test accounts only: `test-*@yopmail.com` (password `Test1234!`)
+- Never commit/push production user data
+- Clean test entries before demo
+- Test accounts list maintained in project memory
+
+### Preview Limitations
+
+- Crons (weekly-reminder, monthly-story, etc.) do NOT run on preview — test manually or on prod
+- Stripe webhook testing → use Stripe test mode, not preview
+- Long-running tasks may timeout (preview cold-starts)
+
+### When You Need Real Staging
+
+If you need isolated test data (persistent staging DB, crons running, webhook testing):
+- Upgrade Supabase to Pro (~$25/mo) to unlock preview branches
+- Create `staging` branch → separate Supabase project → own env vars in Vercel
+- Not currently implemented (cost/complexity trade-off)
+
+---
+
 ## Variables d'environnement (Vercel)
 
 ```
