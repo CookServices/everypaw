@@ -237,6 +237,15 @@ export const BLOG_POSTS_FR: BlogPostFr[] = [
     datePublished: "2026-09-04",
     published: true,
   },
+  {
+    slug: "application-journal-vs-livre-photo",
+    slugEn: "pet-journal-app-vs-photo-book",
+    title: "Application de journal animalier ou livre photo : lequel garde vraiment les souvenirs ?",
+    description:
+      "Application de journal animalier ou service de livre photo ? Un comparatif de ce que chacun capture, ce qu'il manque, et quelle approche garde vraiment l'histoire de votre animal.",
+    datePublished: "2026-09-04",
+    published: true,
+  },
 ];
 
 /** Published French posts, newest first. */
