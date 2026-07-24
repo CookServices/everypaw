@@ -8,11 +8,10 @@ import Link from "next/link";
 import { detectMilestones, MILESTONE_TYPES, translateMilestone, MilestoneDefinition } from "@/lib/milestones";
 import { useLocale } from "@/hooks/useLocale";
 import { fmtDateOrdinal } from "@/lib/date";
-import CoachMark from "@/components/CoachMark";
 import { evaluateFirstStoryNudge } from "@/lib/story";
 import type { Plan } from "@/lib/plan";
 import { compressImage } from "@/lib/image";
-import { MOOD_OPTIONS, EMOJI_CATEGORIES, ALL_EMOJIS, SPECIES_EMOJI, STORY_STYLES } from "./constants";
+import { MOOD_OPTIONS, EMOJI_CATEGORIES, ALL_EMOJIS } from "./constants";
 import { groupEntriesByMonth } from "./utils";
 import MemorialModal from "./components/MemorialModal";
 import UpsellModal from "./components/UpsellModal";
@@ -21,6 +20,13 @@ import DeleteEntryModal from "./components/DeleteEntryModal";
 import EditEntryModal from "./components/EditEntryModal";
 import GenerateStoryModal from "./components/GenerateStoryModal";
 import Lightbox from "./components/Lightbox";
+import PetHeader from "./components/PetHeader";
+import TabBar from "./components/TabBar";
+import StoriesTab from "./components/StoriesTab";
+import MilestonesTab from "./components/MilestonesTab";
+import TributesTab from "./components/TributesTab";
+import MembersTab from "./components/MembersTab";
+import CoachMarks from "./components/CoachMarks";
 
 export default function PetPage({ params }: { params: { id: string } }) {
   const { id } = params;
@@ -711,147 +717,17 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2rem 1.5rem" }}>
 
-        {/* Page header row: pet name + share button */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-          <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.25rem, 3vw, 1.75rem)", fontWeight: 600, color: "var(--ep-text)", margin: 0 }}>
-            {pet?.name ?? ""}
-          </h1>
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(`${window.location.origin}/pets/${id}?lang=${locale}`);
-              alert(t.pet.link_copied);
-            }}
-            style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "var(--ep-text-muted)", fontSize: ".8rem", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flexShrink: 0, transition: "border-color .12s, color .12s" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--ep-brand)"; (e.currentTarget as HTMLElement).style.color = "var(--ep-brand)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(61,43,31,.2)"; (e.currentTarget as HTMLElement).style.color = "var(--ep-text-muted)"; }}
-          >
-            {t.nav.share_profile}
-          </button>
-        </div>
+        <PetHeader
+          t={t} isFR={isFR} pet={pet} petId={id} locale={locale} dateLocale={dateLocale}
+          kebabRef={kebabRef}
+          showKebabMenu={showKebabMenu} setShowKebabMenu={setShowKebabMenu}
+          showDeleteConfirm={showDeleteConfirm} setShowDeleteConfirm={setShowDeleteConfirm}
+          onOpenMemorial={openMemorialModal} onDeletePet={deletePet} deletingPet={deletingPet}
+          milestones={milestones} totalMilestoneCount={totalMilestoneCount} milestoneDefinitions={milestoneDefinitions}
+          bioExpanded={bioExpanded} setBioExpanded={setBioExpanded}
+        />
 
-        {/* Pet header */}
-        <div style={{ background: "var(--ep-bg-card)", borderRadius: 20, padding: "1.25rem 1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)", position: "relative" }}>
-
-          {/* Kebab, absolute top-right */}
-          <div ref={kebabRef} style={{ position: "absolute", top: "1rem", right: "1rem", zIndex: 10 }}>
-            <button
-              onClick={() => { setShowKebabMenu(v => !v); setShowDeleteConfirm(false); }}
-              style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", color: "var(--ep-text-muted)", fontFamily: "inherit", minHeight: "unset", flexShrink: 0 }}
-              aria-label="Options"
-            >
-              ···
-            </button>
-            {showKebabMenu && (
-              <div style={{ position: "absolute", top: "calc(100% + .5rem)", right: 0, background: "var(--ep-bg-card)", border: "1px solid rgba(61,43,31,.1)", borderRadius: 14, boxShadow: "0 8px 30px rgba(61,43,31,.12)", minWidth: 200, overflow: "hidden", zIndex: 60 }}>
-                {!showDeleteConfirm ? (
-                  <>
-                    <Link href={`/dashboard/pets/${id}/edit`} style={{ display: "block", padding: ".75rem 1rem", fontSize: ".875rem", color: "var(--ep-text)", textDecoration: "none", fontFamily: "inherit" }} onClick={() => setShowKebabMenu(false)}>
-                      {t.pet.edit_profile}
-                    </Link>
-                    <button onClick={() => { setShowKebabMenu(false); openMemorialModal(); }} style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "var(--ep-memorial)", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
-                      {pet.deceased_at ? (isFR ? "Modifier le mémorial" : "Edit memorial") : t.memorial.mark_passed}
-                    </button>
-                    <button onClick={() => setShowDeleteConfirm(true)} style={{ display: "block", width: "100%", padding: ".75rem 1rem", fontSize: ".875rem", color: "var(--ep-alert)", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
-                      {t.pet.delete_pet}
-                    </button>
-                  </>
-                ) : (
-                  <div style={{ padding: "1rem" }}>
-                    <p style={{ fontSize: ".8rem", color: "var(--ep-text)", margin: "0 0 .875rem", lineHeight: 1.5 }}>{t.pet.delete_confirm.replace("{name}", pet.name)}</p>
-                    <div style={{ display: "flex", gap: ".5rem" }}>
-                      <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: ".5rem", borderRadius: 100, border: "1px solid rgba(61,43,31,.15)", background: "transparent", fontSize: ".8rem", color: "var(--ep-text-muted)", cursor: "pointer", fontFamily: "inherit" }}>{t.pet.delete_cancel}</button>
-                      <button onClick={deletePet} disabled={deletingPet} style={{ flex: 1, padding: ".5rem", borderRadius: 100, border: "none", background: "var(--ep-alert)", color: "#fff", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", opacity: deletingPet ? .6 : 1 }}>{t.pet.delete_yes}</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Top row: photo + name + breed */}
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem", paddingRight: "2.5rem" }}>
-            <div style={{ width: 72, height: 72, borderRadius: 18, background: "rgba(200,129,58,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.2rem", flexShrink: 0, overflow: "hidden" }}>
-              {pet.photo_url
-                ? <img src={pet.photo_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : SPECIES_EMOJI[pet.species]}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
-                <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.7rem, 4vw, 2.2rem)", fontWeight: 600, letterSpacing: "-.01em", color: "var(--ep-text)", margin: 0 }}>{pet.name}</h1>
-                {pet.deceased_at && (
-                  <span style={{ fontSize: ".7rem", background: "rgba(139,107,74,.12)", color: "var(--ep-memorial)", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".2rem .6rem", fontWeight: 500, letterSpacing: ".04em", whiteSpace: "nowrap" }}>
-                    🕊️ {t.memorial.badge}
-                  </span>
-                )}
-              </div>
-              <p style={{ fontSize: ".82rem", color: "var(--ep-text-muted)", fontWeight: 300, margin: ".2rem 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {pet.breed || pet.species}{pet.birthdate ? ` · ${t.pet.born} ${new Date(pet.birthdate).toLocaleDateString(dateLocale, { month: "long", year: "numeric" })}` : ""}
-              </p>
-            </div>
-          </div>
-
-          {/* Milestone badge, inline pill below name */}
-          {milestones.length > 0 && (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: ".5rem", marginTop: ".875rem", background: "rgba(200,129,58,.1)", borderRadius: 100, padding: ".35rem .875rem" }}>
-              <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", fontWeight: 600, color: "var(--ep-brand)" }}>{milestones.length} / {totalMilestoneCount}</span>
-              <span style={{ fontSize: ".7rem", color: "var(--ep-text-muted)" }}>{t.milestones.label}</span>
-              {milestones[0] && (() => {
-                const localTitle = translateMilestone(milestones[0].type, isFR, milestoneDefinitions, milestones[0].title);
-                return <span style={{ fontSize: ".7rem", color: "var(--ep-brand)", opacity: .85 }}>· 🏆 {localTitle.slice(0, 20)}{localTitle.length > 20 ? "…" : ""}</span>;
-              })()}
-            </div>
-          )}
-
-          {/* Bio, full width */}
-          {pet.bio && (
-            <div style={{ marginTop: ".875rem" }}>
-              <p style={{
-                fontSize: ".85rem", color: "var(--ep-text-muted)", fontStyle: "italic", margin: 0, lineHeight: 1.55,
-                ...(bioExpanded ? {} : { overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const }),
-              }}>{pet.bio}</p>
-              {pet.bio.length > 120 && (
-                <button onClick={() => setBioExpanded(v => !v)} style={{ background: "none", border: "none", padding: ".25rem 0 0", cursor: "pointer", fontSize: ".75rem", color: "var(--ep-brand)", fontFamily: "inherit", display: "block" }}>
-                  {bioExpanded ? (isFR ? "Voir moins" : "See less") : (isFR ? "Voir plus" : "See more")}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Memorial links, full width */}
-          {pet.deceased_at && (
-            <div style={{ display: "flex", gap: ".75rem", marginTop: ".875rem", flexWrap: "wrap" }}>
-              <Link href={`/memorial/${id}`} style={{ fontSize: ".8rem", color: "var(--ep-memorial)", textDecoration: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".375rem .875rem" }}>
-                {t.memorial.view_memorial}
-              </Link>
-              <button
-                onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/memorial/${id}?lang=${locale}`); alert(t.pet.link_copied); }}
-                style={{ fontSize: ".8rem", color: "var(--ep-memorial)", background: "none", border: "1px solid rgba(139,107,74,.25)", borderRadius: 100, padding: ".375rem .875rem", cursor: "pointer", fontFamily: "inherit" }}
-              >
-                {t.memorial.share_memorial}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Tab bar */}
-        <div style={{ display: "flex", gap: ".375rem", marginBottom: "1.5rem", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" as const }}>
-          {tabs.map(t => (
-            <Link
-              key={t.key}
-              href={`/dashboard/pets/${id}?tab=${t.key}`}
-              style={{
-                padding: ".5rem 1.125rem", borderRadius: 100, fontSize: ".85rem",
-                whiteSpace: "nowrap", textDecoration: "none", flexShrink: 0,
-                background: tab === t.key ? "var(--ep-brand)" : "rgba(61,43,31,.07)",
-                color: tab === t.key ? "var(--ep-bg-card)" : "var(--ep-text-muted)",
-                fontWeight: tab === t.key ? 500 : 400,
-                transition: "background .15s, color .15s",
-              }}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </div>
+        <TabBar tabs={tabs} activeTab={tab} petId={id} />
 
         {tab === "journal" && (
           <>
@@ -1088,548 +964,53 @@ export default function PetPage({ params }: { params: { id: string } }) {
         )}
 
         {tab === "stories" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {/* First-story nudge, disappears for good once a story exists for this pet */}
-            {showFirstStoryNudge && pet && (
-              <div style={{ background: "rgba(200,129,58,.06)", borderRadius: 16, padding: "1.25rem 1.5rem", border: "1px solid rgba(200,129,58,.2)", display: "flex", flexDirection: "column", gap: ".5rem" }}>
-                <p style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "var(--ep-text)", margin: 0 }}>
-                  {t.first_story_nudge.card_title}
-                </p>
-                <p style={{ fontSize: ".85rem", color: "var(--ep-text-muted)", lineHeight: 1.6, margin: 0 }}>
-                  {t.first_story_nudge.card_subtitle.replace("{count}", String(allEntryDates.length))}
-                </p>
-                <button
-                  onClick={() => { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); }}
-                  style={{ alignSelf: "flex-start", marginTop: ".25rem", padding: ".625rem 1.25rem", borderRadius: 100, border: "none", background: "var(--ep-brand)", color: "#fff", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer" }}
-                >
-                  {t.first_story_nudge.card_cta}
-                </button>
-              </div>
-            )}
-            {/* Next chapter indicator */}
-            {(() => {
-              const now = new Date();
-              const firstOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-              const daysUntil = Math.ceil((firstOfNextMonth.getTime() - now.getTime()) / 864e5);
-              const thisMonthPrefix = now.toISOString().slice(0, 7);
-              const hasThisMonthStory = stories.some(s => s.created_at.slice(0, 7) === thisMonthPrefix);
-              const nextDay = firstOfNextMonth.getDate();
-              const nextMonthName = firstOfNextMonth.toLocaleDateString(dateLocale, { month: "long" });
-              const ordinal = isFR
-                ? (nextDay === 1 ? `1er` : `${nextDay}`)
-                : (nextDay === 1 ? "1st" : nextDay === 2 ? "2nd" : nextDay === 3 ? "3rd" : `${nextDay}th`);
-              const nextDate = isFR ? `${ordinal} ${nextMonthName}` : `${nextMonthName} ${ordinal}`;
-              return (
-                <div style={{ background: hasThisMonthStory ? "rgba(61,43,31,.04)" : "rgba(200,129,58,.06)", borderRadius: 12, padding: ".625rem 1rem", border: `1px solid ${hasThisMonthStory ? "rgba(61,43,31,.08)" : "rgba(200,129,58,.2)"}`, display: "flex", flexDirection: "column", gap: ".35rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".5rem", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: ".8rem", color: hasThisMonthStory ? "var(--ep-text-muted)" : "var(--ep-brand)", fontWeight: hasThisMonthStory ? 300 : 500 }}>
-                      {hasThisMonthStory
-                        ? (isFR ? `✓ Chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })} généré` : `✓ ${now.toLocaleDateString(dateLocale, { month: "long" })} chapter generated`)
-                        : (isFR ? `✨ Générez le chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })}` : `✨ Generate ${now.toLocaleDateString(dateLocale, { month: "long" })}'s chapter`)}
-                    </span>
-                    <span style={{ fontSize: ".72rem", color: "var(--ep-text-faint)", fontWeight: 300, flexShrink: 0 }}>
-                      {isFR ? `Prochain : ${nextDate} (dans ${daysUntil}j)` : `Next: ${nextDate} (in ${daysUntil}d)`}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: ".72rem", color: "var(--ep-text-faint)", fontWeight: 300 }}>
-                    {isFR ? "Généré automatiquement" : "Auto-generated"}
-                  </span>
-                </div>
-              );
-            })()}
-            {/* Generate button, mirrors journal tab CTA */}
-            {(() => {
-              const generatingMessages = pet ? [
-                t.journal.generating_1.replace("{name}", pet.name),
-                t.journal.generating_2,
-                t.journal.generating_3,
-              ] : [t.journal.generating, t.journal.generating_2, t.journal.generating_3];
-              return (
-                <button
-                  onClick={() => { if (entries.length >= 3) { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); } }}
-                  disabled={generating || entries.length < 3}
-                  style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "var(--ep-brand)", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", opacity: entries.length < 3 ? .5 : 1 }}
-                >
-                  {generating ? generatingMessages[generatingMsgIdx] : t.journal.generate_story.replace("{name}", pet.name)}
-                  {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>{t.journal.add_more.replace("{count}", String(3 - entries.length)).replace("{entries}", 3 - entries.length === 1 ? t.journal.entry : t.journal.entries)}</span>}
-                </button>
-              );
-            })()}
-            {stories.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
-                <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>✨</div>
-                <p style={{ color: "var(--ep-text-muted)", fontFamily: "Georgia, serif", fontSize: "1rem" }}>{t.stories.no_stories.replace("{name}", pet.name)}</p>
-              </div>
-            ) : stories.map(story => (
-              <div key={story.id}>
-              <div style={{ background: "var(--ep-bg-card)", borderRadius: 20, padding: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1rem", gap: ".75rem" }}>
-                  <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "var(--ep-text)", margin: 0 }}>{story.title || `${pet.name}'s Story`}</h3>
-                  <span style={{ fontSize: ".72rem", color: "var(--ep-text-faint)", fontWeight: 300, flexShrink: 0 }}>{fmtDateOrdinal(new Date(story.created_at), isFR, { month: "short", year: "numeric" })}</span>
-                </div>
-                {(story.period_start && story.period_end || story.style) && (
-                  <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: ".875rem", alignItems: "center" }}>
-                    {story.period_start && story.period_end && (
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", background: "rgba(200,129,58,.07)", borderRadius: 100, padding: ".25rem .75rem", fontSize: ".72rem", color: "var(--ep-brand)", fontWeight: 500 }}>
-                        {fmtDateOrdinal(new Date(story.period_start + "T12:00:00"), isFR, { month: "short" })} – {fmtDateOrdinal(new Date(story.period_end + "T12:00:00"), isFR, { month: "short", year: "numeric" })}
-                      </span>
-                    )}
-                    {story.style && (() => {
-                      const s = STORY_STYLES.find(st => st.value === story.style);
-                      return s ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", background: "rgba(61,43,31,.05)", borderRadius: 100, padding: ".25rem .75rem", fontSize: ".72rem", color: "var(--ep-text-muted)", fontWeight: 400 }}>
-                          <span>{s.icon}</span>
-                          <span>{isFR ? s.labelFR : s.labelEN}</span>
-                        </span>
-                      ) : null;
-                    })()}
-                  </div>
-                )}
-                <div style={{ fontSize: "1.05rem", color: "var(--ep-text)", lineHeight: 1.8, marginBottom: "1.25rem", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
-                  {story.content
-                    .replace(/\*\*(INTRO|INTRODUCTION|DÉVELOPPEMENT|DEVELOPPEMENT|DEVELOPMENT|CHUTE|CONCLUSION|ENDING)\*\*/gi, "")
-                    .split(/\n{2,}/)
-                    .map((para, i) => para.trim())
-                    .filter(para => para.length > 0)
-                    .map((para, i) => <p key={i} style={{ margin: i === 0 ? "0 0 1rem" : "0 0 1rem" }}>{para}</p>)
-                  }
-                </div>
-                <div style={{ borderTop: "1px solid rgba(61,43,31,.06)", paddingTop: "1rem", display: "flex", gap: ".625rem", flexWrap: "wrap" }}>
-                  <button
-                    onClick={() => handleShare(story)}
-                    disabled={sharingStoryId === story.id}
-                    style={{
-                      display: "inline-flex", alignItems: "center", gap: ".5rem",
-                      background: "transparent",
-                      border: "1.5px solid rgba(200,129,58,.35)",
-                      color: "var(--ep-brand)",
-                      borderRadius: 100, padding: ".5rem 1.125rem",
-                      fontSize: ".8rem", fontWeight: 500, cursor: "pointer",
-                      fontFamily: "inherit", opacity: sharingStoryId === story.id ? .65 : 1,
-                      transition: "background .15s, opacity .15s", minHeight: 36,
-                    }}
-                    onMouseEnter={e => { if (sharingStoryId !== story.id) (e.currentTarget as HTMLElement).style.background = "rgba(200,129,58,.08)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-                  >
-                    {sharingStoryId === story.id ? (
-                      <>
-                        <span style={{ fontSize: ".9rem" }}>⏳</span>
-                        {t.stories.share_generating}
-                      </>
-                    ) : (
-                      <>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                        </svg>
-                        {t.stories.share_chapter}
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => openShareCard(story)}
-                    style={{
-                      display: "inline-flex", alignItems: "center", gap: ".5rem",
-                      background: "transparent",
-                      border: "1.5px solid rgba(61,43,31,.18)",
-                      color: "var(--ep-text-muted)",
-                      borderRadius: 100, padding: ".5rem 1.125rem",
-                      fontSize: ".8rem", fontWeight: 500, cursor: "pointer",
-                      fontFamily: "inherit",
-                      transition: "background .15s", minHeight: 36,
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(61,43,31,.05)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                    {t.stories.share_card_open}
-                  </button>
-                </div>
-              </div>
-              {userPlan === "free" && (
-                <div style={{ background: "#FFF3E0", borderRadius: 12, padding: "20px", border: "1px solid rgba(200,129,58,.2)" }}>
-                  <p style={{ fontSize: ".875rem", color: "var(--ep-text)", lineHeight: 1.6, margin: "0 0 1rem", fontFamily: "Georgia, serif" }}>
-                    {t.stories.free_upsell_text}
-                  </p>
-                  <Link
-                    href="/dashboard/settings"
-                    style={{ display: "inline-block", padding: ".625rem 1.25rem", borderRadius: 100, background: "var(--ep-brand)", color: "var(--ep-bg-card)", fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}
-                  >
-                    {t.stories.free_upsell_cta}
-                  </Link>
-                  <p style={{ fontSize: ".75rem", color: "var(--ep-text-faint)", margin: ".75rem 0 0", fontWeight: 300 }}>
-                    {t.stories.free_upsell_refresh}
-                  </p>
-                </div>
-              )}
-              </div>
-            ))}
-
-            {hasMoreEntries && !filterYear && !filterMonth && (
-              <div style={{ textAlign: "center", marginTop: "1rem" }}>
-                <button
-                  onClick={loadMoreEntries}
-                  disabled={loadingMore}
-                  style={{ display: "inline-flex", alignItems: "center", gap: ".5rem", padding: ".5rem 1.25rem", borderRadius: 100, border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", color: "var(--ep-text-muted)", fontSize: ".8rem", fontFamily: "inherit", cursor: loadingMore ? "wait" : "pointer", opacity: loadingMore ? .6 : 1 }}
-                >
-                  {loadingMore ? (isFR ? "Chargement…" : "Loading…") : (isFR ? "Charger plus" : "Load more")}
-                </button>
-              </div>
-            )}
-          </div>
+          <StoriesTab
+            t={t} isFR={isFR} dateLocale={dateLocale} petName={pet.name}
+            stories={stories} entries={entries} allEntryDates={allEntryDates}
+            showFirstStoryNudge={showFirstStoryNudge}
+            onOpenGenerateModal={() => { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); }}
+            generating={generating} generatingMsgIdx={generatingMsgIdx}
+            userPlan={userPlan} sharingStoryId={sharingStoryId}
+            onShare={handleShare} onOpenShareCard={openShareCard}
+            hasMoreEntries={hasMoreEntries} filterYear={filterYear} filterMonth={filterMonth}
+            onLoadMore={loadMoreEntries} loadingMore={loadingMore}
+          />
         )}
-
         {tab === "milestones" && (
-          <div>
-            {/* Auto-detection info box */}
-            <div style={{ background: "rgba(200,129,58,.06)", borderRadius: 14, padding: ".875rem 1rem", marginBottom: "1.25rem", border: "1px solid rgba(200,129,58,.2)", display: "flex", gap: ".625rem", alignItems: "flex-start" }}>
-              <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: ".05rem" }}>💡</span>
-              <p style={{ fontSize: ".8rem", color: "var(--ep-text-muted)", margin: 0, lineHeight: 1.55 }}>
-                {t.milestones.auto_hint}
-              </p>
-            </div>
-
-            {/* Progress bar */}
-            <div style={{ background: "var(--ep-bg-card)", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: "1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: ".625rem" }}>
-                <span style={{ fontSize: ".85rem", fontWeight: 500, color: "var(--ep-text)" }}>
-                  {milestones.length} / {totalMilestoneCount} {t.milestones.steps_completed}
-                </span>
-                <span style={{ fontSize: ".8rem", color: "var(--ep-brand)", fontWeight: 600 }}>
-                  {Math.round(milestones.length / (totalMilestoneCount) * 100)}%
-                </span>
-              </div>
-              <div style={{ height: 6, borderRadius: 100, background: "rgba(61,43,31,.1)", overflow: "hidden" }}>
-                <div style={{ height: "100%", borderRadius: 100, background: "var(--ep-brand)", width: "100%", transform: `scaleX(${totalMilestoneCount ? milestones.length / totalMilestoneCount : 0})`, transformOrigin: "left", transition: "transform .5s ease" }} />
-              </div>
-            </div>
-
-            {(() => {
-              // Build full list with achieved flag, then sort:
-              // 1. achieved first, 2. alphabetical within each group
-              const definedItems = (milestoneDefinitions.length
-                ? milestoneDefinitions.map(def => ({ key: def.key, icon: def.icon ?? "🏆", localTitle: isFR ? def.name_fr : def.name_en, keywords: def.keywords ?? [] }))
-                : MILESTONE_TYPES.map(mt => ({ key: mt.type, icon: mt.icon, localTitle: isFR ? mt.titleFR : mt.title, keywords: mt.keywords }))
-              ).map(item => ({ ...item, achieved: milestones.find(m => m.type === item.key) ?? null }));
-
-              // Orphan milestones: recorded in DB but not present in milestone_definitions
-              // (e.g. "in_memory" set when marking a pet as deceased, or legacy "first_entry")
-              const definedKeys = new Set(definedItems.map(i => i.key));
-              const orphanItems = milestones
-                .filter(m => !definedKeys.has(m.type))
-                .map(m => {
-                  const fallback = MILESTONE_TYPES.find(mt => mt.type === m.type);
-                  return {
-                    key: m.type,
-                    icon: fallback?.icon ?? "🏆",
-                    localTitle: fallback ? (isFR ? fallback.titleFR : fallback.title) : (m.title ?? m.type),
-                    keywords: fallback?.keywords ?? [],
-                    achieved: m,
-                  };
-                });
-
-              const allItems = [...definedItems, ...orphanItems].sort((a, b) => {
-                if (!!a.achieved !== !!b.achieved) return a.achieved ? -1 : 1;
-                return a.localTitle.localeCompare(b.localTitle, isFR ? "fr" : "en", { sensitivity: "base" });
-              });
-
-              const achievedItems = allItems.filter(i => i.achieved);
-              const pendingItems = allItems.filter(i => !i.achieved);
-
-              const renderItem = ({ key, icon, localTitle, achieved, keywords }: typeof allItems[number]) => {
-                const lockHint = !achieved && keywords.length > 0
-                  ? t.milestones.unlock_hint.replace("{keyword}", isFR ? (keywords[1] ?? keywords[0]) : keywords[0])
-                  : null;
-                return (
-                  <div key={key} style={{ background: "var(--ep-bg-card)", borderRadius: 14, padding: ".875rem 1.125rem", border: `1px solid ${achieved ? "rgba(200,129,58,.2)" : "rgba(61,43,31,.06)"}`, display: "flex", alignItems: "center", gap: ".875rem", opacity: achieved ? 1 : 0.6 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: achieved ? "rgba(200,129,58,.12)" : "rgba(61,43,31,.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.15rem", flexShrink: 0 }}>
-                      {achieved ? icon : "🔒"}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: ".875rem", fontWeight: 500, color: achieved ? "var(--ep-text)" : "var(--ep-text-muted)", margin: "0 0 .15rem" }}>{localTitle}</p>
-                      <p style={{ fontSize: ".72rem", color: achieved ? "var(--ep-text-muted)" : "var(--ep-text-faint)", margin: 0, fontWeight: 300 }}>
-                        {achieved
-                          ? fmtDateOrdinal(new Date(achieved.achieved_at), isFR, { month: "long", year: "numeric" })
-                          : (lockHint ?? t.milestones.not_yet)}
-                      </p>
-                    </div>
-                    {achieved && <span style={{ fontSize: ".9rem", flexShrink: 0 }}>✅</span>}
-                  </div>
-                );
-              };
-
-              return (
-                <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-                  {achievedItems.length > 0 && (
-                    <>
-                      <p style={{ fontSize: ".68rem", fontWeight: 600, color: "var(--ep-brand)", margin: "0 0 .1rem", fontFamily: "sans-serif" }}>
-                        {t.milestones.unlocked.replace("{n}", String(achievedItems.length))}
-                      </p>
-                      {achievedItems.map(renderItem)}
-                    </>
-                  )}
-                  {pendingItems.length > 0 && (
-                    <>
-                      <p style={{ fontSize: ".68rem", fontWeight: 600, color: "var(--ep-text-faint)", margin: `${achievedItems.length > 0 ? ".5rem" : "0"} 0 .1rem`, fontFamily: "sans-serif" }}>
-                        {t.milestones.locked.replace("{n}", String(pendingItems.length))}
-                      </p>
-                      {pendingItems.map(renderItem)}
-                    </>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
+          <MilestonesTab
+            t={t} isFR={isFR} milestones={milestones}
+            totalMilestoneCount={totalMilestoneCount} milestoneDefinitions={milestoneDefinitions}
+          />
         )}
 
         {/* ── Tributes moderation (deceased pets only) ──────────────────── */}
         {tab === "tributes" && pet?.deceased_at && (
-          <div>
-            <div style={{ background: "rgba(200,129,58,.06)", borderRadius: 14, padding: ".875rem 1rem", marginBottom: "1.25rem", border: "1px solid rgba(200,129,58,.2)", display: "flex", gap: ".625rem", alignItems: "flex-start" }}>
-              <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: ".05rem" }}>🕊️</span>
-              <p style={{ fontSize: ".8rem", color: "var(--ep-text-muted)", margin: 0, lineHeight: 1.55 }}>
-                {isFR
-                  ? "Les hommages soumis par les proches apparaissent ici avant publication. Approuvez ceux que vous souhaitez afficher sur la page mémorial."
-                  : "Tributes submitted by family and friends appear here before publishing. Approve the ones you want to display on the memorial page."}
-              </p>
-            </div>
-
-            {!tributesLoaded ? (
-              <p style={{ fontSize: ".85rem", color: "var(--ep-text-faint)", fontStyle: "italic" }}>{isFR ? "Chargement…" : "Loading…"}</p>
-            ) : pendingTributes.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--ep-text-faint)", fontSize: ".9rem" }}>
-                <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>🕊️</div>
-                <p style={{ margin: 0, fontStyle: "italic" }}>
-                  {isFR ? "Aucun hommage en attente de validation." : "No tributes pending review."}
-                </p>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {pendingTributes.map(tribute => (
-                  <div key={tribute.id} style={{ background: "var(--ep-bg-card)", borderRadius: 16, padding: "1.125rem 1.25rem", border: "1px solid rgba(61,43,31,.08)" }}>
-                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: ".5rem" }}>
-                      <span style={{ fontSize: ".9rem", fontWeight: 600, color: "var(--ep-text)" }}>{tribute.author_name}</span>
-                      <span style={{ fontSize: ".72rem", color: "var(--ep-text-faint)" }}>
-                        {new Date(tribute.created_at).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: ".875rem", color: "var(--ep-text-muted)", lineHeight: 1.65, margin: "0 0 1rem", fontStyle: "italic" }}>
-                      {tribute.message}
-                    </p>
-                    <div style={{ display: "flex", gap: ".625rem" }}>
-                      <button
-                        onClick={async () => {
-                          const res = await fetch(`/api/memorial/tributes/${tribute.id}/approve`, { method: "POST" });
-                          if (res.ok) setPendingTributes(prev => prev.filter(t => t.id !== tribute.id));
-                        }}
-                        style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".5rem 1rem", borderRadius: 100, background: "var(--ep-brand)", color: "var(--ep-bg-card)", border: "none", cursor: "pointer", fontSize: ".8rem", fontWeight: 500, fontFamily: "inherit" }}
-                      >
-                        ✓ {isFR ? "Approuver" : "Approve"}
-                      </button>
-                      <button
-                        onClick={async () => {
-                          const res = await fetch(`/api/memorial/tributes/${tribute.id}/reject`, { method: "POST" });
-                          if (res.ok) setPendingTributes(prev => prev.filter(t => t.id !== tribute.id));
-                        }}
-                        style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".5rem 1rem", borderRadius: 100, background: "transparent", color: "var(--ep-text-faint)", border: "1.5px solid rgba(61,43,31,.12)", cursor: "pointer", fontSize: ".8rem", fontFamily: "inherit" }}
-                      >
-                        {isFR ? "Rejeter" : "Reject"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <TributesTab
+            isFR={isFR} dateLocale={dateLocale} tributesLoaded={tributesLoaded}
+            pendingTributes={pendingTributes} setPendingTributes={setPendingTributes}
+          />
         )}
 
         {/* ── Household members tab ────────────────────────────────────────── */}
         {tab === "members" && (
-          <div style={{ padding: "0 1.5rem 2rem" }}>
-            <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .5rem", fontFamily: "Georgia, serif" }}>
-              {t.members.title}
-            </h2>
-            <p style={{ fontSize: ".85rem", color: "var(--ep-text-muted)", margin: "0 0 1.5rem", lineHeight: 1.5 }}>
-              {t.members.subtitle}
-            </p>
-
-            {/* Upgrade upsell for non-paid plan owners */}
-            {(userPlan === "free" || userPlan === "book_only") && (
-              <div style={{ background: "#FFF3E0", border: "1px solid #F7C27A", borderRadius: 14, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
-                <p style={{ fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .4rem", fontSize: ".95rem" }}>{t.members.upgrade_title}</p>
-                <p style={{ color: "var(--ep-text-muted)", fontSize: ".85rem", margin: "0 0 1rem", lineHeight: 1.5 }}>{t.members.upgrade_desc}</p>
-                <a href="/dashboard/upgrade" style={{ display: "inline-block", background: "var(--ep-brand)", color: "var(--ep-bg-card)", textDecoration: "none", padding: "10px 20px", borderRadius: 100, fontWeight: 600, fontSize: ".85rem", fontFamily: "inherit" }}>
-                  {t.members.upgrade_cta}
-                </a>
-              </div>
-            )}
-
-            {/* Invite form, for paid plan owners */}
-            {(userPlan === "digital" || userPlan === "print") && (
-              <div style={{ background: "var(--ep-bg-card)", border: "1px solid rgba(61,43,31,.1)", borderRadius: 14, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
-                <label style={{ display: "block", fontSize: ".8rem", fontWeight: 500, color: "var(--ep-text-muted)", marginBottom: ".5rem" }}>
-                  {t.members.invite_label}
-                </label>
-                <div style={{ display: "flex", gap: ".625rem", flexWrap: "wrap" }}>
-                  <input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={e => { setInviteEmail(e.target.value); setInviteResult(null); }}
-                    placeholder={t.members.invite_placeholder}
-                    style={{ flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: 8, border: "1.5px solid #D4C5B0", background: "var(--ep-bg)", color: "var(--ep-text)", fontSize: ".9rem", fontFamily: "inherit", outline: "none" }}
-                  />
-                  <button
-                    disabled={inviteLoading || !inviteEmail.trim()}
-                    onClick={async () => {
-                      setInviteLoading(true);
-                      setInviteResult(null);
-                      const res = await fetch("/api/pet-members", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ petId: id, email: inviteEmail.trim() }),
-                      });
-                      const data = await res.json();
-                      setInviteLoading(false);
-                      if (res.ok) {
-                        setInviteResult({ success: true, resent: data.resent });
-                        setInviteEmail("");
-                        setMembersLoaded(false); // reload list
-                        setTimeout(() => setInviteResult(null), 10000);
-                      } else {
-                        const errKey = data.error as string;
-                        const errMsg =
-                          errKey === "cannot_invite_self" ? t.members.error_cannot_invite_self :
-                          errKey === "already_member" ? t.members.error_already_member :
-                          errKey === "member_limit" ? t.members.error_member_limit :
-                          errKey === "upgrade_required" ? t.members.error_upgrade_required :
-                          errKey === "Invalid email" ? t.members.error_invalid_email :
-                          t.members.error_generic;
-                        setInviteResult({ error: errMsg });
-                        setTimeout(() => setInviteResult(null), 10000);
-                      }
-                    }}
-                    style={{ padding: "10px 18px", borderRadius: 100, background: "var(--ep-brand)", color: "var(--ep-bg-card)", border: "none", cursor: inviteLoading || !inviteEmail.trim() ? "not-allowed" : "pointer", fontWeight: 600, fontSize: ".85rem", fontFamily: "inherit", opacity: inviteLoading || !inviteEmail.trim() ? .6 : 1, flexShrink: 0 }}
-                  >
-                    {inviteLoading ? t.members.invite_sending : t.members.invite_cta}
-                  </button>
-                </div>
-                {inviteResult?.success && (
-                  <p style={{ color: "#2E7D32", fontSize: ".8rem", margin: ".6rem 0 0" }}>
-                    ✓ {inviteResult.resent ? t.members.invite_resent : t.members.invite_success}
-                  </p>
-                )}
-                {inviteResult?.error && (
-                  <p style={{ color: "var(--ep-alert)", fontSize: ".8rem", margin: ".6rem 0 0" }}>{inviteResult.error}</p>
-                )}
-                <p style={{ color: "var(--ep-text-faint)", fontSize: ".75rem", margin: ".75rem 0 0" }}>{t.members.max_members}</p>
-              </div>
-            )}
-
-            {/* Member list */}
-            {!membersLoaded ? (
-              <p style={{ color: "var(--ep-text-faint)", fontSize: ".85rem", fontStyle: "italic" }}>{isFR ? "Chargement…" : "Loading…"}</p>
-            ) : members.length === 0 ? (
-              <p style={{ color: "var(--ep-text-faint)", fontSize: ".875rem", fontStyle: "italic", textAlign: "center", padding: "2rem 0" }}>{t.members.empty}</p>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-                {members.map(member => (
-                  <div key={member.id} style={{ background: "var(--ep-bg-card)", border: "1px solid rgba(61,43,31,.08)", borderRadius: 12, padding: "1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: "0 0 .2rem", fontWeight: 500, color: "var(--ep-text)", fontSize: ".9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {member.display_name}
-                      </p>
-                      <p style={{ margin: 0, fontSize: ".75rem", color: "var(--ep-text-faint)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {member.invited_email}
-                      </p>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: ".625rem", flexShrink: 0 }}>
-                      <span style={{
-                        fontSize: ".72rem", fontWeight: 500, padding: "3px 10px", borderRadius: 100,
-                        background: member.status === "accepted" ? "rgba(46,94,30,.1)" : "rgba(61,43,31,.07)",
-                        color: member.status === "accepted" ? "#2E5E1E" : "var(--ep-text-muted)",
-                      }}>
-                        {member.status === "accepted" ? t.members.status_accepted : t.members.status_pending}
-                      </span>
-                      {revokeConfirmId === member.id ? (
-                        <div style={{ display: "flex", gap: ".4rem" }}>
-                          <button
-                            onClick={async () => {
-                              const res = await fetch(`/api/pet-members/${member.id}/revoke`, { method: "POST" });
-                              if (res.ok) {
-                                setMembers(prev => prev.filter(m => m.id !== member.id));
-                              }
-                              setRevokeConfirmId(null);
-                            }}
-                            style={{ padding: "5px 12px", borderRadius: 100, background: "var(--ep-alert)", color: "#fff", border: "none", cursor: "pointer", fontSize: ".78rem", fontWeight: 500, fontFamily: "inherit" }}>
-                            {t.members.revoke_yes}
-                          </button>
-                          <button
-                            onClick={() => setRevokeConfirmId(null)}
-                            style={{ padding: "5px 12px", borderRadius: 100, background: "transparent", color: "var(--ep-text-muted)", border: "1px solid rgba(61,43,31,.15)", cursor: "pointer", fontSize: ".78rem", fontFamily: "inherit" }}>
-                            {t.members.revoke_no}
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setRevokeConfirmId(member.id)}
-                          style={{ padding: "5px 12px", borderRadius: 100, background: "transparent", color: "var(--ep-text-faint)", border: "1px solid rgba(61,43,31,.12)", cursor: "pointer", fontSize: ".78rem", fontFamily: "inherit" }}>
-                          {t.members.revoke_cta}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <MembersTab
+            t={t} isFR={isFR} petId={id} userPlan={userPlan}
+            inviteEmail={inviteEmail} setInviteEmail={setInviteEmail}
+            inviteLoading={inviteLoading} setInviteLoading={setInviteLoading}
+            inviteResult={inviteResult} setInviteResult={setInviteResult}
+            membersLoaded={membersLoaded} setMembersLoaded={setMembersLoaded}
+            members={members} setMembers={setMembers}
+            revokeConfirmId={revokeConfirmId} setRevokeConfirmId={setRevokeConfirmId}
+          />
         )}
       </main>
 
       {/* ── Coach marks ─────────────────────────────────────────────────────── */}
-      {/* 1. First entry added → push to generate AI story */}
-      {entries.length >= 1 && stories.length === 0 && (
-        <CoachMark
-          id="first_entry"
-          title={isFR ? "✨ Génère ta première histoire IA" : "✨ Generate your first AI story"}
-          body={isFR
-            ? "Tu as ajouté ta première entrée ! Rends-toi dans l'onglet Histoires pour créer un récit magique."
-            : "You added your first entry! Head to the Stories tab to create a magical narrative."}
-          cta={isFR ? "Voir les histoires" : "See stories"}
-          ctaHref={`/dashboard/pets/${id}?tab=stories`}
-          delay={1500}
-        />
-      )}
-
-      {/* 2. First story generated → push to create book */}
-      {stories.length >= 1 && (
-        <CoachMark
-          id="first_story"
-          title={isFR ? "📖 Ton livre prend forme" : "📖 Your book is taking shape"}
-          body={isFR
-            ? "Avec plusieurs histoires, tu peux créer un livre imprimé. Plus tu en génères, plus le livre sera riche."
-            : "With several stories, you can create a printed book. The more you generate, the richer it gets."}
-          cta={isFR ? "Créer mon livre" : "Create my book"}
-          ctaHref={`/dashboard/pets/${id}/order`}
-          delay={2000}
-        />
-      )}
-
-      {/* 3. Print plan with unused book credit */}
-      {userPlan === "print" && bookCredits > 0 && (
-        <CoachMark
-          id="book_credit"
-          title={isFR ? "🎁 Tu as un livre offert !" : "🎁 You have a free book!"}
-          body={isFR
-            ? "Ton abonnement Print inclut un livre offert par an. Il t'attend, commence ta configuration."
-            : "Your Print plan includes one free book per year. It's waiting for you, start your configuration."}
-          cta={isFR ? "Configurer mon livre" : "Configure my book"}
-          ctaHref={`/dashboard/pets/${id}/order`}
-          delay={2500}
-        />
-      )}
+      <CoachMarks
+        isFR={isFR} petId={id}
+        entryCount={entries.length} storyCount={stories.length}
+        userPlan={userPlan} bookCredits={bookCredits}
+      />
     </div>
   );
 }
