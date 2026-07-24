@@ -93,19 +93,56 @@ Déploiement sur **Vercel** — push sur `main` = auto-deploy. Les variables d'e
 
 ## Deployment & Staging
 
-**Architecture: Vercel Preview Deployments (free)**
+**Architecture: two Vercel projects, one repo (free plan)**
 
-Everypaw uses auto-preview per PR (no persistent staging DB). Production uses `main` branch.
+The Hobby plan does not allow a separate Preview environment alongside Production on a single
+project, so the repo is connected to **two** Vercel projects:
+
+| Project | Role | URL |
+| --- | --- | --- |
+| `everypaw` | Production | `everypaw.app` |
+| `everypaw-staging` | Preview (per PR) | `everypaw-staging-git-<branch>-*.vercel.app` |
+
+**Both still share the same Supabase project** — `everypaw-staging` is a separate *Vercel* project,
+not a separate database. The name is misleading: there is no isolated staging data.
 
 ### Workflow
 
 ```
 1. Feature branch → Push to GitHub
-2. Create PR → Vercel auto deploys preview URL (*.vercel.app)
-3. Test on preview (shares prod Supabase DB)
+2. Create PR → both projects post a preview URL
+3. Test on the everypaw-staging preview URL (shares prod Supabase DB)
 4. Review + Approve PR (GitHub ruleset required)
 5. Merge main → Auto deploy prod (everypaw.app)
 ```
+
+A PR comment shows a preview for `everypaw` too. **Ignore it** — that project is configured for
+Production only, so its previews 500 on every service-role route (see below).
+
+### Environment Variable Scoping
+
+Vercel bakes env vars at build time and scopes them per environment, **per project**. Adding a
+variable to one project does nothing for the other, and an existing deployment never picks up a
+newly added variable — it needs a redeploy.
+
+`SUPABASE_SERVICE_ROLE_KEY` must be present on the **Preview** scope of `everypaw-staging`.
+Without it, `getServiceSupabase()` throws and **every service-role path 500s**: all 8 crons, the
+Stripe webhook and subscription routes, Gelato order, the PDF routes, account deletion,
+pet-members, memorial tributes, share-card, plus the public SSR pages `pets/[id]` and
+`memorial/[id]`. The app still loads and hydrates (the `NEXT_PUBLIC_*` vars are separate), which
+makes the failure look like an application bug rather than a config gap.
+
+To check the current scoping without reading any secret value:
+
+```bash
+npx vercel link --yes --project everypaw-staging
+npx vercel env ls          # shows name + environments, never values
+```
+
+Quick probe for whether a deployment has the service key: open a public pet page
+(`/pets/<id>`). It calls `getServiceSupabase()` with no auth, so it renders when the key is
+present and returns a server exception when it is missing. Do **not** probe with an API route
+that checks auth first — it returns 401 either way and tells you nothing.
 
 ### GitHub Branch Protection (`main`)
 
@@ -117,6 +154,8 @@ Ruleset `main-protection` (configured 2026-07-23):
 ### Test Data Discipline
 
 Preview deployments share production Supabase (no separate staging DB = free tier limitation).
+This holds despite the `everypaw-staging` project name — every preview writes to real production
+data, so the rules below are not optional.
 
 **Rules:**
 - Use test accounts only: `test-*@yopmail.com` (password `Test1234!`)
