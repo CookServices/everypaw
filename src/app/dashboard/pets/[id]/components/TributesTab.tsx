@@ -3,11 +3,12 @@
 import { TributeRow } from "./types";
 
 export default function TributesTab({
-  isFR, dateLocale, tributesLoaded, pendingTributes, setPendingTributes,
+  isFR, dateLocale, tributesLoaded, loadError, pendingTributes, setPendingTributes,
 }: {
   isFR: boolean;
   dateLocale: string;
   tributesLoaded: boolean;
+  loadError: boolean;
   pendingTributes: TributeRow[];
   setPendingTributes: React.Dispatch<React.SetStateAction<TributeRow[]>>;
 }) {
@@ -24,6 +25,12 @@ export default function TributesTab({
 
       {!tributesLoaded ? (
         <p style={{ fontSize: ".85rem", color: "var(--ep-text-faint)", fontStyle: "italic" }}>{isFR ? "Chargement…" : "Loading…"}</p>
+      ) : loadError ? (
+        <p style={{ color: "var(--ep-alert)", fontSize: ".85rem", textAlign: "center", padding: "2rem 0", lineHeight: 1.5 }}>
+          {isFR
+            ? "Impossible de charger les hommages. Réessayez plus tard."
+            : "Could not load tributes. Please try again later."}
+        </p>
       ) : pendingTributes.length === 0 ? (
         <div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--ep-text-faint)", fontSize: ".9rem" }}>
           <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>🕊️</div>

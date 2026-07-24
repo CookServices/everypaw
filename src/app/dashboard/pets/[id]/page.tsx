@@ -86,6 +86,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [userTotalStoryCount, setUserTotalStoryCount] = useState(0);
   const [pendingTributes, setPendingTributes] = useState<{ id: string; author_name: string; message: string; created_at: string }[]>([]);
   const [tributesLoaded, setTributesLoaded] = useState(false);
+  const [tributesError, setTributesError] = useState(false);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const [entryMenuId, setEntryMenuId] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
@@ -96,6 +97,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [members, setMembers] = useState<{ id: string; invited_email: string; status: string; display_name: string; accepted_at: string | null; created_at: string }[]>([]);
   const [membersLoaded, setMembersLoaded] = useState(false);
+  const [membersError, setMembersError] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteResult, setInviteResult] = useState<{ success?: boolean; resent?: boolean; error?: string } | null>(null);
@@ -220,10 +222,19 @@ export default function PetPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     if (tab !== "members" || membersLoaded || !pet) return;
     const load = async () => {
-      const res = await fetch(`/api/pet-members?petId=${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setMembers(data.members ?? []);
+      // A failed load must not fall through to the empty state: that reads as
+      // "no members" and hides the real error.
+      try {
+        const res = await fetch(`/api/pet-members?petId=${id}`);
+        if (!res.ok) {
+          setMembersError(true);
+        } else {
+          const data = await res.json();
+          setMembers(data.members ?? []);
+          setMembersError(false);
+        }
+      } catch {
+        setMembersError(true);
       }
       setMembersLoaded(true);
     };
@@ -234,10 +245,18 @@ export default function PetPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     if (tab !== "tributes" || tributesLoaded || !pet?.deceased_at) return;
     const load = async () => {
-      const res = await fetch(`/api/memorial/tributes?petId=${id}&status=pending`);
-      if (res.ok) {
-        const data = await res.json();
-        setPendingTributes(data.tributes ?? []);
+      // Same as members: never let a failure look like "no pending tributes".
+      try {
+        const res = await fetch(`/api/memorial/tributes?petId=${id}&status=pending`);
+        if (!res.ok) {
+          setTributesError(true);
+        } else {
+          const data = await res.json();
+          setPendingTributes(data.tributes ?? []);
+          setTributesError(false);
+        }
+      } catch {
+        setTributesError(true);
       }
       setTributesLoaded(true);
     };
@@ -986,7 +1005,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
         {/* ── Tributes moderation (deceased pets only) ──────────────────── */}
         {tab === "tributes" && pet?.deceased_at && (
           <TributesTab
-            isFR={isFR} dateLocale={dateLocale} tributesLoaded={tributesLoaded}
+            isFR={isFR} dateLocale={dateLocale} tributesLoaded={tributesLoaded} loadError={tributesError}
             pendingTributes={pendingTributes} setPendingTributes={setPendingTributes}
           />
         )}
@@ -998,7 +1017,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             inviteEmail={inviteEmail} setInviteEmail={setInviteEmail}
             inviteLoading={inviteLoading} setInviteLoading={setInviteLoading}
             inviteResult={inviteResult} setInviteResult={setInviteResult}
-            membersLoaded={membersLoaded} setMembersLoaded={setMembersLoaded}
+            membersLoaded={membersLoaded} setMembersLoaded={setMembersLoaded} loadError={membersError}
             members={members} setMembers={setMembers}
             revokeConfirmId={revokeConfirmId} setRevokeConfirmId={setRevokeConfirmId}
           />
