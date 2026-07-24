@@ -129,6 +129,28 @@ Preview deployments share production Supabase (no separate staging DB = free tie
 - Crons (weekly-reminder, monthly-story, etc.) do NOT run on preview — test manually or on prod
 - Stripe webhook testing → use Stripe test mode, not preview
 - Long-running tasks may timeout (preview cold-starts)
+- **Email flows can NOT be completed on a preview** — they always land back on production
+
+#### Why email flows redirect to production
+
+`validateRedirectTo` (`lib/auth.ts`) compares the requested `redirect_to` hostname against
+`NEXT_PUBLIC_APP_URL` and falls back to the production URL when it does not match. This is an
+open-redirect guard, so it fires for every `*.vercel.app` preview host.
+
+Affected: password reset, signup confirmation, email change.
+
+Concretely, for a password reset requested from a preview:
+
+1. `forgot-password` sends `redirect_to = <preview-origin>/auth/update-password`
+2. `validateRedirectTo` rejects the preview hostname and substitutes the production URL
+3. The emailed link lands on `everypaw.app/auth/update-password`, so the recovery session
+   belongs to the **production** domain
+4. Entering the new password back on the preview fails with "Lien de réinitialisation invalide
+   ou expiré" — `auth/update-password` only reads the session from the URL hash, and there is
+   none on that origin
+
+**Workaround:** finish the email flow on `everypaw.app`, then sign in on the preview. Preview and
+production share the same Supabase project, so the credential works on both.
 
 ### When You Need Real Staging
 
