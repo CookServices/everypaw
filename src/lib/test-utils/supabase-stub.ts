@@ -20,6 +20,16 @@ export function createSupabaseStub() {
   const updates: RecordedUpdate[] = [];
   const rpcs: RecordedRpc[] = [];
   const rpcResults: StubResult[] = [];
+  const throwingTables = new Set<string>();
+
+  /**
+   * Make any awaited chain on this table reject. Used to characterize what a
+   * handler does when a write fails midway - notably whether it compensates.
+   */
+  function throwOn(table: string) {
+    throwingTables.add(table);
+    return api;
+  }
 
   /** Next terminal read resolves to this. Call once per expected read, in order. */
   function queueRead(result: StubResult) {
@@ -60,11 +70,17 @@ export function createSupabaseStub() {
     };
     builder.delete = () => builder;
 
-    builder.single = async () => nextRead();
-    builder.maybeSingle = async () => nextRead();
+    builder.single = async () => {
+      if (throwingTables.has(table)) throw new Error(`stub: ${table} read failed`);
+      return nextRead();
+    };
+    builder.maybeSingle = builder.single;
 
     // Awaiting the chain directly (e.g. `await db.from(t).insert(...)`).
-    builder.then = (resolve: (v: StubResult) => unknown) => resolve(nextRead());
+    builder.then = (resolve: (v: StubResult) => unknown, reject?: (e: unknown) => unknown) => {
+      if (throwingTables.has(table)) return reject?.(new Error(`stub: ${table} write failed`));
+      return resolve(nextRead());
+    };
 
     return builder;
   }
@@ -81,6 +97,7 @@ export function createSupabaseStub() {
     client,
     queueRead,
     queueRpc,
+    throwOn,
     inserts,
     updates,
     rpcs,
