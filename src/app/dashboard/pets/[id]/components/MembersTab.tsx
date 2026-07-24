@@ -7,8 +7,9 @@ type InviteResult = { success?: boolean; resent?: boolean; error?: string } | nu
 export default function MembersTab({
   t, isFR, petId, userPlan,
   inviteEmail, setInviteEmail, inviteLoading, setInviteLoading, inviteResult, setInviteResult,
-  membersLoaded, setMembersLoaded, members, setMembers, revokeConfirmId, setRevokeConfirmId,
+  membersLoaded, setMembersLoaded, members, setMembers, revokeConfirmId, setRevokeConfirmId, loadError,
 }: {
+  loadError: boolean;
   t: Translations;
   isFR: boolean;
   petId: string;
@@ -110,6 +111,12 @@ export default function MembersTab({
       {/* Member list */}
       {!membersLoaded ? (
         <p style={{ color: "var(--ep-text-faint)", fontSize: ".85rem", fontStyle: "italic" }}>{isFR ? "Chargement…" : "Loading…"}</p>
+      ) : loadError ? (
+        <p style={{ color: "var(--ep-alert)", fontSize: ".85rem", textAlign: "center", padding: "2rem 0", lineHeight: 1.5 }}>
+          {isFR
+            ? "Impossible de charger la liste des membres. Réessayez plus tard."
+            : "Could not load the member list. Please try again later."}
+        </p>
       ) : members.length === 0 ? (
         <p style={{ color: "var(--ep-text-faint)", fontSize: ".875rem", fontStyle: "italic", textAlign: "center", padding: "2rem 0" }}>{t.members.empty}</p>
       ) : (
