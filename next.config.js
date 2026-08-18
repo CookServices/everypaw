@@ -13,11 +13,11 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.stripe.com",
+      "connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.stripe.com https://*.google-analytics.com https://*.analytics.google.com",
       "frame-src https://js.stripe.com https://checkout.stripe.com",
     ].join("; "),
   },

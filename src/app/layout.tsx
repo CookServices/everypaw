@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import Script from "next/script";
+import { Suspense } from "react";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 export const metadata: Metadata = {
   title: "AI Pet Journal That Becomes a Printed Book | Everypaw",
@@ -33,6 +35,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const h = await headers();
@@ -42,6 +45,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={lang}>
       <body>
+        {GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+window.gtag = gtag;
+gtag('js', new Date());
+gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });`}
+            </Script>
+            <Suspense fallback={null}>
+              <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />
+            </Suspense>
+          </>
+        )}
         {META_PIXEL_ID && (
           <>
             <Script id="meta-pixel" strategy="afterInteractive">
