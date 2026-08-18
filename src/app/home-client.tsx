@@ -95,7 +95,7 @@ export default function Home({ locale }: { locale: Locale }) {
       <PublicNav variant="full" fixed locale={locale} />
 
       {/* HERO */}
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes ep-typing {
           from { width: 0 }
           to { width: 100% }
@@ -134,7 +134,7 @@ export default function Home({ locale }: { locale: Locale }) {
             opacity: 1 !important;
           }
         }
-      `}</style>
+      ` }} />
       <section style={{
         minHeight: "100dvh",
         display: "flex", alignItems: "flex-start", justifyContent: "center",
