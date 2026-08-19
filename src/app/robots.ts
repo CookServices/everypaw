@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/dashboard", "/api", "/auth", "/unsubscribe"],
+        disallow: ["/dashboard", "/api", "/unsubscribe"],
       },
     ],
     sitemap: "https://everypaw.app/sitemap.xml",
