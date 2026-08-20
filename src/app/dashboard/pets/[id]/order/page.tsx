@@ -9,6 +9,8 @@ import { calcGelatoBookPrice } from "@/lib/gelato-pricing";
 import type { Step, LayoutType, ThemeId, Story, Entry, Pet, Profile } from "./constants";
 import { PAGE_LAYOUTS, SHIPPING_BY_COUNTRY, COUNTRIES, COVER_THEMES } from "./constants";
 import { estimateOrderPages, calcCoverPeriod, calcMonthsCount } from "./utils";
+import PreviewModal from "./components/PreviewModal";
+import Stepper from "./components/Stepper";
 
 export const dynamic = "force-dynamic";
 
@@ -498,9 +500,6 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     outline: "none", boxSizing: "border-box" as const,
   };
 
-  // Stepper: preview=0, address=1, confirm=2 (success has no stepper)
-  const stepIndex: Record<Step, number> = { preview: 0, address: 1, confirm: 2, success: 3 };
-  const currentIdx = stepIndex[step];
   const stepLabels = [t.order.step_preview, t.order.step_address, t.order.step_payment];
 
   const shippingEstimate = SHIPPING_BY_COUNTRY[address.country];
@@ -519,88 +518,6 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const closeLabel = locale === "fr" ? "Fermer" : "Close";
 
   // ── Render helpers ───────────────────────────────────────────────────────
-
-  const renderPreviewModal = () => (
-    <div
-      onClick={closePreview}
-      style={{
-        position: "fixed", inset: 0, zIndex: 1000,
-        background: "rgba(0,0,0,.75)", backdropFilter: "blur(4px)",
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-        padding: "1rem",
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 860, height: "90vh", display: "flex", flexDirection: "column", borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.5)" }}
-      >
-        {/* Modal header */}
-        <div style={{ background: "var(--ep-text)", padding: ".75rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <span style={{ fontFamily: "Georgia, serif", fontSize: ".95rem", color: "#F7C27A", display: "flex", alignItems: "center", gap: ".5rem" }}>
-            {previewLabel}
-            {previewStale && <span style={{ fontSize: ".7rem", background: "rgba(200,129,58,.25)", color: "#F7C27A", padding: ".15rem .5rem", borderRadius: 4 }}>↻ mise à jour…</span>}
-          </span>
-          <button
-            onClick={closePreview}
-            style={{ background: "rgba(247,242,234,.12)", border: "none", color: "var(--ep-bg)", borderRadius: 8, padding: ".35rem .75rem", cursor: "pointer", fontFamily: "inherit", fontSize: ".8rem" }}
-          >
-            {closeLabel} ✕
-          </button>
-        </div>
-        {/* iframe via srcdoc, evite les restrictions blob: URL / CSP */}
-        <iframe
-          srcDoc={previewHtml!}
-          style={{ flex: 1, border: "none", background: "var(--ep-bg)" }}
-          title="Book preview"
-        />
-      </div>
-    </div>
-  );
-
-  const renderStepper = () => (
-    <div style={{ display: "flex", alignItems: "flex-start", marginBottom: "2.5rem" }}>
-      {stepLabels.map((label, i) => {
-        const steps: Step[] = ["preview", "address", "confirm"];
-        const clickable = i < currentIdx;
-        return (
-        <div key={i}
-          onClick={() => clickable && setStep(steps[i])}
-          style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", cursor: clickable ? "pointer" : "default" }}>
-          {/* Connector line left */}
-          {i > 0 && (
-            <div style={{
-              position: "absolute", top: 15, right: "50%", width: "100%", height: 2,
-              background: i <= currentIdx ? accentColor : isMemorial ? "rgba(247,242,234,.1)" : "rgba(61,43,31,.12)",
-              zIndex: 0,
-            }} />
-          )}
-          {/* Circle */}
-          <div style={{
-            width: 30, height: 30, borderRadius: "50%", zIndex: 1, position: "relative",
-            background: i < currentIdx ? accentColor : i === currentIdx ? accentColor : isMemorial ? "rgba(247,242,234,.08)" : "rgba(61,43,31,.08)",
-            border: i === currentIdx ? `2px solid ${accentColor}` : "2px solid transparent",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: i <= currentIdx ? "var(--ep-bg-card)" : textMuted,
-            fontSize: i < currentIdx ? ".85rem" : ".8rem",
-            fontWeight: 600, transition: "all .3s",
-            boxShadow: clickable ? `0 0 0 3px ${accentColor}22` : "none",
-          }}>
-            {i < currentIdx ? "✓" : i + 1}
-          </div>
-          {/* Label */}
-          <span style={{
-            fontSize: ".7rem", marginTop: ".35rem",
-            color: i === currentIdx ? accentColor : i < currentIdx ? accentColor : textMuted,
-            fontWeight: i === currentIdx ? 600 : 400,
-            textAlign: "center", lineHeight: 1.2,
-          }}>
-            {label}
-          </span>
-        </div>
-        );
-      })}
-    </div>
-  );
 
   const renderUpsellBanners = () => (
     <>
@@ -1478,7 +1395,15 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   return (
     <>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      {previewHtml && renderPreviewModal()}
+      {previewHtml && (
+        <PreviewModal
+          previewHtml={previewHtml}
+          previewStale={previewStale}
+          previewLabel={previewLabel}
+          closeLabel={closeLabel}
+          onClose={closePreview}
+        />
+      )}
       <div style={{ minHeight: "100vh", background: bg, fontFamily: "'DM Sans', sans-serif", transition: "background .3s" }}>
         <nav style={{ background: isMemorial ? "rgba(28,20,16,.9)" : "rgba(247,242,234,0.9)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${isMemorial ? "rgba(247,242,234,.06)" : "rgba(61,43,31,.08)"}`, padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: textPrimary }}>
@@ -1488,7 +1413,16 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           </span>
         </nav>
         <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
-          {step !== "success" && renderStepper()}
+          {step !== "success" && (
+            <Stepper
+              step={step}
+              isMemorial={isMemorial}
+              accentColor={accentColor}
+              textMuted={textMuted}
+              stepLabels={stepLabels}
+              onStepClick={setStep}
+            />
+          )}
           {renderUpsellBanners()}
           {step === "preview" && renderPreviewStep()}
           {step === "success" && renderSuccessStep()}
