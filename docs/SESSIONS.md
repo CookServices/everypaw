@@ -1559,3 +1559,103 @@ Second audit exhaustif (lecture seule d'abord, rapports `AUDIT_REPORT.md` + `AUD
 
 **Reportés délibérément** : Q7 (650 hex → tokens) et Q13 (découpe composants 2084/1625 l.) — cosmétiques/refactors lourds sans couverture de test, à faire incrémentalement. Q6 (`withAuth`) et Q8 (constantes URL/email) reportés aussi.
 
+---
+
+### ✅ Session 57 — i18n hybride : /fr crawlable server-rendered (2026-07-12)
+
+Chantier : rendre la version FR crawlable par Google sans réintroduire next-intl. Audit préalable : `/fr` existait déjà mais en copie manuelle client de 579 l (drift, dette #6) ; `/gift` en `useLocale` navigator (non crawlable FR) ; pas de `/fr/gift` ; aucun redirect auto Accept-Language (rien à retirer). Décision (validée user) : composant client locale-aware partagé + langue **figée par URL**, plutôt que RSC purs + îlots (blast-radius élevé, zéro gain SEO car le FR est déjà en source via `use client` + `force-dynamic`).
+
+**Commit 1 `79c1ca1` (refactor)** : `PublicNav`/`PublicFooter` acceptent une prop `locale` optionnelle (absente → `useLocale`, préserve dashboard + 19 autres pages publiques) + `localeSwitch` (lien crawlable `<a>` footer) ; `home-client.tsx` `<Home locale>` (drop `useLocale`) ; `gift/page.tsx` splitté en `gift-client.tsx` (`<GiftContent locale>`) + wrapper server ; liens nav internes locale-aware.
+
+**Commit 2 `0219982` (routes FR)** : `/fr` réécrit en server component (`<Home locale="fr">` + JSON-LD FR Org/App/FAQPage i18n-driven, **`aggregateRating` factice retiré**) ; nouveau `/fr/gift`. Supprime la copie manuelle de 579 l et corrige le drop de `premium_f5` côté FR.
+
+**Commit 3 `0584eaf` (SEO)** : metadata FR (`/fr` title « Journal animalier IA qui devient un livre imprimé | Everypaw », `/fr/gift` title « Offrir un journal animalier et un livre souvenir | Everypaw »), hreflang **réciproque** sur les 4 routes (canonicals relatives résolues via `metadataBase`), `sitemap.ts` + `/fr/gift`.
+
+**Vérifié** (`next start` + curl) : `/fr` rend du français dans le HTML source ✓ ; `/` reste EN sous `Accept-Language: fr` ✓ ; hreflang réciproques `/`↔`/fr` et `/gift`↔`/fr/gift` ✓ ; sitemap liste `/fr` + `/fr/gift` ✓ ; `npm run build` + `tsc --noEmit` verts. Dashboard `useLocale` intact.
+
+**Bandeau de suggestion de langue** (`LangSuggestBanner`, commit `dfafd65`) : client component monté sur les 4 pages marketing. Lit `navigator.language` **uniquement pour suggérer** (jamais de redirect, ne modifie jamais le contenu rendu). Affiché seulement si mismatch (page EN + navigator fr, ou page FR + navigator non-fr). Lien réel crawlable `<a href>` vers la même page dans l'autre langue. Fixed bottom, dismissible, dismiss mémorisé en `localStorage` (`ep_lang_suggest_dismissed`), rend `null` tant que non monté (pas de mismatch d'hydratation, pas de CLS). ⚠️ Vérifier l'interactivité client sur `next start` (prod) : le preview `next dev` du sandbox n'hydrate pas React.
+
+**Infra blog SEO** (commit `2489c7f`) : cluster de contenu « pet memory ». `src/lib/blog.ts` = registre unique (`BLOG_POSTS[]` : slug, title, description, datePublished, `published`) — pilote l'index `/blog`, l'inclusion sitemap et le noindex par article. Chaque article = `app/blog/<slug>/page.tsx` écrit à la main : metadata (canonical `/blog/<slug>`, `robots` dérivé du flag `published`), JSON-LD Article (author/publisher Organization Everypaw) **émis seulement si publié**, corps H2/H3 dans `<ArticleLayout post>` (`src/components/blog/ArticleLayout.tsx` : fil d'ariane, colonne lecture ~680px, typo Georgia/DM Sans, CTA final discret vers `/`). **Workflow pour ajouter/publier un article** : (1) écrire le corps dans `app/blog/<slug>/page.tsx`, (2) passer `published: true` dans `blog.ts` → l'article entre dans l'index + le sitemap et perd le noindex, le JSON-LD s'active. **Publication différée (commit `312751e`, session 2026-07-23)** : `published: true` seul ne suffit plus si `datePublished` est dans le futur — `getPost`/`getPostFr` calculent `published` réel comme `flag ET date atteinte (comparaison UTC)`, donc index/sitemap/robots/JSON-LD/hreflang réciproque restent tous gelés jusqu'à la date, sans redeploy nécessaire au moment du bascule (pages `ƒ` dynamiques, check fait à chaque requête).
+
+**12 articles publiés** (`published: true`), tous dans le cluster « pet memory » :
+1. `pet-journal-prompts` — "50 Pet Journal Prompts to Capture Your Pet's Story" (`16d6a1e`)
+2. `dog-memory-book-ideas` — "12 Dog Memory Book Ideas That Go Beyond Photos" (`1493184`)
+3. `puppy-first-year-memory-book` — "How to Make a Puppy's First Year Memory Book" (`08a79b1`)
+4. `how-to-keep-a-pet-memory-journal` — **pilier** "How to Keep a Pet Memory Journal (and Why It Matters)" (2026-07-21), lie vers les 5 autres articles du cluster + `/memorial`
+5. `cat-memory-book` — "Cat Memory Book: How to Capture Your Cat's Quiet Story" (2026-07-21)
+6. `pet-loss-keepsake-ideas` — "Pet Loss Keepsake Ideas: 9 Ways to Honor a Pet You've Lost" (2026-07-21, ton sobre deuil, mention Everypaw limitée à la section memorial)
+7. `write-your-pets-life-story` — "How to Write Your Pet's Life Story (Even If You're Not a Writer)" (2026-07-22)
+8. `kitten-first-year-memory-book` — "Kitten First Year Memory Book: A Month-by-Month Guide" (2026-07-22, guide mémoire pur, aucun conseil vétérinaire/éducation féline)
+9. `pet-memorial-gifts` — "Pet Memorial Gifts: 7 Thoughtful Ideas for a Grieving Friend" (2026-07-22, perspective de l'ami qui offre, ton sobre deuil, mention Everypaw limitée au point 7/memorial)
+10. `gifts-for-pet-parents` — "Unique Gifts for Pet Parents Who Already Have Everything" (`datePublished` 2026-09-04, timing Q4, commit `2c2e5c8`)
+11. `best-pet-journal-app` — "Best Pet Journal Apps in 2026: What They Actually Do (and Don't)" (`datePublished` 2026-09-04, comparatif honnête DogNote/PetDesk/Everypaw/Voyage/notes apps, commit `6d48a67`)
+12. `pet-journal-app-vs-photo-book` — "Pet Journal App vs Photo Book Service: Which One Actually Keeps the Memories?" (`datePublished` 2026-09-04, commit `19423e7`)
+
+Maillage : pilier (4) → 5 autres + `/memorial` ; retour 1-3 → 4-6 (commit `e296866`) ; retour 1,3,5,6 → 7,8,9 (commit `e0b67b1`) ; retour 2,4,7,9 → 10,11,12 (commit `7aff546`). Plus de placeholder non publié, plus de lien interne cassé à ce jour. Lien « Blog » dans le footer full (landing).
+
+**Note article 11** : la description de l'app tierce Voyage a été corrigée par rapport au brief initial lors de la rédaction — recherche web (2026-07-22) a montré que Voyage est en réalité une app pet-spécifique ("Voyage: Pet Health & Diary") combinant génération IA de journal ET tracking santé, pas une app généraliste adaptée par les users comme supposé. DogNote et PetDesk confirmés conformes au brief.
+
+**Cluster blog FR** (`/fr/blog`, session 2026-07-22, étendu session 2026-07-23) : les 12 articles ont une édition française sous `/fr/blog/<slug-fr>`, avec des **slugs traduits** (SEO FR), pas les mêmes slugs qu'EN. `src/lib/blog.ts` : `BLOG_POSTS_FR[]` (interface `BlogPostFr` avec `slugEn` pour le mapping hreflang) + `getPublishedPostsFr()`/`getPostFr()`/`getFrSlugForEn()`. `ArticleLayout` accepte désormais `locale?: "en" | "fr"` (défaut `"en"`) : breadcrumb, CTA de clôture et format de date localisés via une table `CHROME`. Chaque article FR = `app/fr/blog/<slug-fr>/page.tsx`, traduction fidèle (même structure H2/H3, vouvoiement), maillage interne identique à la version EN mais entre slugs FR, liens `/memorial` remplacés par `/fr/memorial`. Hreflang réciproque posé des deux côtés (`alternates.languages` sur les 12 pages EN + les 12 pages FR + les deux index `/blog`/`/fr/blog`) — les hreflang FR des 3 nouveaux articles EN se sont peuplés automatiquement dès l'ajout des entrées FR au registre, sans retoucher les pages EN déjà publiées. Sitemap inclut les 12 URLs FR + `/fr/blog`. Mapping slugs EN → FR :
+- `pet-journal-prompts` → `prompts-journal-animalier`
+- `dog-memory-book-ideas` → `idees-livre-souvenir-chien`
+- `puppy-first-year-memory-book` → `livre-souvenir-premiere-annee-chiot`
+- `how-to-keep-a-pet-memory-journal` → `comment-tenir-journal-animalier` (pilier)
+- `cat-memory-book` → `livre-souvenir-chat`
+- `pet-loss-keepsake-ideas` → `idees-souvenirs-deuil-animal`
+- `write-your-pets-life-story` → `ecrire-histoire-de-vie-animal`
+- `kitten-first-year-memory-book` → `livre-souvenir-premiere-annee-chaton`
+- `pet-memorial-gifts` → `cadeaux-deuil-animalier`
+- `gifts-for-pet-parents` → `idees-cadeaux-maitres-animaux` (commit `766641a`)
+- `best-pet-journal-app` → `meilleure-application-journal-animalier` (commit `aac88ee`)
+- `pet-journal-app-vs-photo-book` → `application-journal-vs-livre-photo` (commit `e4b9cc4`)
+
+**Landing mémorial publique** (`/memorial`, commit `e1620ba`) : page marketing SEO « pet memorial book », **server component pur** (pas de `"use client"`, zéro interactivité) — distincte des pages user `/memorial/[id]`. Ton sobre (deuil animalier) : palette cream + sage, pas d'amber criard sur le contenu (le dot logo nav + cookie banner restent en amber = chrome global), aucune image, aucun schema Review, CTA unique discret `/auth/signup`. Textes en `memorial_landing` (en+fr dans `messages/*.json`). Metadata title/description dédiées + canonical `/memorial`, ajouté au sitemap. Carte homepage « A legacy that lasts » (f5) devient un lien descriptif vers `/memorial` (`aria-label`, ancre SEO). **`/fr/memorial` créé (session 2026-07-22)** : réutilise `getTranslations("fr").memorial_landing` (déjà traduit), hreflang réciproque avec `/memorial`, ajouté au sitemap. Les 2 tirets cadratins pré-existants dans `memorial_landing` (fr.json) ont été corrigés à cette occasion.
+
+⚠️ **Tiret cadratin résiduel hors scope** (repéré 2026-07-22, non corrigé) : `messages/fr.json` ligne ~377, clé `step3_desc` (page gift) — `"Le cadeau est activé pour toute la période — un mois de Digital ou un an de Print."`. Pas touché car hors périmètre de la tâche blog FR ; à nettoyer dans une prochaine session dédiée au contenu.
+
+**Suivi Search Console (2026-07-22)** :
+- **Sitemap** `everypaw.app/sitemap.xml` : "Opération effectuée", 21 URLs découvertes, dernière lecture 22 juil. (erreur fetch du 07-12 résolue ✓)
+- **Pages indexées** (2) : `https://everypaw.app/` (3 juil.), `/auth/login` (28 juin)
+- **Pages non-indexées** (2) : `http://everypaw.app/` (redirection 308 HTTP→HTTPS), `https://everypaw.app/fr` (explorée, actuellement non-indexée, 29 juin)
+- **Articles blog + pages légales FR** : non crawlés par Google encore (hors GSC)
+- **Action** : `/fr` soumis pour indexation manuelle (22 juil.)
+
+**Session 2026-07-22 — Amélioration rendus visuels emails** :
+- **Nouvelles primitives** `email-templates.ts` : `divider()`, `card()`, `colorSection()`, `list()`, `heroSection()` → riche structure visuelle sans briser compatibilité
+- **Refonte crons** (4 fichiers) :
+  - `weekly-reminder` : `heroSection("✍️")` + `colorSection` engagement + divider séparation
+  - `monthly-story` : `heroSection("📖")` + section urgence "nouvelle histoire lue cette semaine"
+  - `first-story-nudge` : `heroSection("✨")` + section "prêt(e) à voir l'histoire?"
+  - `on-this-day` : `heroSection` + colorSection urgence Print "ces souvenirs méritent un livre"
+- **Refonte auth emails** (4 types) :
+  - Signup confirm : heroSection + colorSection "confirmez votre email"
+  - Password reset : heroSection + section timeout (rouge pale)
+  - Payment failed : heroSection + section urgence (rouge) + CTA "Mettre à jour"
+  - Change email : heroSection + section "confirmer maintenant"
+- **Gift email** : heroSection + divider + section CTA urgence
+- **Localization** : EN/FR préservée 100% via `locale` param + traductions contextuelles dans colorSections
+- **Backlog emails restants** (4 crons + 3 APIs) — reportés : `birthday-check`, `daily-prompts`, `streak-alert`, `retention-emails` + `contact`, `waitlist`, `suggestion`
+- **Commits** : `edaea6c` (GSC suivi), `58cdbc0` (email templates), `92849ab` (doc session), `c75ab98` (on-this-day)
+
+---
+
+### ✅ Session 59 — Vérification pages légales FR + Refonte visuelle emails (2026-07-22)
+
+**Problème session 59a** : Pages légales FR manuelles depuis session 56, dérive possible vs version EN.
+**Résolution** : 3 pages légales FR vérifées conformes (cgv 100L, confidentialite 57L, mentions 56L) → statut ✓ archivé, hreflang recheck session 57.
+
+**Problème session 59b** : Emails basiques (emoji + heading + paragraph) sans structure visuelle — manque de hiérarchie, appels à l'action peu visibles, messagerie engagement faible.
+
+**Refonte email visual structure** (commits `d3b9cc5` + `0c0e65c`) :
+- **Nouvelles primitives `email-templates.ts`** : `heroSection(emoji, heading)` centré + gros titre Georgia ; `colorSection(html, bgColor, textColor)` pour sections d'urgence/CTA ; `divider()` séparation ; `card()` hors scope ; `list()` hors scope.
+- **7 emails refactorisés (APIs + crons existants, tous branches prior)** :
+  - `contact` (API) : heroSection + quote + colorSection "direct reply"
+  - `waitlist` (API) : heroSection + colorSection "welcome early access"
+  - `suggestion` (API) : heroSection + quote + colorSection "reply directly"
+  - `on-this-day` (cron) : heroSection + colorSection Print urgence "these memories deserve a book"
+  - `first-story-nudge` (cron) : heroSection + colorSection "ready to see story?"
+- **11 emails refactorisés (session 59, commits dans sessions antérieures)** : auth (4) + gift (1) + crons (4) + on-this-day (1) déjà complétés.
+- **Backlog emails (4 crons + 3 APIs, session 60 prochaine)** : `birthday-check`, `daily-prompts`, `streak-alert`, `retention-emails` + `contact`, `waitlist`, `suggestion`.
+- **Localization** : FR/EN 100% preserved via `locale` param + colorSection messages contextualisées (2 langues dans les colorSections).
+- **Build checks** : `npm run build` ✓ + `git push origin main` ✓.
+
