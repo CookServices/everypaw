@@ -7,19 +7,12 @@ import { useRouter } from "next/navigation";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { fmtDateOrdinal } from "@/lib/date";
 import PasswordStrength from "@/components/PasswordStrength";
+import type { Plan, SubscriptionInfo } from "./constants";
+import { inputStyle, btnPrimary, btnOutline } from "./constants";
+import UpgradeConfirmModal from "./components/UpgradeConfirmModal";
+import DeleteAccountModal from "./components/DeleteAccountModal";
 
 export const dynamic = "force-dynamic";
-
-
-type Plan = "free" | "digital" | "print";
-
-interface SubscriptionInfo {
-  status: string;
-  cancel_at_period_end: boolean;
-  cancel_at: number | null;
-  current_period_end: number;
-  interval: "month" | "year";
-}
 
 export default function SettingsPage() {
   const { t, locale } = useLocale();
@@ -437,31 +430,6 @@ export default function SettingsPage() {
   };
 
   // ── Styles ───────────────────────────────────────────────────────────────────
-  const inputStyle: React.CSSProperties = {
-    width: "100%", boxSizing: "border-box",
-    padding: ".65rem .875rem", borderRadius: 10,
-    border: "1.5px solid rgba(61,43,31,.15)",
-    background: "#F7F2EA", fontFamily: "inherit",
-    fontSize: ".875rem", color: "#3D2B1F", outline: "none",
-  };
-
-  const btnPrimary: React.CSSProperties = {
-    padding: ".65rem 1.25rem", borderRadius: 100, border: "none",
-    background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit",
-    fontSize: ".875rem", fontWeight: 500, cursor: "pointer",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    width: "100%", boxSizing: "border-box" as const,
-  };
-
-  const btnOutline: React.CSSProperties = {
-    padding: ".6rem 1rem", borderRadius: 100,
-    border: "1.5px solid rgba(200,129,58,.4)", background: "transparent",
-    color: "#C8813A", fontFamily: "inherit", fontSize: ".875rem",
-    fontWeight: 500, cursor: "pointer",
-    width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-    boxSizing: "border-box" as const,
-  };
-
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
 
@@ -474,93 +442,27 @@ export default function SettingsPage() {
 
       {/* Upgrade confirmation modal */}
       {upgradeModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, padding: "1rem" }}>
-          <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "2rem", maxWidth: 420, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,.25)" }}>
-            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#3D2B1F", margin: "0 0 1.25rem" }}>
-              {isFR ? "Confirmer le changement de plan" : "Confirm plan change"}
-            </h3>
-
-            {/* Scheduled date */}
-            <div style={{ background: "#F7F2EA", borderRadius: 12, padding: "1rem 1.25rem", marginBottom: "1.25rem" }}>
-              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: "0 0 .25rem", fontWeight: 300 }}>
-                {isFR ? "Changement effectif le" : "Change takes effect on"}
-              </p>
-              <p style={{ fontSize: "1.15rem", fontFamily: "Georgia, serif", fontWeight: 600, color: "#3D2B1F", margin: 0 }}>
-                {formatDate(upgradeModal.scheduledDate)}
-              </p>
-              <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".4rem 0 0", fontWeight: 300 }}>
-                {isFR
-                  ? "Vous conservez votre abonnement actuel jusqu'à cette date. Aucun paiement immédiat."
-                  : "Your current plan continues until that date. No charge today."}
-              </p>
-            </div>
-
-            <div style={{ display: "flex", gap: ".75rem" }}>
-              <button
-                onClick={() => setUpgradeModal(null)}
-                disabled={!!upgradeLoading}
-                style={{ ...btnOutline, border: "1.5px solid rgba(61,43,31,.2)", color: "#3D2B1F", flex: 1 }}
-              >
-                {isFR ? "Annuler" : "Cancel"}
-              </button>
-              <button
-                onClick={() => handleUpgrade(upgradeModal.newPlan)}
-                disabled={!!upgradeLoading}
-                style={{ ...btnPrimary, opacity: upgradeLoading ? .7 : 1, flex: 1 }}
-              >
-                {upgradeLoading
-                  ? (isFR ? "Planification…" : "Scheduling…")
-                  : (isFR ? "Confirmer" : "Confirm")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <UpgradeConfirmModal
+          newPlan={upgradeModal.newPlan}
+          scheduledDate={upgradeModal.scheduledDate}
+          isFR={isFR}
+          upgradeLoading={upgradeLoading}
+          onCancel={() => setUpgradeModal(null)}
+          onConfirm={handleUpgrade}
+        />
       )}
 
       {/* Delete account modal */}
       {showDeleteModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, padding: "1rem" }}>
-          <div style={{ background: "#FDFAF5", borderRadius: 20, padding: "2rem", maxWidth: 440, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,.25)" }}>
-            <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", color: "#A32D2D", margin: "0 0 1rem" }}>
-              {isFR ? "Supprimer mon compte" : "Delete my account"}
-            </h3>
-            <p style={{ fontSize: ".875rem", color: "#3D2B1F", lineHeight: 1.6, margin: "0 0 1.25rem" }}>
-              {isFR
-                ? "Cette action est irréversible. Toutes vos données seront supprimées : profil, animaux, entrées, histoires, photos."
-                : "This action is irreversible. All your data will be deleted: profile, pets, entries, stories, photos."}
-            </p>
-            <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: "0 0 .5rem" }}>
-              {isFR ? 'Tapez "SUPPRIMER" pour confirmer' : 'Type "DELETE" to confirm'}
-            </p>
-            <input
-              type="text"
-              value={deleteConfirmText}
-              onChange={e => setDeleteConfirmText(e.target.value)}
-              placeholder={isFR ? "SUPPRIMER" : "DELETE"}
-              style={{ ...inputStyle, marginBottom: ".75rem" }}
-            />
-            {deleteError && (
-              <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: "0 0 .75rem" }}>{deleteError}</p>
-            )}
-            <div style={{ display: "flex", gap: ".75rem", justifyContent: "flex-end" }}>
-              <button
-                onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(""); setDeleteError(""); }}
-                style={{ ...btnOutline, border: "1.5px solid rgba(61,43,31,.2)", color: "#3D2B1F" }}
-              >
-                {isFR ? "Annuler" : "Cancel"}
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={deleteLoading}
-                style={{ ...btnPrimary, background: "#A32D2D", opacity: deleteLoading ? .7 : 1 }}
-              >
-                {deleteLoading
-                  ? (isFR ? "Suppression…" : "Deleting…")
-                  : (isFR ? "Supprimer définitivement" : "Delete permanently")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteAccountModal
+          isFR={isFR}
+          deleteConfirmText={deleteConfirmText}
+          deleteError={deleteError}
+          deleteLoading={deleteLoading}
+          onTextChange={setDeleteConfirmText}
+          onCancel={() => { setShowDeleteModal(false); setDeleteConfirmText(""); setDeleteError(""); }}
+          onConfirm={handleDeleteAccount}
+        />
       )}
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
