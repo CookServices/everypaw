@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { compressImage } from "@/lib/image";
 import { useLocale } from "@/hooks/useLocale";
 
 interface Pet {
@@ -15,27 +16,6 @@ interface Props {
   pet: Pet;
   onComplete: () => void;  // called after "Continue to journal"
   onSkip: () => void;      // called when user clicks "Later"
-}
-
-async function compressImage(file: File): Promise<Blob> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const maxSize = 1200;
-      let { width, height } = img;
-      if (width > maxSize || height > maxSize) {
-        if (width > height) { height = (height / width) * maxSize; width = maxSize; }
-        else { width = (width / height) * maxSize; height = maxSize; }
-      }
-      canvas.width = width; canvas.height = height;
-      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
-      canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.85);
-      URL.revokeObjectURL(url);
-    };
-    img.src = url;
-  });
 }
 
 export default function OriginsFlow({ pet, onComplete, onSkip }: Props) {
