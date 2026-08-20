@@ -6,81 +6,11 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
 import { calcGelatoBookPrice } from "@/lib/gelato-pricing";
+import type { Step, LayoutType, ThemeId, Story, Entry, Pet, Profile } from "./constants";
+import { PAGE_LAYOUTS, SHIPPING_BY_COUNTRY, COUNTRIES, COVER_THEMES } from "./constants";
+import { estimateOrderPages, calcCoverPeriod, calcMonthsCount } from "./utils";
 
 export const dynamic = "force-dynamic";
-
-type Step = "preview" | "address" | "confirm" | "success";
-type LayoutType = "classic" | "photo_hero" | "split" | "text_only";
-
-const PAGE_LAYOUTS: { id: LayoutType; labelKey: "layout_classic" | "layout_photo_hero" | "layout_split" | "layout_text_only"; icon: string }[] = [
-  { id: "classic",    labelKey: "layout_classic",    icon: "≡" },
-  { id: "photo_hero", labelKey: "layout_photo_hero",  icon: "▣" },
-  { id: "split",      labelKey: "layout_split",       icon: "▥" },
-  { id: "text_only",  labelKey: "layout_text_only",   icon: "☰" },
-];
-
-interface Story {
-  id: string;
-  title: string | null;
-  content: string;
-  period_start: string | null;
-  period_end: string | null;
-  created_at: string;
-}
-
-interface Entry {
-  id: string;
-  photo_urls: string[];
-  entry_date: string;
-}
-
-interface Pet {
-  id: string;
-  name: string;
-  birthdate: string | null;
-  created_at: string;
-  deceased_at: string | null;
-}
-
-interface Profile {
-  plan: string;
-  book_credits: number;
-}
-
-const SHIPPING_BY_COUNTRY: Record<string, string> = {
-  FR: "~5–10 €", DE: "~5–10 €", ES: "~5–10 €", IT: "~5–10 €",
-  NL: "~5–10 €", BE: "~5–10 €", PT: "~5–10 €", AT: "~5–10 €",
-  CH: "~8–14 CHF", SE: "~80–120 SEK", DK: "~70–110 DKK", NO: "~90–140 NOK",
-  FI: "~5–10 €", IE: "~5–10 €", PL: "~5–10 €",
-  GB: "~£8–14", US: "~$12–18", CA: "~$15–22", AU: "~$18–28",
-  NZ: "~$22–32", SG: "~$18–26", JP: "~¥1800–2800", KR: "~₩18000–28000",
-  AE: "~$18–28", ZA: "~$20–32",
-};
-
-const COUNTRIES = [
-  { code: "FR", name: "France" }, { code: "DE", name: "Germany" },
-  { code: "GB", name: "United Kingdom" }, { code: "US", name: "United States" },
-  { code: "ES", name: "Spain" }, { code: "IT", name: "Italy" },
-  { code: "NL", name: "Netherlands" }, { code: "BE", name: "Belgium" },
-  { code: "PT", name: "Portugal" }, { code: "AT", name: "Austria" },
-  { code: "CH", name: "Switzerland" }, { code: "SE", name: "Sweden" },
-  { code: "DK", name: "Denmark" }, { code: "NO", name: "Norway" },
-  { code: "FI", name: "Finland" }, { code: "IE", name: "Ireland" },
-  { code: "PL", name: "Poland" }, { code: "CA", name: "Canada" },
-  { code: "AU", name: "Australia" }, { code: "NZ", name: "New Zealand" },
-  { code: "SG", name: "Singapore" }, { code: "JP", name: "Japan" },
-  { code: "KR", name: "South Korea" }, { code: "AE", name: "United Arab Emirates" },
-  { code: "ZA", name: "South Africa" },
-];
-
-const COVER_THEMES = [
-  { id: "classic", labelFr: "Classique", labelEn: "Classic", bg: "var(--ep-text)", title: "#F7C27A", accent: "var(--ep-brand)", back: "var(--ep-brand)" },
-  { id: "noir",    labelFr: "Noir",      labelEn: "Noir",    bg: "#1A1A1E", title: "#F0EEE8", accent: "#B8AFA0", back: "#2C2C2E" },
-  { id: "forest",  labelFr: "Forêt",     labelEn: "Forest",  bg: "#1B3028", title: "#AACCA0", accent: "var(--ep-status-ship)", back: "#2A4A38" },
-  { id: "ocean",   labelFr: "Océan",     labelEn: "Ocean",   bg: "#152040", title: "#A8C8E8", accent: "var(--ep-status-print)", back: "#1E3060" },
-  { id: "rose",    labelFr: "Rose",      labelEn: "Rose",    bg: "#3A1525", title: "#F0B8C8", accent: "#C87890", back: "#8A3050" },
-] as const;
-type ThemeId = typeof COVER_THEMES[number]["id"];
 
 export default function OrderPage({ params }: { params: { id: string } }) {
   const { t, locale } = useLocale();
@@ -412,23 +342,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const photoCount = Math.min(photoEntries.flatMap(e => e.photo_urls).length, 6);
 
   // Estimated content page count (no dedication, filled at address step).
-  // Matches calcPageCount: content only, multiple of 4, min 28.
   // Total PDF pages = estimatedPages + 3 structural (cover, endpaper, back cover).
-  const { estimatedPages, tooFewContent } = (() => {
-    const selected = visibleStories.filter(s => selectedStoryIds.includes(s.id));
-    const hasOrphanPhotos = filteredEntries.some(e => {
-      if (!e.photo_urls?.length) return false;
-      const d = new Date(e.entry_date);
-      return !selected.some(story => {
-        const start = story.period_start ? new Date(story.period_start) : null;
-        const end = story.period_end ? new Date(story.period_end) : null;
-        return !!start && d >= start && (!end || d <= end);
-      });
-    });
-    const contentPages = Math.max(selected.length, 1) + (hasOrphanPhotos ? 1 : 0);
-    const rounded = Math.ceil(contentPages / 4) * 4;
-    return { estimatedPages: Math.max(28, rounded), tooFewContent: selected.length < 7 };
-  })();
+  const { estimatedPages, tooFewContent } = estimateOrderPages(visibleStories, filteredEntries, selectedStoryIds);
 
   // Cover photo picker uses the same year filter as the rest of the preview
   const availablePhotos = filteredEntries
@@ -436,48 +351,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     .filter(Boolean)
     .slice(0, 8);
 
-  const coverPeriod = (() => {
-    if (!pet) return "";
-    const allDates: Date[] = [];
-    if (pet.birthdate) allDates.push(new Date(pet.birthdate));
-    visibleStories.forEach(s => { if (s.period_start) allDates.push(new Date(s.period_start)); });
-    filteredEntries.forEach(e => { if (e.entry_date) allDates.push(new Date(e.entry_date)); });
-    const start = allDates.length ? allDates.reduce((a, b) => a < b ? a : b) : new Date(pet.created_at);
-    const endDates: Date[] = [];
-    visibleStories.forEach(s => { if (s.period_end) endDates.push(new Date(s.period_end)); else if (s.period_start) endDates.push(new Date(s.period_start)); });
-    filteredEntries.forEach(e => { if (e.entry_date) endDates.push(new Date(e.entry_date)); });
-    const end = endDates.length ? endDates.reduce((a, b) => a > b ? a : b) : new Date();
-    const startYear = start.getFullYear();
-    const endYear = yearFilter ?? end.getFullYear();
-    return startYear === endYear ? String(startYear) : `${startYear}–${endYear}`;
-  })();
+  const coverPeriod = calcCoverPeriod(pet, visibleStories, filteredEntries, yearFilter);
 
-  const monthsCount = (() => {
-    if (!pet) return 1;
-    if (yearFilter === null) {
-      // Toutes les années : depuis la première histoire/entrée jusqu'à aujourd'hui
-      const allDates: Date[] = [
-        ...entries.map(e => new Date(e.entry_date)),
-        ...stories.map(s => new Date(s.period_start ?? s.created_at)),
-      ];
-      if (allDates.length === 0) {
-        // Fallback si aucun contenu : depuis la création du profil
-        const start = pet.birthdate ? new Date(pet.birthdate) : new Date(pet.created_at);
-        return Math.max(1, Math.round((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24 * 30)));
-      }
-      const minDate = allDates.reduce((a, b) => a < b ? a : b);
-      return Math.max(1, Math.round((Date.now() - minDate.getTime()) / (1000 * 60 * 60 * 24 * 30)));
-    }
-    // Année spécifique : span entre la première et la dernière entrée/histoire de cette année
-    const dates: Date[] = [
-      ...filteredEntries.map(e => new Date(e.entry_date)),
-      ...visibleStories.map(s => new Date(s.period_start ?? s.created_at)),
-    ];
-    if (dates.length === 0) return 1;
-    const minDate = dates.reduce((a, b) => a < b ? a : b);
-    const maxDate = dates.reduce((a, b) => a > b ? a : b);
-    return Math.max(1, Math.round((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1);
-  })();
+  const monthsCount = calcMonthsCount(pet, entries, stories, filteredEntries, visibleStories, yearFilter);
 
   const handleSave = async (name?: string) => {
     setSaving(true);
