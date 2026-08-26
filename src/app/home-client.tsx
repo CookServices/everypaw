@@ -7,6 +7,7 @@ import { formatPrice, type Currency } from "@/lib/currency";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 import LangSuggestBanner from "@/components/LangSuggestBanner";
+import { trackViewContent } from "@/lib/pixel";
 
 const tEN = getTranslations("en");
 const tFR = getTranslations("fr");
@@ -29,6 +30,10 @@ export default function Home({ locale }: { locale: Locale }) {
   useEffect(() => {
     const id = setInterval(() => setDemoSlide(s => (s + 1) % 3), 5000);
     return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    trackViewContent("Everypaw Landing");
   }, []);
 
   // Open FAQ from URL hash on first load

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 import { getSignupError } from "@/lib/auth-errors";
 import { log } from "@/lib/log";
+import { trackCompleteRegistration } from "@/lib/pixel";
 import PublicFooter from "@/components/PublicFooter";
 import PasswordStrength from "@/components/PasswordStrength";
 
@@ -146,6 +147,7 @@ export default function SignupPage() {
       setStatus("error");
     } else {
       setStatus("success");
+      trackCompleteRegistration();
     }
   };
 

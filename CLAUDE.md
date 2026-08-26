@@ -575,6 +575,8 @@ currency: "USD"
 
 **Qualité** : logs gatés (`src/lib/log.ts`, `DEBUG_LOGS=1`), rate-limit persistant Postgres (`checkRateLimitDb`), tests Vitest (plan guards, priceIdToPlan, calcPageCount, parseStoryResponse), hook SessionStart `npm install`.
 
+Meta Pixel événements custom : CompleteRegistration (signup) + ViewContent (landing) — installés via src/lib/pixel.ts
+
 ---
 
 ## Conventions de code
