@@ -109,3 +109,25 @@
   border-color: var(--ep-error-border);
   color: var(--ep-error-ink);
 }
+
+.ep-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--ep-radius-pill);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+.ep-badge--print {
+  background-color: rgba(88,128,184,.12);
+  color: var(--ep-status-print);
+}
+.ep-badge--ship {
+  background-color: rgba(106,158,120,.12);
+  color: var(--ep-status-ship-ink);
+}
+.ep-badge--memorial {
+  background-color: rgba(139,107,74,.12);
+  color: var(--ep-memorial);
+}
