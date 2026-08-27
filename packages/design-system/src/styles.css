@@ -110,6 +110,12 @@
   border-color: var(--ep-error-border);
   color: var(--ep-error-ink);
 }
+.ep-input-error-message {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  color: var(--ep-error-ink);
+  margin: 0;
+}
 
 .ep-badge {
   display: inline-flex;
