@@ -151,3 +151,32 @@
   font-weight: 500;
   background-color: rgba(61,43,31,.04);
 }
+
+.ep-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(61,43,31,.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: ep-fade-in var(--ep-transition);
+}
+.ep-modal {
+  background-color: var(--ep-bg-card);
+  color: var(--ep-text);
+  border-radius: var(--ep-radius-lg);
+  box-shadow: var(--ep-shadow-lg);
+  padding: 24px;
+  max-width: 480px;
+  width: 90%;
+}
+.ep-modal-title {
+  font-family: Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+@keyframes ep-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
