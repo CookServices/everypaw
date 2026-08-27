@@ -65,3 +65,17 @@
   border-color: var(--ep-brand);
   color: var(--ep-brand);
 }
+
+.ep-card {
+  background-color: var(--ep-bg-card);
+  color: var(--ep-text);
+  border-radius: var(--ep-radius-md);
+  border: 1px solid var(--ep-border);
+  box-shadow: var(--ep-shadow-sm);
+}
+.ep-card--sm {
+  padding: 16px;
+}
+.ep-card--md {
+  padding: 24px;
+}
