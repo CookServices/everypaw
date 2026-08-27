@@ -15,8 +15,8 @@ export function Input({ error, label, id, ...rest }: InputProps) {
       )}
       <input
         id={id}
-        className={`ep-input${error ? ' ep-input--error' : ''}`}
         {...rest}
+        className={`ep-input${error ? ' ep-input--error' : ''}${rest.className ? ` ${rest.className}` : ''}`}
       />
     </div>
   );

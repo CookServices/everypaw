@@ -6,13 +6,17 @@ standalone, buildable package.
 
 ## Build
 
+```bash
 npm install
 npm run build
+```
 
 ## Usage
 
+```tsx
 import { Button, Card, Input, Badge, NavItem, Modal } from '@everypaw/design-system';
 import '@everypaw/design-system/styles.css';
+```
 
 ## Scope
 

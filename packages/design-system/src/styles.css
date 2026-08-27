@@ -34,7 +34,7 @@
   font-family: 'DM Sans', -apple-system, sans-serif;
   font-weight: 500;
   font-size: 1rem;
-  border: none;
+  border: 1.5px solid transparent;
   cursor: pointer;
   transition: background-color var(--ep-transition), transform var(--ep-transition), color var(--ep-transition), border-color var(--ep-transition);
 }
@@ -59,7 +59,7 @@
 .ep-btn--outline {
   background-color: transparent;
   color: var(--ep-text);
-  border: 1.5px solid rgba(61,43,31,.2);
+  border-color: rgba(61,43,31,.2);
 }
 .ep-btn--outline:hover:not(:disabled) {
   border-color: var(--ep-brand);
@@ -99,6 +99,7 @@
   padding: 10px 14px;
   font-size: 16px;
   color: var(--ep-text);
+  font-family: 'DM Sans', sans-serif;
 }
 .ep-input:focus-visible {
   outline: 2px solid var(--ep-brand);
