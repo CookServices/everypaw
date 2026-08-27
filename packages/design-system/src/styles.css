@@ -1,0 +1,26 @@
+:root {
+  --ep-bg: #F7F2EA;
+  --ep-bg-card: #FDFAF5;
+  --ep-brand: #C8813A;
+  --ep-brand-dark: #B5712E;
+  --ep-text: #3D2B1F;
+  --ep-text-muted: #7A5C44;
+  --ep-text-faint: #9A8070;
+  --ep-border: rgba(61,43,31,.1);
+  --ep-error-bg: #FEF2F2;
+  --ep-error-border: #FCA5A5;
+  --ep-error-ink: #991B1B;
+  --ep-alert: #A32D2D;
+  --ep-status-print: #5880B8;
+  --ep-status-ship: #6A9E78;
+  --ep-status-ship-ink: #3A6A48;
+  --ep-memorial: #8B6B4A;
+  --ep-radius-sm: 8px;
+  --ep-radius-md: 14px;
+  --ep-radius-lg: 20px;
+  --ep-radius-pill: 100px;
+  --ep-shadow-sm: 0 2px 8px rgba(61,43,31,.08);
+  --ep-shadow-md: 0 8px 24px rgba(61,43,31,.12);
+  --ep-shadow-lg: 0 16px 48px rgba(61,43,31,.16);
+  --ep-transition: 150ms ease;
+}
