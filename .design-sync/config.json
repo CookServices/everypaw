@@ -1,0 +1,11 @@
+{
+  "projectId": "dc91647a-d972-409a-adee-c59450239a42",
+  "pkg": "@everypaw/design-system",
+  "shape": "package",
+  "buildCmd": "npm run build",
+  "runtimeFontPrefixes": ["DM Sans"],
+  "overrides": {
+    "Modal": { "cardMode": "single", "viewport": "480x420" }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}

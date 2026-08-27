@@ -1,0 +1,189 @@
+:root {
+  --ep-bg: #F7F2EA;
+  --ep-bg-card: #FDFAF5;
+  --ep-brand: #C8813A;
+  --ep-brand-dark: #B5712E;
+  --ep-text: #3D2B1F;
+  --ep-text-muted: #7A5C44;
+  --ep-text-faint: #9A8070;
+  --ep-border: rgba(61,43,31,.1);
+  --ep-error-bg: #FEF2F2;
+  --ep-error-border: #FCA5A5;
+  --ep-error-ink: #991B1B;
+  --ep-alert: #A32D2D;
+  --ep-status-print: #5880B8;
+  --ep-status-ship: #6A9E78;
+  --ep-status-ship-ink: #3A6A48;
+  --ep-memorial: #8B6B4A;
+  --ep-radius-sm: 8px;
+  --ep-radius-md: 14px;
+  --ep-radius-lg: 20px;
+  --ep-radius-pill: 100px;
+  --ep-shadow-sm: 0 2px 8px rgba(61,43,31,.08);
+  --ep-shadow-md: 0 8px 24px rgba(61,43,31,.12);
+  --ep-shadow-lg: 0 16px 48px rgba(61,43,31,.16);
+  --ep-transition: 150ms ease;
+}
+
+.ep-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ep-radius-pill);
+  padding: 12px 24px;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  font-weight: 500;
+  font-size: 1rem;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--ep-transition), transform var(--ep-transition), color var(--ep-transition), border-color var(--ep-transition);
+}
+.ep-btn:active {
+  transform: scale(0.98);
+}
+.ep-btn:focus-visible {
+  outline: 2px solid var(--ep-brand);
+  outline-offset: 2px;
+}
+.ep-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ep-btn--primary {
+  background-color: var(--ep-brand);
+  color: var(--ep-bg-card);
+}
+.ep-btn--primary:hover:not(:disabled) {
+  background-color: var(--ep-brand-dark);
+}
+.ep-btn--outline {
+  background-color: transparent;
+  color: var(--ep-text);
+  border-color: rgba(61,43,31,.2);
+}
+.ep-btn--outline:hover:not(:disabled) {
+  border-color: var(--ep-brand);
+  color: var(--ep-brand);
+}
+
+.ep-card {
+  background-color: var(--ep-bg-card);
+  color: var(--ep-text);
+  border-radius: var(--ep-radius-md);
+  border: 1px solid var(--ep-border);
+  box-shadow: var(--ep-shadow-sm);
+}
+.ep-card--sm {
+  padding: 16px;
+}
+.ep-card--md {
+  padding: 24px;
+}
+
+.ep-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ep-input-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--ep-text-muted);
+}
+.ep-input {
+  background-color: var(--ep-bg-card);
+  border: 1px solid var(--ep-border);
+  border-radius: var(--ep-radius-sm);
+  padding: 10px 14px;
+  font-size: 16px;
+  color: var(--ep-text);
+  font-family: 'DM Sans', sans-serif;
+}
+.ep-input:focus-visible {
+  outline: 2px solid var(--ep-brand);
+  outline-offset: 3px;
+}
+.ep-input--error {
+  background-color: var(--ep-error-bg);
+  border-color: var(--ep-error-border);
+  color: var(--ep-error-ink);
+}
+.ep-input-error-message {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  color: var(--ep-error-ink);
+  margin: 0;
+}
+
+.ep-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--ep-radius-pill);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+.ep-badge--print {
+  background-color: rgba(88,128,184,.12);
+  color: var(--ep-status-print);
+}
+.ep-badge--ship {
+  background-color: rgba(106,158,120,.12);
+  color: var(--ep-status-ship-ink);
+}
+.ep-badge--memorial {
+  background-color: rgba(139,107,74,.12);
+  color: var(--ep-memorial);
+}
+
+.ep-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--ep-radius-sm);
+  color: var(--ep-text);
+  text-decoration: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  transition: background-color var(--ep-transition);
+}
+.ep-nav-item:hover {
+  background-color: rgba(61,43,31,.04);
+}
+.ep-nav-item--active {
+  font-weight: 500;
+  background-color: rgba(61,43,31,.04);
+}
+
+.ep-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(61,43,31,.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: ep-fade-in var(--ep-transition);
+}
+.ep-modal {
+  background-color: var(--ep-bg-card);
+  color: var(--ep-text);
+  border-radius: var(--ep-radius-lg);
+  box-shadow: var(--ep-shadow-lg);
+  padding: 24px;
+  max-width: 480px;
+  width: 90%;
+}
+.ep-modal-title {
+  font-family: Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+@keyframes ep-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
