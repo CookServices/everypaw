@@ -131,3 +131,23 @@
   background-color: rgba(139,107,74,.12);
   color: var(--ep-memorial);
 }
+
+.ep-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--ep-radius-sm);
+  color: var(--ep-text);
+  text-decoration: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  transition: background-color var(--ep-transition);
+}
+.ep-nav-item:hover {
+  background-color: rgba(61,43,31,.04);
+}
+.ep-nav-item--active {
+  font-weight: 500;
+  background-color: rgba(61,43,31,.04);
+}
