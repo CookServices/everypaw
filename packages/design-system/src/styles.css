@@ -24,3 +24,44 @@
   --ep-shadow-lg: 0 16px 48px rgba(61,43,31,.16);
   --ep-transition: 150ms ease;
 }
+
+.ep-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ep-radius-pill);
+  padding: 12px 24px;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  font-weight: 500;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--ep-transition), transform var(--ep-transition), color var(--ep-transition), border-color var(--ep-transition);
+}
+.ep-btn:active {
+  transform: scale(0.98);
+}
+.ep-btn:focus-visible {
+  outline: 2px solid var(--ep-brand);
+  outline-offset: 2px;
+}
+.ep-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ep-btn--primary {
+  background-color: var(--ep-brand);
+  color: var(--ep-bg-card);
+}
+.ep-btn--primary:hover:not(:disabled) {
+  background-color: var(--ep-brand-dark);
+}
+.ep-btn--outline {
+  background-color: transparent;
+  color: var(--ep-text);
+  border: 1.5px solid rgba(61,43,31,.2);
+}
+.ep-btn--outline:hover:not(:disabled) {
+  border-color: var(--ep-brand);
+  color: var(--ep-brand);
+}
