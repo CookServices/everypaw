@@ -79,3 +79,33 @@
 .ep-card--md {
   padding: 24px;
 }
+
+.ep-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ep-input-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--ep-text-muted);
+}
+.ep-input {
+  background-color: var(--ep-bg-card);
+  border: 1px solid var(--ep-border);
+  border-radius: var(--ep-radius-sm);
+  padding: 10px 14px;
+  font-size: 16px;
+  color: var(--ep-text);
+}
+.ep-input:focus-visible {
+  outline: 2px solid var(--ep-brand);
+  outline-offset: 3px;
+}
+.ep-input--error {
+  background-color: var(--ep-error-bg);
+  border-color: var(--ep-error-border);
+  color: var(--ep-error-ink);
+}
