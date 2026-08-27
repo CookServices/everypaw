@@ -705,31 +705,6 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 Historique complet (sessions 1 à 53, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
 Seules les 2 dernières sessions sont conservées ici ; à chaque nouvelle session, déplacer la plus ancienne vers l'archive.
 
-### ✅ Session 60 — Refonte visuelle emails (suite complète) (2026-07-22)
-
-Continuation refonte emails : finaliser les 7 APIs + crons restants (reportés session 59).
-
-**Refactorisés** (commits `d3b9cc5` + `0c0e65c`) :
-- **3 APIs** : `contact`, `waitlist`, `suggestion` → heroSection + colorSection + divider, structure cohérente avec le reste
-- **4 crons** : `birthday-check`, `daily-prompts`, `streak-alert`, `retention-emails` (3 paliers d1/d7/d30) → heroSection + colorSection urgence/momentum, messages emotivement alignés avec le tone DESIGN.md Georgia (Serif-for-Soul)
-- **All primitives use BRAND colors** (no inline hex sauf exceptions DESIGN.md) ; `--ep-brand` (`#C8813A` terracotta) + warmth context.
-- **Bilingual emails** : EN/FR 100% via colorSection message tuning (ex d30_free: "Unlock the full power" vs "Déverrouillez le pouvoir complet")
-- **Localization path** : `locale` param (basé sur `profile.language` ou `req.locale`) + `getTranslations(locale).key_name` où applicable (retention-emails, first-story-nudge).
-- **Testing** : `npm run build` ✓ ; all TypeScript ✓.
-- **Commits** : `d3b9cc5` APIs + `0c0e65c` crons ; `git push origin main` ✓.
-
-**Status all email visual improvements** : ✅ COMPLETE.
-- ✅ 4 auth emails (signup-confirm, password-reset, payment-failed, change-email)
-- ✅ 4 crons email 1st wave (on-this-day, first-story-nudge, weekly-reminder, monthly-story) + 1st wave completeness (session 58+59)
-- ✅ 3 APIs (contact, waitlist, suggestion) — session 60
-- ✅ 4 crons email 2nd wave (birthday-check, daily-prompts, streak-alert, retention-emails) — session 60
-- ✅ 1 gift email (gift/complete)
-
-**Remaining backlog** (large refactors, deferred) — see "Optimisation & dette technique" above for current status:
-- #4 CDN static landing (root `/[locale]/` restructure for `headers()` removal)
-- #8 Dashboards RSC migration (~10 client pages → data at first paint)
-- #9 God-components split (in progress, see Session 61)
-
 ### ✅ Session 61 — Dédup compressImage + découpe god-components order/settings (2026-08-20)
 
 Suite du chantier #9 (dette technique). Méthode identique à `pets/[id]` (sessions 2026-07-23) : petites PR incrémentales, `tsc`+`npm test` verts avant push, smoke test sur preview Vercel `everypaw-staging` avant merge, jamais de commit direct sur `main`.
@@ -745,3 +720,14 @@ Suite du chantier #9 (dette technique). Méthode identique à `pets/[id]` (sessi
 **Vérification** : chaque PR testée en live sur `everypaw-staging-git-*` (compte `test-print-multi@yopmail.com`) avant merge — upload avatar réel (mesuré 400×400 après upload), simulation upload origins 1600×1200 (resize réellement déclenché, vérifié sans erreur), navigation Stepper aller/retour, ouverture/fermeture `PreviewModal` (iframe srcdoc généré), ouverture/saisie/annulation `DeleteAccountModal`. `UpgradeConfirmModal` non testable en live sur ce compte (`/api/stripe/upgrade-preview` → 400 "No active subscription", limite pré-existante des comptes seedés sans vraie souscription Stripe, sans rapport avec la refacto).
 
 **Reste ouvert sur #9** : `renderPreviewStep` (order, 492 l) + le reste de `settings/page.tsx` (encore ~800 l de JSX/handlers) — les deux bloqués sur le même sujet (bundle de props partagées), pas des quick wins.
+
+### ✅ Session 62 — Package `@everypaw/design-system` + sync claude.ai/design (PRs [#104](https://github.com/CookServices/everypaw/pull/104), [#105](https://github.com/CookServices/everypaw/pull/105) mergées) (2026-08-27)
+
+`/design-sync` (feature Claude Code) exige un repo/package buildable de façon isolée pour lire des composants — everypaw (styles inline, pas de lib composants) n'y correspondait pas.
+
+- **Nouveau package** `packages/design-system/` : `private`, buildé via `tsup` (ESM+CJS+d.ts). Tokens (`tokens.ts` + `styles.css`) **dupliqués** depuis `DESIGN.md`/`globals.css` (choix assumé — isolation totale du package, drift risk accepté). 6 composants présentationnels : `Button`, `Card`, `Input`, `Badge`, `NavItem`, `Modal`. Zéro consommateur dans `src/` pour l'instant (scope v1 volontairement minimal).
+- **Exception convention** : ce package stylise via `className`+CSS (`:hover`/`:focus-visible`), contrairement à la règle "styles inline partout" ci-dessus — accepté pour ce package isolé exportable. Naming CSS pas encore réconcilié : `.ep-btn-primary` (app) vs `.ep-btn--primary` (package, BEM).
+- **Fix tsconfig** : root `tsconfig.json` `include` élargi (`**/*.ts`) absorbait le `node_modules`/`@types/react` isolé du package → 160 erreurs TS fantômes. Fix durable : `include` scopé à `src/**`, `scripts/**`, `vitest.config.ts` (plus besoin d'exclure chaque futur sibling directory par son nom).
+- **`/design-sync` exécuté 2×** : upload initial (6 composants) + re-sync après fixes review (Input `useId`/`aria-invalid`/`errorMessage`). Committé un dossier `.design-sync/` (config + previews + notes) — 2e commit direct sur `main` par la session `/design-sync` elle-même (pas par moi).
+- **Review complète** (`/code-review`, 8 angles, high effort) : 6 findings confirmés, 4 corrigés (a11y Input + tsconfig), 2 laissés (conventions styles/naming, hors scope demandé).
+- Projet claude.ai : https://claude.ai/design/p/dc91647a-d972-409a-adee-c59450239a42

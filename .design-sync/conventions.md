@@ -17,10 +17,12 @@ Fixed BEM-style component classes, never utility classes and never inline style 
 |---|---|---|
 | Button | `.ep-btn` | `.ep-btn--primary`, `.ep-btn--outline` |
 | Card | `.ep-card` | `.ep-card--sm`, `.ep-card--md` |
-| Input | `.ep-input-wrapper` / `.ep-input` / `.ep-input-label` | `.ep-input--error` |
+| Input | `.ep-input-wrapper` / `.ep-input` / `.ep-input-label` | `.ep-input--error`, `.ep-input-error-message` |
 | Badge | `.ep-badge` | `.ep-badge--print`, `.ep-badge--ship`, `.ep-badge--memorial` |
 | NavItem | `.ep-nav-item` | `.ep-nav-item--active` |
 | Modal | `.ep-modal-overlay` / `.ep-modal` / `.ep-modal-title` | — (controlled via `open` prop) |
+
+`Input` pairs `error` (boolean) with an optional `errorMessage` string: pass both to show accessible inline error text (`aria-invalid` + `aria-describedby` are wired automatically) — `error` alone just tints the field, `errorMessage` is what actually renders the message.
 
 All colors, radii, shadows, and transitions come from CSS custom properties defined in `styles.css` (`--ep-brand`, `--ep-bg-card`, `--ep-text`, `--ep-radius-pill`, `--ep-shadow-sm`, etc.) — never hardcode a hex value when composing layouts around these components; reach for the matching `var(--ep-*)` token instead. Read `styles.css` at the project root for the full token list before styling anything adjacent to these components.
 

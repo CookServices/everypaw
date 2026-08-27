@@ -1659,3 +1659,30 @@ Maillage : pilier (4) → 5 autres + `/memorial` ; retour 1-3 → 4-6 (commit `e
 - **Localization** : FR/EN 100% preserved via `locale` param + colorSection messages contextualisées (2 langues dans les colorSections).
 - **Build checks** : `npm run build` ✓ + `git push origin main` ✓.
 
+---
+
+### ✅ Session 60 — Refonte visuelle emails (suite complète) (2026-07-22)
+
+Continuation refonte emails : finaliser les 7 APIs + crons restants (reportés session 59).
+
+**Refactorisés** (commits `d3b9cc5` + `0c0e65c`) :
+- **3 APIs** : `contact`, `waitlist`, `suggestion` → heroSection + colorSection + divider, structure cohérente avec le reste
+- **4 crons** : `birthday-check`, `daily-prompts`, `streak-alert`, `retention-emails` (3 paliers d1/d7/d30) → heroSection + colorSection urgence/momentum, messages emotivement alignés avec le tone DESIGN.md Georgia (Serif-for-Soul)
+- **All primitives use BRAND colors** (no inline hex sauf exceptions DESIGN.md) ; `--ep-brand` (`#C8813A` terracotta) + warmth context.
+- **Bilingual emails** : EN/FR 100% via colorSection message tuning (ex d30_free: "Unlock the full power" vs "Déverrouillez le pouvoir complet")
+- **Localization path** : `locale` param (basé sur `profile.language` ou `req.locale`) + `getTranslations(locale).key_name` où applicable (retention-emails, first-story-nudge).
+- **Testing** : `npm run build` ✓ ; all TypeScript ✓.
+- **Commits** : `d3b9cc5` APIs + `0c0e65c` crons ; `git push origin main` ✓.
+
+**Status all email visual improvements** : ✅ COMPLETE.
+- ✅ 4 auth emails (signup-confirm, password-reset, payment-failed, change-email)
+- ✅ 4 crons email 1st wave (on-this-day, first-story-nudge, weekly-reminder, monthly-story) + 1st wave completeness (session 58+59)
+- ✅ 3 APIs (contact, waitlist, suggestion) — session 60
+- ✅ 4 crons email 2nd wave (birthday-check, daily-prompts, streak-alert, retention-emails) — session 60
+- ✅ 1 gift email (gift/complete)
+
+**Remaining backlog** (large refactors, deferred) — see "Optimisation & dette technique" in CLAUDE.md for current status:
+- #4 CDN static landing (root `/[locale]/` restructure for `headers()` removal)
+- #8 Dashboards RSC migration (~10 client pages → data at first paint)
+- #9 God-components split (in progress, see Session 61)
+
