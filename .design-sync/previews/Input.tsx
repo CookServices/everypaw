@@ -11,6 +11,7 @@ export function WithError() {
       label="Email"
       defaultValue="not-an-email"
       error
+      errorMessage="Enter a valid email address"
       placeholder="you@example.com"
     />
   );
