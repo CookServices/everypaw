@@ -705,22 +705,6 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 Historique complet (sessions 1 à 53, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
 Seules les 2 dernières sessions sont conservées ici ; à chaque nouvelle session, déplacer la plus ancienne vers l'archive.
 
-### ✅ Session 61 — Dédup compressImage + découpe god-components order/settings (2026-08-20)
-
-Suite du chantier #9 (dette technique). Méthode identique à `pets/[id]` (sessions 2026-07-23) : petites PR incrémentales, `tsc`+`npm test` verts avant push, smoke test sur preview Vercel `everypaw-staging` avant merge, jamais de commit direct sur `main`.
-
-**Dédup `compressImage`** (PR [#98](https://github.com/CookServices/everypaw/pull/98)) : dette repérée lors de la découpe `pets/[id]` (2026-07-23), enfin traitée. 4 copies → 1 seule dans `src/lib/image.ts`, importée par `pets/new`, `pets/[id]/edit`, `OriginsFlow`. Comportement identique vérifié : les 2 sites avatar passent toujours un blob cropé fixe 400×400 en entrée, donc `maxSize` 800 vs 1200 ne changeait jamais rien en pratique (branche resize jamais déclenchée) ; `OriginsFlow` avait déjà `maxSize: 1200` identique au canonique.
-
-**`order/page.tsx` — PR1+PR2 (1625 → 1435 l)** :
-- PR1 ([#99](https://github.com/CookServices/everypaw/pull/99)) : `constants.ts` (types `Step`/`LayoutType`/`ThemeId`, interfaces `Story`/`Entry`/`Pet`/`Profile`, `PAGE_LAYOUTS`/`SHIPPING_BY_COUNTRY`/`COUNTRIES`/`COVER_THEMES`) + `utils.ts` (3 IIFE dérivées converties en fonctions pures nommées : `estimateOrderPages`, `calcCoverPeriod`, `calcMonthsCount`).
-- PR2 ([#100](https://github.com/CookServices/everypaw/pull/100)) : le fichier avait déjà 7 render-closures depuis la refonte session 2026-06-05 (`renderPreviewModal`, `renderStepper`, `renderUpsellBanners`, `renderPreviewStep` 492 l, `renderSuccessStep`, `renderConfirmStep`, `renderAddressStep`). Seuls `renderPreviewModal` → `components/PreviewModal.tsx` et `renderStepper` → `components/Stepper.tsx` extraits : les 4 autres partagent massivement `accentColor`/`textPrimary`/`textMuted`/`isMemorial` calculés une fois dans le parent — extraction prématurée sans bundle "theme props" = signature de props énorme et risque de divergence. **Reste à faire** : concevoir ce bundle avant PR3.
-
-**`settings/page.tsx` — PR1 (964 → 866 l)** ([#101](https://github.com/CookServices/everypaw/pull/101)) : pas de render-closures pré-existantes ici, mais 3 objets style (`inputStyle`/`btnPrimary`/`btnOutline`) sont des littéraux statiques sans dépendance état/props → extraits tels quels dans `constants.ts`. Les 2 modales self-contained (`UpgradeConfirmModal`, `DeleteAccountModal`) extraites en composants avec props typées (`isFR` + callbacks), import direct des styles partagés (pas de prop-threading superflu).
-
-**Vérification** : chaque PR testée en live sur `everypaw-staging-git-*` (compte `test-print-multi@yopmail.com`) avant merge — upload avatar réel (mesuré 400×400 après upload), simulation upload origins 1600×1200 (resize réellement déclenché, vérifié sans erreur), navigation Stepper aller/retour, ouverture/fermeture `PreviewModal` (iframe srcdoc généré), ouverture/saisie/annulation `DeleteAccountModal`. `UpgradeConfirmModal` non testable en live sur ce compte (`/api/stripe/upgrade-preview` → 400 "No active subscription", limite pré-existante des comptes seedés sans vraie souscription Stripe, sans rapport avec la refacto).
-
-**Reste ouvert sur #9** : `renderPreviewStep` (order, 492 l) + le reste de `settings/page.tsx` (encore ~800 l de JSX/handlers) — les deux bloqués sur le même sujet (bundle de props partagées), pas des quick wins.
-
 ### ✅ Session 62 — Package `@everypaw/design-system` + sync claude.ai/design (PRs [#104](https://github.com/CookServices/everypaw/pull/104), [#105](https://github.com/CookServices/everypaw/pull/105) mergées) (2026-08-27)
 
 `/design-sync` (feature Claude Code) exige un repo/package buildable de façon isolée pour lire des composants — everypaw (styles inline, pas de lib composants) n'y correspondait pas.
@@ -731,3 +715,11 @@ Suite du chantier #9 (dette technique). Méthode identique à `pets/[id]` (sessi
 - **`/design-sync` exécuté 2×** : upload initial (6 composants) + re-sync après fixes review (Input `useId`/`aria-invalid`/`errorMessage`). Committé un dossier `.design-sync/` (config + previews + notes) — 2e commit direct sur `main` par la session `/design-sync` elle-même (pas par moi).
 - **Review complète** (`/code-review`, 8 angles, high effort) : 6 findings confirmés, 4 corrigés (a11y Input + tsconfig), 2 laissés (conventions styles/naming, hors scope demandé).
 - Projet claude.ai : https://claude.ai/design/p/dc91647a-d972-409a-adee-c59450239a42
+
+### ✅ Session 63 — Fix `allow_promotion_codes` manquant sur checkout Stripe (2026-08-28)
+
+Testeur passé en abonnement Digital n'a vu aucun champ code promo sur la page Stripe Checkout. Audit : 4 routes appellent `stripe.checkout.sessions.create`, aucune ne passait `allow_promotion_codes`.
+
+- **Fix appliqué** (`allow_promotion_codes: true`) : `stripe/checkout` (abonnement digital/print), `gift/checkout` (achat gift), `stripe/book-checkout` (livre supplémentaire).
+- **Non touché** : `gift/redeem` — passe déjà `discounts: [{ promotion_code }]` codé en dur ; Stripe refuse `allow_promotion_codes` + `discounts` sur la même session.
+- PR : voir historique Git (branche `fix/checkout-allow-promo-codes`).
