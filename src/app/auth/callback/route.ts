@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSafeRelativePath } from "@/lib/validation";
+import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -9,7 +10,15 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (error) {
+      log.error("[auth/callback] exchangeCodeForSession failed", {
+        message: error.message,
+        status: (error as { status?: number }).status,
+      });
+      return NextResponse.redirect(`${origin}/auth/login?auth_error=exchange_failed`);
+    }
 
     // Persist the signup language (from user_metadata) onto the profile once,
     // so localized emails can target the right language.

@@ -181,7 +181,8 @@
     "password_hint": "Mot de passe (min. 8 caractères)",
     "check_inbox": "Vérifiez votre boîte mail",
     "check_inbox_desc": "Nous avons envoyé un lien de confirmation à {email}. Cliquez dessus pour activer votre compte.",
-    "start_story": "Commencez l'histoire de votre animal aujourd'hui"
+    "start_story": "Commencez l'histoire de votre animal aujourd'hui",
+    "confirm_link_invalid": "Ce lien n'est plus valide. Si vous avez déjà confirmé votre email, connectez-vous. Sinon, demandez un nouveau lien de confirmation."
   },
   "pet": {
     "add_title": "Ajouter un animal",
