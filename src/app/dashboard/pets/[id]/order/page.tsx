@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
 import { calcGelatoBookPrice } from "@/lib/gelato-pricing";
+import { calcPageCount } from "@/lib/book-pages";
 import type { Step, LayoutType, ThemeId, Story, Entry, Pet, Profile } from "./constants";
 import { PAGE_LAYOUTS, SHIPPING_BY_COUNTRY, COUNTRIES, COVER_THEMES } from "./constants";
 import { estimateOrderPages, calcCoverPeriod, calcMonthsCount } from "./utils";
@@ -407,7 +408,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       const res = await fetch("/api/stripe/book-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ petId: id, pageCount: estimatedPages }),
+        body: JSON.stringify({ petId: id }),
       });
       const data = await res.json();
       if (data.url) { window.location.href = data.url; return; }
@@ -482,7 +483,12 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const textMuted = isMemorial ? "rgba(247,242,234,.5)" : "var(--ep-text-muted)";
   const labelColor = isMemorial ? "rgba(247,242,234,.4)" : "var(--ep-text-muted)";
   const accentColor = isMemorial ? "var(--ep-memorial)" : "var(--ep-brand)";
-  const extraBookPrice = calcGelatoBookPrice(estimatedPages);
+  // Matches the server-side worst-case computation in /api/stripe/book-checkout:
+  // all of this pet's stories, dedication/orphan-photos/tributes all assumed
+  // present. Shown price must never be lower than what Stripe will actually
+  // charge (that route ignores any client-supplied page count).
+  const worstCasePages = calcPageCount(stories.length, true, true, true);
+  const extraBookPrice = calcGelatoBookPrice(worstCasePages);
   const extraBookPriceLabel = `${extraBookPrice} €`;
   const price = isMemorial ? t.memorial.order_price : extraBookPriceLabel;
   const productName = isMemorial
