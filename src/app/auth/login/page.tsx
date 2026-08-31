@@ -13,15 +13,17 @@ export default function LoginPage() {
   const { locale, t } = useLocale();
   const isFR = locale === "fr";
 
-  // Redirect params from gift redeem flow
+  // Redirect params: `next` used by invite flow, `redirect` used by gift flow
   const getRedirectTarget = () => {
     if (typeof window === "undefined") return "/dashboard";
     const p = new URLSearchParams(window.location.search);
     const redirect = p.get("redirect");
+    const next = p.get("next");
     const code = p.get("code");
+    const target = next ?? redirect;
     // Only allow relative paths, prevent open redirect to external sites
-    if (isSafeRelativePath(redirect)) {
-      return code ? `${redirect}?code=${code}` : redirect;
+    if (isSafeRelativePath(target)) {
+      return code ? `${target}?code=${code}` : target;
     }
     return "/dashboard";
   };
