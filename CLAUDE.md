@@ -191,41 +191,10 @@ Concretely, for a password reset requested from a preview:
 **Workaround:** finish the email flow on `everypaw.app`, then sign in on the preview. Preview and
 production share the same Supabase project, so the credential works on both.
 
-**Bug cross-device corrigé (Session 64, suite) :** `forgot-password` envoyait `redirectTo` vers
-`/auth/update-password`, et sous PKCE ce lien redirigeait avec un `?code=` que
-`update-password/page.tsx` n'a jamais échangé explicitement (`exchangeCodeForSession` n'y est pas
-appelé) — ça ne marchait que par effet de bord de la détection automatique d'URL du client browser
-(`detectSessionInUrl`), qui a besoin du `code_verifier` local. Testé en prod : même navigateur que
-la demande → session ouverte silencieusement ; navigateur différent (storage vierge) → coincé sur
-`?code=` jamais échangé, "Lien de réinitialisation invalide ou expiré" alors que le lien était frais.
-Même mécanisme et même fix que le bug signup ci-dessus : `auth-hook` construit désormais le lien
-recovery vers `/auth/confirm?type=recovery` (au lieu de `confirmation_url` PKCE), `/auth/confirm`
-généralisé pour accepter `type=signup|recovery`, `update-password/page.tsx` affiche le message
-d'erreur proactivement sur `auth_error=confirm_failed` (nouvelle clé i18n `auth.confirm_link_invalid`
-non réutilisée ici — message déjà existant sur la page, juste déclenché plus tôt).
-Le bug de substitution preview→prod documenté ci-dessus est indépendant et reste réel, mais devient
-sans effet pratique : le lien pointe désormais toujours vers `${APP_URL}/auth/confirm` (jamais
-l'origine preview), donc le scénario "reset demandé depuis une preview" atterrit directement sur
-prod sans passer par la substitution.
-
-**Bug distinct corrigé (Session 64, suite) — email_change totalement cassé, pas juste cross-device :**
-`dashboard/settings` appelle `updateUser({ email })` sans `emailRedirectTo`. Le lien de confirmation
-envoyé à la nouvelle adresse avait `token=` **vide** (`.../auth/v1/verify?token=&type=email_change&...`)
-→ Supabase répondait `400 validation_failed "Verify requires a token or a token hash"` à chaque
-tentative, pour tout le monde, peu importe l'appareil. Personne n'a jamais pu confirmer un changement
-d'email sur Everypaw en cliquant le lien reçu.
-Cause : "Secure email change" est **désactivé** dans Supabase Auth (Providers → Email) sur ce projet
-— une seule confirmation, sur la nouvelle adresse. Sous ce mode, Supabase renvoie `token_hash_new`
-comme chaîne vide plutôt que de l'omettre ; l'ancien code faisait `token_hash_new ?? tokenHash`
-(`??` ne rattrape que `null`/`undefined`, pas une chaîne vide) → `tokenHashNew` restait `""`.
-En plus, la construction manuelle utilisait le mauvais nom de paramètre (`token=` au lieu de
-`token_hash=`), bug resté invisible tant que `confirmationUrl` (jamais fourni par Supabase pour ce
-type d'action ici) n'était jamais réellement testé côté fallback.
-Fix : `tokenHashNew = token_hash_new || tokenHash` (`||`, pas `??`), lien construit vers
-`/auth/confirm?type=email_change` (`/auth/confirm` généralisé à `signup|recovery|email_change`),
-`dashboard/settings` affiche le message d'erreur proactivement sur `auth_error=confirm_failed`.
-`confirmationUrl`/`SUPABASE_URL` devenus totalement orphelins dans `auth-hook.ts` après ce fix (plus
-aucune branche ne les utilise) — supprimés.
+**Note (Session 64) :** les liens signup/recovery/email_change ne passent plus par `confirmation_url`
+PKCE ni par `validateRedirectTo` — ils pointent tous vers `${APP_URL}/auth/confirm` (jamais une origine
+preview), ce qui rend la substitution ci-dessus sans effet pratique pour ces 3 flux. Détail complet
+(cause racine, fix, validation prod) dans « Historique des sessions » → Session 64.
 
 ### When You Need Real Staging
 
@@ -749,22 +718,30 @@ Testeur passé en abonnement Digital n'a vu aucun champ code promo sur la page S
 - **Non touché** : `gift/redeem` — passe déjà `discounts: [{ promotion_code }]` codé en dur ; Stripe refuse `allow_promotion_codes` + `discounts` sur la même session.
 - PR : voir historique Git (branche `fix/checkout-allow-promo-codes`).
 
-### ✅ Session 64 — Bug critique confirmation signup cross-device (PKCE) (2026-08-31)
+### ✅ Session 64 — 3 bugs critiques de confirmation email en production (PKCE + token vide) (2026-08-31)
 
-**Nature du bug** : un utilisateur qui confirme son inscription depuis un navigateur/appareil différent de celui utilisé pour s'inscrire (cas par défaut sur trafic Instagram mobile : clic depuis le webview de l'app mail) était redirigé silencieusement vers `/auth/login`, sans message, sans session ouverte — alors que Supabase avait bien marqué son email comme confirmé. Confirmé en prod : `randy.figueroa`, `email_confirmed_at` renseigné, `last_sign_in_at` NULL, jamais revenu.
+Trois bugs distincts sur les trois flux de confirmation par email (signup, recovery, email_change), trouvés et corrigés dans la même session : les deux premiers partagent la même cause racine PKCE, le troisième est un bug différent (token vide) découvert en vérifiant le troisième flux par cohérence avec les deux premiers.
 
-**Cause racine** : `signup/page.tsx` déclenche `supabase.auth.signUp()` via `createBrowserClient` (`@supabase/ssr`), qui utilise le flow PKCE par défaut — un `code_verifier` est stocké côté navigateur au moment de l'inscription. Le Send Email Hook Supabase fournit un `confirmation_url` déjà construit avec ce PKCE (`token=pkce_...`), et l'ancien `auth-hook/route.ts` le préférait systématiquement au lien basé sur `token_hash`. Ouvert depuis un autre navigateur, le `code_verifier` est absent : l'échange de code échoue côté `/auth/callback`, dont l'erreur retournée par `exchangeCodeForSession` n'était **jamais capturée** — la route redirigeait quand même vers `/dashboard`, où le middleware (sans session) rebondissait silencieusement vers `/auth/login`.
+**1. Signup — confirmation cross-device silencieuse** (PR [#108](https://github.com/CookServices/everypaw/pull/108)) :
+Un utilisateur qui confirme son inscription depuis un navigateur/appareil différent de celui utilisé pour s'inscrire (cas par défaut sur trafic Instagram mobile : clic depuis le webview de l'app mail) était redirigé silencieusement vers `/auth/login`, sans message, sans session ouverte — alors que Supabase avait bien marqué son email comme confirmé. Confirmé en prod : `randy.figueroa`, `email_confirmed_at` renseigné, `last_sign_in_at` NULL, jamais revenu.
+Cause : `signup/page.tsx` déclenche `supabase.auth.signUp()` via `createBrowserClient` (`@supabase/ssr`), flow PKCE par défaut — `code_verifier` stocké côté navigateur au moment de l'inscription. Le `confirmation_url` fourni par Supabase (PKCE, `token=pkce_...`) était systématiquement préféré au lien `token_hash`. Ouvert depuis un autre navigateur, le `code_verifier` est absent : l'échange de code échoue côté `/auth/callback`, dont l'erreur retournée par `exchangeCodeForSession` n'était **jamais capturée** — la route redirigeait quand même vers `/dashboard`, où le middleware (sans session) rebondissait silencieusement vers `/auth/login`.
+Fix : `auth/callback/route.ts` capture et logue l'erreur, redirect `/auth/login?auth_error=exchange_failed` au lieu du bounce silencieux. Nouvelle route `src/app/auth/confirm/route.ts` : vérifie `token_hash` côté serveur via `supabase.auth.verifyOtp()` — aucun état navigateur requis. `auth-hook/route.ts` construit désormais le lien signup vers cette route, ignore `confirmation_url`. `login/page.tsx` affiche un bandeau distinct (ton neutre, bouton "Renvoyer le lien") pour `auth_error=confirm_failed` (clé i18n `auth.confirm_link_invalid`). Suppression de `src/app/api/emails/{confirm-signup,change-email,reset-password}/route.ts` (code mort, jamais appelé depuis la bascule vers `auth-hook`).
+Validé en prod : signup navigateur A, clic du lien dans navigateur B storage vierge → session ouverte, `last_sign_in_at` renseigné.
 
-**Correction appliquée** :
-1. **Visibilité de l'échec** (`auth/callback/route.ts`) : l'erreur d'`exchangeCodeForSession` est désormais capturée et loguée côté serveur (jamais de détail exposé au client) ; en cas d'échec, redirect vers `/auth/login?auth_error=exchange_failed` au lieu d'un redirect silencieux vers `/dashboard`.
-2. **Flux indépendant du navigateur** pour la confirmation d'inscription : nouvelle route `src/app/auth/confirm/route.ts` qui vérifie `token_hash` côté serveur via `supabase.auth.verifyOtp({ type: "signup" })` — aucun état navigateur requis, fonctionne depuis n'importe quel appareil. `auth-hook/route.ts` construit désormais le lien de l'email signup vers cette route (`${APP_URL}/auth/confirm?token_hash=...&type=signup&next=...`) et ignore délibérément `confirmation_url` pour ce type d'action. `recovery` et `email_change` sont **inchangés** (hors scope cette session, voir flag ci-dessous).
-3. `login/page.tsx` affiche un bandeau distinct (ton neutre, pas le rouge générique, bouton "Renvoyer le lien de confirmation" affiché) pour `auth_error=confirm_failed` (lien de confirmation invalide/expiré/déjà utilisé — nouvelle clé i18n `auth.confirm_link_invalid`) et un message générique pour `auth_error=exchange_failed` (échec OAuth, cas résiduel).
-4. **Nettoyage** : suppression de `src/app/api/emails/{confirm-signup,change-email,reset-password}/route.ts` — code mort (auth Bearer simple, jamais appelé depuis la bascule vers `auth-hook` en Standard Webhooks), la doc qui les référençait était obsolète.
+**2. Recovery — même bug PKCE cross-device** (PR [#109](https://github.com/CookServices/everypaw/pull/109)) :
+`forgot-password` envoie `redirectTo` vers `/auth/update-password` (PKCE aussi), et `update-password/page.tsx` n'a jamais appelé `exchangeCodeForSession` explicitement — ça ne marchait que par effet de bord de la détection automatique d'URL du client browser (`detectSessionInUrl`), qui a besoin du `code_verifier` local. Vérifié en prod avant correction : même navigateur → marche (silencieusement) ; navigateur différent (storage vierge) → coincé sur `?code=` jamais échangé, "Lien de réinitialisation invalide ou expiré" alors que le lien était frais.
+Fix : `/auth/confirm` généralisé à `type=signup|recovery`, `auth-hook` construit le lien recovery vers cette route (au lieu de `confirmation_url` PKCE), `update-password/page.tsx` affiche le message d'erreur existant proactivement sur `auth_error=confirm_failed` au lieu d'attendre un submit raté.
+Validé en prod bout-en-bout : reset demandé, lien ouvert dans un navigateur storage vierge → session ouverte, nouveau mot de passe soumis avec succès, redirect `/dashboard`.
+Le bug de substitution preview→prod documenté dans Preview Limitations (ci-dessus) est indépendant et reste réel, mais devient sans effet pratique : le lien pointe désormais toujours vers `${APP_URL}/auth/confirm`, jamais une origine preview.
 
-**Suite corrigée dans la même session** : le flux de réinitialisation de mot de passe (`forgot-password` → `update-password`) a été vérifié en prod (même mécanisme cassé, confirmé cross-device) puis corrigé sur le même principe — `/auth/confirm` généralisé à `type=signup|recovery`, `auth-hook` construit le lien recovery vers cette route. Détail dans la section Preview Limitations ci-dessus.
+**3. Email change — totalement cassé, pas juste cross-device** (PR [#110](https://github.com/CookServices/everypaw/pull/110)) :
+Découvert en vérifiant ce troisième flux par cohérence avec les deux précédents. Le lien de confirmation envoyé à la nouvelle adresse avait `token=` **vide** (`.../auth/v1/verify?token=&type=email_change&...`) → Supabase répondait `400 validation_failed "Verify requires a token or a token hash"` à chaque tentative, pour tout le monde, peu importe l'appareil. Personne n'a jamais pu confirmer un changement d'email sur Everypaw en cliquant le lien reçu.
+Cause : "Secure email change" est **désactivé** dans Supabase Auth (Providers → Email) — une seule confirmation, sur la nouvelle adresse. Sous ce mode, Supabase renvoie `token_hash_new` comme chaîne vide plutôt que de l'omettre ; l'ancien code faisait `token_hash_new ?? tokenHash` (`??` ne rattrape que `null`/`undefined`, pas une chaîne vide) → `tokenHashNew` restait `""`. La construction manuelle utilisait aussi le mauvais nom de paramètre (`token=` au lieu de `token_hash=`), bug resté invisible tant que `confirmationUrl` (jamais fourni par Supabase pour ce type d'action ici) prenait toujours le dessus.
+Fix : `tokenHashNew = token_hash_new || tokenHash` (`||`, pas `??`), lien construit vers `/auth/confirm?type=email_change` (`/auth/confirm` généralisé à `signup|recovery|email_change`), `dashboard/settings` affiche l'erreur proactivement sur `auth_error=confirm_failed`. `confirmationUrl`/`SUPABASE_URL` devenus orphelins dans `auth-hook.ts` (plus aucune branche ne les utilise) — supprimés.
+Validé en prod bout-en-bout : changement d'email déclenché, lien ouvert → email réellement mis à jour (`Adresse actuelle : ...` reflète la nouvelle adresse).
 
-**Reste à faire côté Julien** (voir aussi checklist de test manuel demandée) :
-- Vérifier dans Supabase Dashboard → Auth → URL Configuration que `<APP_URL>/auth/confirm` est bien couvert par les **Redirect URLs** autorisées (wildcard `https://everypaw.app/**` ou entrée explicite).
+**Reste à faire côté Julien** :
+- Vérifier dans Supabase Dashboard → Auth → URL Configuration que `<APP_URL>/auth/confirm` est bien couvert par les **Redirect URLs** autorisées — déjà confirmé ✓ via le wildcard `https://everypaw.app/**` existant, rien à changer.
 - Aucune nouvelle variable d'environnement Vercel requise (la route réutilise `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`/`NEXT_PUBLIC_APP_URL` déjà en place).
-- **Scénario de validation prod** : inscription dans un navigateur A, ouverture du lien de confirmation reçu par email dans un navigateur B (ou un autre appareil) → vérifier que la session s'ouvre (redirect `/dashboard`, pas `/auth/login`) et que `last_sign_in_at` est renseigné en base pour ce compte.
-- **Limite connue, non corrigeable par du code** : certains scanners de sécurité email d'entreprise (Microsoft Defender Safe Links, Google Workspace) pré-cliquent automatiquement les liens avant l'utilisateur, consommant le token single-use. Si ça se reproduit après ce fix, le symptôme (`auth_error=confirm_failed`) sera visible au lieu d'être silencieux, mais la cause sera différente du bug PKCE corrigé ici.
+- Les 3 scénarios de validation prod ont été rejoués et confirmés dans cette session (voir ci-dessus) — rien à retester, sauf si régression suspectée.
+- **Limite connue, non corrigeable par du code** (signup/recovery) : certains scanners de sécurité email d'entreprise (Microsoft Defender Safe Links, Google Workspace) pré-cliquent automatiquement les liens avant l'utilisateur, consommant le token single-use. Le symptôme (`auth_error=confirm_failed`) sera désormais visible au lieu d'être silencieux, mais la cause sera différente du bug PKCE corrigé ici.
