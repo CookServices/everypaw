@@ -49,34 +49,34 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
   const steps = [
     {
       emoji: "🐾",
-      title: t.onboarding.step1_title,
-      desc: t.onboarding.step1_desc,
+      title: hasPets ? t.onboarding.step1_done : t.onboarding.step1_title,
+      desc: hasPets ? null : t.onboarding.step1_desc,
       extra: null,
       example: null,
-      primaryHref: "/dashboard/pets/new",
-      primaryLabel: t.onboarding.step1_skip,
-      skipLabel: t.onboarding.step1_cta,
+      primaryHref: hasPets ? null : "/dashboard/pets/new",
+      primaryLabel: hasPets ? t.onboarding.next : t.onboarding.step1_skip,
+      skipLabel: hasPets ? null : t.onboarding.step1_cta,
       skipHref: null,
     },
     {
       emoji: "✏️",
-      title: t.onboarding.step2_title,
-      desc: t.onboarding.step2_desc,
-      example: t.onboarding.step2_example,
+      title: hasEntries ? t.onboarding.step2_done : t.onboarding.step2_title,
+      desc: hasEntries ? null : t.onboarding.step2_desc,
+      example: hasEntries ? null : t.onboarding.step2_example,
       extra: null,
       primaryHref: null,
-      primaryLabel: t.onboarding.next,
+      primaryLabel: hasEntries ? t.onboarding.next : t.onboarding.step2_cta,
       skipLabel: null,
       skipHref: null,
     },
     {
       emoji: "✨",
-      title: t.onboarding.step3_title,
-      desc: t.onboarding.step3_desc,
-      extra: t.onboarding.step3_how,
+      title: hasStories ? t.onboarding.step3_done : t.onboarding.step3_title,
+      desc: hasStories ? null : t.onboarding.step3_desc,
+      extra: hasStories ? null : t.onboarding.step3_how,
       example: null,
       primaryHref: null,
-      primaryLabel: t.onboarding.start,
+      primaryLabel: hasStories ? t.onboarding.got_it : t.onboarding.step3_cta,
       skipLabel: null,
       skipHref: null,
     },
@@ -173,12 +173,14 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
         </h2>
 
         {/* Description */}
-        <p style={{
-          fontSize: ".9rem", color: "#7A5C44", fontWeight: 300,
-          lineHeight: 1.7, margin: "0 0 1.25rem",
-        }}>
-          {current.desc}
-        </p>
+        {current.desc && (
+          <p style={{
+            fontSize: ".9rem", color: "#7A5C44", fontWeight: 300,
+            lineHeight: 1.7, margin: "0 0 1.25rem",
+          }}>
+            {current.desc}
+          </p>
+        )}
 
         {/* Example quote (step 2) */}
         {current.example && (
