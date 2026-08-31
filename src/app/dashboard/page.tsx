@@ -12,6 +12,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { fmtDateOrdinal } from "@/lib/date";
 import type { Plan } from "@/lib/plan";
+import { getChapterEligibility } from "@/lib/plan-guards";
 import { getWeeklyQuestion, currentISOWeekBounds } from "@/lib/interview";
 
 export const dynamic = "force-dynamic";
@@ -92,7 +93,7 @@ export default function DashboardPage() {
       ] = await Promise.all([
         supabase.from("pets").select("*").order("created_at", { ascending: false }),
         supabase.from("entries").select("*").eq("user_id", user.id).order("entry_date", { ascending: false }).limit(5),
-        supabase.from("profiles").select("is_premium, onboarding_completed, book_credits, subscription_renewal_date, plan, payment_past_due").single(),
+        supabase.from("profiles").select("is_premium, onboarding_dismissed, book_credits, subscription_renewal_date, plan, payment_past_due").single(),
         supabase.from("stories").select("id").eq("user_id", user.id).limit(1),
         supabase.from("entries").select("*", { count: "exact", head: true }).eq("user_id", user.id).gte("entry_date", monthStart).lte("entry_date", monthEnd),
         supabase.from("entries").select("pet_id, entry_date").eq("user_id", user.id).order("entry_date", { ascending: false }),
@@ -109,7 +110,9 @@ export default function DashboardPage() {
       setBookCredits(profile?.book_credits ?? 0);
       if (profile?.subscription_renewal_date) setSubscriptionRenewalDate(profile.subscription_renewal_date);
       setPaymentPastDue(!!profile?.payment_past_due);
-      setShowOnboarding(!profile?.onboarding_completed);
+      // Modal visibility follows onboarding_dismissed, not onboarding_completed: completion now
+      // reflects having a real pet (set in pets/new), dismissal is what stops the modal recurring.
+      setShowOnboarding(!profile?.onboarding_dismissed);
       setHasStories((storiesData?.length || 0) > 0);
       setHasOrigins((originsCount ?? 0) > 0);
       setMonthlyEntryCount(monthlyCount ?? 0);
@@ -171,7 +174,7 @@ export default function DashboardPage() {
     if (!user) return;
 
     const resolvedPet = pets.find(p => p.id === resolvedPetId);
-    const petName = resolvedPet?.name ?? "";
+    const petName = resolvedPet?.name || t.interview.fallback_name;
     const question = getWeeklyQuestion(locale).replace("{petName}", petName);
     const content = `Q: ${question}\n${interviewAnswer.trim()}`;
     const today = new Date().toISOString().slice(0, 10);
@@ -227,12 +230,17 @@ export default function DashboardPage() {
       ? t.dashboard.month_chapter_day
       : t.dashboard.month_chapter_days.replace("{days}", String(daysUntilChapter));
 
+  const chapterEligibility = getChapterEligibility(plan, monthlyEntryCount);
+
+  // Free plan's "10" is a lifetime cap (see plan-guards.ts canAddEntry), not a monthly one,
+  // so its progress must track totalEntriesCount, not monthlyEntryCount.
   const entriesLabel = isPremium
     ? t.dashboard.month_entries_premium.replace("{count}", String(monthlyEntryCount))
-    : t.dashboard.month_entries_free.replace("{count}", String(monthlyEntryCount));
+    : t.dashboard.month_entries_free.replace("{count}", String(totalEntriesCount));
 
-  const progressGoal = 15;
-  const progressPct = Math.min(monthlyEntryCount / progressGoal, 1);
+  const progressGoal = isPremium ? 15 : 10;
+  const progressCount = isPremium ? monthlyEntryCount : totalEntriesCount;
+  const progressPct = Math.min(progressCount / progressGoal, 1);
   const progressColor = progressPct >= 1 ? "var(--ep-alert)" : "var(--ep-brand)";
 
   const orderLink = resolvedPetId ? `/dashboard/pets/${resolvedPetId}/order` : "/dashboard";
@@ -399,14 +407,14 @@ export default function DashboardPage() {
               <p style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .5rem", lineHeight: 1 }}>
                 {entriesLabel}
               </p>
-              {/* Progress bar toward 15-entry goal */}
+              {/* Progress bar toward the plan's real cap: 10 lifetime (free) or 15 monthly (premium, decorative) */}
               <div style={{ height: 4, borderRadius: 100, background: "rgba(61,43,31,.1)", overflow: "hidden", marginBottom: ".35rem" }}>
                 <div style={{ height: "100%", borderRadius: 100, background: progressColor, width: "100%", transform: `scaleX(${progressPct})`, transformOrigin: "left", transition: "transform .4s ease" }} />
               </div>
               <p style={{ fontSize: ".68rem", color: "var(--ep-text-muted)", margin: 0, fontWeight: 300 }}>
                 {isPremium
                   ? `∞ ${t.dashboard.premium_badge}`
-                  : `${isFR ? "Objectif" : "Goal"} : ${progressGoal} ${isFR ? "moments" : "moments"}`}
+                  : t.dashboard.month_entries_free_period}
               </p>
             </div>
 
@@ -415,20 +423,52 @@ export default function DashboardPage() {
               <p style={cardLabelStyle}>
                 {t.dashboard.month_chapter_label}
               </p>
-              <p style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.4rem, 5vw, 1.65rem)", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .35rem", lineHeight: 1.15 }}>
-                {chapterLabel}
-              </p>
-              <p style={{ fontSize: ".72rem", color: "var(--ep-text-muted)", margin: "0 0 .15rem", fontWeight: 300 }}>
-                {(() => {
-                  const d = firstOfNextMonth.getDate();
-                  const m = firstOfNextMonth.toLocaleDateString(dateLocale, { month: "long" });
-                  const ord = isFR ? (d === 1 ? "1er" : `${d}`) : (d === 1 ? "1st" : d === 2 ? "2nd" : d === 3 ? "3rd" : `${d}th`);
-                  return isFR ? `${ord} ${m}` : `${m} ${ord}`;
-                })()}
-              </p>
-              <p style={{ fontSize: ".68rem", color: "var(--ep-text-muted)", margin: "0 0 .5rem", fontWeight: 300 }}>
-                {isFR ? "Généré automatiquement" : "Auto-generated"}
-              </p>
+              {chapterEligibility.state === "eligible" && (
+                <>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.4rem, 5vw, 1.65rem)", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .35rem", lineHeight: 1.15 }}>
+                    {chapterLabel}
+                  </p>
+                  <p style={{ fontSize: ".72rem", color: "var(--ep-text-muted)", margin: "0 0 .15rem", fontWeight: 300 }}>
+                    {(() => {
+                      const d = firstOfNextMonth.getDate();
+                      const m = firstOfNextMonth.toLocaleDateString(dateLocale, { month: "long" });
+                      const ord = isFR ? (d === 1 ? "1er" : `${d}`) : (d === 1 ? "1st" : d === 2 ? "2nd" : d === 3 ? "3rd" : `${d}th`);
+                      return isFR ? `${ord} ${m}` : `${m} ${ord}`;
+                    })()}
+                  </p>
+                  <p style={{ fontSize: ".68rem", color: "var(--ep-text-muted)", margin: "0 0 .5rem", fontWeight: 300 }}>
+                    {isFR ? "Généré automatiquement" : "Auto-generated"}
+                  </p>
+                </>
+              )}
+              {chapterEligibility.state === "needs_entries" && (
+                <>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .35rem", lineHeight: 1.3 }}>
+                    {t.dashboard.month_chapter_missing.replace("{n}", String(chapterEligibility.missing))}
+                  </p>
+                  {resolvedPetId && (
+                    <Link
+                      href={`/dashboard/pets/${resolvedPetId}?tab=journal`}
+                      style={{ fontSize: ".72rem", color: "var(--ep-brand)", textDecoration: "none", fontWeight: 500, display: "inline-block", marginBottom: ".5rem" }}
+                    >
+                      {t.dashboard.month_chapter_add_moment}
+                    </Link>
+                  )}
+                </>
+              )}
+              {chapterEligibility.state === "not_included" && (
+                <>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .35rem", lineHeight: 1.3 }}>
+                    {t.dashboard.month_chapter_not_included}
+                  </p>
+                  <Link
+                    href={storiesLink}
+                    style={{ fontSize: ".72rem", color: "var(--ep-brand)", textDecoration: "none", fontWeight: 500, display: "inline-block", marginBottom: ".5rem" }}
+                  >
+                    {t.dashboard.month_chapter_write_manually}
+                  </Link>
+                </>
+              )}
               {hasStories && (
                 <Link
                   href={storiesLink}
@@ -530,15 +570,29 @@ export default function DashboardPage() {
         {/* ── Weekly interview card ────────────────────────────────────── */}
         {pets.length > 0 && resolvedPetId && (() => {
           const resolvedPet = pets.find(p => p.id === resolvedPetId);
-          const petName = resolvedPet?.name ?? "";
+          const petName = resolvedPet?.name || t.interview.fallback_name;
           const question = getWeeklyQuestion(locale).replace("{petName}", petName);
           const isEntryLimitReached = plan === "free" && totalEntriesCount >= 10;
 
           return (
             <div style={{ background: "var(--ep-bg-card)", borderRadius: 16, padding: "1.25rem 1.5rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.07)" }}>
-              <p style={{ ...cardLabelStyle, margin: "0 0 .75rem" }}>
-                {t.dashboard.interview_title}
-              </p>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".5rem", margin: "0 0 .75rem" }}>
+                <p style={{ ...cardLabelStyle, margin: 0 }}>
+                  {t.dashboard.interview_title}
+                </p>
+                {/* Which pet this question is about: needed once there's more than one, since the
+                    dashboard nav can be in "All my pets" mode while this card still targets one pet. */}
+                {pets.length > 1 && resolvedPet && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", fontSize: ".72rem", color: "var(--ep-brand)", fontWeight: 500, flexShrink: 0 }}>
+                    {resolvedPet.photo_url ? (
+                      <img src={resolvedPet.photo_url} alt={resolvedPet.name} style={{ width: 16, height: 16, borderRadius: "50%", objectFit: "cover" }} />
+                    ) : (
+                      <span>{SPECIES_EMOJI[resolvedPet.species] ?? "🐾"}</span>
+                    )}
+                    {resolvedPet.name}
+                  </span>
+                )}
+              </div>
               <p style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontWeight: 400, color: "var(--ep-text)", lineHeight: 1.6, margin: "0 0 .875rem", fontStyle: "italic" }}>
                 {question}
               </p>

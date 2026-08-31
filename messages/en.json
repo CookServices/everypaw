@@ -35,13 +35,18 @@
     "last_entry_days_ago": "{days}d ago",
     "last_entry_weeks_ago": "{weeks}w ago",
     "month_title": "Your month in progress",
-    "month_entries_free": "{count} / 10 entries this month",
+    "month_entries_free": "{count} / 10 entries used",
+    "month_entries_free_period": "No monthly limit, this is a lifetime total",
     "month_entries_premium": "{count} entries this month",
     "month_entries_label": "Journal",
     "month_chapter_label": "Next AI chapter",
     "month_chapter_days": "in {days} days",
     "month_chapter_day": "tomorrow",
     "month_chapter_soon": "generating soon",
+    "month_chapter_not_included": "Auto-generated chapters are a Premium feature",
+    "month_chapter_write_manually": "Write a chapter manually",
+    "month_chapter_missing": "{n} more moment(s) needed to unlock this chapter",
+    "month_chapter_add_moment": "Add a moment",
     "month_book_label": "Your {year} book",
     "month_book_value": "In progress ✦",
     "month_book_credit_available": "{n} credit available",
@@ -182,7 +187,8 @@
     "check_inbox": "Check your inbox",
     "check_inbox_desc": "We sent a confirmation link to {email}. Click it to activate your account.",
     "start_story": "Start your pet's story today",
-    "confirm_link_invalid": "This link is no longer valid. If you already confirmed your email, sign in. Otherwise, request a new confirmation link."
+    "confirm_link_invalid": "This link is no longer valid. If you already confirmed your email, sign in. Otherwise, request a new confirmation link.",
+    "session_exchange_failed": "Your account is ready. Try signing in again."
   },
   "pet": {
     "add_title": "Add a pet",
@@ -617,6 +623,7 @@
     "unsubscribe": "Unsubscribe from these emails"
   },
   "interview": {
+    "fallback_name": "your pet",
     "q1": "What's {petName}'s morning ritual?",
     "q2": "What sound does {petName} hate most?",
     "q3": "What's {petName}'s favourite hiding spot?",

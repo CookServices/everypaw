@@ -40,6 +40,27 @@ export function canOrderBook(plan: Plan, bookCredits: number): string | null {
   return "no_book_credits";
 }
 
+// ── Monthly AI chapter eligibility ──────────────────────────────────────────
+// Shared by the monthly-story cron (which actually generates the chapter) and
+// the dashboard (which announces it), so the two never diverge on what counts
+// as eligible.
+
+export const MONTHLY_CHAPTER_MIN_ENTRIES = 3;
+
+export type ChapterEligibility =
+  | { state: "not_included" }
+  | { state: "needs_entries"; missing: number }
+  | { state: "eligible" };
+
+/** entryCount: entries for the month being evaluated (the month whose end triggers generation). */
+export function getChapterEligibility(plan: Plan, entryCount: number): ChapterEligibility {
+  if (plan !== "digital" && plan !== "print") return { state: "not_included" };
+  if (entryCount < MONTHLY_CHAPTER_MIN_ENTRIES) {
+    return { state: "needs_entries", missing: MONTHLY_CHAPTER_MIN_ENTRIES - entryCount };
+  }
+  return { state: "eligible" };
+}
+
 // ── Price ID → plan mapping ───────────────────────────────────────────────────
 
 export function priceIdToPlan(priceId: string): Plan | null {

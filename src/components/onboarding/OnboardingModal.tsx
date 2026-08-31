@@ -42,7 +42,7 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
     sessionStorage.removeItem("ep_onboarding_step");
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user!.id);
+    await supabase.from("profiles").update({ onboarding_dismissed: true }).eq("id", user!.id);
     onComplete();
   };
 
@@ -53,10 +53,10 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
       desc: t.onboarding.step1_desc,
       extra: null,
       example: null,
-      primaryHref: null,
-      primaryLabel: t.onboarding.step1_cta,
-      skipLabel: t.onboarding.step1_skip,
-      skipHref: "/dashboard/pets/new",
+      primaryHref: "/dashboard/pets/new",
+      primaryLabel: t.onboarding.step1_skip,
+      skipLabel: t.onboarding.step1_cta,
+      skipHref: null,
     },
     {
       emoji: "✏️",
@@ -249,20 +249,35 @@ export default function OnboardingModal({ hasPets, hasEntries, hasStories, onCom
             </button>
           )}
 
-          {/* Secondary: "Créer le profil de mon animal →" on step 1 */}
-          {current.skipLabel && current.skipHref && (
-            <Link
-              href={current.skipHref}
-              onClick={() => sessionStorage.setItem("ep_onboarding_step", String(step + 1))}
-              style={{
-                textAlign: "center",
-                fontSize: ".8rem", color: "#7A5C44",
-                textDecoration: "none", padding: ".25rem",
-                opacity: .75,
-              }}
-            >
-              {current.skipLabel}
-            </Link>
+          {/* Secondary: link to another page, or a low-emphasis "next step" action */}
+          {current.skipLabel && (
+            current.skipHref ? (
+              <Link
+                href={current.skipHref}
+                onClick={() => sessionStorage.setItem("ep_onboarding_step", String(step + 1))}
+                style={{
+                  textAlign: "center",
+                  fontSize: ".8rem", color: "#7A5C44",
+                  textDecoration: "none", padding: ".25rem",
+                  opacity: .75,
+                }}
+              >
+                {current.skipLabel}
+              </Link>
+            ) : (
+              <button
+                onClick={() => goTo(step + 1)}
+                style={{
+                  textAlign: "center",
+                  fontSize: ".8rem", color: "#7A5C44",
+                  background: "none", border: "none", cursor: "pointer",
+                  fontFamily: "inherit", padding: ".25rem",
+                  opacity: .75,
+                }}
+              >
+                {current.skipLabel}
+              </button>
+            )
           )}
         </div>
 

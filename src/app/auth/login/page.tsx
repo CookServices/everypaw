@@ -58,7 +58,8 @@ export default function LoginPage() {
       setShowResend(true);
       setError(t.auth.confirm_link_invalid);
     } else if (authError === "exchange_failed") {
-      setError(isFR ? "Une erreur est survenue. Veuillez réessayer." : "An error occurred. Please try again.");
+      setNotice(true);
+      setError(t.auth.session_exchange_failed);
     }
   }, [isFR, t]);
 

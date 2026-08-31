@@ -750,7 +750,7 @@ export default function SettingsPage() {
                   <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .25rem" }}>{t.settings.onboarding_guide}</p>
                   <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.settings.onboarding_guide_desc}</p>
                 </div>
-                <button onClick={async () => { const s = createClient(); const { data: { user } } = await s.auth.getUser(); await s.from("profiles").update({ onboarding_completed: false }).eq("id", user!.id); ["ep_cm_first_entry","ep_cm_first_story","ep_cm_book_credit"].forEach(k => localStorage.removeItem(k)); showToast(t.settings.save_success, "success"); }} style={{ background: "transparent", color: "#C8813A", padding: ".4rem 1rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "1.5px solid rgba(200,129,58,.3)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", marginLeft: "1rem" }}>
+                <button onClick={async () => { const s = createClient(); const { data: { user } } = await s.auth.getUser(); await s.from("profiles").update({ onboarding_dismissed: false }).eq("id", user!.id); ["ep_cm_first_entry","ep_cm_first_story","ep_cm_book_credit"].forEach(k => localStorage.removeItem(k)); showToast(t.settings.save_success, "success"); }} style={{ background: "transparent", color: "#C8813A", padding: ".4rem 1rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "1.5px solid rgba(200,129,58,.3)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", marginLeft: "1rem" }}>
                   {t.settings.reset_guide}
                 </button>
               </div>
