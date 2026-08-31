@@ -124,12 +124,6 @@ export async function POST(req: Request) {
   let html: string;
   let toEmail = email;
 
-  // Build the action URL: use confirmation_url if Supabase provides it,
-  // otherwise construct with token_hash + action type.
-  const buildUrl = (type: string, fallbackRedirect: string) =>
-    confirmationUrl
-    ?? `${SUPABASE_URL}/auth/v1/verify?token=${tokenHash}&type=${type}&redirect_to=${encodeURIComponent(redirectTo ?? fallbackRedirect)}`;
-
   if (actionType === "signup") {
     // Signup confirmation never uses Supabase's own confirmation_url: that link
     // is PKCE-based (token=pkce_...) and requires the code_verifier stored in
@@ -153,7 +147,14 @@ export async function POST(req: Request) {
     ({ subject, html } = buildConfirmSignupEmail(lang, url));
 
   } else if (actionType === "recovery") {
-    const url = buildUrl("recovery", `${APP_URL}/auth/update-password`);
+    // Same PKCE cross-device defect as signup: Supabase's confirmation_url
+    // needs the code_verifier from the browser that requested the reset.
+    // Build our own link to /auth/confirm (verifyOtp server-side) instead.
+    if (!tokenHash) {
+      log.error("[auth-hook] Missing token_hash for recovery, cannot build confirm link");
+      return NextResponse.json({ error: "Missing token_hash" }, { status: 400 });
+    }
+    const url = `${APP_URL}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=recovery&next=${encodeURIComponent("/auth/update-password")}`;
     log.debug("[auth-hook] recovery url:", url);
     ({ subject, html } = buildResetPasswordEmail(lang, url));
 

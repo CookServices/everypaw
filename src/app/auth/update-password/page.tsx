@@ -33,6 +33,17 @@ export default function UpdatePasswordPage() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // /auth/confirm bounced back here after a failed server-side token
+  // verification (invalid, expired, or already-used reset link).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("auth_error") === "confirm_failed") {
+      setError(isFR
+        ? "Lien de réinitialisation invalide ou expiré. Ouvrez le lien reçu par email, ou demandez-en un nouveau."
+        : "Invalid or expired reset link. Open the link from your email, or request a new one.");
+    }
+  }, [isFR]);
+
   const handleSubmit = async () => {
     setError("");
     if (!sessionReady) {
