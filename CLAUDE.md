@@ -255,7 +255,8 @@ profiles: id, email, full_name, avatar_url,
           book_credits,      -- integer — livres dus à l'utilisateur
           stripe_customer_id,
           email_reminders,   -- boolean — consentement emails hebdomadaires
-          onboarding_completed,
+          onboarding_completed,  -- boolean — true seulement si l'utilisateur a créé un animal (set dans pets/new)
+          onboarding_dismissed,  -- boolean — true si le modal a été fermé/terminé (Passer, ou fin du flow) ; pilote l'affichage du modal, indépendamment de onboarding_completed
           payment_past_due,  -- boolean — set par invoice.payment_failed, cleared par invoice.payment_succeeded
           created_at
 
@@ -702,8 +703,10 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` en `useEffect` (waterfall, requêtes exposées client). Migration RSC = data au 1er paint, moins de surface.
 - **#9 Split god-components** — en cours, incrémental (voir Session 61). `pets/[id]/page.tsx` **✅ résolu** (2122→1017 l, PR #83-85, 2026-07-23) sauf onglet journal (~50 state, volontairement laissé). `order/page.tsx` 1625→1435 l (PR #99-100, constantes/utils + 2 composants) — reste `renderPreviewStep` (492 l) + 3 autres render-closures, bloqués sur design d'un bundle "theme props" (`accentColor`/`textPrimary`/`textMuted`/`isMemorial` partagés). `settings/page.tsx` 964→866 l (PR #101, constantes + 2 modales) — reste ~800 l de JSX/handlers, même blocage.
 - **#12 Interaction non vérifiée `stripe/cancel`/`reactivate` ↔ `stripe/upgrade` (Session 64, 2026-08-31)** — `cancel`/`reactivate` manipulent `cancel_at_period_end` directement sur la subscription brute ; `upgrade` manipule un Subscription Schedule séparé (`subscriptionSchedules.create/update`), sans jamais lire l'état de l'autre mécanisme. Deux scénarios pas testés : (a) annuler puis appeler `upgrade` pour changer de plan — la création du schedule (`end_behavior: "release"`, phase 2 = nouveau plan) pourrait silencieusement lever l'annulation sans que l'utilisateur l'ait demandé ; (b) upgrade programmé (schedule actif) puis `cancel` — pas clair si Stripe applique l'annulation ou si le schedule prend le dessus à la fin de période. Pas de preuve que ça casse — non reproduit en live (demanderait une vraie souscription Stripe test-mode). À vérifier avant de toucher à ces 3 routes.
+- **#13 `OnboardingModal` ignore `hasPets`/`hasEntries`/`hasStories` (Session 65, 2026-08-31)** — props déclarées, jamais lues dans le rendu (dead props, préexistant à Session 65). Conséquence : la 2ᵉ invocation du modal dans `dashboard/page.tsx` (après `OriginsFlow`, quand l'utilisateur a déjà un animal) affiche quand même l'étape 1 "Créer le profil de votre animal" avec CTA vers `/dashboard/pets/new`, alors que l'animal existe déjà. Trouvé en corrigeant la hiérarchie de l'étape 1 (Lot 1), pas corrigé, hors périmètre de ce lot.
+- **#14 Clés i18n mortes `onboarding.step2_cta`/`step3_cta` (Session 65, 2026-08-31)** — définies dans `messages/en.json`/`fr.json`, jamais lues par `OnboardingModal.tsx` (`t.onboarding.next`/`t.onboarding.start` utilisés à la place). Préexistant, trouvé par lecture du composant lors du Lot 1.
 
-*Dernière mise à jour : 2026-08-20 (Session 61 — dédup `compressImage` (4→1 copie), découpe `order/page.tsx` et `settings/page.tsx` en PR incrémentales testées sur preview Vercel avant merge)*
+*Dernière mise à jour : 2026-08-31 (Session 65 — onboarding empty-account default, dashboard card inconsistencies, auth exchange_failed message)*
 
 ---
 
@@ -711,14 +714,6 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 
 Historique complet (sessions 1 à 53, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
 Seules les 2 dernières sessions sont conservées ici ; à chaque nouvelle session, déplacer la plus ancienne vers l'archive.
-
-### ✅ Session 63 — Fix `allow_promotion_codes` manquant sur checkout Stripe (2026-08-28)
-
-Testeur passé en abonnement Digital n'a vu aucun champ code promo sur la page Stripe Checkout. Audit : 4 routes appellent `stripe.checkout.sessions.create`, aucune ne passait `allow_promotion_codes`.
-
-- **Fix appliqué** (`allow_promotion_codes: true`) : `stripe/checkout` (abonnement digital/print), `gift/checkout` (achat gift), `stripe/book-checkout` (livre supplémentaire).
-- **Non touché** : `gift/redeem` — passe déjà `discounts: [{ promotion_code }]` codé en dur ; Stripe refuse `allow_promotion_codes` + `discounts` sur la même session.
-- PR : voir historique Git (branche `fix/checkout-allow-promo-codes`).
 
 ### ✅ Session 64 — 5 bugs critiques trouvés et corrigés en production, audit étendu (2026-08-31)
 
@@ -756,3 +751,20 @@ Fix : `book-checkout` vérifie désormais l'ownership du pet et calcule le prix 
 - Les scénarios de validation prod (1, 2, 3, 4) ont été rejoués et confirmés dans cette session — rien à retester, sauf si régression suspectée. Le point 5 n'a été vérifié qu'en lecture de code + tests/build, pas en commande réelle — un test manuel (commander un livre avec filtre année/histoires, comparer prix affiché vs montant Stripe réel) reste à faire.
 - **Limite connue, non corrigeable par du code** (signup/recovery) : certains scanners de sécurité email d'entreprise (Microsoft Defender Safe Links, Google Workspace) pré-cliquent automatiquement les liens avant l'utilisateur, consommant le token single-use. Le symptôme (`auth_error=confirm_failed`) sera désormais visible au lieu d'être silencieux, mais la cause sera différente du bug PKCE corrigé ici.
 - **Backlog #12** (voir section Optimisation & dette technique) : interaction non vérifiée entre `stripe/cancel`/`reactivate` et `stripe/upgrade` — trouvé pendant cet audit, pas corrigé, juste consigné.
+
+### ✅ Session 65 — Onboarding comptes vides, incohérences dashboard, message auth (2026-08-31)
+
+Session en 3 lots indépendants, chacun validé sur preview Vercel avant merge (PR [#117](https://github.com/CookServices/everypaw/pull/117)).
+
+**Lot 1 — Onboarding par défaut créait des comptes vides** (5/9 inscrits réels sans animal) : le bouton principal de l'étape 1 du modal ("Suivant", plein, orange) avançait sans rien créer, le vrai CTA de création (`/dashboard/pets/new`) était le lien secondaire à opacité réduite ; `onboarding_completed` passait à `true` sur simple fermeture du modal, sans qu'aucun animal existe. Fix : hiérarchie de l'étape 1 inversée (CTA principal = créer le profil), nouveau champ `profiles.onboarding_dismissed` (migration `add_onboarding_dismissed_2026_08_31.sql`, appliquée en prod) qui pilote désormais seul l'affichage du modal ; `onboarding_completed` n'est écrit `true` qu'à la création réussie d'un animal (`pets/new/page.tsx`), reflète enfin la réalité. Le bouton "Réinitialiser le guide" (settings) écrivait l'ancien flag — corrigé au passage (même incohérence, découverte en cours de lot). Piège de migration : `onboarding_dismissed` par défaut `false` pour tous les comptes existants aurait fait réapparaître le modal chez tous les utilisateurs ayant déjà un animal — rattrapage SQL à deux requêtes donné à Julien (voir mémoire projet Everypaw), la deuxième (backfill `dismissed=true` pour tout compte avec animal) n'est pas optionnelle.
+
+**Lot 2 — Trois défauts dashboard constatés en prod (31/08/2026, compte free, 1 animal)** : (a) la question hebdomadaire affichait un trou grammatical quand le nom de l'animal était vide (`petName ?? ""` puis substitution) — fallback générique "your pet"/"ton animal" ajouté pour les 52 questions × 2 langues, plus un badge nom+avatar sur la carte quand plusieurs animaux existent (root cause réelle non corrigée : `localStorage.lastPetId` jamais nettoyé, peut pointer un animal supprimé) ; (b) la carte "Next AI chapter" annonçait toujours une date de génération, même sur plan free ou compte sans assez d'entrées — `getChapterEligibility()` extraite dans `plan-guards.ts`, partagée par le cron `monthly-story` et le dashboard, 3 états réels (`not_included`/`needs_entries`/`eligible`) ; (c) le compteur d'entrées affichait un total mensuel contre un plafond qui est en réalité lifetime (`10` vient de `canAddEntry`, pas de `monthlyEntryCount`) — dénominateur et libellé corrigés pour utiliser la même source que la limite réelle. Bug de build découvert en cours de route : `getChapterEligibility` importée depuis `@/lib/plan` (qui tire `next/headers` via `supabase/server.ts`) dans un composant client cassait le build Vercel — même pattern déjà documenté (Session build cassé du 2026-06-11) ; fix = importer depuis `@/lib/plan-guards` (zero imports) à la place.
+
+**Lot 3 — Message générique sur `auth_error=exchange_failed`** : texte en dur "Une erreur est survenue" dans un encart rouge, alors que ce code correspond aujourd'hui exclusivement à un échec OAuth Google (`/auth/callback`, PKCE cross-device — les liens de confirmation email passent par `/auth/confirm` depuis la Session 64 et ne déclenchent plus ce cas). Fix : clé i18n dédiée `auth.session_exchange_failed` ("Ton compte est prêt. Réessaie de te connecter." / "Your account is ready. Try signing in again."), affichée dans le style `notice` neutre (déjà utilisé par `confirm_failed`) au lieu du rouge erreur, `showResend` resté `false` (renvoyer un lien de confirmation n'a pas de sens pour un échec OAuth).
+
+**Validé sur preview** : Lot 1 (hiérarchie modal, capture écran), Lot 2b/2c (cartes dashboard, compte free réel), Lot 3 FR (`exchange_failed` + non-régression `confirm_failed`). Non testé : Lot 3 en anglais (pas de moyen de forcer `navigator.language` dans le Browser pane utilisé), déclenchement réel cross-device du bug OAuth (nécessite deux appareils physiques).
+
+**Reste à faire côté Julien** :
+- Exécuter le rattrapage SQL onboarding (2 requêtes, voir mémoire projet) si pas déjà fait — sans la 2ᵉ requête, tous les comptes existants avec animal revoient le modal d'onboarding.
+- Vérifier `exchange_failed` en anglais (navigateur perso en EN) — non testable depuis cette session.
+- **Backlog #13/#14** (voir section Optimisation & dette technique) : `OnboardingModal` ignore `hasPets`/`hasEntries`/`hasStories` (2ᵉ invocation du modal montre la mauvaise étape), clés i18n `step2_cta`/`step3_cta` mortes — trouvés pendant le Lot 1, pas corrigés, hors périmètre.
