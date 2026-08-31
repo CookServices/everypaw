@@ -9,11 +9,12 @@ interface Props {
   body: string;
   cta?: string;
   ctaHref?: string;
+  isFR?: boolean;
   /** Delay in ms before appearing (default 1200) */
   delay?: number;
 }
 
-export default function CoachMark({ id, title, body, cta, ctaHref, delay = 1200 }: Props) {
+export default function CoachMark({ id, title, body, cta, ctaHref, isFR = false, delay = 1200 }: Props) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export default function CoachMark({ id, title, body, cta, ctaHref, delay = 1200 
       {/* Close */}
       <button
         onClick={dismiss}
-        aria-label="Fermer"
+        aria-label={isFR ? "Fermer" : "Close"}
         style={{
           position: "absolute", top: ".625rem", right: ".75rem",
           background: "none", border: "none", cursor: "pointer",
@@ -101,7 +102,7 @@ export default function CoachMark({ id, title, body, cta, ctaHref, delay = 1200 
           fontSize: ".72rem", color: "#9A8070", fontFamily: "inherit", padding: 0,
         }}
       >
-        OK, compris
+        {isFR ? "OK, compris" : "Got it"}
       </button>
     </div>
   );
