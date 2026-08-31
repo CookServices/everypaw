@@ -42,6 +42,12 @@ export async function POST(req: Request) {
     const currentPriceId = subscription.items.data[0]?.price.id;
     if (!currentPriceId) return NextResponse.json({ error: "Subscription item not found" }, { status: 400 });
 
+    // A subscription schedule's end_behavior/phases fully determine cancel_at_period_end going
+    // forward, so creating one here would silently discard a pending cancellation (backlog #12).
+    if (subscription.cancel_at_period_end) {
+      return NextResponse.json({ error: "Reactivate your subscription before changing plans" }, { status: 400 });
+    }
+
     // Use the subscription's existing currency so EUR/USD stays consistent throughout the lifecycle
     const subCurrency = (subscription.currency?.toUpperCase() ?? "USD") as Currency;
     const newPriceId = PRICE_MAP[newPlan]?.[subCurrency];
