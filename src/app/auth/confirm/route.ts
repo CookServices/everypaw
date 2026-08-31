@@ -3,18 +3,17 @@ import { isSafeRelativePath } from "@/lib/validation";
 import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 
-const SUPPORTED_TYPES = ["signup", "recovery"] as const;
+const SUPPORTED_TYPES = ["signup", "recovery", "email_change"] as const;
 type SupportedType = (typeof SUPPORTED_TYPES)[number];
 
 function isSupportedType(value: string | null): value is SupportedType {
-  return value === "signup" || value === "recovery";
+  return value === "signup" || value === "recovery" || value === "email_change";
 }
 
-// Server-side signup/recovery confirmation via verifyOtp(token_hash). Unlike
-// the PKCE code exchange in /auth/callback, this does not depend on any state
-// stored in the browser that made the original request, so it works from any
-// device. email_change is intentionally not handled here (different payload
-// shape, out of scope).
+// Server-side signup/recovery/email_change confirmation via verifyOtp(token_hash).
+// Unlike the PKCE code exchange in /auth/callback, this does not depend on any
+// state stored in the browser that made the original request, so it works from
+// any device.
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const tokenHash = searchParams.get("token_hash");
@@ -28,8 +27,14 @@ export async function GET(request: Request) {
 
   const failureRedirect = type === "recovery"
     ? `${origin}/auth/update-password?auth_error=confirm_failed`
+    : type === "email_change"
+    ? `${origin}/dashboard/settings?auth_error=confirm_failed`
     : `${origin}/auth/login?auth_error=confirm_failed`;
-  const defaultDestination = type === "recovery" ? "/auth/update-password" : "/dashboard";
+  const defaultDestination = type === "recovery"
+    ? "/auth/update-password"
+    : type === "email_change"
+    ? "/dashboard/settings"
+    : "/dashboard";
   const destination = isSafeRelativePath(next) ? next : defaultDestination;
 
   const supabase = await createClient();
