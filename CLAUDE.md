@@ -208,6 +208,25 @@ sans effet pratique : le lien pointe désormais toujours vers `${APP_URL}/auth/c
 l'origine preview), donc le scénario "reset demandé depuis une preview" atterrit directement sur
 prod sans passer par la substitution.
 
+**Bug distinct corrigé (Session 64, suite) — email_change totalement cassé, pas juste cross-device :**
+`dashboard/settings` appelle `updateUser({ email })` sans `emailRedirectTo`. Le lien de confirmation
+envoyé à la nouvelle adresse avait `token=` **vide** (`.../auth/v1/verify?token=&type=email_change&...`)
+→ Supabase répondait `400 validation_failed "Verify requires a token or a token hash"` à chaque
+tentative, pour tout le monde, peu importe l'appareil. Personne n'a jamais pu confirmer un changement
+d'email sur Everypaw en cliquant le lien reçu.
+Cause : "Secure email change" est **désactivé** dans Supabase Auth (Providers → Email) sur ce projet
+— une seule confirmation, sur la nouvelle adresse. Sous ce mode, Supabase renvoie `token_hash_new`
+comme chaîne vide plutôt que de l'omettre ; l'ancien code faisait `token_hash_new ?? tokenHash`
+(`??` ne rattrape que `null`/`undefined`, pas une chaîne vide) → `tokenHashNew` restait `""`.
+En plus, la construction manuelle utilisait le mauvais nom de paramètre (`token=` au lieu de
+`token_hash=`), bug resté invisible tant que `confirmationUrl` (jamais fourni par Supabase pour ce
+type d'action ici) n'était jamais réellement testé côté fallback.
+Fix : `tokenHashNew = token_hash_new || tokenHash` (`||`, pas `??`), lien construit vers
+`/auth/confirm?type=email_change` (`/auth/confirm` généralisé à `signup|recovery|email_change`),
+`dashboard/settings` affiche le message d'erreur proactivement sur `auth_error=confirm_failed`.
+`confirmationUrl`/`SUPABASE_URL` devenus totalement orphelins dans `auth-hook.ts` après ce fix (plus
+aucune branche ne les utilise) — supprimés.
+
 ### When You Need Real Staging
 
 If you need isolated test data (persistent staging DB, crons running, webhook testing):
@@ -618,7 +637,7 @@ Meta Pixel événements custom : CompleteRegistration (signup) + ViewContent (la
 - **Auth sécurité** : tout changement de mot de passe doit vérifier le mot de passe actuel via `signInWithPassword` avant `updateUser`
 - **Devise** : utiliser `getCurrencyFromCountry` + `formatPrice` de `src/lib/currency.ts` pour tout affichage de prix. Ne jamais utiliser `isFR` comme proxy de devise — langue ≠ pays. Les routes Stripe lisent `x-vercel-ip-country` (checkout) ou `subscription.currency` (upgrade).
 - **Webhooks entrants** (Supabase auth hook) : Supabase suit le spec **Standard Webhooks**. Headers à lire : `webhook-id`, `webhook-timestamp`, `webhook-signature`. Contenu signé : `{id}.{timestamp}.{body}`. Secret : strip le préfixe `v1,whsec_` (ou `v1,` ou `whsec_`) puis `Buffer.from(rest, "base64")` comme clé HMAC-SHA256. Signature = `v1,<base64_hmac>`. Fail-closed : si `SUPABASE_HOOK_SECRET` absent → 401 immédiat. Comparer avec `timingSafeEqual` sur les buffers. Voir `src/app/api/emails/auth-hook/route.ts` pour l'implémentation de référence.
-- **Confirmation d'inscription** (`/auth/confirm`) : vérifie `token_hash` côté serveur via `supabase.auth.verifyOtp({ type: "signup" })` — jamais via le `confirmation_url` PKCE fourni par Supabase, qui exige le `code_verifier` du navigateur d'origine (absent si le lien est ouvert ailleurs, cause du bug production du 2026-08-31, voir Session 64). Les anciennes routes `confirm-signup`/`change-email`/`reset-password` (auth Bearer simple, jamais appelées depuis la bascule vers `auth-hook`) ont été supprimées à cette occasion.
+- **Confirmation email** (`/auth/confirm`, `type=signup|recovery|email_change`) : vérifie `token_hash` côté serveur via `supabase.auth.verifyOtp({ type })` — jamais via le `confirmation_url` PKCE fourni par Supabase, qui exige le `code_verifier` du navigateur d'origine (absent si le lien est ouvert ailleurs, cause du bug production du 2026-08-31, voir Session 64). `email_change` a en plus un bug distinct (token vide, voir Session 64) : "Secure email change" étant désactivé, `token_hash_new` arrive en chaîne vide plutôt qu'absent → toujours utiliser `||` pour retomber sur `token_hash`, jamais `??`. Les anciennes routes `confirm-signup`/`change-email`/`reset-password` (auth Bearer simple, jamais appelées depuis la bascule vers `auth-hook`) ont été supprimées à cette occasion.
 - **`/api/generate`** : ne jamais faire confiance aux données du body client (petName, species, bio, entries). Re-fetcher depuis la DB après vérification de l'ownership du pet.
 - **`/api/gelato/order`** : toujours filtrer les updates de stories par `user_id` (même avec service role). Consommer les crédits via `try_consume_book_credit` **avant** l'appel Gelato, et restaurer via `restore_book_credit` en cas d'échec.
 - **`/api/preview-pdf`** : l'accès GET (Gelato) nécessite un token HMAC signé généré par `gelato/order`. L'accès POST (in-app) nécessite une session + vérification de l'ownership du pet. Ne jamais exposer le contenu du livre sans authentification. Les URLs insérées dans du CSS (`url('...')`) doivent être passées par `safeCssUrl()` qui échappe les apostrophes.

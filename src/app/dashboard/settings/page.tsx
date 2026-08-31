@@ -84,6 +84,18 @@ export default function SettingsPage() {
   } | null>(null);
   const [upgradePreviewLoading, setUpgradePreviewLoading] = useState<string | null>(null);
 
+  // /auth/confirm bounced back here after a failed server-side email_change
+  // token verification (invalid, expired, or already-used confirmation link).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("auth_error") === "confirm_failed") {
+      setEmailStatus("error");
+      setEmailError(isFR
+        ? "Ce lien de confirmation n'est plus valide. Réessayez de changer d'adresse email."
+        : "This confirmation link is no longer valid. Try changing your email address again.");
+    }
+  }, [isFR]);
+
   // ── Load ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {

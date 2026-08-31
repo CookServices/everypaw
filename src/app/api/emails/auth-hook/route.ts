@@ -11,7 +11,6 @@ import {
 } from "@/lib/auth-emails";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://everypaw.app";
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
 export async function POST(req: Request) {
   // Verify Supabase hook HMAC signature, fail-closed (no secret = reject all)
@@ -87,26 +86,11 @@ export async function POST(req: Request) {
   const actionType = body.email_data?.email_action_type;
   const email = body.user?.email ?? body.email ?? "";
   const tokenHash = body.email_data?.token_hash ?? "";
-  const tokenHashNew = body.email_data?.token_hash_new ?? tokenHash;
-  const rawConfirmationUrl = body.email_data?.confirmation_url;
+  // Secure email change is off for this project (single confirmation, new
+  // email only) — Supabase sends token_hash_new as an empty string rather
+  // than omitting it, so "||" (not "??") is required to fall back to token_hash.
+  const tokenHashNew = body.email_data?.token_hash_new || tokenHash;
   const redirectTo = body.email_data?.redirect_to;
-
-  // Validate confirmation_url is from our Supabase instance (prevent open redirect injection)
-  let confirmationUrl: string | undefined;
-  if (rawConfirmationUrl) {
-    try {
-      const parsed = new URL(rawConfirmationUrl);
-      const supabaseHost = new URL(SUPABASE_URL).hostname;
-      if (parsed.hostname !== supabaseHost || parsed.protocol !== "https:") {
-        log.error("[auth-hook] Invalid confirmation_url domain:", rawConfirmationUrl);
-        return NextResponse.json({ error: "Invalid confirmation URL" }, { status: 400 });
-      }
-      confirmationUrl = rawConfirmationUrl;
-    } catch {
-      log.error("[auth-hook] Malformed confirmation_url:", rawConfirmationUrl);
-      return NextResponse.json({ error: "Invalid confirmation URL" }, { status: 400 });
-    }
-  }
 
   if (!email) {
     log.error("[auth-hook] Missing email in payload");
@@ -161,9 +145,16 @@ export async function POST(req: Request) {
   } else if (actionType === "email_change") {
     const newEmail = body.user?.new_email ?? body.email_data?.new_email ?? email;
     toEmail = newEmail;
-    // email_change uses token_hash_new for the new address confirmation
-    const changeUrl = confirmationUrl
-      ?? `${SUPABASE_URL}/auth/v1/verify?token=${tokenHashNew}&type=email_change&redirect_to=${encodeURIComponent(redirectTo ?? `${APP_URL}/dashboard`)}`;
+    // Same PKCE cross-device defect as signup/recovery, on top of a separate
+    // bug: with "Secure email change" off, Supabase never provides a usable
+    // confirmation_url for this action type, and the old manual fallback used
+    // the wrong query param name (token= instead of token_hash=). Build our
+    // own link to /auth/confirm (verifyOtp server-side) instead.
+    if (!tokenHashNew) {
+      log.error("[auth-hook] Missing token_hash for email_change, cannot build confirm link");
+      return NextResponse.json({ error: "Missing token_hash" }, { status: 400 });
+    }
+    const changeUrl = `${APP_URL}/auth/confirm?token_hash=${encodeURIComponent(tokenHashNew)}&type=email_change&next=${encodeURIComponent("/dashboard/settings")}`;
     log.debug("[auth-hook] email_change url:", changeUrl);
     ({ subject, html } = buildChangeEmailEmail(lang, changeUrl, newEmail));
 
