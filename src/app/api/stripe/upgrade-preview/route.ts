@@ -40,6 +40,12 @@ export async function GET(req: Request) {
   try {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
+    // Mirrors the guard in stripe/upgrade: a scheduled cancellation must be reactivated first,
+    // creating a subscription schedule would silently discard it (backlog #12).
+    if (subscription.cancel_at_period_end) {
+      return NextResponse.json({ error: "Reactivate your subscription before changing plans" }, { status: 400 });
+    }
+
     // Plan changes are now always deferred to period end (no proration, no immediate charge).
     // The preview simply tells the client when the change will take effect.
     return NextResponse.json({
