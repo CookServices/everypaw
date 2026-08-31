@@ -26,7 +26,6 @@ export default function GiftContent({ locale }: { locale: Locale }) {
     scheduledDate: "",
   });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [authError, setAuthError] = useState(false);
   const [code, setCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [currency, setCurrency] = useState<Currency>("USD");
@@ -68,24 +67,6 @@ export default function GiftContent({ locale }: { locale: Locale }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Restore form saved before login redirect
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem("gift_form");
-      if (!saved) return;
-      const parsed = JSON.parse(saved);
-      setForm({
-        recipientEmail: parsed.recipientEmail ?? "",
-        recipientName:  parsed.recipientName  ?? "",
-        senderName:     parsed.senderName     ?? "",
-        message:        parsed.message        ?? "",
-        scheduledDate:  parsed.scheduledDate  ?? "",
-      });
-      if (parsed.selectedPlan) setSelectedPlan(parsed.selectedPlan as "digital" | "print");
-      sessionStorage.removeItem("gift_form");
-    } catch {}
-  }, []);
-
   // Step 1 : validate form, then go to confirm screen (no auth required)
   const handleGoToConfirm = () => {
     if (!form.recipientEmail || !form.recipientName || !form.senderName) {
@@ -97,14 +78,12 @@ export default function GiftContent({ locale }: { locale: Locale }) {
       return;
     }
     setStatus("idle");
-    setAuthError(false);
     setStep("confirm");
   };
 
   // Step 2 : redirect to Stripe Checkout
   const handleConfirm = async () => {
     setStatus("loading");
-    setAuthError(false);
     const res = await fetch("/api/gift/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -294,14 +273,7 @@ export default function GiftContent({ locale }: { locale: Locale }) {
               {status === "error" && (
                 <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 8, padding: "12px 16px", marginTop: ".75rem" }}>
                   <p style={{ fontSize: ".8rem", color: "#991B1B", margin: 0 }}>
-                    {authError ? (
-                      <>
-                        {isFR ? "Vous devez être connecté pour offrir un cadeau." : "You must be signed in to send a gift."}{" "}
-                        <a href={`/auth/login?redirect=${isFR ? "/fr/gift" : "/gift"}`} style={{ color: "#991B1B", fontWeight: 600, textDecoration: "underline" }}>
-                          {isFR ? "Se connecter" : "Sign in"}
-                        </a>
-                      </>
-                    ) : t.gift.error}
+                    {t.gift.error}
                   </p>
                 </div>
               )}
