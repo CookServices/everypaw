@@ -191,13 +191,22 @@ Concretely, for a password reset requested from a preview:
 **Workaround:** finish the email flow on `everypaw.app`, then sign in on the preview. Preview and
 production share the same Supabase project, so the credential works on both.
 
-**Flag non résolu (Session 64) :** `forgot-password` envoie `redirectTo` directement vers
-`/auth/update-password` (pas `/auth/callback`), et sous PKCE ce lien redirige aussi avec un `?code=`
-plutôt que des tokens en hash. `update-password/page.tsx` n'appelle jamais `exchangeCodeForSession`
-— il compte sur la détection automatique d'URL du client browser. Même mécanisme de dépendance au
-navigateur d'origine que le bug signup corrigé cette session, donc probablement cassé cross-device
-pour la même raison, en plus du bug de substitution preview→prod documenté ci-dessus. Pas encore
-testé en prod ni corrigé — à traiter séparément.
+**Bug cross-device corrigé (Session 64, suite) :** `forgot-password` envoyait `redirectTo` vers
+`/auth/update-password`, et sous PKCE ce lien redirigeait avec un `?code=` que
+`update-password/page.tsx` n'a jamais échangé explicitement (`exchangeCodeForSession` n'y est pas
+appelé) — ça ne marchait que par effet de bord de la détection automatique d'URL du client browser
+(`detectSessionInUrl`), qui a besoin du `code_verifier` local. Testé en prod : même navigateur que
+la demande → session ouverte silencieusement ; navigateur différent (storage vierge) → coincé sur
+`?code=` jamais échangé, "Lien de réinitialisation invalide ou expiré" alors que le lien était frais.
+Même mécanisme et même fix que le bug signup ci-dessus : `auth-hook` construit désormais le lien
+recovery vers `/auth/confirm?type=recovery` (au lieu de `confirmation_url` PKCE), `/auth/confirm`
+généralisé pour accepter `type=signup|recovery`, `update-password/page.tsx` affiche le message
+d'erreur proactivement sur `auth_error=confirm_failed` (nouvelle clé i18n `auth.confirm_link_invalid`
+non réutilisée ici — message déjà existant sur la page, juste déclenché plus tôt).
+Le bug de substitution preview→prod documenté ci-dessus est indépendant et reste réel, mais devient
+sans effet pratique : le lien pointe désormais toujours vers `${APP_URL}/auth/confirm` (jamais
+l'origine preview), donc le scénario "reset demandé depuis une preview" atterrit directement sur
+prod sans passer par la substitution.
 
 ### When You Need Real Staging
 
@@ -733,7 +742,7 @@ Testeur passé en abonnement Digital n'a vu aucun champ code promo sur la page S
 3. `login/page.tsx` affiche un bandeau distinct (ton neutre, pas le rouge générique, bouton "Renvoyer le lien de confirmation" affiché) pour `auth_error=confirm_failed` (lien de confirmation invalide/expiré/déjà utilisé — nouvelle clé i18n `auth.confirm_link_invalid`) et un message générique pour `auth_error=exchange_failed` (échec OAuth, cas résiduel).
 4. **Nettoyage** : suppression de `src/app/api/emails/{confirm-signup,change-email,reset-password}/route.ts` — code mort (auth Bearer simple, jamais appelé depuis la bascule vers `auth-hook` en Standard Webhooks), la doc qui les référençait était obsolète.
 
-**Flag, non corrigé cette session** : le flux de réinitialisation de mot de passe (`forgot-password` → `update-password`) partage probablement le même défaut structurel (PKCE cross-device) — voir note dans la section Preview Limitations ci-dessus.
+**Suite corrigée dans la même session** : le flux de réinitialisation de mot de passe (`forgot-password` → `update-password`) a été vérifié en prod (même mécanisme cassé, confirmé cross-device) puis corrigé sur le même principe — `/auth/confirm` généralisé à `type=signup|recovery`, `auth-hook` construit le lien recovery vers cette route. Détail dans la section Preview Limitations ci-dessus.
 
 **Reste à faire côté Julien** (voir aussi checklist de test manuel demandée) :
 - Vérifier dans Supabase Dashboard → Auth → URL Configuration que `<APP_URL>/auth/confirm` est bien couvert par les **Redirect URLs** autorisées (wildcard `https://everypaw.app/**` ou entrée explicite).
