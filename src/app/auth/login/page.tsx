@@ -10,7 +10,7 @@ import PublicFooter from "@/components/PublicFooter";
 export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const isFR = locale === "fr";
 
   // Redirect params from gift redeem flow
@@ -31,6 +31,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [showResend, setShowResend] = useState(false);
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [notice, setNotice] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -44,10 +45,26 @@ export default function LoginPage() {
     }
   }, [isFR]);
 
+  // Auth flow bounced back here after a server-side failure: /auth/callback (OAuth
+  // exchange) or /auth/confirm (signup token verification). Surface the reason
+  // instead of leaving the user on a silent login page.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const authError = new URLSearchParams(window.location.search).get("auth_error");
+    if (authError === "confirm_failed") {
+      setNotice(true);
+      setShowResend(true);
+      setError(t.auth.confirm_link_invalid);
+    } else if (authError === "exchange_failed") {
+      setError(isFR ? "Une erreur est survenue. Veuillez réessayer." : "An error occurred. Please try again.");
+    }
+  }, [isFR, t]);
+
   const handleEmailLogin = async () => {
     setStatus("loading");
     setError("");
     setShowResend(false);
+    setNotice(false);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       const msg = error.message.toLowerCase();
@@ -84,6 +101,7 @@ export default function LoginPage() {
   };
 
   const handleResend = async () => {
+    setNotice(false);
     if (!email.trim()) {
       setError(isFR ? "Entrez votre adresse email pour renvoyer le lien." : "Enter your email to resend the link.");
       return;
@@ -154,13 +172,17 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div style={{ background: resendStatus === "sent" ? "rgba(46,94,30,.06)" : "#FEF2F2", border: `1px solid ${resendStatus === "sent" ? "rgba(46,94,30,.2)" : "#FCA5A5"}`, borderRadius: 8, padding: "12px 16px" }}>
-                <p style={{ fontSize: ".8rem", color: resendStatus === "sent" ? "#2E5E1E" : "#991B1B", margin: 0 }}>{error}</p>
+              <div style={{
+                background: notice ? "#FFF3E0" : resendStatus === "sent" ? "rgba(46,94,30,.06)" : "#FEF2F2",
+                border: `1px solid ${notice ? "#F7C27A" : resendStatus === "sent" ? "rgba(46,94,30,.2)" : "#FCA5A5"}`,
+                borderRadius: 8, padding: "12px 16px",
+              }}>
+                <p style={{ fontSize: ".8rem", color: notice ? "#3D2B1F" : resendStatus === "sent" ? "#2E5E1E" : "#991B1B", margin: 0 }}>{error}</p>
                 {showResend && resendStatus !== "sent" && (
                   <button
                     onClick={handleResend}
                     disabled={resendStatus === "sending"}
-                    style={{ marginTop: ".5rem", padding: ".4rem .875rem", borderRadius: 100, border: "1.5px solid #A32D2D", background: "transparent", color: "#A32D2D", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", opacity: resendStatus === "sending" ? .7 : 1 }}
+                    style={{ marginTop: ".5rem", padding: ".4rem .875rem", borderRadius: 100, border: `1.5px solid ${notice ? "#C8813A" : "#A32D2D"}`, background: "transparent", color: notice ? "#C8813A" : "#A32D2D", fontSize: ".8rem", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", opacity: resendStatus === "sending" ? .7 : 1 }}
                   >
                     {resendStatus === "sending"
                       ? (isFR ? "Envoi…" : "Sending…")

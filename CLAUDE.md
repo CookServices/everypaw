@@ -191,6 +191,14 @@ Concretely, for a password reset requested from a preview:
 **Workaround:** finish the email flow on `everypaw.app`, then sign in on the preview. Preview and
 production share the same Supabase project, so the credential works on both.
 
+**Flag non résolu (Session 64) :** `forgot-password` envoie `redirectTo` directement vers
+`/auth/update-password` (pas `/auth/callback`), et sous PKCE ce lien redirige aussi avec un `?code=`
+plutôt que des tokens en hash. `update-password/page.tsx` n'appelle jamais `exchangeCodeForSession`
+— il compte sur la détection automatique d'URL du client browser. Même mécanisme de dépendance au
+navigateur d'origine que le bug signup corrigé cette session, donc probablement cassé cross-device
+pour la même raison, en plus du bug de substitution preview→prod documenté ci-dessus. Pas encore
+testé en prod ni corrigé — à traiter séparément.
+
 ### When You Need Real Staging
 
 If you need isolated test data (persistent staging DB, crons running, webhook testing):
@@ -601,7 +609,7 @@ Meta Pixel événements custom : CompleteRegistration (signup) + ViewContent (la
 - **Auth sécurité** : tout changement de mot de passe doit vérifier le mot de passe actuel via `signInWithPassword` avant `updateUser`
 - **Devise** : utiliser `getCurrencyFromCountry` + `formatPrice` de `src/lib/currency.ts` pour tout affichage de prix. Ne jamais utiliser `isFR` comme proxy de devise — langue ≠ pays. Les routes Stripe lisent `x-vercel-ip-country` (checkout) ou `subscription.currency` (upgrade).
 - **Webhooks entrants** (Supabase auth hook) : Supabase suit le spec **Standard Webhooks**. Headers à lire : `webhook-id`, `webhook-timestamp`, `webhook-signature`. Contenu signé : `{id}.{timestamp}.{body}`. Secret : strip le préfixe `v1,whsec_` (ou `v1,` ou `whsec_`) puis `Buffer.from(rest, "base64")` comme clé HMAC-SHA256. Signature = `v1,<base64_hmac>`. Fail-closed : si `SUPABASE_HOOK_SECRET` absent → 401 immédiat. Comparer avec `timingSafeEqual` sur les buffers. Voir `src/app/api/emails/auth-hook/route.ts` pour l'implémentation de référence.
-- **Routes email hooks** (`confirm-signup`, `change-email`, `reset-password`) : vérification `Bearer ${SUPABASE_HOOK_SECRET}` fail-closed — retourner 401 immédiatement si la variable est absente.
+- **Confirmation d'inscription** (`/auth/confirm`) : vérifie `token_hash` côté serveur via `supabase.auth.verifyOtp({ type: "signup" })` — jamais via le `confirmation_url` PKCE fourni par Supabase, qui exige le `code_verifier` du navigateur d'origine (absent si le lien est ouvert ailleurs, cause du bug production du 2026-08-31, voir Session 64). Les anciennes routes `confirm-signup`/`change-email`/`reset-password` (auth Bearer simple, jamais appelées depuis la bascule vers `auth-hook`) ont été supprimées à cette occasion.
 - **`/api/generate`** : ne jamais faire confiance aux données du body client (petName, species, bio, entries). Re-fetcher depuis la DB après vérification de l'ownership du pet.
 - **`/api/gelato/order`** : toujours filtrer les updates de stories par `user_id` (même avec service role). Consommer les crédits via `try_consume_book_credit` **avant** l'appel Gelato, et restaurer via `restore_book_credit` en cas d'échec.
 - **`/api/preview-pdf`** : l'accès GET (Gelato) nécessite un token HMAC signé généré par `gelato/order`. L'accès POST (in-app) nécessite une session + vérification de l'ownership du pet. Ne jamais exposer le contenu du livre sans authentification. Les URLs insérées dans du CSS (`url('...')`) doivent être passées par `safeCssUrl()` qui échappe les apostrophes.
@@ -705,17 +713,6 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 Historique complet (sessions 1 à 53, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
 Seules les 2 dernières sessions sont conservées ici ; à chaque nouvelle session, déplacer la plus ancienne vers l'archive.
 
-### ✅ Session 62 — Package `@everypaw/design-system` + sync claude.ai/design (PRs [#104](https://github.com/CookServices/everypaw/pull/104), [#105](https://github.com/CookServices/everypaw/pull/105) mergées) (2026-08-27)
-
-`/design-sync` (feature Claude Code) exige un repo/package buildable de façon isolée pour lire des composants — everypaw (styles inline, pas de lib composants) n'y correspondait pas.
-
-- **Nouveau package** `packages/design-system/` : `private`, buildé via `tsup` (ESM+CJS+d.ts). Tokens (`tokens.ts` + `styles.css`) **dupliqués** depuis `DESIGN.md`/`globals.css` (choix assumé — isolation totale du package, drift risk accepté). 6 composants présentationnels : `Button`, `Card`, `Input`, `Badge`, `NavItem`, `Modal`. Zéro consommateur dans `src/` pour l'instant (scope v1 volontairement minimal).
-- **Exception convention** : ce package stylise via `className`+CSS (`:hover`/`:focus-visible`), contrairement à la règle "styles inline partout" ci-dessus — accepté pour ce package isolé exportable. Naming CSS pas encore réconcilié : `.ep-btn-primary` (app) vs `.ep-btn--primary` (package, BEM).
-- **Fix tsconfig** : root `tsconfig.json` `include` élargi (`**/*.ts`) absorbait le `node_modules`/`@types/react` isolé du package → 160 erreurs TS fantômes. Fix durable : `include` scopé à `src/**`, `scripts/**`, `vitest.config.ts` (plus besoin d'exclure chaque futur sibling directory par son nom).
-- **`/design-sync` exécuté 2×** : upload initial (6 composants) + re-sync après fixes review (Input `useId`/`aria-invalid`/`errorMessage`). Committé un dossier `.design-sync/` (config + previews + notes) — 2e commit direct sur `main` par la session `/design-sync` elle-même (pas par moi).
-- **Review complète** (`/code-review`, 8 angles, high effort) : 6 findings confirmés, 4 corrigés (a11y Input + tsconfig), 2 laissés (conventions styles/naming, hors scope demandé).
-- Projet claude.ai : https://claude.ai/design/p/dc91647a-d972-409a-adee-c59450239a42
-
 ### ✅ Session 63 — Fix `allow_promotion_codes` manquant sur checkout Stripe (2026-08-28)
 
 Testeur passé en abonnement Digital n'a vu aucun champ code promo sur la page Stripe Checkout. Audit : 4 routes appellent `stripe.checkout.sessions.create`, aucune ne passait `allow_promotion_codes`.
@@ -723,3 +720,23 @@ Testeur passé en abonnement Digital n'a vu aucun champ code promo sur la page S
 - **Fix appliqué** (`allow_promotion_codes: true`) : `stripe/checkout` (abonnement digital/print), `gift/checkout` (achat gift), `stripe/book-checkout` (livre supplémentaire).
 - **Non touché** : `gift/redeem` — passe déjà `discounts: [{ promotion_code }]` codé en dur ; Stripe refuse `allow_promotion_codes` + `discounts` sur la même session.
 - PR : voir historique Git (branche `fix/checkout-allow-promo-codes`).
+
+### ✅ Session 64 — Bug critique confirmation signup cross-device (PKCE) (2026-08-31)
+
+**Nature du bug** : un utilisateur qui confirme son inscription depuis un navigateur/appareil différent de celui utilisé pour s'inscrire (cas par défaut sur trafic Instagram mobile : clic depuis le webview de l'app mail) était redirigé silencieusement vers `/auth/login`, sans message, sans session ouverte — alors que Supabase avait bien marqué son email comme confirmé. Confirmé en prod : `randy.figueroa`, `email_confirmed_at` renseigné, `last_sign_in_at` NULL, jamais revenu.
+
+**Cause racine** : `signup/page.tsx` déclenche `supabase.auth.signUp()` via `createBrowserClient` (`@supabase/ssr`), qui utilise le flow PKCE par défaut — un `code_verifier` est stocké côté navigateur au moment de l'inscription. Le Send Email Hook Supabase fournit un `confirmation_url` déjà construit avec ce PKCE (`token=pkce_...`), et l'ancien `auth-hook/route.ts` le préférait systématiquement au lien basé sur `token_hash`. Ouvert depuis un autre navigateur, le `code_verifier` est absent : l'échange de code échoue côté `/auth/callback`, dont l'erreur retournée par `exchangeCodeForSession` n'était **jamais capturée** — la route redirigeait quand même vers `/dashboard`, où le middleware (sans session) rebondissait silencieusement vers `/auth/login`.
+
+**Correction appliquée** :
+1. **Visibilité de l'échec** (`auth/callback/route.ts`) : l'erreur d'`exchangeCodeForSession` est désormais capturée et loguée côté serveur (jamais de détail exposé au client) ; en cas d'échec, redirect vers `/auth/login?auth_error=exchange_failed` au lieu d'un redirect silencieux vers `/dashboard`.
+2. **Flux indépendant du navigateur** pour la confirmation d'inscription : nouvelle route `src/app/auth/confirm/route.ts` qui vérifie `token_hash` côté serveur via `supabase.auth.verifyOtp({ type: "signup" })` — aucun état navigateur requis, fonctionne depuis n'importe quel appareil. `auth-hook/route.ts` construit désormais le lien de l'email signup vers cette route (`${APP_URL}/auth/confirm?token_hash=...&type=signup&next=...`) et ignore délibérément `confirmation_url` pour ce type d'action. `recovery` et `email_change` sont **inchangés** (hors scope cette session, voir flag ci-dessous).
+3. `login/page.tsx` affiche un bandeau distinct (ton neutre, pas le rouge générique, bouton "Renvoyer le lien de confirmation" affiché) pour `auth_error=confirm_failed` (lien de confirmation invalide/expiré/déjà utilisé — nouvelle clé i18n `auth.confirm_link_invalid`) et un message générique pour `auth_error=exchange_failed` (échec OAuth, cas résiduel).
+4. **Nettoyage** : suppression de `src/app/api/emails/{confirm-signup,change-email,reset-password}/route.ts` — code mort (auth Bearer simple, jamais appelé depuis la bascule vers `auth-hook` en Standard Webhooks), la doc qui les référençait était obsolète.
+
+**Flag, non corrigé cette session** : le flux de réinitialisation de mot de passe (`forgot-password` → `update-password`) partage probablement le même défaut structurel (PKCE cross-device) — voir note dans la section Preview Limitations ci-dessus.
+
+**Reste à faire côté Julien** (voir aussi checklist de test manuel demandée) :
+- Vérifier dans Supabase Dashboard → Auth → URL Configuration que `<APP_URL>/auth/confirm` est bien couvert par les **Redirect URLs** autorisées (wildcard `https://everypaw.app/**` ou entrée explicite).
+- Aucune nouvelle variable d'environnement Vercel requise (la route réutilise `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`/`NEXT_PUBLIC_APP_URL` déjà en place).
+- **Scénario de validation prod** : inscription dans un navigateur A, ouverture du lien de confirmation reçu par email dans un navigateur B (ou un autre appareil) → vérifier que la session s'ouvre (redirect `/dashboard`, pas `/auth/login`) et que `last_sign_in_at` est renseigné en base pour ce compte.
+- **Limite connue, non corrigeable par du code** : certains scanners de sécurité email d'entreprise (Microsoft Defender Safe Links, Google Workspace) pré-cliquent automatiquement les liens avant l'utilisateur, consommant le token single-use. Si ça se reproduit après ce fix, le symptôme (`auth_error=confirm_failed`) sera visible au lieu d'être silencieux, mais la cause sera différente du bug PKCE corrigé ici.

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { Resend } from "resend";
 import { getProfileLocale } from "@/lib/locale";
+import { isSafeRelativePath } from "@/lib/validation";
 import {
   buildConfirmSignupEmail,
   buildResetPasswordEmail,
@@ -87,7 +88,6 @@ export async function POST(req: Request) {
   const email = body.user?.email ?? body.email ?? "";
   const tokenHash = body.email_data?.token_hash ?? "";
   const tokenHashNew = body.email_data?.token_hash_new ?? tokenHash;
-  const token = body.email_data?.token ?? tokenHash;
   const rawConfirmationUrl = body.email_data?.confirmation_url;
   const redirectTo = body.email_data?.redirect_to;
 
@@ -131,7 +131,24 @@ export async function POST(req: Request) {
     ?? `${SUPABASE_URL}/auth/v1/verify?token=${tokenHash}&type=${type}&redirect_to=${encodeURIComponent(redirectTo ?? fallbackRedirect)}`;
 
   if (actionType === "signup") {
-    const url = buildUrl("signup", `${APP_URL}/dashboard`);
+    // Signup confirmation never uses Supabase's own confirmation_url: that link
+    // is PKCE-based (token=pkce_...) and requires the code_verifier stored in
+    // the browser that started the signup. Opened from another device or an
+    // email app's webview, that verifier is missing and the exchange fails
+    // silently. Instead we build our own link to /auth/confirm, which verifies
+    // token_hash server-side (verifyOtp) — no browser state required.
+    if (!tokenHash) {
+      log.error("[auth-hook] Missing token_hash for signup, cannot build confirm link");
+      return NextResponse.json({ error: "Missing token_hash" }, { status: 400 });
+    }
+    let signupNext = "/dashboard";
+    if (redirectTo) {
+      try {
+        const n = new URL(redirectTo).searchParams.get("next");
+        if (isSafeRelativePath(n)) signupNext = n;
+      } catch {}
+    }
+    const url = `${APP_URL}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=signup&next=${encodeURIComponent(signupNext)}`;
     log.debug("[auth-hook] signup url:", url);
     ({ subject, html } = buildConfirmSignupEmail(lang, url));
 

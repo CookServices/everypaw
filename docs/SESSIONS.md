@@ -1702,3 +1702,14 @@ Suite du chantier #9 (dette technique). Méthode identique à `pets/[id]` (sessi
 
 **Reste ouvert sur #9** : `renderPreviewStep` (order, 492 l) + le reste de `settings/page.tsx` (encore ~800 l de JSX/handlers) — les deux bloqués sur le même sujet (bundle de props partagées), pas des quick wins.
 
+### ✅ Session 62 — Package `@everypaw/design-system` + sync claude.ai/design (PRs [#104](https://github.com/CookServices/everypaw/pull/104), [#105](https://github.com/CookServices/everypaw/pull/105) mergées) (2026-08-27)
+
+`/design-sync` (feature Claude Code) exige un repo/package buildable de façon isolée pour lire des composants — everypaw (styles inline, pas de lib composants) n'y correspondait pas.
+
+- **Nouveau package** `packages/design-system/` : `private`, buildé via `tsup` (ESM+CJS+d.ts). Tokens (`tokens.ts` + `styles.css`) **dupliqués** depuis `DESIGN.md`/`globals.css` (choix assumé — isolation totale du package, drift risk accepté). 6 composants présentationnels : `Button`, `Card`, `Input`, `Badge`, `NavItem`, `Modal`. Zéro consommateur dans `src/` pour l'instant (scope v1 volontairement minimal).
+- **Exception convention** : ce package stylise via `className`+CSS (`:hover`/`:focus-visible`), contrairement à la règle "styles inline partout" ci-dessus — accepté pour ce package isolé exportable. Naming CSS pas encore réconcilié : `.ep-btn-primary` (app) vs `.ep-btn--primary` (package, BEM).
+- **Fix tsconfig** : root `tsconfig.json` `include` élargi (`**/*.ts`) absorbait le `node_modules`/`@types/react` isolé du package → 160 erreurs TS fantômes. Fix durable : `include` scopé à `src/**`, `scripts/**`, `vitest.config.ts` (plus besoin d'exclure chaque futur sibling directory par son nom).
+- **`/design-sync` exécuté 2×** : upload initial (6 composants) + re-sync après fixes review (Input `useId`/`aria-invalid`/`errorMessage`). Committé un dossier `.design-sync/` (config + previews + notes) — 2e commit direct sur `main` par la session `/design-sync` elle-même (pas par moi).
+- **Review complète** (`/code-review`, 8 angles, high effort) : 6 findings confirmés, 4 corrigés (a11y Input + tsconfig), 2 laissés (conventions styles/naming, hors scope demandé).
+- Projet claude.ai : https://claude.ai/design/p/dc91647a-d972-409a-adee-c59450239a42
+
