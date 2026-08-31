@@ -112,7 +112,10 @@ export default function NewPetPage() {
       bio: bio || null, photo_url: photoUrl,
     });
     if (err) { setError(err.message); setStatus("error"); }
-    else window.location.href = "/dashboard";
+    else {
+      await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user!.id);
+      window.location.href = "/dashboard";
+    }
   };
 
   const labelStyle: React.CSSProperties = {

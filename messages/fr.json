@@ -35,13 +35,18 @@
     "last_entry_days_ago": "il y a {days} j",
     "last_entry_weeks_ago": "il y a {weeks} sem.",
     "month_title": "Votre mois en cours",
-    "month_entries_free": "{count} / 10 entrées ce mois",
+    "month_entries_free": "{count} / 10 entrées utilisées",
+    "month_entries_free_period": "Pas de limite mensuelle, c'est un total cumulé",
     "month_entries_premium": "{count} entrées ce mois",
     "month_entries_label": "Journal",
     "month_chapter_label": "Prochain chapitre IA",
     "month_chapter_days": "dans {days} jours",
     "month_chapter_day": "demain",
     "month_chapter_soon": "génération imminente",
+    "month_chapter_not_included": "Les chapitres automatiques sont réservés aux plans payants",
+    "month_chapter_write_manually": "Écrire un chapitre manuellement",
+    "month_chapter_missing": "Encore {n} moment(s) pour débloquer ce chapitre",
+    "month_chapter_add_moment": "Ajouter un moment",
     "month_book_label": "Votre livre {year}",
     "month_book_value": "En cours de création ✦",
     "month_book_credit_available": "{n} crédit disponible",
@@ -182,7 +187,8 @@
     "check_inbox": "Vérifiez votre boîte mail",
     "check_inbox_desc": "Nous avons envoyé un lien de confirmation à {email}. Cliquez dessus pour activer votre compte.",
     "start_story": "Commencez l'histoire de votre animal aujourd'hui",
-    "confirm_link_invalid": "Ce lien n'est plus valide. Si vous avez déjà confirmé votre email, connectez-vous. Sinon, demandez un nouveau lien de confirmation."
+    "confirm_link_invalid": "Ce lien n'est plus valide. Si vous avez déjà confirmé votre email, connectez-vous. Sinon, demandez un nouveau lien de confirmation.",
+    "session_exchange_failed": "Ton compte est prêt. Réessaie de te connecter."
   },
   "pet": {
     "add_title": "Ajouter un animal",
@@ -617,6 +623,7 @@
     "unsubscribe": "Se désinscrire de ces emails"
   },
   "interview": {
+    "fallback_name": "ton animal",
     "q1": "Quelle est la routine matinale de {petName} ?",
     "q2": "Quel son {petName} déteste-t-il/elle le plus ?",
     "q3": "Quelle est la cachette préférée de {petName} ?",

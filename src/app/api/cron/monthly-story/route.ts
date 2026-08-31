@@ -1,6 +1,7 @@
 import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
-import { getServiceSupabase } from "@/lib/plan";
+import { getServiceSupabase, getChapterEligibility } from "@/lib/plan";
+import type { Plan } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { getResendClient } from "@/lib/resend";
@@ -83,7 +84,7 @@ export async function GET(req: Request) {
       }
     ).profiles;
 
-    // Gate: >= 3 entries in the previous month
+    // Gate: enough entries in the previous month (shared threshold with the dashboard)
     const { count: entryCount } = await supabase
       .from("entries")
       .select("*", { count: "exact", head: true })
@@ -91,7 +92,7 @@ export async function GET(req: Request) {
       .gte("entry_date", monthStart)
       .lte("entry_date", monthEnd);
 
-    if ((entryCount ?? 0) < 3) { skipped++; continue; }
+    if (getChapterEligibility(profile.plan as Plan, entryCount ?? 0).state !== "eligible") { skipped++; continue; }
 
     // Idempotence: skip if story already exists for this (pet, month)
     const { count: existingCount } = await supabase
