@@ -5,6 +5,16 @@
 
 ---
 
+### ✅ Session 63 — Fix `allow_promotion_codes` manquant sur checkout Stripe (2026-08-28)
+
+Testeur passé en abonnement Digital n'a vu aucun champ code promo sur la page Stripe Checkout. Audit : 4 routes appellent `stripe.checkout.sessions.create`, aucune ne passait `allow_promotion_codes`.
+
+- **Fix appliqué** (`allow_promotion_codes: true`) : `stripe/checkout` (abonnement digital/print), `gift/checkout` (achat gift), `stripe/book-checkout` (livre supplémentaire).
+- **Non touché** : `gift/redeem` — passe déjà `discounts: [{ promotion_code }]` codé en dur ; Stripe refuse `allow_promotion_codes` + `discounts` sur la même session.
+- PR : voir historique Git (branche `fix/checkout-allow-promo-codes`).
+
+---
+
 ### ✅ Session 56 — SEO : canonicals par page, robots.ts, sitemap.ts (2026-07-11)
 
 Commit `f01d59a`. Bug critique révélé par audit SEO : `alternates.canonical` + `openGraph.url` hardcodés `https://everypaw.app` dans le root layout → hérités par **toutes** les pages → Google considérait tout le site comme duplicata de la homepage.
