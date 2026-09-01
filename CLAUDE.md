@@ -169,6 +169,8 @@ data, so the rules below are not optional.
 - Stripe webhook testing → use Stripe test mode, not preview
 - Long-running tasks may timeout (preview cold-starts)
 - **Email flows can NOT be completed on a preview** — they always land back on production
+- **An env var scoped to Production only is absent on preview**, and every route that needs it
+  fails there with an unhandled 500 (see below)
 
 #### Why email flows redirect to production
 
@@ -190,6 +192,42 @@ Concretely, for a password reset requested from a preview:
 
 **Workaround:** finish the email flow on `everypaw.app`, then sign in on the preview. Preview and
 production share the same Supabase project, so the credential works on both.
+
+#### Env vars need the Preview scope explicitly
+
+Vercel env vars carry a target scope. One added to Production alone simply does not exist in
+preview deployments, and nothing warns you: the deployment builds and serves normally until a
+request hits code that reads the variable.
+
+`SUPABASE_SERVICE_ROLE_KEY` sat in Production scope alone for 119 days (found 2026-09-01, fixed
+the same day). Every preview request reaching `getServiceSupabase()` threw:
+
+```
+Error: Missing environment variable(s): SUPABASE_SERVICE_ROLE_KEY.
+Service-role Supabase calls cannot run. Check the environment scope (Preview vs Production).
+```
+
+That is **24 API routes**: `gelato/order`, `stripe/{book-checkout,subscription,webhook}`,
+`account/delete`, `invite/[token]`, `memorial/tributes`, `pet-members`, `share-card`,
+`book-pdf`, `preview-pdf`, and the 7 crons. "Just test it on preview" was quietly false for all
+of them throughout that window, which is worth remembering when reading older session notes that
+claim a preview test passed.
+
+Auditing the scopes:
+
+```bash
+vercel env ls
+```
+
+The `environments` column must show Preview, not only Production.
+
+Two traps when fixing one:
+
+- Adding a scope does **not** touch existing deployments. Redeploy before retesting, with
+  `vercel redeploy <preview-url>` or a fresh push.
+- In the dashboard, plain Preview scoping lives under the **Environments** submenu and works on
+  the Hobby plan. **Preview Branches**, right next to it, is per-branch values and is Pro-only,
+  so hitting a paywall there does not mean Preview scoping is unavailable.
 
 **Note (Session 64) :** les liens signup/recovery/email_change ne passent plus par `confirmation_url`
 PKCE ni par `validateRedirectTo` — ils pointent tous vers `${APP_URL}/auth/confirm` (jamais une origine
