@@ -117,8 +117,13 @@ export default function PreviewActions({
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-        {/* Hide main CTA when user has no credits, except free plan (show disabled so user understands the gate) */}
-        {((profile?.book_credits ?? 0) > 0 || profile?.plan === "free") && <button
+        {/* Hide the main CTA when the user has no credits, with two exceptions.
+            Free: shown disabled, so the gate is visible rather than puzzling.
+            Print with no credits: shown and enabled, because that is the paid
+            extra-copy path. Hiding it there stranded Print subscribers with a
+            banner and no way to buy, while the label and the checkout call for
+            exactly that case already existed just below. */}
+        {((profile?.book_credits ?? 0) > 0 || profile?.plan === "free" || profile?.plan === "print") && <button
           onClick={() => {
             setStep("address");
           }}
