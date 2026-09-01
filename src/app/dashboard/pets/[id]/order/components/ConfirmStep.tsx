@@ -132,7 +132,9 @@ export default function ConfirmStep({
             </button>
             <button
               onClick={() => {
-                if (profile?.plan === "print" && profile.book_credits === 0) {
+                // Any paid plan without a credit pays here. Falling through to
+                // handleOrder would place a Gelato order without payment.
+                if (profile && profile.plan !== "free" && profile.book_credits === 0) {
                   startBookCheckout();
                   return;
                 }

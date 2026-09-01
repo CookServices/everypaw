@@ -23,3 +23,12 @@ const PRICE_TABLE: Record<PriceKey, Record<Currency, string>> = {
 export function formatPrice(currency: Currency, key: PriceKey): string {
   return PRICE_TABLE[key][currency];
 }
+
+/**
+ * Formats a computed amount (e.g. the dynamic book price) in the same style as
+ * the fixed prices above. The book price is the same number in both currencies,
+ * only the symbol and its position change.
+ */
+export function formatAmount(currency: Currency, amount: number): string {
+  return currency === "EUR" ? `${amount} €` : `$${amount}`;
+}

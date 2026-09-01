@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
 import { calcGelatoBookPrice } from "@/lib/gelato-pricing";
 import { calcPageCount } from "@/lib/book-pages";
+import { formatAmount, type Currency } from "@/lib/currency";
 import type { Step, LayoutType, ThemeId, Story, Entry, Pet, Profile } from "./constants";
 import { SHIPPING_BY_COUNTRY, COVER_THEMES } from "./constants";
 import { estimateOrderPages, calcCoverPeriod, calcMonthsCount } from "./utils";
@@ -55,6 +56,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
   const [renewalDate, setRenewalDate] = useState<string | null>(null);
+  const [currency, setCurrency] = useState<Currency>("USD");
   const [currentConfigId, setCurrentConfigId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -128,6 +130,13 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       });
     });
   }, [id, locale]);
+
+  // Currency for displayed prices — same source as settings/upgrade, and the
+  // same country header /api/stripe/book-checkout uses to pick the Stripe
+  // currency, so the shown price matches what is actually charged.
+  useEffect(() => {
+    fetch("/api/currency").then(r => r.json()).then(d => setCurrency(d.currency as Currency)).catch(() => {});
+  }, []);
 
   // Load approved tribute count for deceased pets
   useEffect(() => {
@@ -500,8 +509,11 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   // charge (that route ignores any client-supplied page count).
   const worstCasePages = calcPageCount(stories.length, true, true, true);
   const extraBookPrice = calcGelatoBookPrice(worstCasePages);
-  const extraBookPriceLabel = `${extraBookPrice} €`;
-  const price = isMemorial ? t.memorial.order_price : extraBookPriceLabel;
+  const extraBookPriceLabel = formatAmount(currency, extraBookPrice);
+  // Memorial books go through the same checkout and the same dynamic pricing,
+  // so they show the computed price too, never a fixed string.
+  const price = extraBookPriceLabel;
+  const paidPriceSuffix = `${extraBookPriceLabel} ${locale === "fr" ? "+ livraison" : "+ shipping"}`;
   const productName = isMemorial
     ? (petName ? t.memorial.order_tribute.replace("{name}", petName) : "…")
     : t.order.product_detail;
@@ -575,9 +587,6 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             locale={locale}
             t={t}
             renewalDate={renewalDate}
-            checkoutLoading={checkoutLoading}
-            startBookCheckout={startBookCheckout}
-            extraBookPriceLabel={extraBookPriceLabel}
             petName={petName}
           />
           {step === "preview" && (
@@ -674,6 +683,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
                 selectedStoryIds={selectedStoryIds}
                 tooFewContent={tooFewContent}
                 checkoutLoading={checkoutLoading}
+                paidPriceSuffix={paidPriceSuffix}
                 profile={profile}
                 setStep={setStep}
                 accentColor={accentColor}
