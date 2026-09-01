@@ -236,13 +236,36 @@ That is **24 API routes**: `gelato/order`, `stripe/{book-checkout,subscription,w
 of them throughout that window, which is worth remembering when reading older session notes that
 claim a preview test passed.
 
+**Wider than that one key (found 2026-09-01, Session 67, not fixed).** The `everypaw-staging`
+project holds **only three** variables, all Supabase:
+
+```
+SUPABASE_SERVICE_ROLE_KEY      Preview
+NEXT_PUBLIC_SUPABASE_ANON_KEY  Preview
+NEXT_PUBLIC_SUPABASE_URL       Preview
+```
+
+So every route reading any other secret fails on preview: all the Stripe routes (`checkout`,
+`book-checkout`, `upgrade`, `cancel`, `webhook`…) miss `STRIPE_SECRET_KEY`, story generation
+misses `ANTHROPIC_API_KEY`, `gelato/order` misses `GELATO_API_KEY`, the crons miss `CRON_SECRET`,
+and anything building an absolute link misses `NEXT_PUBLIC_APP_URL`. Observed as a bare **500 with
+an empty body** (unhandled throw), which looks like a code bug and is not one.
+
+Consequence for the workflow: a preview proves the UI, the data reads through Supabase, and which
+endpoint a button calls, **but never what that endpoint does**. Anything past a payment or a print
+order has to be checked on production. Adding the live `STRIPE_SECRET_KEY` to this project is not
+a free fix: preview deployments are publicly reachable (see the Deployment Protection note in the
+session history), so weigh that before doing it.
+
 Auditing the scopes:
 
 ```bash
 vercel env ls
 ```
 
-The `environments` column must show Preview, not only Production.
+The `environments` column must show Preview, not only Production. Run it once per project
+(`npx vercel link --yes --project everypaw-staging` first), the two projects are audited
+separately.
 
 Two traps when fixing one:
 
@@ -789,17 +812,19 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
   - Le symptôme était silencieux et trompeur : serveur qui répond 200, markup rendu côté serveur correct, mais aucun composant client hydraté. En développant #11 il a fallu un A/B en retirant les changements pour constater que l'ancien bandeau ne s'affichait pas davantage.
   - **Vérification à refaire si ce header est retouché** : la chaîne `script-src` produite en production doit rester identique à celle d'avant. Contrôlée par comparaison directe avec la version de `main` (`NODE_ENV=production node -e "require('./next.config.js').headers()..."`), et l'en-tête réellement servi en dev contrôlé par `curl -D -`. Ne pas se contenter de relire le code : c'est la seule garantie que le correctif n'affaiblit pas la production.
 
-- **#17 Prix affiché sur la page order jamais confronté au montant réellement débité (Session 66)** : sur un plan Digital sans crédit, l'encart propose « Acheter un livre, {prix} + livraison ». Ce prix vient de `calcGelatoBookPrice(worstCasePages)` calculé côté client, tandis que `stripe/book-checkout` recalcule le sien indépendamment depuis PR [#115](https://github.com/CookServices/everypaw/pull/115). Les deux devraient coïncider, ça n'a jamais été confronté à un vrai montant Stripe. Le point 5 de la Session 64 le notait déjà comme vérifié en lecture de code seulement.
-  - **Défaut confirmé (constaté à l'écran le 2026-09-01)** : l'encart produit affiche **deux prix contradictoires**. La ligne de specs vient de la chaîne i18n statique `order.product_specs`, qui contient un prix écrit en dur (`~29 €`, `~$29` en anglais), tandis que le prix à droite est calculé par `calcGelatoBookPrice(worstCasePages)` et vaut `28 €`. Les deux ont divergé. Correctif attendu : retirer le prix de `product_specs`, qui doit décrire le produit (grammage, pelliculage) et non citer un montant qui dérivera, puisque le prix réel est affiché juste à côté.
-  - **Défaut suspecté, trouvé en préparant cet item** : `extraBookPriceLabel` code l'euro en dur (`` `${extraBookPrice} €` `` dans `order/page.tsx`), alors que `settings` utilise `formatPrice(currency, …)` avec la devise détectée par `/api/currency`. Un utilisateur en USD verrait donc des dollars dans ses réglages et des euros sur la page de commande, et un prix qui ne correspond pas à ce que Stripe lui débitera. À confirmer avant de corriger : forcer la devise USD et comparer les deux écrans.
-  - À faire : compte Digital sans crédit, relever le prix affiché sur la page order, lancer le checkout et comparer au montant réel côté Stripe **sans finaliser le paiement** (la page Stripe affiche le montant avant saisie de carte). Vérifier aussi le cas d'un livre filtré par année ou par sélection de chapitres, où le pire cas serveur peut sur-facturer volontairement.
+- ~~**#17 Prix affiché sur la page order jamais confronté au montant réellement débité**~~ ✅ **résolu (Session 67, PR [#132](https://github.com/CookServices/everypaw/pull/132))** : deux défauts distincts, tous deux corrigés.
+  - **Deux prix contradictoires dans l'encart produit** : la ligne de specs `order.product_specs` citait un montant en dur (`~29 €` / `~$29`) à côté du prix calculé par `calcGelatoBookPrice` (`28 €`). Le montant est retiré de la chaîne, qui ne décrit plus que le papier et le pelliculage — le format était aussi répété, il est déjà dans `product_detail` juste au-dessus.
+  - **Devise codée en dur** : `extraBookPriceLabel` écrivait toujours `€`, alors que `stripe/book-checkout` choisit la devise Stripe depuis `x-vercel-ip-country`. Un visiteur hors zone euro voyait `28 €` et était débité `$28`. La page lit désormais `/api/currency` (même source que settings et upgrade) et formate via `formatAmount(currency, amount)` ([currency.ts](src/lib/currency.ts), 2 tests).
+  - **Le livre mémorial affichait un `59 €` figé** alors qu'il passe par le même checkout et le même prix dynamique. Il affiche le prix calculé ; `memorial.order_price` supprimée, `memorial.order_note` ne cite plus de montant.
+  - **Non vérifié** : le montant réellement débité côté Stripe. `stripe/book-checkout` renvoie 500 sur preview faute de `STRIPE_SECRET_KEY` (voir « Env vars need the Preview scope explicitly »), et l'affichage USD n'est pas testable depuis la France, `/api/currency` suivant le pays de la requête. À faire sur la prod : ouvrir le checkout et comparer le montant affiché par Stripe **sans finaliser le paiement**.
+  - Dette laissée : `order.product_price` (`29,00 €` / `$29.00`) n'est lue nulle part, morte avant cette session.
 
-- **#18 Un abonné Digital doit pouvoir commander un livre, payant dès le premier (Session 66, demande produit de Julien)** : l'intention est que Digital ne soit pas bloqué, simplement qu'aucun livre ne soit inclus dans l'abonnement, donc payant dès le premier exemplaire.
-  - **État réel du code** : ce n'est pas bloqué. Un Digital sans crédit peut déjà payer, via le bouton « Acheter un livre, {prix} + livraison » de l'encart `no_credits_*` ([UpsellBanners.tsx](src/app/dashboard/pets/[id]/order/components/UpsellBanners.tsx)), qui appelle `startBookCheckout`. Le CTA principal, lui, reste masqué.
-  - **Ce qu'il y a à traiter, c'est l'asymétrie** : depuis PR [#130](https://github.com/CookServices/everypaw/pull/130), Print sans crédit affiche le CTA principal (« Commander un exemplaire supplémentaire »), alors que Digital sans crédit n'a toujours que le bouton de l'encart. Deux plans payants, deux points d'entrée différents pour le même achat. À trancher : soit Digital rejoint Print sur le CTA principal, soit on documente que l'encart est le point d'entrée voulu pour Digital.
-  - Point d'attention si on ouvre le CTA principal à Digital : vérifier le libellé (aujourd'hui `preview_cta`, « Commander un livre », qui n'annonce pas que c'est payant) et la branche de `ConfirmStep`, qui ne route vers `startBookCheckout` que pour `plan === "print" && credits === 0` et appellerait donc `handleOrder` pour un Digital, c'est-à-dire une commande Gelato sans paiement.
-
-*Dernière mise à jour : 2026-09-01 (Session 66 : backlog #9, #11, #15 et #16 clos ; #17 et #18 ouverts sur le prix affiché et l'accès Digital à la commande ; liste des comptes de test corrigée, elle était périmée)*
+- ~~**#18 Un abonné Digital doit pouvoir commander un livre, payant dès le premier**~~ ✅ **résolu (Session 67, PR [#132](https://github.com/CookServices/everypaw/pull/132))** : le CTA principal est désormais l'unique point d'entrée, sur tous les plans.
+  - Rendu partout : désactivé en Free (la gate reste visible), actif sur tout plan payant sans crédit, et **libellé avec le prix** (« Acheter un livre, 28 € + livraison » en Digital, « Commander un exemplaire supplémentaire, … » en Print) pour annoncer que c'est payant.
+  - **Le bouton d'achat de l'encart est supprimé** : il appelait `startBookCheckout` depuis l'étape aperçu, donc avant l'adresse. Au retour de Stripe, la commande auto partait avec une adresse vide, Gelato refusait, et l'utilisateur se retrouvait payé avec une commande échouée et un crédit restauré. L'achat passe maintenant par aperçu → adresse → confirmation → checkout.
+  - **`ConfirmStep` ne peut plus commander sans paiement** : sa branche ne couvrait que `plan === "print" && credits === 0`, donc un Digital arrivé là appelait `handleOrder`, c'est-à-dire une commande Gelato gratuite. Elle couvre tout plan payant sans crédit.
+  - Vérifié sur preview (compte Digital, 0 crédit, 24 chapitres) : libellé et prix du CTA, passage par l'étape adresse, encart sans bouton, et au clic sur « Passer la commande » un appel à `/api/stripe/book-checkout` et **aucun** à `/api/gelato/order` — contrôlé en interceptant `window.fetch` pour bloquer la route Gelato avant le clic, aucune commande n'a pu partir.
+*Dernière mise à jour : 2026-09-01 (Session 67 : backlog #17 et #18 clos ; trou de variables d'environnement du projet `everypaw-staging` documenté, non corrigé)*
 
 ---
 
@@ -807,43 +832,6 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 
 Historique complet (sessions 1 à 53, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
 Seules les 2 dernières sessions sont conservées ici ; à chaque nouvelle session, déplacer la plus ancienne vers l'archive.
-
-### ✅ Session 64 — 5 bugs critiques trouvés et corrigés en production, audit étendu (2026-08-31)
-
-Partie d'un audit de bug initial sur la confirmation d'inscription, étendu par vérifications successives à tous les flux auth/paiement voisins. Trois bugs sur les flux de confirmation par email (signup, recovery, email_change — les deux premiers partagent la même cause racine PKCE, le troisième est un bug différent de token vide trouvé par cohérence), un bug de redirect sur l'invite flow, et une faille de sécurité financière sur les livres payants à l'unité — trouvée en auditant le flow gift/redeem par contraste.
-
-**1. Signup — confirmation cross-device silencieuse** (PR [#108](https://github.com/CookServices/everypaw/pull/108)) :
-Un utilisateur qui confirme son inscription depuis un navigateur/appareil différent de celui utilisé pour s'inscrire (cas par défaut sur trafic Instagram mobile : clic depuis le webview de l'app mail) était redirigé silencieusement vers `/auth/login`, sans message, sans session ouverte — alors que Supabase avait bien marqué son email comme confirmé. Confirmé en prod : `randy.figueroa`, `email_confirmed_at` renseigné, `last_sign_in_at` NULL, jamais revenu.
-Cause : `signup/page.tsx` déclenche `supabase.auth.signUp()` via `createBrowserClient` (`@supabase/ssr`), flow PKCE par défaut — `code_verifier` stocké côté navigateur au moment de l'inscription. Le `confirmation_url` fourni par Supabase (PKCE, `token=pkce_...`) était systématiquement préféré au lien `token_hash`. Ouvert depuis un autre navigateur, le `code_verifier` est absent : l'échange de code échoue côté `/auth/callback`, dont l'erreur retournée par `exchangeCodeForSession` n'était **jamais capturée** — la route redirigeait quand même vers `/dashboard`, où le middleware (sans session) rebondissait silencieusement vers `/auth/login`.
-Fix : `auth/callback/route.ts` capture et logue l'erreur, redirect `/auth/login?auth_error=exchange_failed` au lieu du bounce silencieux. Nouvelle route `src/app/auth/confirm/route.ts` : vérifie `token_hash` côté serveur via `supabase.auth.verifyOtp()` — aucun état navigateur requis. `auth-hook/route.ts` construit désormais le lien signup vers cette route, ignore `confirmation_url`. `login/page.tsx` affiche un bandeau distinct (ton neutre, bouton "Renvoyer le lien") pour `auth_error=confirm_failed` (clé i18n `auth.confirm_link_invalid`). Suppression de `src/app/api/emails/{confirm-signup,change-email,reset-password}/route.ts` (code mort, jamais appelé depuis la bascule vers `auth-hook`).
-Validé en prod : signup navigateur A, clic du lien dans navigateur B storage vierge → session ouverte, `last_sign_in_at` renseigné.
-
-**2. Recovery — même bug PKCE cross-device** (PR [#109](https://github.com/CookServices/everypaw/pull/109)) :
-`forgot-password` envoie `redirectTo` vers `/auth/update-password` (PKCE aussi), et `update-password/page.tsx` n'a jamais appelé `exchangeCodeForSession` explicitement — ça ne marchait que par effet de bord de la détection automatique d'URL du client browser (`detectSessionInUrl`), qui a besoin du `code_verifier` local. Vérifié en prod avant correction : même navigateur → marche (silencieusement) ; navigateur différent (storage vierge) → coincé sur `?code=` jamais échangé, "Lien de réinitialisation invalide ou expiré" alors que le lien était frais.
-Fix : `/auth/confirm` généralisé à `type=signup|recovery`, `auth-hook` construit le lien recovery vers cette route (au lieu de `confirmation_url` PKCE), `update-password/page.tsx` affiche le message d'erreur existant proactivement sur `auth_error=confirm_failed` au lieu d'attendre un submit raté.
-Validé en prod bout-en-bout : reset demandé, lien ouvert dans un navigateur storage vierge → session ouverte, nouveau mot de passe soumis avec succès, redirect `/dashboard`.
-Le bug de substitution preview→prod documenté dans Preview Limitations (ci-dessus) est indépendant et reste réel, mais devient sans effet pratique : le lien pointe désormais toujours vers `${APP_URL}/auth/confirm`, jamais une origine preview.
-
-**3. Email change — totalement cassé, pas juste cross-device** (PR [#110](https://github.com/CookServices/everypaw/pull/110)) :
-Découvert en vérifiant ce troisième flux par cohérence avec les deux précédents. Le lien de confirmation envoyé à la nouvelle adresse avait `token=` **vide** (`.../auth/v1/verify?token=&type=email_change&...`) → Supabase répondait `400 validation_failed "Verify requires a token or a token hash"` à chaque tentative, pour tout le monde, peu importe l'appareil. Personne n'a jamais pu confirmer un changement d'email sur Everypaw en cliquant le lien reçu.
-Cause : "Secure email change" est **désactivé** dans Supabase Auth (Providers → Email) — une seule confirmation, sur la nouvelle adresse. Sous ce mode, Supabase renvoie `token_hash_new` comme chaîne vide plutôt que de l'omettre ; l'ancien code faisait `token_hash_new ?? tokenHash` (`??` ne rattrape que `null`/`undefined`, pas une chaîne vide) → `tokenHashNew` restait `""`. La construction manuelle utilisait aussi le mauvais nom de paramètre (`token=` au lieu de `token_hash=`), bug resté invisible tant que `confirmationUrl` (jamais fourni par Supabase pour ce type d'action ici) prenait toujours le dessus.
-Fix : `tokenHashNew = token_hash_new || tokenHash` (`||`, pas `??`), lien construit vers `/auth/confirm?type=email_change` (`/auth/confirm` généralisé à `signup|recovery|email_change`), `dashboard/settings` affiche l'erreur proactivement sur `auth_error=confirm_failed`. `confirmationUrl`/`SUPABASE_URL` devenus orphelins dans `auth-hook.ts` (plus aucune branche ne les utilise) — supprimés.
-Validé en prod bout-en-bout : changement d'email déclenché, lien ouvert → email réellement mis à jour (`Adresse actuelle : ...` reflète la nouvelle adresse).
-
-**4. Login — `?next=` de l'invite flow ignoré** (PR [#112](https://github.com/CookServices/everypaw/pull/112)) :
-Trouvé en auditant le flow invite/pet_members. `invite/[token]/page.tsx` envoie les utilisateurs existants vers `/auth/login?next=/invite/{token}` pour le CTA "Se connecter pour accepter", mais `login/page.tsx` ne lisait jamais que `?redirect=` (le paramètre du flow gift). `signup/page.tsx` avait déjà le fix (`next ?? redirect`, commentaire explicite) — jamais reporté sur login. Pas une faille de sécurité, juste un paramètre perdu : l'utilisateur atterrissait sur `/dashboard` au lieu de revenir sur la page d'invitation, laissant l'invitation non acceptée jusqu'à ce qu'il re-clique le lien email.
-Validé en prod : connexion avec `?next=%2Fgift` atterrissait sur `/dashboard` avant fix, sur `/gift` après.
-
-**5. `stripe/book-checkout` — prix calculé depuis un `pageCount` client, paiement contournable** (PR [#115](https://github.com/CookServices/everypaw/pull/115)) :
-Trouvé en auditant le flow gift/redeem puis les routes Stripe voisines. Le prix du livre supplémentaire payant se calculait depuis un `pageCount` envoyé par le client (`calcGelatoBookPrice(pageCount)`, seule validation `28 ≤ pageCount ≤ 500`). `/api/gelato/order` recalcule le vrai `pageCount` **indépendamment** côté serveur à partir du contenu réel du pet, sans jamais le comparer au prix payé — et `book_credits` est un jeton fongible (1 crédit = 1 commande autorisée) sans notion de prix attaché. N'importe quel utilisateur connecté pouvait déclarer `pageCount: 28` via un simple appel `fetch` (devtools, aucun accès spécial requis) pour payer le minimum (~28€/$) tout en recevant un livre à la taille réelle de son contenu (jusqu'à ~121€/$ au plafond de 500 pages). Perte financière directe et non plafonnée, par commande.
-Fix : `book-checkout` vérifie désormais l'ownership du pet et calcule le prix côté serveur au **pire cas** (`calcPageCount` sur toutes les stories du pet, dédicace/photos orphelines/tributs supposés présents) au lieu de faire confiance au client. `calcPageCount` est monotone sur chaque paramètre → le prix calculé est prouvablement toujours ≥ ce que `gelato/order` calculera réellement pour n'importe quel sous-ensemble filtré du même contenu (jamais de sous-facturation ; parfois une légère sur-facturation si l'utilisateur filtre son livre). Le prix affiché sur la page order avant paiement utilise désormais la même formule pire-cas, pour que ce qui est montré corresponde à ce qui sera réellement facturé sur Stripe.
-
-**Reste à faire côté Julien** :
-- Vérifier dans Supabase Dashboard → Auth → URL Configuration que `<APP_URL>/auth/confirm` est bien couvert par les **Redirect URLs** autorisées — déjà confirmé ✓ via le wildcard `https://everypaw.app/**` existant, rien à changer.
-- Aucune nouvelle variable d'environnement Vercel requise (la route réutilise `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`/`NEXT_PUBLIC_APP_URL` déjà en place).
-- Les scénarios de validation prod (1, 2, 3, 4) ont été rejoués et confirmés dans cette session — rien à retester, sauf si régression suspectée. Le point 5 n'a été vérifié qu'en lecture de code + tests/build, pas en commande réelle — un test manuel (commander un livre avec filtre année/histoires, comparer prix affiché vs montant Stripe réel) reste à faire.
-- **Limite connue, non corrigeable par du code** (signup/recovery) : certains scanners de sécurité email d'entreprise (Microsoft Defender Safe Links, Google Workspace) pré-cliquent automatiquement les liens avant l'utilisateur, consommant le token single-use. Le symptôme (`auth_error=confirm_failed`) sera désormais visible au lieu d'être silencieux, mais la cause sera différente du bug PKCE corrigé ici.
-- **Backlog #12** (voir section Optimisation & dette technique) : interaction non vérifiée entre `stripe/cancel`/`reactivate` et `stripe/upgrade` — trouvé pendant cet audit, pas corrigé, juste consigné.
 
 ### ✅ Session 65 — Onboarding comptes vides, incohérences dashboard, message auth (2026-08-31)
 
@@ -861,3 +849,18 @@ Session en 3 lots indépendants, chacun validé sur preview Vercel avant merge (
 - Exécuter le rattrapage SQL onboarding (2 requêtes, voir mémoire projet) si pas déjà fait — sans la 2ᵉ requête, tous les comptes existants avec animal revoient le modal d'onboarding.
 - Vérifier `exchange_failed` en anglais (navigateur perso en EN) — non testable depuis cette session.
 - **Backlog #13/#14** (voir section Optimisation & dette technique) : `OnboardingModal` ignore `hasPets`/`hasEntries`/`hasStories` (2ᵉ invocation du modal montre la mauvaise étape), clés i18n `step2_cta`/`step3_cta` mortes — trouvés pendant le Lot 1, pas corrigés, hors périmètre.
+
+
+### ✅ Session 67 — Prix de la page order et accès Digital à la commande (2026-09-01)
+
+Backlog #17 et #18 traités ensemble, ils touchent le même encart produit. PR [#132](https://github.com/CookServices/everypaw/pull/132), 3 commits, détail complet dans « Optimisation & dette technique ».
+
+**#17 — le prix affiché était faux deux fois.** La ligne de specs citait un montant écrit en dur (`~29 €`) à côté du prix calculé (`28 €`) : les deux avaient dérivé, le montant est retiré de la chaîne i18n. Et `extraBookPriceLabel` codait l'euro en dur alors que `stripe/book-checkout` choisit la devise depuis `x-vercel-ip-country` — un visiteur hors zone euro lisait `28 €` et était débité `$28`. La page lit `/api/currency` et formate via un nouvel helper `formatAmount` (`src/lib/currency.ts`, 2 tests). Le livre mémorial, qui affichait un `59 €` figé alors qu'il passe par le même checkout, affiche le prix calculé.
+
+**#18 — Digital et Print partagent enfin un point d'entrée.** Le CTA principal est rendu sur tous les plans (désactivé en Free), libellé avec le prix quand l'achat est payant. Deux bugs trouvés en câblant ça : le bouton d'achat de l'encart appelait le checkout **avant** l'étape adresse, donc la commande auto au retour de Stripe partait avec une adresse vide et échouait chez Gelato (bouton supprimé) ; et `ConfirmStep` ne routait vers le paiement que pour Print, un Digital arrivé là aurait déclenché une commande Gelato **sans paiement** (branche élargie à tout plan payant sans crédit).
+
+**Vérification** : preview Vercel, compte `testopera@yopmail.com` basculé en `plan=digital, book_credits=0`. Libellé et prix du CTA, passage par l'adresse, encart sans bouton, et au clic sur « Passer la commande » un appel à `/api/stripe/book-checkout` et **aucun** à `/api/gelato/order`. Méthode réutilisable pour tester un bouton qui coûte de l'argent : patcher `window.fetch` dans la page pour bloquer la route dangereuse **avant** de cliquer, puis vérifier qu'elle n'a pas été appelée.
+
+**Trouvé au passage, non corrigé** : le projet Vercel `everypaw-staging` ne contient que 3 variables (les 3 Supabase). Toutes les routes Stripe, Gelato, Anthropic et les crons renvoient un 500 à corps vide sur preview. Documenté dans « Env vars need the Preview scope explicitly ». Conséquence : une preview prouve l'UI et quel endpoint un bouton appelle, jamais ce que cet endpoint fait.
+
+**Reste à faire côté Julien** : comparer sur la prod le prix affiché et le montant réel de la page Stripe (sans finaliser le paiement), et remettre le compte de test en free (`UPDATE profiles SET plan='free', is_premium=false, book_credits=0 WHERE email='testopera@yopmail.com';`).
