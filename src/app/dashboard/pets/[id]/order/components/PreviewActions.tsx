@@ -140,8 +140,8 @@ export default function PreviewActions({
         {checkoutError && (
           <p style={{ fontSize: ".8rem", color: "var(--ep-alert)", textAlign: "center", margin: "-.25rem 0 0" }}>
             {locale === "fr"
-              ? "Une erreur est survenue. Vérifie ta connexion et réessaie."
-              : "Something went wrong. Check your connection and try again."}
+              ? "Une erreur est survenue. Réessaie dans un instant."
+              : "Something went wrong. Try again in a moment."}
           </p>
         )}
         <button
@@ -194,8 +194,8 @@ export default function PreviewActions({
         {saveError && (
           <p style={{ fontSize: ".8rem", color: "var(--ep-alert)", textAlign: "center", margin: 0 }}>
             {locale === "fr"
-              ? "Impossible d'enregistrer le brouillon (limite atteinte ou connexion). Réessaie."
-              : "Could not save the draft (limit reached or connection). Try again."}
+              ? "Impossible d'enregistrer le brouillon (limite de brouillons peut-être atteinte). Réessaie dans un instant."
+              : "Could not save the draft (you may have reached the draft limit). Try again in a moment."}
           </p>
         )}
       </div>

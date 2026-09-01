@@ -269,9 +269,11 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         }),
       });
       if (!res.ok) {
+        // The request reached the server, so this is never the user's connection:
+        // don't tell them to check it.
         const msg = locale === "fr"
-          ? "Impossible de générer l'aperçu. Vérifiez votre connexion et réessayez."
-          : "Could not generate the preview. Check your connection and try again.";
+          ? "Impossible de générer l'aperçu. Réessayez dans un instant."
+          : "Could not generate the preview. Try again in a moment.";
         alert(msg);
       } else {
         const html = await res.text();

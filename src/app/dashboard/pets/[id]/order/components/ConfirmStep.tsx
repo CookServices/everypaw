@@ -148,8 +148,8 @@ export default function ConfirmStep({
           {checkoutError && (
             <p style={{ fontSize: ".8rem", color: "var(--ep-alert)", textAlign: "center", margin: "1rem 0 0" }}>
               {locale === "fr"
-                ? "Impossible de démarrer le paiement. Vérifie ta connexion et réessaie."
-                : "Could not start checkout. Check your connection and try again."}
+                ? "Impossible de démarrer le paiement. Réessaie dans un instant."
+                : "Could not start checkout. Try again in a moment."}
             </p>
           )}
         </div>
