@@ -64,7 +64,9 @@ const STRINGS = {
     noStories: (name: string) => `Aucune histoire pour l'instant. Ajoutez des entrées et générez la première histoire de ${name}.`,
     backTitle: "Chaque moment, à jamais.",
     backText: "Ce livre a été créé avec amour grâce à Everypaw, le journal IA qui transforme les moments du quotidien de votre animal en histoires à garder pour toujours.",
-    birthdate: (d: Date) => `Né(e) le ${d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`,
+    // "en", not "le": the date below is a month and a year, never a day, so
+    // "Né(e) le août 2026" was ungrammatical. Mirrors the English "Born August 2026".
+    birthdate: (d: Date) => `Né(e) en ${d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`,
   },
 };
 
