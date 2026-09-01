@@ -2,24 +2,42 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { CONSENT_EVENT, readConsent, writeConsent, type ConsentValue } from "@/lib/consent";
 
-const CONSENT_KEY = "cookie_consent";
-
-export default function CookieBanner() {
+/**
+ * `lang` comes from the route, not from navigator.language: the banner sits on
+ * the page next to the footer's "Cookie settings" control, and the two saying
+ * different languages looked like a bug.
+ */
+export default function CookieBanner({ lang }: { lang: "fr" | "en" }) {
   const [visible, setVisible] = useState(false);
-  const [isFR, setIsFR] = useState(false);
+  const isFR = lang === "fr";
 
   useEffect(() => {
-    setIsFR(navigator.language.toLowerCase().startsWith("fr"));
-    if (localStorage.getItem(CONSENT_KEY) !== "accepted") setVisible(true);
+    const sync = () => setVisible(readConsent() === null);
+    sync();
+    // Lets the footer link reopen the banner by clearing the decision.
+    window.addEventListener(CONSENT_EVENT, sync);
+    return () => window.removeEventListener(CONSENT_EVENT, sync);
   }, []);
 
-  const accept = () => {
-    localStorage.setItem(CONSENT_KEY, "accepted");
+  const decide = (value: ConsentValue) => {
+    writeConsent(value);
     setVisible(false);
   };
 
   if (!visible) return null;
+
+  const buttonBase = {
+    borderRadius: 100,
+    padding: "8px 20px",
+    fontSize: "0.875rem",
+    fontWeight: 600,
+    cursor: "pointer",
+    whiteSpace: "nowrap" as const,
+    flexShrink: 0,
+    fontFamily: "inherit",
+  };
 
   return (
     <div
@@ -41,21 +59,35 @@ export default function CookieBanner() {
     >
       <p style={{ margin: 0, fontSize: "0.82rem", color: "#FDFAF5", lineHeight: 1.5, flex: 1, minWidth: 200 }}>
         {isFR
-          ? <>Cookies fonctionnels uniquement, aucun tracking.{" "}<Link href="/legal/confidentialite" style={{ color: "#F7C27A", textDecoration: "underline", whiteSpace: "nowrap" }}>Politique de confidentialité</Link></>
-          : <>Essential cookies only, no tracking.{" "}<Link href="/legal/privacy" style={{ color: "#F7C27A", textDecoration: "underline", whiteSpace: "nowrap" }}>Privacy policy</Link></>
+          ? <>Nous utilisons des cookies de mesure d&apos;audience et de publicité. Ils ne sont déposés que si vous les acceptez.{" "}<Link href="/legal/confidentialite" style={{ color: "#F7C27A", textDecoration: "underline", whiteSpace: "nowrap" }}>Politique de confidentialité</Link></>
+          : <>We use analytics and advertising cookies. They are only set if you accept them.{" "}<Link href="/legal/privacy" style={{ color: "#F7C27A", textDecoration: "underline", whiteSpace: "nowrap" }}>Privacy policy</Link></>
         }
       </p>
-      <button
-        onClick={accept}
-        style={{
-          background: "#C8813A", color: "#FDFAF5", border: "none",
-          borderRadius: 100, padding: "8px 20px",
-          fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
-          whiteSpace: "nowrap", flexShrink: 0,
-        }}
-      >
-        {isFR ? "Accepter" : "Accept"}
-      </button>
+      {/* Equal weight on both choices: refusing must be as easy as accepting. */}
+      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+        <button
+          onClick={() => decide("refused")}
+          style={{
+            ...buttonBase,
+            background: "transparent",
+            color: "#FDFAF5",
+            border: "1.5px solid rgba(253,250,245,0.5)",
+          }}
+        >
+          {isFR ? "Refuser" : "Decline"}
+        </button>
+        <button
+          onClick={() => decide("accepted")}
+          style={{
+            ...buttonBase,
+            background: "#C8813A",
+            color: "#FDFAF5",
+            border: "1.5px solid #C8813A",
+          }}
+        >
+          {isFR ? "Accepter" : "Accept"}
+        </button>
+      </div>
     </div>
   );
 }
