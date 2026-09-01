@@ -158,10 +158,33 @@ This holds despite the `everypaw-staging` project name — every preview writes 
 data, so the rules below are not optional.
 
 **Rules:**
-- Use test accounts only: `test-*@yopmail.com` (password `Test1234!`)
+- Use yopmail test accounts only
 - Never commit/push production user data
 - Clean test entries before demo
-- Test accounts list maintained in project memory
+
+**Comptes de test : ne pas se fier à une liste écrite, la requêter.** Au 2026-09-01 les cinq
+comptes `test-*@yopmail.com` historiquement documentés (`test-free`, `test-digital`,
+`test-print-fresh`, `test-print-ordered`, `test-print-multi`) **n'existent plus**. Ce n'est pas
+`purge_test_data.sql` qui les a retirés, il réinitialise les profils sans toucher aux comptes
+auth ; ils ont probablement été supprimés via `/api/account/delete`, qui lui supprime le profil
+et le compte auth en cascade. Les comptes réellement présents ce jour-là étaient
+`testopera@`, `testux@` et `testvide@`, tous en plan free.
+
+Avant tout test, lister ce qui existe :
+
+```sql
+SELECT id, email, plan, book_credits FROM profiles
+WHERE email LIKE '%@yopmail.com' ORDER BY email;
+```
+
+⚠️ **`supabase/seed_print_multi.sql` et `purge_test_data.sql` sont périmés** : ils ciblent les
+UUID codés en dur des comptes disparus. Deux pièges dans le seed, rencontrés en vrai :
+son `UPDATE profiles ... WHERE id = uid` d'ouverture **n'échoue pas** quand le compte n'existe
+pas (un UPDATE sans correspondance affecte zéro ligne en silence), la vraie erreur ne surgit que
+vingt lignes plus loin sur une contrainte de clé étrangère ; et il **désactive le trigger**
+`trg_enforce_free_entry_limit`, qui reste désactivé en production si le script échoue entre la
+désactivation et la réactivation. Préférer un script qui résout l'identifiant depuis l'email,
+lève une exception explicite si le compte est absent, et ne touche à aucun trigger.
 
 ### Preview Limitations
 
@@ -756,15 +779,17 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 - **#12 Interaction `stripe/cancel`/`reactivate` ↔ `stripe/upgrade` (Session 64→65)** — scénario (a) : ~~annuler puis appeler `upgrade`~~ ✅ **résolu (Session 65, PR [#121](https://github.com/CookServices/everypaw/pull/121))** — confirmé par lecture de code (`subscriptionSchedules.update()` écrasait `end_behavior` à `"release"` sans jamais lire `cancel_at_period_end`, ce qui levait silencieusement l'annulation, DB/UI comprises via le webhook). Fix : `upgrade` et `upgrade-preview` refusent désormais (400) si `cancel_at_period_end` est vrai, message "reactivate first". **Scénario (b) reste ouvert** : upgrade programmé (schedule actif) puis `cancel` — pas confirmable par lecture de code seule, nécessite une souscription Stripe test-mode réelle (plan de test donné à Julien en session, pas encore exécuté).
 - ~~**#13 `OnboardingModal` ignore `hasPets`/`hasEntries`/`hasStories`**~~ ✅ **résolu (Session 65, PR [#119](https://github.com/CookServices/everypaw/pull/119))** — chaque étape affiche désormais sa copie `*_done` déjà écrite (`step1_done`/`step2_done`/`step3_done`) et une action neutre (avancer/fermer) quand le jalon correspondant est déjà atteint.
 - ~~**#14 Clés i18n mortes `onboarding.step2_cta`/`step3_cta`**~~ ✅ **résolu (Session 65, PR [#119](https://github.com/CookServices/everypaw/pull/119))** — câblées comme label principal des étapes 2/3 côté "pas encore fait" (remplace le générique `next`/`start`), plus `got_it` câblé pour l'étape 3 "déjà fait".
-- **#15 Étapes adresse et paiement de `order` jamais reparcourues depuis le split (Session 66)** : `AddressStep` et `ConfirmStep` (PR [#123](https://github.com/CookServices/everypaw/pull/123)) sont partis en production sans qu'on ait déroulé les étapes 2 et 3. Cause : le compte de test utilisé était en plan gratuit, or le CTA qui mène à l'étape adresse y est désactivé par design, donc le parcours était inatteignable depuis l'interface. Le reste de la page a bien été validé sur preview.
-  - Ce que ça vaut : le JSX a été déplacé sans changement de logique et `tsc` passe, donc le risque est faible. Mais c'est le seul flux de l'app qui déclenche un paiement Stripe et une commande Gelato, ce qui justifie de ne pas se contenter du typage.
-  - À faire : se connecter avec un compte Print disposant d'au moins un crédit (`test-print-multi@yopmail.com`, voir mémoire projet), puis dérouler aperçu, adresse, confirmation. Vérifier la validation inline champ par champ (bordure rouge et "Champ requis"), l'autocomplete pays, l'estimation de livraison qui apparaît une fois le pays choisi, la dédicace avec son compteur, le récapitulatif d'adresse et le bouton de commande.
-  - Ne pas aller jusqu'au paiement réel : s'arrêter avant, ou utiliser Stripe en test mode.
+- ~~**#15 Étapes adresse et paiement de `order` jamais reparcourues depuis le split**~~ ✅ **résolu (Session 66)** : parcours déroulé en production sur un compte Print créditée, sans passer commande.
+  - Vérifié dans `AddressStep` : validation sur formulaire vide (on reste sur l'étape, libellés « Champ requis », bordures `rgb(163,45,45)`), effacement par champ à la saisie, autocomplete pays, estimation de livraison réactive (`~5–10 €` en France, `~8–14 CHF` en Suisse), dédicace et compteur, en-tête produit avec « 1 crédit utilisé · reste 0 ».
+  - Vérifié dans `ConfirmStep` : récapitulatif d'adresse, résumé de commande et prix, stepper.
+  - **Le câblage des props, seul vrai risque du refacto, est prouvé** : « Modifier l'adresse » passe par la prop `setStep`, transmise dans le même objet que `handleOrder` ; il ramène à l'étape 2 avec adresse et dédicace préservées.
+  - **Non couvert, volontairement** : le clic sur « Passer la commande ». Ses deux branches coûtent de l'argent (`startBookCheckout` sans crédit, sinon `handleOrder` qui appelle Gelato et fait imprimer puis expédier un livre). Il n'existe **pas** de mode sandbox Gelato dans le code, une seule `GELATO_API_KEY` sur l'API de production. Résiduel accepté : `handleOrder` n'a pas été déplacé par #123 et son câblage est prouvé par le bouton voisin.
+  - Détail utile : le champ pays est pré-rempli depuis `navigator.language`, donc un navigateur français voit 5 erreurs sur 6 champs requis au submit vide, pas 6. Ce n'est pas un défaut d'affichage.
 - ~~**#16 La CSP casse tout le JavaScript client en `next dev`**~~ ✅ **résolu (Session 66, PR [#128](https://github.com/CookServices/everypaw/pull/128))** : `'unsafe-eval'` ajouté au `script-src` **en développement uniquement**, via `process.env.NODE_ENV !== "production"` dans [next.config.js](next.config.js).
   - Le symptôme était silencieux et trompeur : serveur qui répond 200, markup rendu côté serveur correct, mais aucun composant client hydraté. En développant #11 il a fallu un A/B en retirant les changements pour constater que l'ancien bandeau ne s'affichait pas davantage.
   - **Vérification à refaire si ce header est retouché** : la chaîne `script-src` produite en production doit rester identique à celle d'avant. Contrôlée par comparaison directe avec la version de `main` (`NODE_ENV=production node -e "require('./next.config.js').headers()..."`), et l'en-tête réellement servi en dev contrôlé par `curl -D -`. Ne pas se contenter de relire le code : c'est la seule garantie que le correctif n'affaiblit pas la production.
 
-*Dernière mise à jour : 2026-09-01 (Session 66 : backlog #9, #11 et #16 clos ; #15 ouvert, étapes adresse et paiement non reparcourues)*
+*Dernière mise à jour : 2026-09-01 (Session 66 : backlog #9, #11, #15 et #16 clos ; liste des comptes de test corrigée, elle était périmée)*
 
 ---
 
