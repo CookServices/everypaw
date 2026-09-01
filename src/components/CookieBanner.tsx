@@ -4,12 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CONSENT_EVENT, readConsent, writeConsent, type ConsentValue } from "@/lib/consent";
 
-export default function CookieBanner() {
+/**
+ * `lang` comes from the route, not from navigator.language: the banner sits on
+ * the page next to the footer's "Cookie settings" control, and the two saying
+ * different languages looked like a bug.
+ */
+export default function CookieBanner({ lang }: { lang: "fr" | "en" }) {
   const [visible, setVisible] = useState(false);
-  const [isFR, setIsFR] = useState(false);
+  const isFR = lang === "fr";
 
   useEffect(() => {
-    setIsFR(navigator.language.toLowerCase().startsWith("fr"));
     const sync = () => setVisible(readConsent() === null);
     sync();
     // Lets the footer link reopen the banner by clearing the decision.

@@ -48,7 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             gated, and a visitor without JavaScript cannot answer the banner. */}
         <Trackers gaId={GA_MEASUREMENT_ID} pixelId={META_PIXEL_ID} />
         {children}
-        <CookieBanner />
+        <CookieBanner lang={lang} />
       </body>
     </html>
   );
