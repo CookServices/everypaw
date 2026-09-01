@@ -1,4 +1,22 @@
 /** @type {import('next').NextConfig} */
+
+// `next dev` compiles with eval (react-refresh and HMR), which the CSP below
+// blocks. The symptom is silent and misleading: the server serves 200s, the
+// server-rendered markup looks right, but no client component ever hydrates, so
+// the app appears broken locally in ways that look like your own regression.
+//
+// Development only. In production eval is precisely what this header exists to
+// stop, and the string built below is byte-identical to what it was before.
+const isDev = process.env.NODE_ENV !== "production";
+
+const scriptSrc = [
+  "'self'",
+  "'unsafe-inline'",
+  ...(isDev ? ["'unsafe-eval'"] : []),
+  "https://www.googletagmanager.com",
+  "https://connect.facebook.net",
+].join(" ");
+
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -13,7 +31,7 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net",
+      `script-src ${scriptSrc}`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
