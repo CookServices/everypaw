@@ -760,12 +760,11 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
   - Ce que ça vaut : le JSX a été déplacé sans changement de logique et `tsc` passe, donc le risque est faible. Mais c'est le seul flux de l'app qui déclenche un paiement Stripe et une commande Gelato, ce qui justifie de ne pas se contenter du typage.
   - À faire : se connecter avec un compte Print disposant d'au moins un crédit (`test-print-multi@yopmail.com`, voir mémoire projet), puis dérouler aperçu, adresse, confirmation. Vérifier la validation inline champ par champ (bordure rouge et "Champ requis"), l'autocomplete pays, l'estimation de livraison qui apparaît une fois le pays choisi, la dédicace avec son compteur, le récapitulatif d'adresse et le bouton de commande.
   - Ne pas aller jusqu'au paiement réel : s'arrêter avant, ou utiliser Stripe en test mode.
-- **#16 La CSP casse tout le JavaScript client en `next dev` (Session 66)** : `script-src` dans [next.config.js](next.config.js) n'autorise pas `'unsafe-eval'`, dont le mode dev de Next a besoin. La console affiche `EvalError: Evaluating a string as JavaScript violates the following Content Security Policy directive`, et les composants client ne s'hydratent pas.
-  - Conséquence : **aucune interactivité n'est testable en local via `next dev`**. Le piège est coûteux, il fait croire à une régression qu'on vient d'introduire. Constaté en développant #11 : le bandeau cookie ne s'affichait pas, et il a fallu un A/B en retirant les changements pour voir que l'ancien ne s'affichait pas davantage.
-  - Contournement en attendant : `npx next build && npx next start`, le build de production n'a pas besoin d'`eval` et se comporte comme la prod.
-  - À faire : n'ajouter `'unsafe-eval'` qu'en développement (`process.env.NODE_ENV !== "production"` dans la construction des en-têtes), surtout pas en production.
+- ~~**#16 La CSP casse tout le JavaScript client en `next dev`**~~ ✅ **résolu (Session 66, PR [#128](https://github.com/CookServices/everypaw/pull/128))** : `'unsafe-eval'` ajouté au `script-src` **en développement uniquement**, via `process.env.NODE_ENV !== "production"` dans [next.config.js](next.config.js).
+  - Le symptôme était silencieux et trompeur : serveur qui répond 200, markup rendu côté serveur correct, mais aucun composant client hydraté. En développant #11 il a fallu un A/B en retirant les changements pour constater que l'ancien bandeau ne s'affichait pas davantage.
+  - **Vérification à refaire si ce header est retouché** : la chaîne `script-src` produite en production doit rester identique à celle d'avant. Contrôlée par comparaison directe avec la version de `main` (`NODE_ENV=production node -e "require('./next.config.js').headers()..."`), et l'en-tête réellement servi en dev contrôlé par `curl -D -`. Ne pas se contenter de relire le code : c'est la seule garantie que le correctif n'affaiblit pas la production.
 
-*Dernière mise à jour : 2026-09-01 (Session 66 : backlog #9 et #11 clos ; #15 et #16 ouverts, étapes de commande non reparcourues et CSP qui casse le dev local)*
+*Dernière mise à jour : 2026-09-01 (Session 66 : backlog #9, #11 et #16 clos ; #15 ouvert, étapes adresse et paiement non reparcourues)*
 
 ---
 
