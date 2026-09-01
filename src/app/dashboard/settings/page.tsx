@@ -4,13 +4,17 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
 import { useRouter } from "next/navigation";
-import { formatPrice, type Currency } from "@/lib/currency";
+import { type Currency } from "@/lib/currency";
 import { fmtDateOrdinal } from "@/lib/date";
-import PasswordStrength from "@/components/PasswordStrength";
-import type { Plan, SubscriptionInfo } from "./constants";
-import { inputStyle, btnPrimary, btnOutline } from "./constants";
+import type { Plan, SubscriptionInfo, Invoice } from "./constants";
 import UpgradeConfirmModal from "./components/UpgradeConfirmModal";
 import DeleteAccountModal from "./components/DeleteAccountModal";
+import SubscriptionSection from "./components/SubscriptionSection";
+import InvoicesSection from "./components/InvoicesSection";
+import PreferencesSection from "./components/PreferencesSection";
+import AccountSecuritySection from "./components/AccountSecuritySection";
+import DataExportSection from "./components/DataExportSection";
+import DangerZoneSection from "./components/DangerZoneSection";
 
 export const dynamic = "force-dynamic";
 
@@ -69,11 +73,7 @@ export default function SettingsPage() {
   // ── RGPD export state ────────────────────────────────────────────────────────
   const [exportLoading, setExportLoading] = useState(false);
   const [exportHtmlLoading, setExportHtmlLoading] = useState(false);
-  const [invoices, setInvoices] = useState<Array<{
-    id: string; number: string | null; amount_paid: number; currency: string;
-    created: number; invoice_pdf: string | null; hosted_invoice_url: string | null;
-    period_start: number; period_end: number;
-  }>>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
   const [invoicesVisible, setInvoicesVisible] = useState(3);
 
@@ -441,6 +441,14 @@ export default function SettingsPage() {
     }
   };
 
+  const handleResetOnboarding = async () => {
+    const s = createClient();
+    const { data: { user } } = await s.auth.getUser();
+    await s.from("profiles").update({ onboarding_dismissed: false }).eq("id", user!.id);
+    ["ep_cm_first_entry", "ep_cm_first_story", "ep_cm_book_credit"].forEach(k => localStorage.removeItem(k));
+    showToast(t.settings.save_success, "success");
+  };
+
   // ── Styles ───────────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
@@ -479,397 +487,88 @@ export default function SettingsPage() {
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
 
-        {/* ── Subscription section ─────────────────────────────────────────── */}
-        <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>
-          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1.25rem" }}>
-            {isFR ? "Mon abonnement" : "My subscription"}
-          </h2>
+        <SubscriptionSection
+          isFR={isFR}
+          subLoading={subLoading}
+          plan={plan}
+          currency={currency}
+          cancelledAt={cancelledAt}
+          subscription={subscription}
+          profileRenewalDate={profileRenewalDate}
+          bookCredits={bookCredits}
+          formatDate={formatDate}
+          reactivateLoading={reactivateLoading}
+          handleReactivate={handleReactivate}
+          checkoutLoading={checkoutLoading}
+          handleCheckout={handleCheckout}
+          upgradeLoading={upgradeLoading}
+          upgradePreviewLoading={upgradePreviewLoading}
+          handleUpgradeWithPreview={handleUpgradeWithPreview}
+          cancelLoading={cancelLoading}
+          handleCancel={handleCancel}
+          giftStatus={giftStatus}
+          giftResult={giftResult}
+          giftCode={giftCode}
+          setGiftCode={setGiftCode}
+          setGiftStatus={setGiftStatus}
+          setGiftError={setGiftError}
+          handleRedeemGift={handleRedeemGift}
+          giftError={giftError}
+        />
 
-          {subLoading ? (
-            <p style={{ color: "#9A8070", fontSize: ".875rem" }}>…</p>
-          ) : (
-            <>
-              {/* Badge plan actuel */}
-              <div style={{ display: "flex", alignItems: "center", gap: ".625rem", marginBottom: "1rem" }}>
-                <span style={{ display: "inline-block", padding: ".3rem .875rem", borderRadius: 100, background: plan === "free" ? "rgba(61,43,31,.08)" : "rgba(200,129,58,.12)", border: `1px solid ${plan === "free" ? "rgba(61,43,31,.15)" : "rgba(200,129,58,.3)"}`, fontSize: ".8rem", fontWeight: 600, color: plan === "free" ? "#7A5C44" : "#C8813A" }}>
-                  {plan === "free" ? (isFR ? "Plan gratuit" : "Free plan") : plan === "digital" ? "Premium Digital" : "Premium Print"}
-                </span>
-                {plan === "digital" && (
-                  <span style={{ fontSize: ".8rem", color: "#9A8070" }}>{formatPrice(currency, "digital")}/{isFR ? "mois" : "mo"}</span>
-                )}
-                {plan === "print" && (
-                  <span style={{ fontSize: ".8rem", color: "#9A8070" }}>{formatPrice(currency, "printAnnual")}/{isFR ? "an" : "yr"}</span>
-                )}
-              </div>
+        <InvoicesSection
+          isFR={isFR}
+          invoicesLoading={invoicesLoading}
+          invoices={invoices}
+          invoicesVisible={invoicesVisible}
+          setInvoicesVisible={setInvoicesVisible}
+        />
 
-              {/* Renouvellement */}
-              {plan !== "free" && !cancelledAt && (subscription?.current_period_end || profileRenewalDate) && (
-                <p style={{ fontSize: ".8rem", color: "#9A8070", margin: "0 0 .75rem", fontWeight: 300 }}>
-                  {isFR
-                    ? `Prochain renouvellement : ${formatDate((subscription?.current_period_end ?? profileRenewalDate)!)}`
-                    : `Next renewal: ${formatDate((subscription?.current_period_end ?? profileRenewalDate)!)}`}
-                </p>
-              )}
+        <PreferencesSection
+          t={t}
+          loading={loading}
+          emailReminders={emailReminders}
+          handleToggleReminders={handleToggleReminders}
+          handleResetOnboarding={handleResetOnboarding}
+        />
 
-              {/* Crédits livre */}
-              {plan === "print" && !cancelledAt && (
-                <p style={{ fontSize: ".8rem", margin: "0 0 1rem", fontWeight: 400, color: bookCredits > 0 ? "#C8813A" : "#9A8070" }}>
-                  {bookCredits > 0
-                    ? (isFR ? "📖 Votre livre offert n'a pas encore été commandé" : "📖 Your free book hasn't been ordered yet")
-                    : (() => {
-                        const renewalTs = subscription?.current_period_end ?? profileRenewalDate;
-                        const renewalStr = renewalTs ? formatDate(renewalTs) : null;
-                        return isFR
-                          ? (renewalStr ? `📖 Votre livre offert a déjà été commandé · Prochain : ${renewalStr}` : "📖 Votre livre offert a déjà été commandé")
-                          : (renewalStr ? `📖 Your free book has already been ordered · Next: ${renewalStr}` : "📖 Your free book has already been ordered");
-                      })()}
-                </p>
-              )}
-
-              {/* Annulation en cours */}
-              {cancelledAt && (
-                <div style={{ background: "rgba(163,45,45,.05)", border: "1px solid rgba(163,45,45,.2)", borderRadius: 10, padding: ".75rem 1rem", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
-                  <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>
-                    {isFR
-                      ? `Votre abonnement sera annulé le ${formatDate(cancelledAt)}. Vous gardez l'accès jusqu'à cette date.`
-                      : `Your subscription will be cancelled on ${formatDate(cancelledAt)}. You keep access until then.`}
-                  </p>
-                  <button
-                    onClick={handleReactivate}
-                    disabled={reactivateLoading}
-                    style={{ background: "none", border: "1px solid rgba(163,45,45,.4)", borderRadius: 100, cursor: "pointer", color: "#A32D2D", fontSize: ".75rem", fontFamily: "inherit", padding: ".3rem .875rem", whiteSpace: "nowrap", opacity: reactivateLoading ? .6 : 1, flexShrink: 0 }}
-                  >
-                    {reactivateLoading ? (isFR ? "Réactivation…" : "Reactivating…") : (isFR ? "Annuler ma résiliation" : "Keep my subscription")}
-                  </button>
-                </div>
-              )}
-
-              {/* ── Plan gratuit → choix abonnement ── */}
-              {plan === "free" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-                  <p style={{ fontSize: ".875rem", color: "#7A5C44", margin: "0 0 .25rem", fontWeight: 300 }}>
-                    {isFR ? "Passez à Premium pour débloquer toutes les fonctionnalités." : "Upgrade to Premium to unlock all features."}
-                  </p>
-                  <button
-                    onClick={() => handleCheckout("digital")}
-                    disabled={!!checkoutLoading}
-                    style={{ ...btnPrimary, opacity: checkoutLoading ? .7 : 1 }}
-                  >
-                    {checkoutLoading === "digital" ? "…" : (isFR ? `Premium Digital, ${formatPrice(currency, "digital")}/mois` : `Premium Digital, ${formatPrice(currency, "digital")}/mo`)}
-                  </button>
-                  <button
-                    onClick={() => handleCheckout("print_annual")}
-                    disabled={!!checkoutLoading}
-                    style={{ ...btnPrimary, background: "#3D2B1F", opacity: checkoutLoading ? .7 : 1 }}
-                  >
-                    {checkoutLoading === "print_annual" ? "…" : (isFR ? `Premium Print, ${formatPrice(currency, "printAnnual")}/an` : `Premium Print, ${formatPrice(currency, "printAnnual")}/yr`)}
-                  </button>
-                  <p style={{ fontSize: ".72rem", color: "#9A8070", margin: ".25rem 0 0", lineHeight: 1.5, fontWeight: 300, textAlign: "center" as const }}>
-                    {isFR ? (<>En continuant, vous acceptez les <a href="/legal/cgv" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>CGV</a>.</>) : (<>By continuing, you agree to our <a href="/legal/terms" target="_blank" style={{ color: "#9A8070", textDecoration: "underline" }}>Terms of Service</a>.</>)}
-                  </p>
-                </div>
-              )}
-
-              {/* ── Plan payant actif → changer ── */}
-              {plan !== "free" && !cancelledAt && (
-                <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-                  <p style={{ fontSize: ".8rem", color: "#9A8070", margin: "0 0 .25rem", fontWeight: 300 }}>
-                    {isFR ? "Changer de formule :" : "Switch plan:"}
-                  </p>
-
-                  {/* Digital → Print annuel */}
-                  {plan === "digital" && (
-                    <button
-                      onClick={() => handleUpgradeWithPreview("print_annual")}
-                      disabled={!!upgradeLoading || !!upgradePreviewLoading}
-                      style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, background: "rgba(61,43,31,.04)", opacity: (upgradeLoading || upgradePreviewLoading) ? .7 : 1 }}
-                    >
-                      {upgradePreviewLoading === "print_annual" ? (isFR ? "Calcul…" : "Calculating…") : upgradeLoading === "print_annual" ? (isFR ? "Mise à jour…" : "Updating…") : (
-                        isFR ? `Premium Print, ${formatPrice(currency, "printAnnual")}/an` : `Premium Print, ${formatPrice(currency, "printAnnual")}/yr`
-                      )}
-                    </button>
-                  )}
-
-                  {/* Print annuel → Digital mensuel */}
-                  {plan === "print" && (
-                    <button
-                      onClick={() => handleUpgradeWithPreview("digital")}
-                      disabled={!!upgradeLoading || !!upgradePreviewLoading}
-                      style={{ ...btnOutline, alignSelf: "stretch", textAlign: "center" as const, opacity: (upgradeLoading || upgradePreviewLoading) ? .7 : 1 }}
-                    >
-                      {upgradePreviewLoading === "digital" ? (isFR ? "Calcul…" : "Calculating…") : upgradeLoading === "digital" ? (isFR ? "Mise à jour…" : "Updating…") : (
-                        isFR ? `Premium Digital, ${formatPrice(currency, "digital")}/mois` : `Premium Digital, ${formatPrice(currency, "digital")}/mo`
-                      )}
-                    </button>
-                  )}
-
-                  <button
-                    onClick={handleCancel}
-                    disabled={cancelLoading}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "#A32D2D", fontSize: ".8rem", fontFamily: "inherit", padding: ".25rem 0", textDecoration: "underline", opacity: cancelLoading ? .6 : 1, textAlign: "left" as const }}
-                  >
-                    {cancelLoading ? (isFR ? "Annulation…" : "Cancelling…") : (isFR ? "Annuler mon abonnement" : "Cancel my subscription")}
-                  </button>
-                </div>
-              )}
-              {/* ── Code cadeau ── */}
-              <div style={{ marginTop: "1.25rem", paddingTop: "1.25rem", borderTop: "0.5px solid rgba(61,43,31,.08)" }}>
-                <p style={{ fontSize: ".8rem", color: "#9A8070", margin: "0 0 .625rem", fontWeight: 300 }}>
-                  {isFR ? "Vous avez un code cadeau ?" : "Have a gift code?"}
-                </p>
-
-                {giftStatus === "success" && giftResult ? (
-                  <div style={{ background: "rgba(107,123,94,.08)", border: "1px solid rgba(107,123,94,.25)", borderRadius: 12, padding: ".875rem 1rem", display: "flex", alignItems: "flex-start", gap: ".625rem" }}>
-                    <span style={{ fontSize: "1.1rem", flexShrink: 0 }}>🎁</span>
-                    <div>
-                      <p style={{ fontSize: ".875rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .2rem" }}>
-                        {isFR ? "Code cadeau activé !" : "Gift code activated!"}
-                      </p>
-                      <p style={{ fontSize: ".8rem", color: "#6B7B5E", margin: 0, fontWeight: 300 }}>
-                        {isFR
-                          ? `Votre plan ${giftResult.plan === "print_annual" ? "Premium Print" : "Premium Digital"} s'activera le ${giftResult.activatesAt ? formatDate(giftResult.activatesAt) : ", "}.`
-                          : `Your ${giftResult.plan === "print_annual" ? "Premium Print" : "Premium Digital"} plan activates on ${giftResult.activatesAt ? formatDate(giftResult.activatesAt) : ", "}.`}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", gap: ".5rem" }}>
-                    <input
-                      type="text"
-                      value={giftCode}
-                      onChange={e => { setGiftCode(e.target.value.toUpperCase()); if (giftStatus === "error") { setGiftStatus("idle"); setGiftError(""); } }}
-                      placeholder={isFR ? "Ex : GIFT-XXXXXX" : "E.g. GIFT-XXXXXX"}
-                      style={{ ...inputStyle, flex: 1, fontFamily: "monospace", letterSpacing: ".08em", textTransform: "uppercase" }}
-                      onKeyDown={e => { if (e.key === "Enter") handleRedeemGift(); }}
-                    />
-                    <button
-                      onClick={handleRedeemGift}
-                      disabled={giftStatus === "loading"}
-                      style={{ ...btnPrimary, whiteSpace: "nowrap" as const, opacity: giftStatus === "loading" ? .7 : 1, flexShrink: 0, width: "auto" }}
-                    >
-                      {giftStatus === "loading" ? "…" : (isFR ? "Activer" : "Activate")}
-                    </button>
-                  </div>
-                )}
-
-                {giftStatus === "error" && giftError && (
-                  <p style={{ fontSize: ".78rem", color: "#A32D2D", margin: ".4rem 0 0" }}>{giftError}</p>
-                )}
-              </div>
-
-            </>
-          )}
-        </div>
-
-        {/* ── Invoices section ─────────────────────────────────────────────── */}
-        {(invoicesLoading || invoices.length > 0) && (
-          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1.25rem" }}>
-              {isFR ? "Mes factures" : "My invoices"}
-            </h2>
-            {invoicesLoading ? (
-              <p style={{ color: "#9A8070", fontSize: ".875rem" }}>…</p>
-            ) : (
-              <>
-                <div style={{ maxHeight: 380, overflowY: "auto", display: "flex", flexDirection: "column", gap: ".5rem", paddingRight: ".25rem" }}>
-                  {invoices.slice(0, invoicesVisible).map(inv => {
-                    const amount = (inv.amount_paid / 100).toLocaleString(isFR ? "fr-FR" : "en-US", { style: "currency", currency: inv.currency.toUpperCase(), minimumFractionDigits: 2 });
-                    const date = new Date(inv.created * 1000).toLocaleDateString(isFR ? "fr-FR" : "en-GB", { day: "2-digit", month: "long", year: "numeric" });
-                    const period = `${new Date(inv.period_start * 1000).toLocaleDateString(isFR ? "fr-FR" : "en-GB", { day: "2-digit", month: "short" })} – ${new Date(inv.period_end * 1000).toLocaleDateString(isFR ? "fr-FR" : "en-GB", { day: "2-digit", month: "short", year: "numeric" })}`;
-                    return (
-                      <div key={inv.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", padding: ".75rem 1rem", background: "#F7F2EA", borderRadius: 12, flexWrap: "wrap", flexShrink: 0 }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
-                            <span style={{ fontSize: ".875rem", fontWeight: 600, color: "#3D2B1F" }}>{amount}</span>
-                            <span style={{ fontSize: ".72rem", color: "#9A8070" }}>· {date}</span>
-                          </div>
-                          <div style={{ fontSize: ".72rem", color: "#9A8070", marginTop: ".15rem" }}>{period}</div>
-                          {inv.number && <div style={{ fontSize: ".68rem", color: "#9A8070", marginTop: ".1rem", fontFamily: "monospace" }}>{inv.number}</div>}
-                        </div>
-                        <div style={{ display: "flex", gap: ".5rem", flexShrink: 0 }}>
-                          {inv.invoice_pdf?.startsWith("https://") && (
-                            <a href={inv.invoice_pdf} target="_blank" rel="noopener noreferrer" style={{ fontSize: ".75rem", color: "#C8813A", textDecoration: "none", border: "1px solid rgba(200,129,58,.3)", borderRadius: 100, padding: ".3rem .75rem", whiteSpace: "nowrap" }}>
-                              PDF
-                            </a>
-                          )}
-                          {inv.hosted_invoice_url?.startsWith("https://") && (
-                            <a href={inv.hosted_invoice_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: ".75rem", color: "#7A5C44", textDecoration: "none", border: "1px solid rgba(61,43,31,.15)", borderRadius: 100, padding: ".3rem .75rem", whiteSpace: "nowrap" }}>
-                              {isFR ? "Voir" : "View"}
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {invoices.length > invoicesVisible && (
-                  <button
-                    onClick={() => setInvoicesVisible(v => v + 6)}
-                    style={{ marginTop: ".75rem", background: "none", border: "none", cursor: "pointer", color: "#C8813A", fontSize: ".8rem", fontFamily: "inherit", fontWeight: 500, padding: ".25rem 0", textDecoration: "underline" }}
-                  >
-                    {isFR ? `Voir plus (${invoices.length - invoicesVisible} restantes)` : `Show more (${invoices.length - invoicesVisible} remaining)`}
-                  </button>
-                )}
-              </>
-            )}
-          </div>
+        {!loading && (
+          <AccountSecuritySection
+            isFR={isFR}
+            isGoogleAccount={isGoogleAccount}
+            currentEmail={currentEmail}
+            newEmail={newEmail}
+            setNewEmail={setNewEmail}
+            emailError={emailError}
+            handleEmailChange={handleEmailChange}
+            emailStatus={emailStatus}
+            currentPassword={currentPassword}
+            setCurrentPassword={setCurrentPassword}
+            newPassword={newPassword}
+            setNewPassword={setNewPassword}
+            confirmPassword={confirmPassword}
+            setConfirmPassword={setConfirmPassword}
+            passwordError={passwordError}
+            handlePasswordChange={handlePasswordChange}
+            passwordStatus={passwordStatus}
+          />
         )}
 
-        {/* ── Preferences section ──────────────────────────────────────────── */}
-        <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>
-          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.25rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1.5rem" }}>{t.settings.title}</h2>
-
-          {loading ? (
-            <p style={{ color: "#7A5C44", fontSize: ".9rem" }}>{t.dashboard.loading_btn}</p>
-          ) : (
-            <>
-              <div style={{ padding: "1rem 0", borderBottom: "0.5px solid rgba(61,43,31,.08)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div>
-                    <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .25rem" }}>{t.settings.weekly_reminders}</p>
-                    <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.settings.weekly_reminders_desc}</p>
-                  </div>
-                  <div
-                    role="switch"
-                    aria-checked={emailReminders}
-                    tabIndex={0}
-                    onClick={() => handleToggleReminders(!emailReminders)}
-                    onKeyDown={e => { if (e.key === "Enter" || e.key === " ") handleToggleReminders(!emailReminders); }}
-                    style={{ width: 44, height: 24, borderRadius: 100, background: emailReminders ? "#C8813A" : "rgba(61,43,31,.15)", cursor: "pointer", position: "relative", transition: "background .2s", flexShrink: 0, marginLeft: "1rem" }}
-                  >
-                    <div style={{ position: "absolute", top: 2, left: emailReminders ? 22 : 2, width: 20, height: 20, borderRadius: "50%", background: "#FDFAF5", transition: "left .2s" }} />
-                  </div>
-                </div>
-                {emailReminders && (
-                  <p style={{ fontSize: ".75rem", color: "#C8813A", margin: ".6rem 0 0", fontWeight: 300, fontStyle: "italic" }}>{t.settings.weekly_reminders_info}</p>
-                )}
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 0" }}>
-                <div>
-                  <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .25rem" }}>{t.settings.onboarding_guide}</p>
-                  <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0, fontWeight: 300 }}>{t.settings.onboarding_guide_desc}</p>
-                </div>
-                <button onClick={async () => { const s = createClient(); const { data: { user } } = await s.auth.getUser(); await s.from("profiles").update({ onboarding_dismissed: false }).eq("id", user!.id); ["ep_cm_first_entry","ep_cm_first_story","ep_cm_book_credit"].forEach(k => localStorage.removeItem(k)); showToast(t.settings.save_success, "success"); }} style={{ background: "transparent", color: "#C8813A", padding: ".4rem 1rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, border: "1.5px solid rgba(200,129,58,.3)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", marginLeft: "1rem" }}>
-                  {t.settings.reset_guide}
-                </button>
-              </div>
-
-            </>
-          )}
-        </div>
-
-        {/* ── Account security section ─────────────────────────────────────── */}
         {!loading && (
-          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: "1.5rem" }}>
-              {isFR ? "Sécurité du compte" : "Account security"}
-            </h2>
-
-            {/* Changer l'email */}
-            <div style={{ paddingBottom: "1.5rem", borderBottom: isGoogleAccount ? "none" : "0.5px solid rgba(61,43,31,.08)", marginBottom: isGoogleAccount ? 0 : "1.5rem" }}>
-              <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .75rem" }}>
-                {isFR ? "Changer l'adresse email" : "Change email address"}
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-                {currentEmail && (
-                  <p style={{ fontSize: ".85rem", color: "#9A8070", margin: "0 0 4px" }}>
-                    {isFR ? `Adresse actuelle : ${currentEmail}` : `Current address: ${currentEmail}`}
-                  </p>
-                )}
-                <input
-                  type="email"
-                  placeholder={isFR ? "Nouvelle adresse email" : "New email address"}
-                  value={newEmail}
-                  onChange={e => setNewEmail(e.target.value)}
-                  style={inputStyle}
-                />
-                {emailError && <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>{emailError}</p>}
-                <button onClick={handleEmailChange} disabled={emailStatus === "saving"} style={{ ...btnOutline, opacity: emailStatus === "saving" ? .7 : 1 }}>
-                  {emailStatus === "saving" ? (isFR ? "Mise à jour…" : "Updating…") : (isFR ? "Mettre à jour l'email" : "Update email")}
-                </button>
-              </div>
-            </div>
-
-            {/* Changer le mot de passe */}
-            {!isGoogleAccount && (
-              <div>
-                <p style={{ fontSize: ".9rem", fontWeight: 500, color: "#3D2B1F", margin: "0 0 .75rem" }}>
-                  {isFR ? "Changer le mot de passe" : "Change password"}
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-                  <input type="password" placeholder={isFR ? "Mot de passe actuel" : "Current password"} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} style={inputStyle} />
-                  <input type="password" placeholder={isFR ? "Nouveau mot de passe (min. 8 caractères)" : "New password (min. 8 characters)"} value={newPassword} onChange={e => setNewPassword(e.target.value)} style={inputStyle} />
-                  <PasswordStrength password={newPassword} isFR={isFR} />
-                  <input type="password" placeholder={isFR ? "Confirmer le mot de passe" : "Confirm password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={inputStyle} />
-                  {passwordError && <p style={{ fontSize: ".8rem", color: "#A32D2D", margin: 0 }}>{passwordError}</p>}
-                  <button onClick={handlePasswordChange} disabled={passwordStatus === "saving"} style={{ ...btnOutline, opacity: passwordStatus === "saving" ? .7 : 1 }}>
-                    {passwordStatus === "saving" ? (isFR ? "Mise à jour…" : "Updating…") : (isFR ? "Mettre à jour le mot de passe" : "Update password")}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {isGoogleAccount && (
-              <p style={{ fontSize: ".8rem", color: "#9A8070", fontWeight: 300, fontStyle: "italic", margin: 0 }}>
-                {isFR ? "Votre compte est connecté via Google. La gestion du mot de passe se fait depuis votre compte Google." : "Your account is linked via Google. Manage your password from your Google account."}
-              </p>
-            )}
-          </div>
+          <DataExportSection
+            isFR={isFR}
+            exportHtmlLoading={exportHtmlLoading}
+            handleExportHtml={handleExportHtml}
+            exportLoading={exportLoading}
+            handleExportData={handleExportData}
+          />
         )}
 
-        {/* ── RGPD, data export ───────────────────────────────────────────── */}
         {!loading && (
-          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(61,43,31,.08)", marginBottom: "1.25rem" }}>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".5rem" }}>
-              {isFR ? "Mes données" : "My data"}
-            </h2>
-            <p style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, margin: "0 0 1.25rem", lineHeight: 1.6 }}>
-              {isFR
-                ? "Téléchargez une copie complète de vos données : profil, animaux, entrées du journal, histoires IA, étapes et configurations de livres."
-                : "Download a full copy of your data: profile, pets, journal entries, AI stories, milestones and book configurations."}
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-              <button
-                onClick={handleExportHtml}
-                disabled={exportHtmlLoading}
-                style={{ ...btnOutline, cursor: exportHtmlLoading ? "wait" : "pointer", opacity: exportHtmlLoading ? .6 : 1 }}
-              >
-                {exportHtmlLoading
-                  ? (isFR ? "Préparation…" : "Preparing…")
-                  : (isFR ? "📄 Télécharger un résumé lisible (HTML)" : "📄 Download a readable summary (HTML)")}
-              </button>
-              <button
-                onClick={handleExportData}
-                disabled={exportLoading}
-                style={{ ...btnOutline, cursor: exportLoading ? "wait" : "pointer", opacity: exportLoading ? .6 : 1, fontSize: ".8rem", color: "#9A8070" }}
-              >
-                {exportLoading
-                  ? (isFR ? "Préparation…" : "Preparing…")
-                  : (isFR ? "Télécharger les données brutes (JSON)" : "Download raw data (JSON)")}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Danger zone, delete account ─────────────────────────────────── */}
-        {!loading && (
-          <div style={{ background: "#FDFAF5", borderRadius: 24, padding: "2rem", border: "1px solid rgba(163,45,45,.15)", marginBottom: "2rem" }}>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#A32D2D", marginBottom: ".5rem" }}>
-              {isFR ? "Zone dangereuse" : "Danger zone"}
-            </h2>
-            <p style={{ fontSize: ".8rem", color: "#7A5C44", fontWeight: 300, margin: "0 0 1.25rem" }}>
-              {isFR
-                ? "Ces actions sont irréversibles. Procédez avec précaution."
-                : "These actions are irreversible. Proceed with caution."}
-            </p>
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              style={{ background: "none", border: "1.5px solid #A32D2D", borderRadius: 100, cursor: "pointer", color: "#A32D2D", fontSize: ".875rem", fontFamily: "inherit", padding: ".6rem 1.25rem", fontWeight: 500, width: "100%", boxSizing: "border-box", textAlign: "center" }}
-            >
-              {isFR ? "Supprimer mon compte et toutes mes données" : "Delete my account and all my data"}
-            </button>
-          </div>
+          <DangerZoneSection
+            isFR={isFR}
+            onDeleteClick={() => setShowDeleteModal(true)}
+          />
         )}
 
       </main>

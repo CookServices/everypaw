@@ -36,6 +36,16 @@ export interface Profile {
   book_credits: number;
 }
 
+export interface Address {
+  firstName: string;
+  lastName: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  postCode: string;
+  country: string;
+}
+
 export const SHIPPING_BY_COUNTRY: Record<string, string> = {
   FR: "~5–10 €", DE: "~5–10 €", ES: "~5–10 €", IT: "~5–10 €",
   NL: "~5–10 €", BE: "~5–10 €", PT: "~5–10 €", AT: "~5–10 €",
