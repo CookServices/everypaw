@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
 import { getTranslations, type Locale } from "@/lib/i18n";
+import { clearConsent } from "@/lib/consent";
 
 interface PublicFooterProps {
   /**
@@ -20,6 +21,27 @@ export default function PublicFooter({ variant = "minimal", locale, localeSwitch
   const auto = useLocale();
   const t = locale ? getTranslations(locale) : auto.t;
   const effLocale: Locale = locale ?? auto.locale;
+
+  // Withdrawing consent has to be as easy as giving it, and the banner is the
+  // only place the choice exists: clearing the decision brings it back.
+  const cookieButton = (
+    <button
+      onClick={() => clearConsent()}
+      style={{
+        background: "none",
+        border: "none",
+        padding: "0 .5rem",
+        fontFamily: "inherit",
+        fontSize: ".72rem",
+        color: "rgba(247,242,234,.28)",
+        fontWeight: 300,
+        whiteSpace: "nowrap",
+        cursor: "pointer",
+      }}
+    >
+      {effLocale === "fr" ? "Gérer les cookies" : "Cookie settings"}
+    </button>
+  );
 
   const switchLink = localeSwitch && (
     <a
@@ -42,7 +64,15 @@ export default function PublicFooter({ variant = "minimal", locale, localeSwitch
         <p style={{ fontSize: ".75rem", color: "rgba(247,242,234,.3)", margin: 0 }}>
           © {new Date().getFullYear()} Everypaw
         </p>
-        {switchLink && <div style={{ marginTop: ".5rem" }}>{switchLink}</div>}
+        <div style={{ marginTop: ".5rem", display: "flex", justifyContent: "center", alignItems: "center", gap: ".1rem", flexWrap: "wrap" }}>
+          {cookieButton}
+          {switchLink && (
+            <>
+              <span style={{ fontSize: ".72rem", color: "rgba(247,242,234,.12)", userSelect: "none" }}>·</span>
+              <span style={{ padding: "0 .5rem" }}>{switchLink}</span>
+            </>
+          )}
+        </div>
       </footer>
     );
   }
@@ -132,6 +162,10 @@ export default function PublicFooter({ variant = "minimal", locale, localeSwitch
             )}
           </span>
         ))}
+        <span style={{ display: "flex", alignItems: "center", gap: ".1rem" }}>
+          <span style={{ fontSize: ".72rem", color: "rgba(247,242,234,.12)", userSelect: "none" }}>·</span>
+          {cookieButton}
+        </span>
         {switchLink && (
           <span style={{ display: "flex", alignItems: "center", gap: ".1rem" }}>
             <span style={{ fontSize: ".72rem", color: "rgba(247,242,234,.12)", userSelect: "none" }}>·</span>
