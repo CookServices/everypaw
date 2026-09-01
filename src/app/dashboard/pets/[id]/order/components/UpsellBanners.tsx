@@ -13,9 +13,6 @@ interface Props {
   locale: Locale;
   t: Translations;
   renewalDate: string | null;
-  checkoutLoading: boolean;
-  startBookCheckout: () => void;
-  extraBookPriceLabel: string;
   petName: string;
 }
 
@@ -29,9 +26,6 @@ export default function UpsellBanners({
   locale,
   t,
   renewalDate,
-  checkoutLoading,
-  startBookCheckout,
-  extraBookPriceLabel,
   petName,
 }: Props) {
   return (
@@ -107,21 +101,10 @@ export default function UpsellBanners({
           <p style={{ fontSize: ".875rem", color: textMuted, lineHeight: 1.6, maxWidth: 380, margin: "0 auto 1rem" }}>
             {t.order.no_credits_desc}
           </p>
+          {/* No buy button here: purchasing goes through the main CTA below, so
+              the shipping address is collected before payment. Paying from this
+              banner skipped the address step and left the order unplaceable. */}
           <div style={{ display: "flex", flexDirection: "column", gap: ".625rem", alignItems: "center" }}>
-            <button
-              onClick={startBookCheckout}
-              disabled={checkoutLoading}
-              style={{
-                background: accentColor, color: "var(--ep-bg-card)", border: "none",
-                padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".875rem",
-                fontWeight: 600, cursor: checkoutLoading ? "wait" : "pointer", fontFamily: "inherit",
-                opacity: checkoutLoading ? .6 : 1,
-              }}
-            >
-              {checkoutLoading
-                ? (locale === "fr" ? "Chargement…" : "Loading…")
-                : `${t.order.no_credits_cta}, ${extraBookPriceLabel} ${locale === "fr" ? "+ livraison" : "+ shipping"}`}
-            </button>
             <a
               href="/dashboard/settings#plan"
               style={{

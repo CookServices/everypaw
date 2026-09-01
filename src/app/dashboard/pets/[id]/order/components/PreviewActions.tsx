@@ -19,6 +19,7 @@ interface Props {
   selectedStoryIds: string[];
   tooFewContent: boolean;
   checkoutLoading: boolean;
+  paidPriceSuffix: string;
   profile: Profile | null;
   setStep: (step: Step) => void;
   accentColor: string;
@@ -50,6 +51,7 @@ export default function PreviewActions({
   selectedStoryIds,
   tooFewContent,
   checkoutLoading,
+  paidPriceSuffix,
   profile,
   setStep,
   accentColor,
@@ -117,13 +119,12 @@ export default function PreviewActions({
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-        {/* Hide the main CTA when the user has no credits, with two exceptions.
+        {/* The main CTA is the single entry point to ordering, on every plan.
             Free: shown disabled, so the gate is visible rather than puzzling.
-            Print with no credits: shown and enabled, because that is the paid
-            extra-copy path. Hiding it there stranded Print subscribers with a
-            banner and no way to buy, while the label and the checkout call for
-            exactly that case already existed just below. */}
-        {((profile?.book_credits ?? 0) > 0 || profile?.plan === "free" || profile?.plan === "print") && <button
+            Any paid plan with no credits (Digital from the first book, Print
+            for an extra copy): shown and enabled, it leads to the address step
+            and then to checkout. */}
+        {profile !== null && <button
           onClick={() => {
             setStep("address");
           }}
@@ -138,9 +139,11 @@ export default function PreviewActions({
         >
           {checkoutLoading
             ? (locale === "fr" ? "Chargement…" : "Loading…")
-            : profile?.plan === "print" && profile.book_credits === 0
-              ? t.order.print_extra_book_cta
-              : t.order.preview_cta}
+            : (profile?.book_credits ?? 0) > 0 || profile?.plan === "free"
+              ? t.order.preview_cta
+              : profile?.plan === "print"
+                ? `${t.order.print_extra_book_cta}, ${paidPriceSuffix}`
+                : `${t.order.no_credits_cta}, ${paidPriceSuffix}`}
         </button>}
         {checkoutError && (
           <p style={{ fontSize: ".8rem", color: "var(--ep-alert)", textAlign: "center", margin: "-.25rem 0 0" }}>
