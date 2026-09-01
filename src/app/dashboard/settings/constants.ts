@@ -10,6 +10,18 @@ export interface SubscriptionInfo {
   interval: "month" | "year";
 }
 
+export interface Invoice {
+  id: string;
+  number: string | null;
+  amount_paid: number;
+  currency: string;
+  created: number;
+  invoice_pdf: string | null;
+  hosted_invoice_url: string | null;
+  period_start: number;
+  period_end: number;
+}
+
 export const inputStyle: CSSProperties = {
   width: "100%", boxSizing: "border-box",
   padding: ".65rem .875rem", borderRadius: 10,

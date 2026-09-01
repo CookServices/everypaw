@@ -169,6 +169,8 @@ data, so the rules below are not optional.
 - Stripe webhook testing → use Stripe test mode, not preview
 - Long-running tasks may timeout (preview cold-starts)
 - **Email flows can NOT be completed on a preview** — they always land back on production
+- **An env var scoped to Production only is absent on preview**, and every route that needs it
+  fails there with an unhandled 500 (see below)
 
 #### Why email flows redirect to production
 
@@ -190,6 +192,42 @@ Concretely, for a password reset requested from a preview:
 
 **Workaround:** finish the email flow on `everypaw.app`, then sign in on the preview. Preview and
 production share the same Supabase project, so the credential works on both.
+
+#### Env vars need the Preview scope explicitly
+
+Vercel env vars carry a target scope. One added to Production alone simply does not exist in
+preview deployments, and nothing warns you: the deployment builds and serves normally until a
+request hits code that reads the variable.
+
+`SUPABASE_SERVICE_ROLE_KEY` sat in Production scope alone for 119 days (found 2026-09-01, fixed
+the same day). Every preview request reaching `getServiceSupabase()` threw:
+
+```
+Error: Missing environment variable(s): SUPABASE_SERVICE_ROLE_KEY.
+Service-role Supabase calls cannot run. Check the environment scope (Preview vs Production).
+```
+
+That is **24 API routes**: `gelato/order`, `stripe/{book-checkout,subscription,webhook}`,
+`account/delete`, `invite/[token]`, `memorial/tributes`, `pet-members`, `share-card`,
+`book-pdf`, `preview-pdf`, and the 7 crons. "Just test it on preview" was quietly false for all
+of them throughout that window, which is worth remembering when reading older session notes that
+claim a preview test passed.
+
+Auditing the scopes:
+
+```bash
+vercel env ls
+```
+
+The `environments` column must show Preview, not only Production.
+
+Two traps when fixing one:
+
+- Adding a scope does **not** touch existing deployments. Redeploy before retesting, with
+  `vercel redeploy <preview-url>` or a fresh push.
+- In the dashboard, plain Preview scoping lives under the **Environments** submenu and works on
+  the Hobby plan. **Preview Branches**, right next to it, is per-branch values and is Pro-only,
+  so hitting a paywall there does not mean Preview scoping is unavailable.
 
 **Note (Session 64) :** les liens signup/recovery/email_change ne passent plus par `confirmation_url`
 PKCE ni par `validateRedirectTo` — ils pointent tous vers `${APP_URL}/auth/confirm` (jamais une origine
@@ -701,12 +739,17 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 - **#4 Rendu statique CDN landing** — bloqué : root `layout.tsx` lit `headers()` (x-pathname) juste pour fixer `<html lang>` fr/en → force **tout** le site en dynamique. Fix = restructurer en `/[locale]/` (recoupe #6). Risque SEO bilingue (hreflang) si bricolé.
 - ~~**#6 Dédup landing**~~ ✅ **résolu (Session 57)** — `/` et `/fr` partagent `home-client.tsx` (`<Home locale>`), plus de copie manuelle. Idem gift (`gift-client.tsx`).
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` en `useEffect` (waterfall, requêtes exposées client). Migration RSC = data au 1er paint, moins de surface.
-- **#9 Split god-components** — en cours, incrémental (voir Session 61). `pets/[id]/page.tsx` **✅ résolu** (2122→1017 l, PR #83-85, 2026-07-23) sauf onglet journal (~50 state, volontairement laissé). `order/page.tsx` 1625→1435 l (PR #99-100, constantes/utils + 2 composants) — reste `renderPreviewStep` (492 l) + 3 autres render-closures, bloqués sur design d'un bundle "theme props" (`accentColor`/`textPrimary`/`textMuted`/`isMemorial` partagés). `settings/page.tsx` 964→866 l (PR #101, constantes + 2 modales) — reste ~800 l de JSX/handlers, même blocage.
+- ~~**#9 Split god-components**~~ ✅ **résolu (Session 66, PR [#123](https://github.com/CookServices/everypaw/pull/123))** : les 3 god-components sont traités.
+  - `pets/[id]/page.tsx` : 2122 à 1017 l (PR #83-85, 2026-07-23), sauf onglet journal (~50 state, volontairement laissé).
+  - `order/page.tsx` : 1625 à 769 l. Les 4 render-closures restantes extraites (`SuccessStep`, `UpsellBanners`, `ConfirmStep`, `AddressStep`), puis `renderPreviewStep` (492 l) splitté en 5 sous-composants (`YearAndTheme`, `BookCover`, `ContentSummary`, `ChapterSelector`, `PreviewActions`) plutôt qu'un composant unique à ~55 props.
+  - `settings/page.tsx` : 878 à 577 l, 6 sections extraites (`SubscriptionSection`, `InvoicesSection`, `PreferencesSection`, `AccountSecuritySection`, `DataExportSection`, `DangerZoneSection`). Pas de blocage theme props ici, les couleurs sont en dur.
+  - **Blocage "theme props" levé** en gardant des props plates, comme `Stepper.tsx`/`PreviewModal.tsx` déjà extraits : ni Context ni bundle d'objets introduits, aucune nouvelle convention. Types `Address` (order) et `Invoice` (settings) dédupliqués dans leurs `constants.ts` respectifs.
+  - Vérifié : `tsc --noEmit` sans nouvelle erreur, dev server compile, les 2 routes se chargent. **Non vérifié** : parcours cliquable réel (pages derrière auth), à faire sur le preview Vercel de la PR.
 - **#12 Interaction `stripe/cancel`/`reactivate` ↔ `stripe/upgrade` (Session 64→65)** — scénario (a) : ~~annuler puis appeler `upgrade`~~ ✅ **résolu (Session 65, PR [#121](https://github.com/CookServices/everypaw/pull/121))** — confirmé par lecture de code (`subscriptionSchedules.update()` écrasait `end_behavior` à `"release"` sans jamais lire `cancel_at_period_end`, ce qui levait silencieusement l'annulation, DB/UI comprises via le webhook). Fix : `upgrade` et `upgrade-preview` refusent désormais (400) si `cancel_at_period_end` est vrai, message "reactivate first". **Scénario (b) reste ouvert** : upgrade programmé (schedule actif) puis `cancel` — pas confirmable par lecture de code seule, nécessite une souscription Stripe test-mode réelle (plan de test donné à Julien en session, pas encore exécuté).
 - ~~**#13 `OnboardingModal` ignore `hasPets`/`hasEntries`/`hasStories`**~~ ✅ **résolu (Session 65, PR [#119](https://github.com/CookServices/everypaw/pull/119))** — chaque étape affiche désormais sa copie `*_done` déjà écrite (`step1_done`/`step2_done`/`step3_done`) et une action neutre (avancer/fermer) quand le jalon correspondant est déjà atteint.
 - ~~**#14 Clés i18n mortes `onboarding.step2_cta`/`step3_cta`**~~ ✅ **résolu (Session 65, PR [#119](https://github.com/CookServices/everypaw/pull/119))** — câblées comme label principal des étapes 2/3 côté "pas encore fait" (remplace le générique `next`/`start`), plus `got_it` câblé pour l'étape 3 "déjà fait".
 
-*Dernière mise à jour : 2026-08-31 (Session 65 — onboarding empty-account default, dashboard card inconsistencies, auth exchange_failed message, backlog #13/#14)*
+*Dernière mise à jour : 2026-09-01 (Session 66 : backlog #9 clos, split de `order/page.tsx` et `settings/page.tsx` en composants de section)*
 
 ---
 
