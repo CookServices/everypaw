@@ -3,7 +3,7 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
-import { baseLayout, heroSection, quote, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
+import { baseLayout, hero, heroSection, quote, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
 
 // Prompts rotate daily by day-of-year index
 const PROMPTS_EN: Record<string, string[]> = {
@@ -125,7 +125,7 @@ export async function GET(req: Request) {
     // Skip users who have no pets or no entries at all (never used the app)
     const { data: pets } = await supabase
       .from("pets")
-      .select("id, name, species")
+      .select("id, name, species, photo_url")
       .eq("user_id", profile.id)
       .is("deceased_at", null)
       .limit(1);
@@ -158,7 +158,13 @@ export async function GET(req: Request) {
       : `✍️ Today's writing prompt for ${petName}`;
 
     const html = baseLayout(
-      heroSection("✍️", isFR ? "Prompt du jour" : "Today's prompt") +
+      hero({
+        photoUrl: pet.photo_url,
+        photoAlt: pet.name,
+        illustration: "paw",
+        emoji: "✍️",
+        heading: isFR ? "Prompt du jour" : "Today's prompt",
+      }) +
       quote(escapeHtml(prompt)) +
       divider() +
       colorSection(

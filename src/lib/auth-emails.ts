@@ -1,12 +1,12 @@
 import { escapeHtml } from "@/lib/html";
-import { BRAND, baseLayout, ctaButton, heroSection, colorSection, divider } from "@/lib/email-templates";
+import { BRAND, baseLayout, hero, ctaButton, heroSection, colorSection, divider } from "@/lib/email-templates";
 
 export function buildConfirmSignupEmail(lang: "fr" | "en", confirmUrl: string): { subject: string; html: string } {
   if (lang === "fr") {
     return {
       subject: "🐾 Confirmez votre adresse email, Everypaw",
       html: baseLayout(`
-        ${heroSection("🐾", "Bienvenue sur Everypaw !")}
+        ${hero({ illustration: "paw", emoji: "🐾", heading: "Bienvenue sur Everypaw !" })}
         <p style="font-size:14px;color:${BRAND.muted};line-height:1.65;margin:0 0 24px;">Vous êtes à un clic de commencer à capturer les plus beaux moments de votre animal.</p>
         ${colorSection("Confirmez votre adresse email pour continuer", BRAND.accent, "#FDFAF5")}
         ${ctaButton(confirmUrl, "Confirmer mon email")}
@@ -17,7 +17,7 @@ export function buildConfirmSignupEmail(lang: "fr" | "en", confirmUrl: string): 
   return {
     subject: "🐾 Confirm your email address, Everypaw",
     html: baseLayout(`
-      ${heroSection("🐾", "Welcome to Everypaw!")}
+      ${hero({ illustration: "paw", emoji: "🐾", heading: "Welcome to Everypaw!" })}
       <p style="font-size:14px;color:${BRAND.muted};line-height:1.65;margin:0 0 24px;">You're one click away from starting to capture your pet's most beautiful moments.</p>
       ${colorSection("Confirm your email to get started", BRAND.accent, "#FDFAF5")}
       ${ctaButton(confirmUrl, "Confirm my email")}

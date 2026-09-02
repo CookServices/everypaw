@@ -3,7 +3,7 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
-import { baseLayout, heroSection, paragraph, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
+import { baseLayout, hero, heroSection, paragraph, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -38,7 +38,7 @@ export async function GET(req: Request) {
   // Batch: first live pet per user
   const { data: allPets } = await supabase
     .from("pets")
-    .select("user_id, id, name")
+    .select("user_id, id, name, photo_url")
     .in("user_id", profileIds)
     .is("deceased_at", null);
 
@@ -48,9 +48,9 @@ export async function GET(req: Request) {
     if (!lastEntryByUser[e.user_id]) lastEntryByUser[e.user_id] = e.entry_date;
   }
 
-  const petByUser: Record<string, { id: string; name: string }> = {};
+  const petByUser: Record<string, { id: string; name: string; photo_url: string | null }> = {};
   for (const p of allPets ?? []) {
-    if (!petByUser[p.user_id]) petByUser[p.user_id] = { id: p.id, name: p.name };
+    if (!petByUser[p.user_id]) petByUser[p.user_id] = { id: p.id, name: p.name, photo_url: p.photo_url };
   }
 
   // Also need to exclude users whose last entry is more recent than 4 days ago
@@ -89,7 +89,13 @@ export async function GET(req: Request) {
       : `🐾 ${daysSince} days without an entry for ${petName}`;
 
     const html = baseLayout(
-      heroSection("🐾", isFR ? `Ça fait ${daysSince} jours…` : `It's been ${daysSince} days…`) +
+      hero({
+        photoUrl: pet.photo_url,
+        photoAlt: pet.name,
+        illustration: "paw",
+        emoji: "🐾",
+        heading: isFR ? `Ça fait ${daysSince} jours…` : `It's been ${daysSince} days…`,
+      }) +
       paragraph(isFR
         ? `${petName} a vécu plein de choses depuis votre dernière entrée. Pas besoin d'un grand moment, une phrase ou une photo, et le souvenir est sauvé pour toujours.`
         : `${petName} has been up to so much since your last entry. It doesn't need to be big, one sentence or a quick photo, and the memory is saved forever.`) +

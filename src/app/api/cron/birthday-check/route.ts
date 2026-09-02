@@ -5,7 +5,7 @@ import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
 import { generateAndSaveBirthdayLetter } from "@/lib/story";
-import { baseLayout, heroSection, paragraph, quote, ctaButton, ctaButtonOutline, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
+import { baseLayout, hero, heroSection, paragraph, quote, ctaButton, ctaButtonOutline, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
 
   const { data: pets } = await supabase
     .from("pets")
-    .select("id, user_id, name, species, bio, birthdate")
+    .select("id, user_id, name, species, bio, birthdate, photo_url")
     .or(orFilter)
     .is("deceased_at", null);
 
@@ -133,9 +133,15 @@ export async function GET(req: Request) {
       : "";
 
     const html = baseLayout(
-      heroSection("🎂", isFR
-        ? `Joyeux anniversaire, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !`
-        : `Happy birthday, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !`) +
+      hero({
+        photoUrl: pet.photo_url,
+        photoAlt: pet.name,
+        illustration: "star",
+        emoji: "🎂",
+        heading: isFR
+          ? `Joyeux anniversaire, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !`
+          : `Happy birthday, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !`,
+      }) +
       paragraph(isFR
         ? `C'est une belle occasion de noter ce moment dans son journal. Décrivez comment ${petName} est aujourd'hui, ce qu'il ou elle aime, ce qui a changé cette année, dans quelques ans, vous serez heureux de l'avoir noté.`
         : `Today is a perfect day to add a birthday entry to ${petName}'s journal. Describe how they are right now, what they love, what's changed this year, you'll be so glad you wrote it down.`) +

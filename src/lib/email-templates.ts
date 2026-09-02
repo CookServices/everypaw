@@ -15,6 +15,14 @@ export const BRAND = {
 // so every rem-sized rule silently fell back to the client default and the
 // whole type hierarchy flattened out in one of the most used desktop clients.
 
+// Images have to be absolute URLs served over https, and bitmaps: Gmail strips
+// SVG entirely. Generated from the repo's own SVG sources by
+// scripts/generate-email-assets.mjs.
+const ASSETS = "https://everypaw.app/email";
+
+/** Illustrations available to `hero()`, drawn at 2x their display size. */
+export type Illustration = "paw" | "book" | "star" | "heart" | "bone" | "plant";
+
 // ── Layout ──────────────────────────────────────────────────────────────────
 // `footerExtra` renders one or more lines above the copyright line — use it for
 // unsubscribe links or contextual promos.
@@ -38,9 +46,8 @@ export function baseLayout(content: string, footerExtra = "", lang: "fr" | "en" 
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:520px;">
         <!-- Header -->
         <tr><td bgcolor="${BRAND.headerBg}" style="background:${BRAND.headerBg};border-radius:16px 16px 0 0;padding:20px 32px;text-align:center;">
-          <span style="font-family:Georgia,serif;font-size:19px;font-weight:600;color:#FDFAF5;">
-            🐾 Everypaw
-          </span>
+          <img src="${ASSETS}/paw-mark.png" width="22" height="22" alt="" style="vertical-align:middle;margin-right:8px;border:0;" />
+          <span style="font-family:Georgia,serif;font-size:19px;font-weight:600;color:#FDFAF5;vertical-align:middle;">Everypaw</span>
         </td></tr>
         <!-- Body -->
         <tr><td bgcolor="#ffffff" style="background:#ffffff;padding:32px;border:1px solid rgba(61,43,31,.08);border-top:none;">
@@ -91,8 +98,17 @@ export function quote(html: string): string {
   return `<div style="background:${BRAND.quoteBg};border-left:3px solid ${BRAND.accent};padding:16px 20px;border-radius:0 10px 10px 0;margin:0 0 24px;font-style:italic;font-size:16px;line-height:1.65;color:${BRAND.text};">${html}</div>`;
 }
 
+/**
+ * Table-wrapped rather than a bare anchor: Outlook drops padding on inline
+ * elements, which turned the button into a bare orange word. The td carries the
+ * fill, so the shape survives even where the radius is ignored.
+ */
 export function ctaButton(href: string, label: string): string {
-  return `<a href="${href}" style="display:inline-block;background:${BRAND.accent};color:#FDFAF5;padding:14px 28px;border-radius:100px;text-decoration:none;font-family:inherit;font-size:15px;font-weight:500;margin:8px 0;">${label}</a>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0;">
+    <tr><td bgcolor="${BRAND.accent}" style="background:${BRAND.accent};border-radius:100px;">
+      <a href="${href}" style="display:inline-block;padding:14px 28px;color:#FDFAF5;text-decoration:none;font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:15px;font-weight:500;">${label}</a>
+    </td></tr>
+  </table>`;
 }
 
 export function ctaButtonOutline(href: string, label: string): string {
@@ -131,6 +147,50 @@ export function heroSection(emoji_char: string, heading_text: string): string {
     <p style="font-size:40px;margin:0 0 12px;line-height:1;">${emoji_char}</p>
     <h1 style="font-family:Georgia,serif;font-size:26px;font-weight:600;color:${BRAND.text};margin:0;letter-spacing:-.02em;">${heading_text}</h1>
   </div>`;
+}
+
+/**
+ * The top of a mail, in order of what carries the most meaning for the reader:
+ * their own pet's photo, then the house illustration, then the emoji the mail
+ * used before this existed.
+ *
+ * `photoUrl` is a Supabase public URL. When a client blocks images, the alt
+ * text carries the pet's name, and the heading below it says the rest.
+ */
+export function hero({
+  photoUrl,
+  photoAlt = "",
+  illustration,
+  emoji: emojiChar,
+  heading: headingText,
+}: {
+  photoUrl?: string | null;
+  photoAlt?: string;
+  illustration?: Illustration;
+  emoji?: string;
+  heading: string;
+}): string {
+  const title = `<h1 style="font-family:Georgia,serif;font-size:26px;font-weight:600;color:${BRAND.text};margin:0;letter-spacing:-.02em;">${headingText}</h1>`;
+
+  if (photoUrl) {
+    return `<div style="text-align:center;margin:0 0 24px;">
+      <img src="${photoUrl}" width="120" height="120" alt="${escapeHtml(photoAlt)}" style="width:120px;height:120px;border-radius:60px;object-fit:cover;display:block;margin:0 auto 16px;border:3px solid ${BRAND.quoteBg};" />
+      ${title}
+    </div>`;
+  }
+
+  if (illustration) {
+    return `<div style="text-align:center;margin:0 0 24px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 16px;">
+        <tr><td bgcolor="${BRAND.quoteBg}" style="background:${BRAND.quoteBg};border-radius:60px;padding:14px;line-height:0;">
+          <img src="${ASSETS}/illus-${illustration}.png" width="92" height="92" alt="" style="display:block;border:0;" />
+        </td></tr>
+      </table>
+      ${title}
+    </div>`;
+  }
+
+  return heroSection(emojiChar ?? "🐾", headingText);
 }
 
 // Footer helper for an unsubscribe link (use as `footerExtra`).

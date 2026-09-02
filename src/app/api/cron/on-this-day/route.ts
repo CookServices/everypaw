@@ -3,7 +3,7 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
-import { baseLayout, emoji, heading, paragraph, quote, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
+import { baseLayout, hero, emoji, heading, paragraph, quote, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -46,10 +46,10 @@ export async function GET(req: Request) {
   const petIds = Array.from(new Set(entries.map(e => e.pet_id)));
   const { data: pets } = await supabase
     .from("pets")
-    .select("id, name")
+    .select("id, name, photo_url")
     .in("id", petIds);
-  const petMap: Record<string, string> = {};
-  for (const p of pets ?? []) petMap[p.id] = p.name;
+  const petMap: Record<string, { name: string; photo_url: string | null }> = {};
+  for (const p of pets ?? []) petMap[p.id] = { name: p.name, photo_url: p.photo_url };
 
   let sent = 0;
 
@@ -62,7 +62,8 @@ export async function GET(req: Request) {
 
     // Pick the first entry to feature (most recent past year)
     const featured = userEntries.sort((a, b) => b.entry_date.localeCompare(a.entry_date))[0];
-    const petName = escapeHtml(petMap[featured.pet_id] ?? (isFR ? "votre animal" : "your pet"));
+    const featuredPet = petMap[featured.pet_id];
+    const petName = escapeHtml(featuredPet?.name ?? (isFR ? "votre animal" : "your pet"));
     const yearsAgo = currentYear - parseInt(featured.entry_date.slice(0, 4), 10);
     const snippet = escapeHtml(featured.content.trim().slice(0, 120)) + (featured.content.length > 120 ? "…" : "");
     const unsubscribeUrl = profile.unsubscribe_token
@@ -82,12 +83,15 @@ export async function GET(req: Request) {
       : `These memories deserve to be in a book. <a href="https://everypaw.app/dashboard" style="color:#C8813A;">Discover Everypaw Print</a>`;
 
     const html = baseLayout(
-      heroSection(
-        "🐾",
-        isFR
+      hero({
+        photoUrl: featuredPet?.photo_url,
+        photoAlt: featuredPet?.name ?? "",
+        illustration: "star",
+        emoji: "🐾",
+        heading: isFR
           ? `Il y a ${yearsAgo} an${yearsAgo > 1 ? "s" : ""}, ${petName}…`
-          : `${yearsAgo} year${yearsAgo > 1 ? "s" : ""} ago, ${petName}…`
-      ) +
+          : `${yearsAgo} year${yearsAgo > 1 ? "s" : ""} ago, ${petName}…`,
+      }) +
       paragraph(dateLabel) +
       quote(`"${snippet}"`) +
       divider() +
