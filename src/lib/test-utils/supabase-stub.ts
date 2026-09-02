@@ -8,7 +8,9 @@
  * assert what the handler persisted.
  */
 
-export type StubResult = { data?: unknown; error?: unknown };
+// `count` is part of a Supabase response too: a handler that writes with
+// `{ count: "exact" }` reads it back to know whether its update matched a row.
+export type StubResult = { data?: unknown; error?: unknown; count?: number | null };
 
 export type RecordedInsert = { table: string; row: unknown };
 export type RecordedUpdate = { table: string; values: unknown };

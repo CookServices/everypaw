@@ -10,14 +10,7 @@ type SendEmailOptions = {
   to: string | string[];
   subject: string;
   html: string;
-  /** Snake case on purpose: that is the field name in the Resend SDK 3.5.0. */
-  reply_to?: string;
-  /**
-   * ISO date carried by the gift flow. ⚠️ Resend 3.5.0 has no scheduling
-   * field, so this is passed through and ignored by the API today. Kept to
-   * preserve the existing call, see the note in gift/complete.
-   */
-  scheduledAt?: string;
+  replyTo?: string;
   /**
    * Present on anything a user can opt out of (the cron mails). Adds the
    * List-Unsubscribe headers Gmail and Yahoo expect from bulk senders, which
@@ -33,7 +26,7 @@ type SendEmailOptions = {
  * Adds the text/plain alternative (derived from the HTML, see email-text.ts)
  * and the unsubscribe headers, so no send site can forget either.
  */
-export async function sendEmail({ from, to, subject, html, reply_to, scheduledAt, unsubscribeUrl }: SendEmailOptions) {
+export async function sendEmail({ from, to, subject, html, replyTo, unsubscribeUrl }: SendEmailOptions) {
   const resend = getResendClient();
   return resend.emails.send({
     from,
@@ -41,8 +34,7 @@ export async function sendEmail({ from, to, subject, html, reply_to, scheduledAt
     subject,
     html,
     text: htmlToText(html),
-    ...(reply_to ? { reply_to } : {}),
-    ...(scheduledAt ? { scheduledAt } : {}),
+    ...(replyTo ? { replyTo } : {}),
     ...(unsubscribeUrl
       ? {
           headers: {

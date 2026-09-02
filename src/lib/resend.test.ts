@@ -44,10 +44,10 @@ describe("sendEmail", () => {
     expect(payload.headers).toBeUndefined();
   });
 
-  it("passes reply_to through under the name the SDK expects", async () => {
-    await sendEmail({ ...base, reply_to: "julien@example.com" });
+  it("passes replyTo through under the name the SDK expects", async () => {
+    await sendEmail({ ...base, replyTo: "julien@example.com" });
 
     const payload = send.mock.calls[0][0] as Record<string, string>;
-    expect(payload.reply_to).toBe("julien@example.com");
+    expect(payload.replyTo).toBe("julien@example.com");
   });
 });

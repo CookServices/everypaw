@@ -3,65 +3,8 @@ import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/resend";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
-import { escapeHtml } from "@/lib/html";
-import { baseLayout, hero, emoji, heading, paragraph, quote, codeBox, ctaButton, finePrint, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
-
-const copy = {
-  fr: {
-    subject: () => `🎁 Vous avez reçu un cadeau Everypaw !`,
-    heading: "Vous avez reçu un cadeau !",
-    body: (sender: string) =>
-      `<strong>${sender}</strong> vous offre 12 mois d'Everypaw Premium, le journal IA qui transforme les moments du quotidien de votre animal en un beau livre imprimé.`,
-    codeLabel: "Votre code cadeau :",
-    cta: "Activer mon cadeau",
-    footer: "Code valable 12 mois · Usage unique. Aucune carte bancaire requise pour l'activer.",
-  },
-  en: {
-    subject: () => `🎁 You've received an Everypaw gift!`,
-    heading: "You've received a gift!",
-    body: (sender: string) =>
-      `<strong>${sender}</strong> gifted you 12 months of Everypaw Premium, the AI journal that turns your pet's daily moments into a beautiful printed book.`,
-    codeLabel: "Your gift code:",
-    cta: "Activate my gift",
-    footer: "Code valid for 12 months · Single use. No credit card required to redeem.",
-  },
-};
-
-function buildEmailHtml({
-  locale,
-  senderName,
-  message,
-  code,
-  redeemUrl,
-}: {
-  locale: "fr" | "en";
-  senderName: string;
-  message: string;
-  code: string;
-  redeemUrl: string;
-}): string {
-  const c = copy[locale] ?? copy.en;
-  return baseLayout(
-    hero({ illustration: "bone", emoji: "🎁", heading: c.heading }) +
-    paragraph(c.body(escapeHtml(senderName))) +
-    (message ? quote(`"${escapeHtml(message)}"`) : "") +
-    divider() +
-    paragraph(`<strong>${c.codeLabel}</strong>`) +
-    codeBox(code) +
-    colorSection(
-      locale === "en"
-        ? `<strong>Ready to get started?</strong> Click below to activate your gift and start capturing your pet's story.`
-        : `<strong>Prêt(e) à commencer ?</strong> Cliquez ci-dessous pour activer votre cadeau et commencer à capturer l'histoire de votre animal.`,
-      BRAND.accent,
-      "#FDFAF5"
-    ) +
-    ctaButton(redeemUrl, c.cta) +
-    finePrint(c.footer),
-    "",
-    locale,
-    locale === "en" ? `${senderName} gifted you 12 months of Everypaw.` : `${senderName} vous offre 12 mois d'Everypaw.`,
-  );
-}
+import { getServiceSupabase } from "@/lib/plan";
+import { buildGiftEmailHtml, giftCopy, giftDeliveryDay } from "@/lib/gift-email";
 
 export async function POST(req: Request) {
   const { sessionId } = await req.json();
@@ -101,7 +44,17 @@ export async function POST(req: Request) {
   }
 
   const emailLocale: "fr" | "en" = locale === "fr" ? "fr" : "en";
-  const expiresAt = Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60;
+
+  // A gift bought for a later date is stored rather than sent: the buyer picks
+  // any date, often months out for a birthday or Christmas, and no provider
+  // schedules that far. /api/cron/gift-deliveries sends it on the day.
+  const deliverOn = giftDeliveryDay(scheduled_date);
+
+  // The code is valid a year from the day the recipient receives it, not from
+  // the day it was bought: a gift bought in June for December would otherwise
+  // reach them with half its life already spent.
+  const validityStart = deliverOn ? new Date(`${deliverOn}T00:00:00Z`).getTime() : Date.now();
+  const expiresAt = Math.floor(validityStart / 1000) + 365 * 24 * 60 * 60;
 
   // Idempotent: same sessionId → same promo code from Stripe
   const promotionCode = await stripe.promotionCodes.create(
@@ -121,23 +74,46 @@ export async function POST(req: Request) {
   );
 
   const redeemUrl = `${process.env.NEXT_PUBLIC_APP_URL}/redeem?code=${promotionCode.code}`;
-  const c = copy[emailLocale];
+  const c = giftCopy[emailLocale];
 
-  // Note: `scheduledAt` is accepted here but ignored by Resend 3.5.0, which has
-  // no scheduling API. A gift bought with a future delivery date is sent right
-  // away. Fixing it means upgrading the SDK, out of scope here.
+  if (deliverOn) {
+    // Unique on checkout_session_id, so a replayed call updates the same row
+    // instead of queuing the gift twice.
+    const { error: queueError } = await getServiceSupabase()
+      .from("gift_deliveries")
+      .upsert(
+        {
+          checkout_session_id: sessionId,
+          promo_code: promotionCode.code,
+          recipient_email,
+          sender_name: sender_name ?? "",
+          message: message ?? "",
+          locale: emailLocale,
+          deliver_on: deliverOn,
+        },
+        { onConflict: "checkout_session_id" },
+      );
+
+    if (queueError) {
+      log.error("[gift/complete] could not queue the scheduled gift:", queueError);
+      return NextResponse.json({ error: "Could not schedule the gift" }, { status: 500 });
+    }
+
+    log.debug(`[gift/complete] gift ${promotionCode.code} queued for ${deliverOn}`);
+    return NextResponse.json({ success: true, code: promotionCode.code, scheduledFor: deliverOn });
+  }
+
   const emailPayload: Parameters<typeof sendEmail>[0] = {
     from: "Everypaw <hello@everypaw.app>",
     to: recipient_email,
     subject: c.subject(),
-    html: buildEmailHtml({
+    html: buildGiftEmailHtml({
       locale: emailLocale,
       senderName: sender_name,
       message: message ?? "",
       code: promotionCode.code,
       redeemUrl,
     }),
-    ...(scheduled_date ? { scheduledAt: new Date(scheduled_date + "T08:00:00Z").toISOString() } : {}),
   };
 
   // Claim the send with a fresh read + immediate flag write BEFORE the slow
