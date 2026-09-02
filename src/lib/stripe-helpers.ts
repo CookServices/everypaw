@@ -21,6 +21,22 @@ export const PRICE_MAP: Record<string, Record<Currency, string | undefined>> = {
   },
 };
 
+// ── attachedScheduleId ────────────────────────────────────────────────────────
+
+/**
+ * ID of the subscription schedule driving this subscription, if any.
+ * Stripe returns either the ID or the expanded object, depending on the call.
+ *
+ * A schedule owns the subscription's future: its phases and `end_behavior`
+ * decide what happens at period end. Any route about to change that future
+ * (upgrade, gift redemption, cancellation) has to look here first.
+ */
+export function attachedScheduleId(subscription: Stripe.Subscription): string | null {
+  const schedule = subscription.schedule;
+  if (!schedule) return null;
+  return typeof schedule === "string" ? schedule : schedule.id;
+}
+
 // ── resolveSubscriptionId ─────────────────────────────────────────────────────
 
 /**

@@ -10,6 +10,12 @@ export interface SubscriptionInfo {
   interval: "month" | "year";
 }
 
+/** Plan change already scheduled for the next renewal (upgrade, or redeemed gift). */
+export interface ScheduledChange {
+  plan: "digital" | "print" | null;
+  at: number;
+}
+
 export interface Invoice {
   id: string;
   number: string | null;

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
-import { PRICE_MAP, resolveSubscriptionId } from "@/lib/stripe-helpers";
+import { attachedScheduleId, PRICE_MAP, resolveSubscriptionId } from "@/lib/stripe-helpers";
 import { getCurrencyFromCountry } from "@/lib/currency";
 
 export async function POST(req: Request) {
@@ -87,12 +87,21 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Subscription item not found" }, { status: 400 });
       }
 
+      // Same guard as stripe/upgrade: the schedule created below sets end_behavior
+      // "release" and rewrites the phases, which silently lifts a pending
+      // cancellation. Refuse before burning the promotion code, so the gift stays
+      // redeemable once the user has reactivated (backlog #12).
+      if (subscription.cancel_at_period_end) {
+        return NextResponse.json(
+          { error: "Reactivate your subscription before redeeming a gift", code: "cancel_pending" },
+          { status: 400 },
+        );
+      }
+
       const periodEnd = subscription.current_period_end;
 
       // Create or retrieve an existing schedule for this subscription
-      const existingScheduleId = typeof subscription.schedule === "string"
-        ? subscription.schedule
-        : (subscription.schedule as Stripe.SubscriptionSchedule | null)?.id ?? null;
+      const existingScheduleId = attachedScheduleId(subscription);
 
       let schedule: Stripe.SubscriptionSchedule;
       if (existingScheduleId) {

@@ -6,7 +6,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { useRouter } from "next/navigation";
 import { type Currency } from "@/lib/currency";
 import { fmtDateOrdinal } from "@/lib/date";
-import type { Plan, SubscriptionInfo, Invoice } from "./constants";
+import type { Plan, ScheduledChange, SubscriptionInfo, Invoice } from "./constants";
 import UpgradeConfirmModal from "./components/UpgradeConfirmModal";
 import DeleteAccountModal from "./components/DeleteAccountModal";
 import SubscriptionSection from "./components/SubscriptionSection";
@@ -45,6 +45,7 @@ export default function SettingsPage() {
   // ── Subscription state ───────────────────────────────────────────────────────
   const [plan, setPlan] = useState<Plan>("free");
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
+  const [scheduledChange, setScheduledChange] = useState<ScheduledChange | null>(null);
   const [subLoading, setSubLoading] = useState(false);
   const [settingsBilling, setSettingsBilling] = useState<"monthly" | "annual">("monthly");
   const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null); // plan being upgraded to
@@ -125,6 +126,7 @@ export default function SettingsPage() {
           const data = await res.json();
           setPlan(data.plan ?? "free");
           setSubscription(data.subscription ?? null);
+          setScheduledChange(data.scheduled_change ?? null);
           if (data.subscription?.cancel_at_period_end && data.subscription?.cancel_at) {
             setCancelledAt(data.subscription.cancel_at);
           }
@@ -266,6 +268,14 @@ export default function SettingsPage() {
         setGiftResult({ activatesAt: data.activatesAt, plan: data.plan });
         setGiftStatus("success");
         setGiftCode("");
+        if (data.activatesAt) {
+          setScheduledChange({ plan: data.plan === "print_annual" ? "print" : "digital", at: data.activatesAt });
+        }
+      } else if (data.code === "cancel_pending") {
+        setGiftError(isFR
+          ? "Votre abonnement est en cours d'annulation. Annulez la résiliation avant d'activer ce cadeau, le code reste valable."
+          : "Your subscription is being cancelled. Keep your subscription first, then activate the gift, the code stays valid.");
+        setGiftStatus("error");
       } else {
         const msg = data.error ?? (isFR ? "Code invalide." : "Invalid code.");
         const translated = msg === "This gift code is not for your account"
@@ -293,6 +303,9 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.success) {
         setUpgradeModal(null);
+        if (data.scheduledAt) {
+          setScheduledChange({ plan: newPlan === "print_annual" ? "print" : "digital", at: data.scheduledAt });
+        }
         const dateStr = data.scheduledAt ? formatDate(data.scheduledAt) : "";
         showToast(
           isFR
@@ -339,10 +352,14 @@ export default function SettingsPage() {
       if (data.success) {
         setCancelledAt(data.cancel_at ?? data.current_period_end);
         setSubscription(prev => prev ? { ...prev, cancel_at_period_end: true, cancel_at: data.cancel_at } : null);
+        // The route releases any pending schedule before cancelling, so a plan
+        // change that was queued for the next renewal no longer exists.
+        setScheduledChange(null);
+        const untilStr = formatDate(data.cancel_at ?? data.current_period_end);
         showToast(
           isFR
-            ? `Abonnement annulé. Accès conservé jusqu'au ${formatDate(data.cancel_at ?? data.current_period_end)}.`
-            : `Subscription cancelled. Access until ${formatDate(data.cancel_at ?? data.current_period_end)}.`,
+            ? `Abonnement annulé. Accès conservé jusqu'au ${untilStr}.${data.dropped_scheduled_change ? " Le changement de formule prévu est abandonné." : ""}`
+            : `Subscription cancelled. Access until ${untilStr}.${data.dropped_scheduled_change ? " The scheduled plan change is dropped." : ""}`,
           "success"
         );
       } else {
@@ -494,6 +511,7 @@ export default function SettingsPage() {
           currency={currency}
           cancelledAt={cancelledAt}
           subscription={subscription}
+          scheduledChange={scheduledChange}
           profileRenewalDate={profileRenewalDate}
           bookCredits={bookCredits}
           formatDate={formatDate}

@@ -483,8 +483,7 @@ currency: "USD"
 
 ## Design system
 
-Palette : voir « Design Context » en tête de fichier, les tokens `--ep-*` de `globals.css` sont la
-seule source (la liste `--cream`/`--brown`/`--amber` qui vivait ici n'existait plus nulle part).
+Palette : « Design Context » en tête de fichier, les tokens `--ep-*` de `globals.css` sont la seule source.
 
 ### Typographie
 
@@ -630,37 +629,29 @@ Cible : pet parents US/UK, très attachés émotionnellement. Différenciateur :
 ## Optimisation & dette technique
 
 Backlog numéroté, ouvert par l'audit Pareto du 2026-06-18 puis alimenté session après session.
-**Clos : #1, #2, #3, #5, #6, #7, #9, #10, #11, #13, #14, #15, #16, #17, #18, #19, #20** — cause, fix
-et vérification de chacun dans `docs/SESSIONS.md` → « Backlog dette technique, items clos ».
+**Clos : #1, #2, #3, #5, #6, #7, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20** — cause,
+fix et vérification de chacun dans `docs/SESSIONS.md` → « Backlog dette technique, items clos ».
 
 **Ouvert :**
 
 - **#4 Rendu statique CDN de la landing** — bloqué par construction : le root `layout.tsx` lit
   `headers()` (`x-pathname`) uniquement pour fixer `<html lang>`, ce qui force **tout** le site en
-  dynamique, aucune page servie par le CDN sauf `robots` et `sitemap`. Le fix est une
-  restructuration en `/[locale]/`, avec un risque SEO réel sur le hreflang bilingue.
+  dynamique, aucune page servie par le CDN sauf `robots` et `sitemap`. Fix = restructuration en
+  `/[locale]/`, avec un risque SEO réel sur le hreflang bilingue.
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` dans un
   `useEffect` (waterfall, requêtes exposées côté client). Une migration RSC donnerait les données au
-  premier paint et réduirait la surface, mais le blast-radius est large pour un gain utilisateur
-  faible.
-- **#12(b) `stripe/upgrade` programmé puis `cancel`** — le scénario (a) est corrigé (Session 65,
-  PR [#121](https://github.com/CookServices/everypaw/pull/121) : `upgrade` et `upgrade-preview`
-  refusent 400 quand `cancel_at_period_end` est vrai). Le (b), annuler alors qu'un Subscription
-  Schedule est actif, n'est pas confirmable en lisant le code : il faut un abonnement Stripe en
-  **test mode** et des Test clocks. Plan de test donné à Julien, jamais exécuté.
-
+  premier paint, mais gros blast-radius pour un gain utilisateur faible.
 **Ne pas re-tenter — #2 `select("*")` → colonnes explicites** : analysé, aucun gain réel. Les
 occurrences restantes sont soit `select("*", { count, head: true })` (zéro ligne transférée), soit
-des selects dont toutes les colonnes sont consommées. Le seul candidat cassait le type `Entry`.
+des selects dont toutes les colonnes servent. Le seul candidat cassait le type `Entry`.
 
-*Dernière mise à jour : 2026-09-02 (Session 68 : #19 et #20 clos, restent #4, #8 et #12(b))*
+*Dernière mise à jour : 2026-09-02 (Session 68 : #12, #19 et #20 clos, restent #4 et #8)*
 
 ---
 
 ## Historique des sessions
 
-Historique complet (sessions 1 à 53, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
-Seules les 2 dernières sessions sont conservées ici ; à chaque nouvelle session, déplacer la plus ancienne vers l'archive.
+Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dernières sessions restent ici, à chaque nouvelle session déplacer la plus ancienne vers l'archive.
 
 ### ✅ Session 67 — Prix de la page order et accès Digital à la commande (2026-09-01)
 
@@ -676,23 +667,34 @@ Backlog #17 et #18 traités ensemble, ils touchent le même encart produit. PR [
 
 **Reste à faire côté Julien** : comparer sur la prod le prix affiché et le montant réel de la page Stripe (sans finaliser le paiement), et remettre le compte de test en free (`UPDATE profiles SET plan='free', is_premium=false, book_credits=0 WHERE email='testopera@yopmail.com';`).
 
-### ✅ Session 68 — Clés i18n orphelines et CLAUDE.md remis sous sa limite (2026-09-02)
+### ✅ Session 68 — Clés i18n orphelines, CLAUDE.md sous sa limite, annulation vs changement de plan programmé (2026-09-02)
 
-Backlog #19 et #20, les deux dettes de documentation ouvertes en fin de Session 67.
+Backlog #19, #20, puis #12(b).
 
 **#19 — 85 clés i18n sans lecteur, retirées des deux fichiers** (667 → 582 feuilles chacun). Pour
 chaque feuille de `messages/en.json` : le nom de la clé apparaît-il quelque part dans `src/` ? Les
 trois accès dynamiques du repo ont été vérifiés et laissés intacts — `t.pet["species_" + v]`,
 `t.interview["q" + n]` via `getWeeklyQuestion`, `faq.q1..q6`/`a1..a6` lus par index pour le JSON-LD
-des landings ; sans ça, les 52 questions de l'interview hebdomadaire partaient à tort. Le gros des
-clés retirées vient de l'ancien catalogue supprimé le 2026-07-07 (`order.product_price`,
+des landings ; sans ça, les 52 questions de l'interview partaient à tort. Le gros des clés
+retirées vient de l'ancien catalogue supprimé le 2026-07-07 (`order.product_price`,
 `landing.free_book`, `landing.pricing_book_note`… tous à 29 €/49 €/9,99 €), de la page waitlist et
 du tableau d'upgrade réécrit. Suppression ligne à ligne plutôt que re-sérialisation du JSON : 170 suppressions et rien d'autre, jeu de clés identique des deux côtés.
 
 **#20 — CLAUDE.md ramené de 869 lignes à moins de 700.** Rien n'est perdu, tout ce qui sort est
 archivé ici : backlog clos (#1 à #18), cases cochées de la checklist de mise en production, Session
-65, procédure de test du webhook via Stripe CLI, et version longue de « Deployment & Staging »
-(197 lignes) dont CLAUDE.md ne garde que la règle, sans le récit de l'incident. Conventions et
-Definition of Done non touchées : c'est la partie réellement relue à chaque session. Retiré au
-passage, parce que faux et non parce que long : la palette `--cream`/`--brown`/`--amber` du « Design
-system », qui n'existe plus dans `globals.css` et que plus aucun composant ne lit.
+65, test du webhook via Stripe CLI, et version longue de « Deployment & Staging » (197 lignes) dont
+CLAUDE.md ne garde que la règle, sans le récit de l'incident. Conventions et Definition of Done non
+touchées, c'est la partie réellement relue. Retiré parce que faux et non parce que long : la palette
+`--cream`/`--brown`/`--amber` du « Design system », absente de `globals.css`, lue par personne.
+
+**#12(b) — annuler pendant qu'un changement de plan est programmé.** Le scénario n'était pas
+confirmable en lisant le code ; il devient sans objet, `stripe/cancel` **libère** le schedule avant
+de poser `cancel_at_period_end`. Sans ça, deux issues, les deux mauvaises : Stripe refuse la mise à
+jour (annulation impossible tant qu'un changement est en file), ou la phase 2 démarre au pivot et
+l'utilisateur reste facturé sur le nouveau plan après avoir lu « Abonnement annulé ». Libération
+qui échoue = 500, rien n'est annulé : mieux qu'une annulation qui se dit réussie. Trouvés en chemin,
+corrigés dans la même PR : `gift/redeem` avait encore le trou bouché par la PR #121 sur `upgrade`
+(racheter un cadeau effaçait une annulation en attente **et** brûlait le code) ; un changement
+programmé était invisible après rechargement ; `/redeem` annonçait « code invalide » à un abonné dont
+le cadeau venait d'être programmé. **Non vérifié en navigateur**, aucune route Stripe ne répond sur
+les previews.

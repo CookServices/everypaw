@@ -2,7 +2,8 @@ import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
-import { getServiceSupabase } from "@/lib/plan";
+import { getServiceSupabase, priceIdToPlan } from "@/lib/plan";
+import { attachedScheduleId } from "@/lib/stripe-helpers";
 
 import { stripe } from "@/lib/stripe";
 
@@ -14,6 +15,36 @@ function formatSubscription(sub: Stripe.Subscription) {
     current_period_end: sub.current_period_end,
     interval: (sub.items.data[0]?.plan?.interval ?? "month") as "month" | "year",
   };
+}
+
+/**
+ * A plan change scheduled for the next renewal, if one is pending.
+ *
+ * `upgrade` and `gift/redeem` both defer the change through a subscription
+ * schedule: phase 1 is the current plan, phase 2 the new one. Without this, the
+ * pending change existed only in the toast shown at the moment of the click and
+ * was invisible on the next page load.
+ */
+async function pendingPlanChange(sub: Stripe.Subscription) {
+  const scheduleId = attachedScheduleId(sub);
+  if (!scheduleId) return null;
+
+  try {
+    const schedule = await stripe.subscriptionSchedules.retrieve(scheduleId);
+    const nextPhase = schedule.phases[1];
+    if (!nextPhase) return null;
+
+    const price = nextPhase.items?.[0]?.price;
+    const priceId = typeof price === "string" ? price : price?.id;
+    return {
+      plan: priceId ? priceIdToPlan(priceId) : null,
+      at: nextPhase.start_date,
+    };
+  } catch (err) {
+    // Never fail the whole subscription read over the pending-change extra.
+    log.error("[stripe/subscription] schedule retrieve error:", err);
+    return null;
+  }
 }
 
 export async function GET() {
@@ -31,7 +62,11 @@ export async function GET() {
   if (profile?.stripe_subscription_id) {
     try {
       const sub = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
-      return NextResponse.json({ plan: profile.plan ?? "free", subscription: formatSubscription(sub) });
+      return NextResponse.json({
+        plan: profile.plan ?? "free",
+        subscription: formatSubscription(sub),
+        scheduled_change: await pendingPlanChange(sub),
+      });
     } catch (err) {
       log.error("[stripe/subscription] retrieve error:", err);
     }
@@ -47,7 +82,11 @@ export async function GET() {
           .from("profiles")
           .update({ stripe_subscription_id: sub.id })
           .eq("id", user.id);
-        return NextResponse.json({ plan: profile.plan ?? "free", subscription: formatSubscription(sub) });
+        return NextResponse.json({
+          plan: profile.plan ?? "free",
+          subscription: formatSubscription(sub),
+          scheduled_change: await pendingPlanChange(sub),
+        });
       }
     } catch (err) {
       log.error("[stripe/subscription] customer lookup error:", err);
