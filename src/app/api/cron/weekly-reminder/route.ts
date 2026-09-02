@@ -65,7 +65,7 @@ export async function GET(req: Request) {
     const ctaLabel = isFrench ? `Répondre pour ${petNameHtml}` : `Answer for ${petNameHtml}`;
     const weekNote = isFrench
       ? (entriesCount > 0
-        ? `Tu as déjà ajouté ${entriesCount} moment${entriesCount > 1 ? "s" : ""} cette semaine, continue !`
+        ? `Vous avez déjà ajouté ${entriesCount} moment${entriesCount > 1 ? "s" : ""} cette semaine, continuez !`
         : "Aucun moment ajouté cette semaine, chaque détail compte.")
       : (entriesCount > 0
         ? `You've already added ${entriesCount} moment${entriesCount > 1 ? "s" : ""} this week, keep going!`

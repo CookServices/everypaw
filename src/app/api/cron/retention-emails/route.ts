@@ -125,7 +125,7 @@ export async function GET(req: Request) {
           ) +
           btn("https://everypaw.app/dashboard/pets/new", re.d1_no_pet_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
-          locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
+          locale === "en" ? "Creating your pet profile takes a minute." : "Créer le profil de votre animal prend une minute.",
         );
       } else {
         const firstPet = alivePets[0];
@@ -159,7 +159,7 @@ export async function GET(req: Request) {
             ) +
             btn(`https://everypaw.app/dashboard/pets/${firstPet.id}`, re.d1_no_entry_cta),
             unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
-            locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
+            locale === "en" ? "The first moment is the hardest one to write." : "Le premier moment est le plus difficile à écrire.",
           );
         } else {
           const remaining = Math.max(0, 3 - ec);
@@ -185,7 +185,7 @@ export async function GET(req: Request) {
             ) +
             btn(`https://everypaw.app/dashboard/pets/${firstPet.id}`, re.d1_entry_cta),
             unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
-            locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
+            locale === "en" ? "A few more moments before the first chapter." : "Encore quelques moments avant le premier chapitre.",
           );
         }
       }
@@ -291,7 +291,7 @@ export async function GET(req: Request) {
           ) +
           btn(`https://everypaw.app/dashboard/pets/${storyPet.id}?tab=stories`, re.d7_story_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
-          locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
+          locale === "en" ? "Your first chapter is waiting in the journal." : "Votre premier chapitre vous attend dans le journal.",
         );
       } else {
         // Best entry with photo
@@ -339,7 +339,7 @@ export async function GET(req: Request) {
           p(re.d7_no_story_body) +
           btn(`https://everypaw.app/dashboard/pets/${entryPet.id}`, re.d7_no_story_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
-          locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
+          locale === "en" ? "A week of memories, and more to write." : "Une semaine de souvenirs, et la suite à écrire.",
         );
       }
 
@@ -452,7 +452,7 @@ export async function GET(req: Request) {
           ) +
           btn("https://everypaw.app/dashboard/settings", re.d30_free_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
-          locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
+          locale === "en" ? "A month of journal, and a book taking shape." : "Un mois de journal, et un livre qui se dessine.",
         );
       } else {
         // Paid user, pages estimate + upcoming chapter date
@@ -486,7 +486,7 @@ export async function GET(req: Request) {
           ) +
           btn(`https://everypaw.app/dashboard/pets/${firstPet.id}`, re.d30_paid_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
-          locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
+          locale === "en" ? "The first automatic chapter is coming." : "Le premier chapitre automatique arrive bientôt.",
         );
       }
 
