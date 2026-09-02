@@ -88,7 +88,7 @@ export default function ConfirmStep({
           </button>
           <p style={{ fontSize: ".78rem", color: textMuted, fontWeight: 300, margin: "1rem 0 0" }}>
             {locale === "fr"
-              ? "Le problème persiste ? Écris-nous depuis Réglages, ta commande sera honorée."
+              ? "Le problème persiste ? Écrivez-nous depuis Réglages, votre commande sera honorée."
               : "Still stuck? Contact us from Settings, your order will be honored."}
           </p>
         </div>

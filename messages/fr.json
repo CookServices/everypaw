@@ -140,7 +140,7 @@
     "email": "Email",
     "password": "Mot de passe",
     "confirm_link_invalid": "Ce lien n'est plus valide. Si vous avez déjà confirmé votre email, connectez-vous. Sinon, demandez un nouveau lien de confirmation.",
-    "session_exchange_failed": "Ton compte est prêt. Réessaie de te connecter."
+    "session_exchange_failed": "Votre compte est prêt. Réessayez de vous connecter."
   },
   "pet": {
     "species": "Espèce",
@@ -489,7 +489,7 @@
     "step3_done": "Première histoire générée ✓",
     "origins_title": "Racontons les débuts de {petName}",
     "origins_desc": "Répondez à quelques questions et notre IA écrira le premier chapitre de {petName}, l'histoire de ses débuts.",
-    "origins_q1": "Comment {petName} est-il/elle arrivé(e) dans ta vie ?",
+    "origins_q1": "Comment {petName} est-il/elle arrivé(e) dans votre vie ?",
     "origins_q1_placeholder": "Je l'ai trouvé(e) dans un refuge un dimanche matin, le plus petit de la portée...",
     "origins_q1_required": "Merci de répondre à cette première question",
     "origins_q1_min": "Au moins 20 caractères requis",
@@ -599,7 +599,7 @@
     "title_memorial": "Le livre souvenir de {petName}",
     "pages_status": "{pages} pages · {chapters} chapitres · Chapitre de {month} en cours",
     "progress_incomplete": "Encore {remaining} pages pour compléter le livre",
-    "progress_ready": "Ton livre est prêt à être imprimé ✨",
+    "progress_ready": "Votre livre est prêt à être imprimé ✨",
     "cta_print": "Voir mon livre",
     "cta_digital": "Imprimer ce livre",
     "cta_free_prefix": "Inclus avec",
@@ -610,7 +610,7 @@
   "members": {
     "tab": "Foyer",
     "title": "Membres du foyer",
-    "subtitle": "Invite ton partenaire ou ta famille à contribuer à ce journal.",
+    "subtitle": "Invitez votre partenaire ou votre famille à contribuer à ce journal.",
     "invite_label": "Inviter par email",
     "invite_placeholder": "partenaire@exemple.com",
     "invite_cta": "Envoyer l'invitation",
@@ -618,9 +618,9 @@
     "invite_success": "Invitation envoyée !",
     "invite_resent": "Invitation renvoyée.",
     "error_invalid_email": "Adresse email invalide.",
-    "error_cannot_invite_self": "Tu ne peux pas t'inviter toi-même.",
+    "error_cannot_invite_self": "Vous ne pouvez pas vous inviter vous-même.",
     "error_already_member": "Cette personne est déjà membre.",
-    "error_member_limit": "Tu as atteint la limite de 5 membres.",
+    "error_member_limit": "Vous avez atteint la limite de 5 membres.",
     "error_upgrade_required": "Inviter des membres est disponible avec les plans Digital et Print.",
     "error_generic": "Une erreur est survenue. Réessaie.",
     "status_pending": "En attente",
@@ -630,7 +630,7 @@
     "revoke_no": "Annuler",
     "empty": "Aucun membre pour l'instant. Invite quelqu'un pour collaborer.",
     "upgrade_title": "Partage ce journal",
-    "upgrade_desc": "Passe au plan Digital ou Print pour inviter ta famille et/ou tes ami(e)s à contribuer à ce journal.",
+    "upgrade_desc": "Passez au plan Digital ou Print pour inviter votre famille ou vos ami(e)s à contribuer à ce journal.",
     "upgrade_cta": "Passer à Premium",
     "added_by": "Ajouté par {name}",
     "max_members": "5 membres max par animal"
