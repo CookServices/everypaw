@@ -4,15 +4,12 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Pet, Entry, Story } from "@/types";
-import Link from "next/link";
 import { detectMilestones, MILESTONE_TYPES, translateMilestone, MilestoneDefinition } from "@/lib/milestones";
 import { useLocale } from "@/hooks/useLocale";
-import { fmtDateOrdinal } from "@/lib/date";
 import { evaluateFirstStoryNudge } from "@/lib/story";
 import type { Plan } from "@/lib/plan";
 import { compressImage } from "@/lib/image";
-import { MOOD_OPTIONS, EMOJI_CATEGORIES, ALL_EMOJIS } from "./constants";
-import { groupEntriesByMonth } from "./utils";
+import { useEntryComposer } from "./useEntryComposer";
 import MemorialModal from "./components/MemorialModal";
 import UpsellModal from "./components/UpsellModal";
 import ShareCardModal from "./components/ShareCardModal";
@@ -22,6 +19,7 @@ import GenerateStoryModal from "./components/GenerateStoryModal";
 import Lightbox from "./components/Lightbox";
 import PetHeader from "./components/PetHeader";
 import TabBar from "./components/TabBar";
+import JournalTab from "./components/JournalTab";
 import StoriesTab from "./components/StoriesTab";
 import MilestonesTab from "./components/MilestonesTab";
 import TributesTab from "./components/TributesTab";
@@ -46,18 +44,14 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [stories, setStories] = useState<Story[]>([]);
   const [milestones, setMilestones] = useState<{ id: string; type: string; title: string; achieved_at: string }[]>([]);
-  const [newEntry, setNewEntry] = useState("");
-  const [mood, setMood] = useState<string | null>(null);
-  const [entryDate, setEntryDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const composer = useEntryComposer(id);
   const [filterYear, setFilterYear] = useState<string | null>(null);
   const [filterMonth, setFilterMonth] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [entryError, setEntryError] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatingMsgIdx, setGeneratingMsgIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
-  const [pendingPhotos, setPendingPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [newMilestone, setNewMilestone] = useState<{ type: string; title: string } | null>(null);
   const [milestoneDefinitions, setMilestoneDefinitions] = useState<MilestoneDefinition[]>([]);
@@ -88,7 +82,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [tributesLoaded, setTributesLoaded] = useState(false);
   const [tributesError, setTributesError] = useState(false);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
-  const [entryMenuId, setEntryMenuId] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [editContent, setEditContent] = useState("");
   const [editMood, setEditMood] = useState<string | null>(null);
@@ -105,32 +98,23 @@ export default function PetPage({ params }: { params: { id: string } }) {
   const [memberProfiles, setMemberProfiles] = useState<Record<string, string>>({});
   const [editPhotos, setEditPhotos] = useState<string[]>([]);
   const [editPendingPhotos, setEditPendingPhotos] = useState<{ file: File; preview: string }[]>([]);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [textareaFocused, setTextareaFocused] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [storyStyle, setStoryStyle] = useState<string | null>(null);
   const [genPeriodStart, setGenPeriodStart] = useState("");
   const [genPeriodEnd, setGenPeriodEnd] = useState("");
   const [showEditEmojiPicker, setShowEditEmojiPicker] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
   const memorialPhotoInputRef = useRef<HTMLInputElement>(null);
   const kebabRef = useRef<HTMLDivElement>(null);
-  const entryMenuRef = useRef<HTMLDivElement>(null);
-  const emojiPickerRef = useRef<HTMLDivElement>(null);
   const editEmojiPickerRef = useRef<HTMLDivElement>(null);
 
+  // The composer's emoji picker and the per-entry menu close themselves, in
+  // useEntryComposer and JournalTab respectively.
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (kebabRef.current && !kebabRef.current.contains(e.target as Node)) {
         setShowKebabMenu(false);
         setShowDeleteConfirm(false);
-      }
-      if (entryMenuRef.current && !entryMenuRef.current.contains(e.target as Node)) {
-        setEntryMenuId(null);
-      }
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) {
-        setShowEmojiPicker(false);
       }
       if (editEmojiPickerRef.current && !editEmojiPickerRef.current.contains(e.target as Node)) {
         setShowEditEmojiPicker(false);
@@ -263,52 +247,22 @@ export default function PetPage({ params }: { params: { id: string } }) {
     load();
   }, [tab, tributesLoaded, pet, id]);
 
-  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const remaining = 5 - pendingPhotos.length;
-    const selected = files.slice(0, remaining);
-    const newPhotos = selected.map(file => ({ file, preview: URL.createObjectURL(file) }));
-    setPendingPhotos(prev => [...prev, ...newPhotos]);
-  };
-
-  const removePhoto = (index: number) => {
-    setPendingPhotos(prev => {
-      URL.revokeObjectURL(prev[index].preview);
-      return prev.filter((_, i) => i !== index);
-    });
-  };
-
-  const uploadPhotos = async (userId: string): Promise<string[]> => {
-    const supabase = createClient();
-    const urls: string[] = [];
-    for (const { file } of pendingPhotos) {
-      const compressed = await compressImage(file);
-      const filename = `${userId}/${id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-      const { error } = await supabase.storage.from("pet-photos").upload(filename, compressed, { contentType: "image/jpeg" });
-      if (!error) {
-        const { data } = supabase.storage.from("pet-photos").getPublicUrl(filename);
-        urls.push(data.publicUrl);
-      }
-    }
-    return urls;
-  };
-
   const addEntry = async () => {
-    if (!newEntry.trim() && pendingPhotos.length === 0) {
-      setEntryError(true);
+    if (composer.isEmpty) {
+      composer.setError(true);
       return;
     }
     setSaving(true);
-    setUploadingPhotos(pendingPhotos.length > 0);
+    setUploadingPhotos(composer.photos.length > 0);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     let photoUrls: string[] = [];
-    if (pendingPhotos.length > 0) photoUrls = await uploadPhotos(user!.id);
+    if (composer.photos.length > 0) photoUrls = await composer.uploadPhotos(user!.id);
 
     const { data, error: insertErr } = await supabase.from("entries").insert({
       pet_id: id, user_id: user!.id,
-      content: newEntry.trim() || " ", mood, photo_urls: photoUrls,
-      entry_date: entryDate,
+      content: composer.text.trim() || " ", mood: composer.mood, photo_urls: photoUrls,
+      entry_date: composer.date,
     }).select().single();
 
     // Free-plan cap enforced by DB trigger (enforce_free_entry_limit): show upsell.
@@ -334,7 +288,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
       }
 
       const existingMilestoneTypes = milestones.map(m => m.type);
-      const detected = detectMilestones({ content: newEntry }, entries, existingMilestoneTypes, milestoneDefinitions);
+      const detected = detectMilestones({ content: composer.text }, entries, existingMilestoneTypes, milestoneDefinitions);
 
       for (const milestone of detected) {
         const { data: savedMilestone } = await supabase.from("milestones").insert({
@@ -350,11 +304,9 @@ export default function PetPage({ params }: { params: { id: string } }) {
       }
     }
 
-    setNewEntry("");
-    setPendingPhotos([]);
+    composer.reset();
     setUploadingPhotos(false);
     setSaving(false);
-    setEntryDate(new Date().toISOString().split("T")[0]);
   };
 
   const generateStory = async () => {
@@ -616,17 +568,6 @@ export default function PetPage({ params }: { params: { id: string } }) {
     setLoadingMore(false);
   };
 
-  const availableYears = Array.from(new Set(allEntryDates.map(d => d.slice(0, 4)))).sort().reverse();
-  const MONTHS = Array.from({ length: 12 }, (_, i) => ({
-    value: String(i + 1).padStart(2, "0"),
-    label: new Date(2000, i, 1).toLocaleDateString(dateLocale, { month: "long" }).replace(/^./, s => s.toUpperCase()),
-  }));
-  const filteredEntries = entries.filter(e => {
-    if (filterYear && e.entry_date.slice(0, 4) !== filterYear) return false;
-    if (filterMonth && e.entry_date.slice(5, 7) !== filterMonth) return false;
-    return true;
-  });
-  const groupedEntries = groupEntriesByMonth(filteredEntries, locale);
   const isFR = locale === "fr";
 
   // Total milestone count = defined (from DB or fallback) + orphans not in definitions
@@ -749,237 +690,25 @@ export default function PetPage({ params }: { params: { id: string } }) {
         <TabBar tabs={tabs} activeTab={tab} petId={id} />
 
         {tab === "journal" && (
-          <>
-            {/* Mo17, monthly progress pill */}
-            {(() => {
-              const now = new Date();
-              const monthPrefix = now.toISOString().slice(0, 7);
-              const thisMonthCount = entries.filter(e => e.entry_date?.slice(0, 7) === monthPrefix).length;
-              const firstOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-              const daysUntil = Math.ceil((firstOfNextMonth.getTime() - now.getTime()) / 864e5);
-              const hasThisMonthStory = stories.some(s => s.created_at?.slice(0, 7) === monthPrefix);
-              let progressLabel: string;
-              if (hasThisMonthStory) {
-                progressLabel = t.journal.month_progress_done.replace("{count}", String(thisMonthCount));
-              } else if (daysUntil <= 0) {
-                progressLabel = t.journal.month_progress_soon.replace("{count}", String(thisMonthCount));
-              } else if (daysUntil === 1) {
-                progressLabel = t.journal.month_progress_tomorrow.replace("{count}", String(thisMonthCount));
-              } else {
-                progressLabel = t.journal.month_progress_days.replace("{count}", String(thisMonthCount)).replace("{days}", String(daysUntil));
-              }
-              return (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", background: hasThisMonthStory ? "rgba(107,123,94,.1)" : "rgba(200,129,58,.08)", borderRadius: 100, padding: ".3rem .75rem", marginBottom: "1rem", border: `1px solid ${hasThisMonthStory ? "rgba(107,123,94,.25)" : "rgba(200,129,58,.2)"}` }}>
-                  <span style={{ fontSize: ".75rem", color: hasThisMonthStory ? "#6B7B5E" : "var(--ep-brand)", fontWeight: 500 }}>
-                    {progressLabel}
-                  </span>
-                </div>
-              );
-            })()}
-
-            {/* Date filter dropdowns */}
-            {availableYears.length >= 1 && (
-              <div style={{ display: "flex", gap: ".5rem", marginBottom: "1.25rem" }}>
-                <select
-                  value={filterYear ?? ""}
-                  onChange={e => { setFilterYear(e.target.value || null); setFilterMonth(null); }}
-                  style={{ flex: "0 0 auto", height: 36, padding: "0 .625rem", borderRadius: 8, border: "1.5px solid #D4C5B0", background: "var(--ep-bg)", color: "var(--ep-text)", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", outline: "none" }}
-                >
-                  <option value="">{isFR ? "Toutes les années" : "All years"}</option>
-                  {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
-                </select>
-                <select
-                  value={filterMonth ?? ""}
-                  onChange={e => setFilterMonth(e.target.value || null)}
-                  style={{ flex: "0 0 auto", height: 36, padding: "0 .625rem", borderRadius: 8, border: "1.5px solid #D4C5B0", background: "var(--ep-bg)", color: "var(--ep-text)", fontFamily: "inherit", fontSize: ".875rem", cursor: "pointer", outline: "none" }}
-                >
-                  <option value="">{isFR ? "Tous les mois" : "All months"}</option>
-                  {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                </select>
-              </div>
-            )}
-
-            {userPlan === "free" && allEntryDates.length >= 5 && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".5rem", background: allEntryDates.length >= 9 ? "var(--ep-brand)" : "#FFF3E0", border: `1px solid ${allEntryDates.length >= 9 ? "var(--ep-brand)" : "#F7C27A"}`, borderRadius: 8, padding: "8px 12px", marginBottom: "1rem" }}>
-                <span style={{ fontSize: "13px", color: allEntryDates.length >= 9 ? "#fff" : "var(--ep-text-muted)", fontWeight: 400 }}>
-                  {t.journal.entry_counter.replace("{count}", String(allEntryDates.length))}
-                </span>
-                <Link href="/dashboard/settings" style={{ fontSize: "13px", color: allEntryDates.length >= 9 ? "#fff" : "var(--ep-brand)", fontWeight: 500, textDecoration: "none" }}>
-                  {t.journal.upgrade_unlimited}
-                </Link>
-              </div>
-            )}
-
-            <div style={{ background: "var(--ep-bg-card)", borderRadius: 20, padding: "1.25rem", marginBottom: "1.5rem", border: "1px solid rgba(61,43,31,.08)" }}>
-              <textarea
-                value={newEntry}
-                onChange={e => { setNewEntry(e.target.value); if (e.target.value.trim()) setEntryError(false); }}
-                onFocus={() => setTextareaFocused(true)}
-                onBlur={() => setTextareaFocused(false)}
-                placeholder={t.journal.placeholder.replace("{name}", pet.name)}
-                rows={3}
-                maxLength={1000}
-                style={{ width: "100%", border: entryError ? "1.5px solid var(--ep-alert)" : "none", background: entryError ? "rgba(163,45,45,.04)" : "transparent", borderRadius: entryError ? 8 : 0, fontFamily: "inherit", fontSize: ".95rem", color: "var(--ep-text)", outline: "none", resize: "none", lineHeight: 1.6, boxSizing: "border-box", padding: entryError ? ".5rem" : 0, transition: "border-color .15s" }}
-              />
-              {entryError && (
-                <p style={{ fontSize: ".8rem", color: "var(--ep-alert)", margin: ".25rem 0 0", lineHeight: 1.4 }}>
-                  {t.journal.entry_required}
-                </p>
-              )}
-              {(textareaFocused || newEntry.length > 0) && (
-                <p style={{ fontSize: ".72rem", textAlign: "right", margin: ".2rem 0 0", color: newEntry.length > 950 ? "var(--ep-alert)" : newEntry.length > 800 ? "var(--ep-brand)" : "var(--ep-text-faint)" }}>
-                  {newEntry.length} / 1000
-                </p>
-              )}
-              {pendingPhotos.length > 0 && (
-                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", margin: ".75rem 0" }}>
-                  {pendingPhotos.map((photo, i) => (
-                    <div key={i} style={{ position: "relative", width: 72, height: 72 }}>
-                      <img src={photo.preview} alt="" style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 10 }} />
-                      <button onClick={() => removePhoto(i)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "var(--ep-text)", color: "var(--ep-bg-card)", border: "none", cursor: "pointer", fontSize: "11px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset", padding: 0 }}>×</button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: ".75rem", flexWrap: "wrap", gap: ".5rem" }}>
-                <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
-                  <div ref={emojiPickerRef} style={{ position: "relative" }}>
-                    <div style={{ position: "relative", display: "inline-block" }}>
-                      <button onClick={() => setShowEmojiPicker(v => !v)}
-                        style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${mood ? "var(--ep-brand)" : "rgba(61,43,31,.2)"}`, background: mood ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "unset" }}
-                        title={isFR ? "Ajouter une émoticône" : "Add an emoji"}>
-                        {mood ? (ALL_EMOJIS.find(e => e.value === mood)?.emoji ?? "😊") : "😊"}
-                      </button>
-                      {mood && (
-                        <button onClick={e => { e.stopPropagation(); setMood(null); }}
-                          style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: "50%", background: "rgba(61,43,31,.25)", color: "var(--ep-text)", border: "none", cursor: "pointer", fontSize: "9px", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, padding: 0, fontWeight: 700, minHeight: "unset" }}>
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                    {showEmojiPicker && (
-                      <div style={{ position: "absolute", top: "calc(100% + .5rem)", left: 0, background: "var(--ep-bg-card)", border: "1px solid rgba(61,43,31,.1)", borderRadius: 16, boxShadow: "0 8px 30px rgba(61,43,31,.15)", padding: "1rem", zIndex: 60, width: 280, maxHeight: 340, overflowY: "auto" }}>
-                        {EMOJI_CATEGORIES.map(cat => (
-                          <div key={cat.label} style={{ marginBottom: ".75rem" }}>
-                            <p style={{ fontSize: ".65rem", fontWeight: 600, color: "var(--ep-text-faint)", margin: "0 0 .4rem" }}>{cat.label}</p>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: ".2rem" }}>
-                              {cat.emojis.map(e => (
-                                <button key={e.value} onClick={() => { setMood(mood === e.value ? null : e.value); setShowEmojiPicker(false); }}
-                                  title={e.label}
-                                  style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${mood === e.value ? "var(--ep-brand)" : "transparent"}`, background: mood === e.value ? "rgba(200,129,58,.1)" : "transparent", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                  {e.emoji}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {pendingPhotos.length < 5 && (
-                    <button onClick={() => fileInputRef.current?.click()} style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(61,43,31,.2)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--ep-text-muted)" }} title="Add photos">
-                      📷
-                    </button>
-                  )}
-                  <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handlePhotoSelect} style={{ display: "none" }} />
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
-                  <input
-                    type="date"
-                    value={entryDate}
-                    min={pet?.birthdate ?? undefined}
-                    max={new Date().toISOString().split("T")[0]}
-                    onChange={e => setEntryDate(e.target.value)}
-                    style={{ height: 32, padding: "0 .5rem", borderRadius: 8, border: `1.5px solid ${entryDate !== new Date().toISOString().split("T")[0] ? "var(--ep-brand)" : "rgba(61,43,31,.2)"}`, background: entryDate !== new Date().toISOString().split("T")[0] ? "rgba(200,129,58,.08)" : "transparent", fontFamily: "inherit", fontSize: ".78rem", color: "var(--ep-text)", outline: "none", cursor: "pointer" }}
-                  />
-                  <button onClick={addEntry} disabled={saving || (!newEntry.trim() && pendingPhotos.length === 0)} style={{ padding: ".5rem 1.25rem", borderRadius: 100, border: "none", background: "var(--ep-brand)", color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".85rem", fontWeight: 500, cursor: "pointer", opacity: saving || (!newEntry.trim() && pendingPhotos.length === 0) ? .5 : 1 }}>
-                    {uploadingPhotos ? t.journal.uploading : saving ? t.journal.saving : t.journal.add_moment}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {(() => {
-              const generatingMessages = pet ? [
-                t.journal.generating_1.replace("{name}", pet.name),
-                t.journal.generating_2,
-                t.journal.generating_3,
-              ] : [t.journal.generating, t.journal.generating_2, t.journal.generating_3];
-              return (
-                <button onClick={() => { if (entries.length >= 3) { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); } }} disabled={generating || entries.length < 3} style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "var(--ep-brand)", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", marginBottom: "1.5rem", opacity: entries.length < 3 ? .5 : 1 }}>
-                  {generating ? generatingMessages[generatingMsgIdx] : t.journal.generate_story.replace("{name}", pet.name)}
-                  {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>{t.journal.add_more.replace("{count}", String(3 - entries.length)).replace("{entries}", 3 - entries.length === 1 ? t.journal.entry : t.journal.entries)}</span>}
-                </button>
-              );
-            })()}
-
-            {filteredEntries.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--ep-text-muted)", fontSize: ".9rem" }}>
-                <img src="/illustrations/paw.svg" alt="" aria-hidden style={{ width: 52, display: "block", margin: "0 auto 1rem", opacity: .9 }} />
-                {(filterYear || filterMonth) ? (isFR ? "Aucune entrée pour cette période." : "No entries for this period.") : t.journal.no_entries}
-              </div>
-            ) : groupedEntries.map(group => (
-              <div key={group.month} style={{ marginBottom: "2rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
-                  <span style={{ fontFamily: "Georgia, serif", fontSize: ".9rem", fontWeight: 600, color: "var(--ep-text-muted)" }}>{group.month}</span>
-                  <div style={{ flex: 1, height: "0.5px", background: "rgba(61,43,31,.1)" }} />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-                  {group.entries.map(entry => (
-                    <div key={entry.id} style={{ background: "var(--ep-bg-card)", borderRadius: 16, border: "1px solid rgba(61,43,31,.06)" }}>
-                      <div style={{ padding: ".875rem 1rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: entry.content.trim() ? ".5rem" : 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
-                            <span style={{ fontSize: ".75rem", color: "var(--ep-text-muted)", fontWeight: 300 }}>
-                              {fmtDateOrdinal(new Date(entry.entry_date), isFR, { weekday: "short", month: "short" })}
-                            </span>
-                            {entry.mood && <span style={{ fontSize: ".9rem" }}>{ALL_EMOJIS.find(m => m.value === entry.mood)?.emoji ?? MOOD_OPTIONS.find(m => m.value === entry.mood)?.emoji}</span>}
-                            {currentUserId && entry.user_id !== currentUserId && (
-                              <span style={{ fontSize: ".7rem", color: "var(--ep-text-faint)", background: "rgba(61,43,31,.06)", borderRadius: 100, padding: "1px 7px" }}>
-                                {t.members.added_by.replace("{name}", memberProfiles[entry.user_id] ?? (isFR ? "Membre" : "Member"))}
-                              </span>
-                            )}
-                          </div>
-                          <div ref={entryMenuId === entry.id ? entryMenuRef : null} style={{ position: "relative" }}>
-                            <button onClick={() => setEntryMenuId(entryMenuId === entry.id ? null : entry.id)}
-                              style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(61,43,31,.12)", background: "transparent", cursor: "pointer", fontSize: ".9rem", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--ep-text-muted)", fontFamily: "inherit", lineHeight: 1, minHeight: "unset", flexShrink: 0 }}>···</button>
-                            {entryMenuId === entry.id && !deletingEntryId && (
-                              <div style={{ position: "absolute", top: "calc(100% + .3rem)", right: 0, background: "var(--ep-bg-card)", border: "1px solid rgba(61,43,31,.1)", borderRadius: 10, boxShadow: "0 4px 16px rgba(61,43,31,.12)", minWidth: 140, zIndex: 30 }}>
-                                <button onClick={() => { setEditingEntry(entry); setEditContent(entry.content.trim()); setEditMood(entry.mood ?? null); setEditPhotos(entry.photo_urls ?? []); setEditPendingPhotos([]); setEntryMenuId(null); }}
-                                  style={{ display: "block", width: "100%", padding: ".625rem .875rem", fontSize: ".8rem", color: "var(--ep-text)", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
-                                  {isFR ? "Modifier" : "Edit"}
-                                </button>
-                                <button onClick={() => { setDeletingEntryId(entry.id); setEntryMenuId(null); }}
-                                  style={{ display: "block", width: "100%", padding: ".625rem .875rem", fontSize: ".8rem", color: "var(--ep-alert)", background: "none", border: "none", borderTop: "1px solid rgba(61,43,31,.06)", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
-                                  {isFR ? "Supprimer" : "Delete"}
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {entry.content.trim() && <p style={{ fontSize: ".9rem", color: "var(--ep-text)", lineHeight: 1.65, margin: 0 }}>{entry.content}</p>}
-                      </div>
-                      {entry.photo_urls && entry.photo_urls.length > 0 && (
-                        <div style={{ display: "grid", gridTemplateColumns: entry.photo_urls.length === 1 ? "1fr" : entry.photo_urls.length === 2 ? "1fr 1fr" : "1fr 1fr 1fr", gap: "2px", borderRadius: "0 0 14px 14px", overflow: "hidden" }}>
-                          {entry.photo_urls.slice(0, 3).map((url: string, i: number) => (
-                            <div key={i} style={{ position: "relative" }}>
-                              <img src={url} alt="" onClick={() => setLightboxUrl(url)}
-                                style={{ width: "100%", height: entry.photo_urls.length === 1 ? 280 : 160, objectFit: "cover", display: "block", cursor: "pointer" }} />
-                              {i === 2 && entry.photo_urls.length > 3 && (
-                                <div onClick={() => setLightboxUrl(entry.photo_urls[2])} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                                  <span style={{ color: "#fff", fontSize: "1.25rem", fontWeight: 500 }}>+{entry.photo_urls.length - 3}</span>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </>
+          <JournalTab
+            t={t} isFR={isFR} locale={locale} dateLocale={dateLocale} pet={pet}
+            entries={entries} allEntryDates={allEntryDates} stories={stories} userPlan={userPlan}
+            currentUserId={currentUserId} memberProfiles={memberProfiles}
+            composer={composer} saving={saving} uploadingPhotos={uploadingPhotos} onAddEntry={addEntry}
+            generating={generating} generatingMsgIdx={generatingMsgIdx}
+            onOpenGenerateModal={() => { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); }}
+            filterYear={filterYear} setFilterYear={setFilterYear}
+            filterMonth={filterMonth} setFilterMonth={setFilterMonth}
+            deletingEntryId={deletingEntryId} setDeletingEntryId={setDeletingEntryId}
+            onEditEntry={entry => {
+              setEditingEntry(entry);
+              setEditContent(entry.content.trim());
+              setEditMood(entry.mood ?? null);
+              setEditPhotos(entry.photo_urls ?? []);
+              setEditPendingPhotos([]);
+            }}
+            onOpenLightbox={setLightboxUrl}
+          />
         )}
 
         {tab === "stories" && (
