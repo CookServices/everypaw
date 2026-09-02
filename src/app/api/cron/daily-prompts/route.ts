@@ -154,7 +154,7 @@ export async function GET(req: Request) {
       : "https://everypaw.app/dashboard";
 
     const subject = isFR
-      ? `✍️ Prompt du jour pour ${petName}`
+      ? `✍️ L'idée du jour pour ${petName}`
       : `✍️ Today's writing prompt for ${petName}`;
 
     const html = baseLayout(
@@ -163,7 +163,7 @@ export async function GET(req: Request) {
         photoAlt: pet.name,
         illustration: "paw",
         emoji: "✍️",
-        heading: isFR ? "Prompt du jour" : "Today's prompt",
+        heading: isFR ? "L'idée du jour" : "Today's prompt",
       }) +
       quote(escapeHtml(prompt)) +
       divider() +
