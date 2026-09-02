@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const { error: resendError } = await sendEmail({
       from: "Everypaw <noreply@everypaw.app>",
       to: "julien.mauduit@gmail.com",
-      reply_to: userEmail !== "unknown" ? userEmail : undefined,
+      replyTo: userEmail !== "unknown" ? userEmail : undefined,
       subject: "💡 Nouvelle suggestion Everypaw",
       html: baseLayout(
         heroSection("💡", "Nouvelle suggestion Everypaw") +

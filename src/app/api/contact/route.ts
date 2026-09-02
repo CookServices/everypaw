@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     await sendEmail({
       from: "Everypaw Contact <noreply@everypaw.app>",
       to,
-      reply_to: email,
+      replyTo: email,
       subject: `[Contact] ${escapeHtml(subject!)}`,
       html: baseLayout(
         heroSection("💬", escapeHtml(subject!)) +
