@@ -4,7 +4,7 @@ import { sendEmail } from "@/lib/resend";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { escapeHtml } from "@/lib/html";
-import { baseLayout, emoji, heading, paragraph, quote, codeBox, ctaButton, finePrint, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
+import { baseLayout, hero, emoji, heading, paragraph, quote, codeBox, ctaButton, finePrint, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 
 const copy = {
   fr: {
@@ -42,7 +42,7 @@ function buildEmailHtml({
 }): string {
   const c = copy[locale] ?? copy.en;
   return baseLayout(
-    heroSection("🎁", c.heading) +
+    hero({ illustration: "bone", emoji: "🎁", heading: c.heading }) +
     paragraph(c.body(escapeHtml(senderName))) +
     (message ? quote(`"${escapeHtml(message)}"`) : "") +
     divider() +

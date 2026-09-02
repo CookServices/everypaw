@@ -4,7 +4,7 @@ import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
-import { baseLayout, heading, paragraph, ctaButton, heroSection, quote, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
+import { baseLayout, hero, heading, paragraph, ctaButton, heroSection, quote, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
 import { estimateBookPages } from "@/lib/book";
 import { getTranslations } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
@@ -90,7 +90,7 @@ export async function GET(req: Request) {
     // Fetch pets (alive first)
     const { data: pets } = await supabase
       .from("pets")
-      .select("id, name, deceased_at")
+      .select("id, name, deceased_at, photo_url")
       .eq("user_id", profile.id)
       .order("created_at", { ascending: true });
 
@@ -113,7 +113,7 @@ export async function GET(req: Request) {
         // No pet yet, encourage creation
         subject = re.d1_subject_no_pet;
         body = wrap(
-          heroSection("🐾", re.d1_no_pet_title) +
+          hero({ illustration: "paw", emoji: "🐾", heading: re.d1_no_pet_title }) +
           p(re.d1_no_pet_body) +
           divider() +
           colorSection(
@@ -141,7 +141,13 @@ export async function GET(req: Request) {
         if (ec === 0) {
           subject = re.d1_subject_no_entry.replace("{petName}", firstPet.name);
           body = wrap(
-            heroSection("🐾", re.d1_no_entry_title) +
+            hero({
+              photoUrl: firstPet.photo_url,
+              photoAlt: firstPet.name,
+              illustration: "paw",
+              emoji: "🐾",
+              heading: re.d1_no_entry_title,
+            }) +
             p(re.d1_no_entry_body) +
             divider() +
             colorSection(
@@ -161,7 +167,13 @@ export async function GET(req: Request) {
             .replace("{remaining}", String(remaining))
             .replace("{petName}", firstPet.name);
           body = wrap(
-            heroSection("🐾", re.d1_entry_title.replace("{remaining}", String(remaining))) +
+            hero({
+              photoUrl: firstPet.photo_url,
+              photoAlt: firstPet.name,
+              illustration: "paw",
+              emoji: "🐾",
+              heading: re.d1_entry_title.replace("{remaining}", String(remaining)),
+            }) +
             p(re.d1_entry_body + ", " + petNameSafe) +
             divider() +
             colorSection(
@@ -222,7 +234,7 @@ export async function GET(req: Request) {
 
     const { data: pets } = await supabase
       .from("pets")
-      .select("id, name, deceased_at")
+      .select("id, name, deceased_at, photo_url")
       .eq("user_id", profile.id)
       .order("created_at", { ascending: true });
 
@@ -260,7 +272,13 @@ export async function GET(req: Request) {
 
         subject = re.d7_story_subject.replace("{petName}", storyPet.name);
         body = wrap(
-          heroSection("📖", re.d7_story_title) +
+          hero({
+              photoUrl: firstPet.photo_url,
+              photoAlt: firstPet.name,
+              illustration: "book",
+              emoji: "📖",
+              heading: re.d7_story_title,
+            }) +
           `<h2 style="font-family:Georgia,serif;font-size:18px;font-weight:600;color:${BRAND.text};margin:0 0 8px;">${titleSafe}</h2>` +
           quote(excerpt) +
           divider() +
@@ -301,7 +319,13 @@ export async function GET(req: Request) {
           : "";
 
         body = wrap(
-          heroSection("🌿", re.d7_no_story_title) +
+          hero({
+              photoUrl: firstPet.photo_url,
+              photoAlt: firstPet.name,
+              illustration: "plant",
+              emoji: "🌿",
+              heading: re.d7_no_story_title,
+            }) +
           photoImg +
           entryText +
           (entryText ? divider() : "") +
@@ -363,7 +387,7 @@ export async function GET(req: Request) {
 
     const { data: pets } = await supabase
       .from("pets")
-      .select("id, name, deceased_at")
+      .select("id, name, deceased_at, photo_url")
       .eq("user_id", profile.id)
       .order("created_at", { ascending: true });
 
@@ -405,7 +429,13 @@ export async function GET(req: Request) {
 
         subject = re.d30_free_subject.replace("{petName}", firstPet.name);
         body = wrap(
-          heroSection("📚", re.d30_free_title.replace("{petName}", firstPet.name)) +
+          hero({
+              photoUrl: firstPet.photo_url,
+              photoAlt: firstPet.name,
+              illustration: "book",
+              emoji: "📚",
+              heading: re.d30_free_title.replace("{petName}", firstPet.name),
+            }) +
           p(
             re.d30_free_body
               .replace("{entries}", String(ec))
@@ -434,7 +464,13 @@ export async function GET(req: Request) {
 
         subject = re.d30_paid_subject.replace("{date}", nextDate);
         body = wrap(
-          heroSection("✨", re.d30_paid_title) +
+          hero({
+              photoUrl: firstPet.photo_url,
+              photoAlt: firstPet.name,
+              illustration: "star",
+              emoji: "✨",
+              heading: re.d30_paid_title,
+            }) +
           p(
             re.d30_paid_body
               .replace("{petName}", firstPet.name)

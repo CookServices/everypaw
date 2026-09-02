@@ -4,7 +4,7 @@ import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
 import { getWeeklyQuestion, currentISOWeekBounds } from "@/lib/interview";
-import { baseLayout, emoji, eyebrow, quote, ctaButton, paragraph, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
+import { baseLayout, hero, emoji, eyebrow, quote, ctaButton, paragraph, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 
     const { data: pets } = await supabase
       .from("pets")
-      .select("id, name, species")
+      .select("id, name, species, photo_url")
       .eq("user_id", profile.id)
       .is("deceased_at", null)
       .order("name", { ascending: true });
@@ -73,7 +73,13 @@ export async function GET(req: Request) {
     const unsubLabel = isFrench ? "Se désabonner des rappels hebdomadaires" : "Unsubscribe from weekly reminders";
 
     const html = baseLayout(
-      heroSection("✍️", isFrench ? "Question de la semaine" : "Question of the week") +
+      hero({
+        photoUrl: firstPet.photo_url,
+        photoAlt: petName,
+        illustration: "paw",
+        emoji: "✍️",
+        heading: isFrench ? "Question de la semaine" : "Question of the week",
+      }) +
       quote(questionHtml) +
       divider() +
       colorSection(

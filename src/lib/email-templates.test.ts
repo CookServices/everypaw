@@ -6,7 +6,7 @@
  * collapsed there. A unit is not something a smoke test catches.
  */
 import { describe, it, expect } from "vitest";
-import { baseLayout, preheader, oneClickUnsubscribeUrl, heading, paragraph, ctaButton } from "./email-templates";
+import { baseLayout, preheader, oneClickUnsubscribeUrl, heading, paragraph, ctaButton, hero } from "./email-templates";
 import { htmlToText } from "./email-text";
 
 describe("baseLayout", () => {
@@ -32,6 +32,36 @@ describe("baseLayout", () => {
   it("renders the preview line only when one is given", () => {
     expect(baseLayout("<p>x</p>", "", "fr", "Aperçu")).toContain("Aperçu");
     expect(baseLayout("<p>x</p>")).not.toContain("display:none;font-size:1px");
+  });
+});
+
+describe("hero", () => {
+  it("shows the pet's own photo when there is one", () => {
+    const html = hero({ photoUrl: "https://cdn.test/coco.jpg", photoAlt: "Coco", illustration: "paw", emoji: "🐾", heading: "Coucou" });
+
+    expect(html).toContain("https://cdn.test/coco.jpg");
+    expect(html).toContain('alt="Coco"');
+    expect(html).not.toContain("illus-paw.png");
+  });
+
+  it("falls back to the illustration, never to a broken image", () => {
+    const html = hero({ photoUrl: null, illustration: "book", emoji: "📖", heading: "Un chapitre" });
+
+    expect(html).toContain("https://everypaw.app/email/illus-book.png");
+    expect(html).not.toContain("📖");
+  });
+
+  it("falls back to the emoji when no illustration is picked", () => {
+    const html = hero({ emoji: "🎁", heading: "Un cadeau" });
+
+    expect(html).toContain("🎁");
+    expect(html).not.toContain("<img");
+  });
+
+  it("escapes the alt text, which carries a user-supplied pet name", () => {
+    const html = hero({ photoUrl: "https://cdn.test/x.jpg", photoAlt: '"><script>', heading: "x" });
+
+    expect(html).not.toContain("<script>");
   });
 });
 

@@ -5,7 +5,7 @@ import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
 import { shouldShowFirstStoryNudge } from "@/lib/story";
-import { baseLayout, emoji, heading, paragraph, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
+import { baseLayout, hero, emoji, heading, paragraph, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 import { getTranslations } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 
@@ -32,6 +32,7 @@ export async function GET(req: Request) {
     .select(`
       id,
       name,
+      photo_url,
       user_id,
       profiles!inner (
         id,
@@ -111,7 +112,13 @@ export async function GET(req: Request) {
         to: profile.email,
         subject,
         html: baseLayout(
-          heroSection("✨", escapeHtml(nudge.email_title)) +
+          hero({
+            photoUrl: pet.photo_url,
+            photoAlt: pet.name,
+            illustration: "star",
+            emoji: "✨",
+            heading: escapeHtml(nudge.email_title),
+          }) +
           paragraph(escapeHtml(body)) +
           divider() +
           colorSection(

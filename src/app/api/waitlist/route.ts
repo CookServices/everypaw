@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/resend";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 import { escapeHtml } from "@/lib/html";
-import { baseLayout, heroSection, paragraph, divider, colorSection, ctaButton, BRAND } from "@/lib/email-templates";
+import { baseLayout, hero, heroSection, paragraph, divider, colorSection, ctaButton, BRAND } from "@/lib/email-templates";
 import { EMAIL_REGEX } from "@/lib/validation";
 
 export async function POST(req: Request) {
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       to: email,
       subject: "You're on the list 🐾",
       html: baseLayout(
-        heroSection("🐾", "You're on the Everypaw waitlist.") +
+        hero({ illustration: "paw", emoji: "🐾", heading: "You're on the Everypaw waitlist." }) +
         paragraph("We're building something special, an AI journal that turns your pet's daily moments into a beautiful printed book.") +
         divider() +
         colorSection(

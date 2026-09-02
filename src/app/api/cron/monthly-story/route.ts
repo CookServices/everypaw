@@ -7,7 +7,7 @@ import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
 import { generateAndSaveStory } from "@/lib/story";
 import { getProfileLocaleById } from "@/lib/locale";
-import { baseLayout, emoji, eyebrow, heading, paragraph, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
+import { baseLayout, hero, emoji, eyebrow, heading, paragraph, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 
 // Sequential AI generation across N pets, each callClaude up to ~30s. Vercel Hobby
 // caps function duration at 60s, so the batch must fit there. If the eligible-pet
@@ -43,6 +43,7 @@ export async function GET(req: Request) {
       name,
       species,
       bio,
+      photo_url,
       user_id,
       profiles!inner (
         id,
@@ -168,7 +169,13 @@ export async function GET(req: Request) {
         to: profile.email,
         subject,
         html: baseLayout(
-          heroSection("📖", `${petNameSafe}'s Story` ) +
+          hero({
+            photoUrl: pet.photo_url,
+            photoAlt: pet.name,
+            illustration: "book",
+            emoji: "📖",
+            heading: `${petNameSafe}'s Story`,
+          }) +
           heading(titleSafe) +
           paragraph(extractSafe) +
           divider() +

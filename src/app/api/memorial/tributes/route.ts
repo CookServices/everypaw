@@ -4,7 +4,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { sendEmail } from "@/lib/resend";
-import { baseLayout, ctaButton, heroSection, paragraph } from "@/lib/email-templates";
+import { baseLayout, hero, ctaButton, heroSection, paragraph } from "@/lib/email-templates";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 
 import { UUID_REGEX } from "@/lib/validation";
@@ -153,10 +153,10 @@ export async function POST(req: Request) {
         const tributesUrl = `https://everypaw.app/dashboard/pets/${pet.id}?tab=tributes`;
         const html = baseLayout(
           isFR
-            ? heroSection("🕊️", `Un hommage a été déposé pour ${petNameEsc}`) +
+            ? hero({ illustration: "plant", emoji: "🕊️", heading: `Un hommage a été déposé pour ${petNameEsc}` }) +
               paragraph(`Quelqu'un a souhaité partager un souvenir ou un message sur la page mémorial de ${petNameEsc}. Vous pouvez l'approuver ou le rejeter depuis le tableau de bord.`) +
               ctaButton(tributesUrl, "Voir les hommages")
-            : heroSection("🕊️", `A tribute was left for ${petNameEsc}`) +
+            : hero({ illustration: "plant", emoji: "🕊️", heading: `A tribute was left for ${petNameEsc}` }) +
               paragraph(`Someone shared a memory or message on ${petNameEsc}'s memorial page. You can approve or reject it from your dashboard.`) +
               ctaButton(tributesUrl, "Review tributes"),
           "",
