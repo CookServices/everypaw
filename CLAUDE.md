@@ -268,6 +268,12 @@ milestone_definitions: id, key (unique), name_fr, name_en, keywords text[], icon
 -- Utilisée en priorité par detectMilestones() et translateMilestone() ; fallback sur MILESTONE_TYPES hardcodé
 -- Clé spéciale "first_memory" : déclenche sur existingEntries.length === 0
 
+-- gift_deliveries (cadeaux achetés pour une date future)
+gift_deliveries: id, checkout_session_id (unique), promo_code, recipient_email,
+                 sender_name, message, locale, deliver_on (date), sent_at, created_at
+-- RLS on, aucune policy : service role seul. Le cron réclame la ligne en écrivant
+-- sent_at AVANT l'envoi et ne lit que sent_at IS NULL, donc jamais deux envois.
+
 -- memorial_tributes (hommages publics sur pages mémorial)
 memorial_tributes: id, pet_id, author_name (1–100), message (1–1000),
                    status ('pending'|'approved'|'rejected'), created_at
@@ -456,14 +462,15 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
     { "path": "/api/cron/birthday-check",  "schedule": "0 8 * * *" },
     { "path": "/api/cron/daily-prompts",     "schedule": "0 7 * * *" },
     { "path": "/api/cron/retention-emails", "schedule": "0 9 * * *" },
-    { "path": "/api/cron/first-story-nudge", "schedule": "0 10 * * *" }
+    { "path": "/api/cron/first-story-nudge", "schedule": "0 10 * * *" },
+    { "path": "/api/cron/gift-deliveries",   "schedule": "0 6 * * *" }
   ]
 }
 ```
 
 Toutes les routes cron protégées par `Authorization: Bearer CRON_SECRET`.
 
-Les 8 routes existent (les 3 de `on-this-day`/`streak-alert`/`birthday-check` créées en session 24, PR #51 ; `first-story-nudge` ajoutée session 58).
+Les 9 routes existent (`on-this-day`/`streak-alert`/`birthday-check` en session 24 ; `first-story-nudge` en session 58 ; `gift-deliveries` en session 68, elle envoie les cadeaux datés).
 
 ---
 
@@ -663,38 +670,31 @@ Backlog #17 et #18 traités ensemble, ils touchent le même encart produit. PR [
 
 **Vérification** : preview Vercel, compte `testopera@yopmail.com` basculé en `plan=digital, book_credits=0`. Libellé et prix du CTA, passage par l'adresse, encart sans bouton, et au clic sur « Passer la commande » un appel à `/api/stripe/book-checkout` et **aucun** à `/api/gelato/order`. Méthode réutilisable pour tester un bouton qui coûte de l'argent : patcher `window.fetch` dans la page pour bloquer la route dangereuse **avant** de cliquer, puis vérifier qu'elle n'a pas été appelée.
 
-**Trouvé au passage, non corrigé** : le projet Vercel `everypaw-staging` ne contient que 3 variables (les 3 Supabase). Toutes les routes Stripe, Gelato, Anthropic et les crons renvoient un 500 à corps vide sur preview. Documenté dans « Deployment & Staging ». Conséquence : une preview prouve l'UI et quel endpoint un bouton appelle, jamais ce que cet endpoint fait.
+**Trouvé au passage, non corrigé** : le projet Vercel `everypaw-staging` ne contient que 3 variables (les 3 Supabase), donc toute route Stripe, Gelato, Anthropic ou cron renvoie un 500 à corps vide sur preview. Une preview prouve l'UI et quel endpoint un bouton appelle, jamais ce que fait cet endpoint.
 
-**Reste à faire côté Julien** : comparer sur la prod le prix affiché et le montant réel de la page Stripe (sans finaliser le paiement), et remettre le compte de test en free (`UPDATE profiles SET plan='free', is_premium=false, book_credits=0 WHERE email='testopera@yopmail.com';`).
+### ✅ Session 68 — Backlog vidé, onglet journal extrait, chantier emails en trois lots (2026-09-02)
 
-### ✅ Session 68 — Clés i18n orphelines, CLAUDE.md sous sa limite, annulation vs changement de plan programmé (2026-09-02)
+**Backlog #19, #20, #12(b) clos.** #19 : 85 clés i18n sans lecteur retirées (667 à 582 feuilles) ; les
+trois accès dynamiques du repo ont été vérifiés avant de couper (`t.pet["species_" + v]`,
+`t.interview["q" + n]` via `getWeeklyQuestion`, `faq.q1..q6` lus par index), sans quoi les 52
+questions d'interview partaient à tort. #20 : fichier ramené de 869 lignes sous les 700, le retiré
+est archivé dans `docs/SESSIONS.md`. #12(b) : `stripe/cancel` **libère** le schedule avant de poser
+`cancel_at_period_end`, ce qui rend le scénario sans objet plutôt que dépendant d'une sémantique
+Stripe invérifiable. Trouvés en chemin : `gift/redeem` avait encore le trou bouché par la PR #121 sur
+`upgrade`, un changement programmé était invisible après rechargement, et `/redeem` annonçait « code invalide » à un abonné dont le cadeau venait d'être programmé.
 
-Backlog #19, #20, puis #12(b).
+**Phase 2b de la découpe** (PR #136) : hook `useEntryComposer` puis `JournalTab`. `pets/[id]/page.tsx`
+passe de 1035 à 764 lignes, 2122 à 764 depuis le début (−64 %). Composer passé en prop unique, le
+reste dérivé dans le composant.
 
-**#19 — 85 clés i18n sans lecteur, retirées des deux fichiers** (667 → 582 feuilles chacun). Pour
-chaque feuille de `messages/en.json` : le nom de la clé apparaît-il quelque part dans `src/` ? Les
-trois accès dynamiques du repo ont été vérifiés et laissés intacts — `t.pet["species_" + v]`,
-`t.interview["q" + n]` via `getWeeklyQuestion`, `faq.q1..q6`/`a1..a6` lus par index pour le JSON-LD
-des landings ; sans ça, les 52 questions de l'interview partaient à tort. Le gros des clés
-retirées vient de l'ancien catalogue supprimé le 2026-07-07 (`order.product_price`,
-`landing.free_book`, `landing.pricing_book_note`… tous à 29 €/49 €/9,99 €), de la page waitlist et
-du tableau d'upgrade réécrit. Suppression ligne à ligne plutôt que re-sérialisation du JSON : 170 suppressions et rien d'autre, jeu de clés identique des deux côtés.
+**Chantier emails, trois lots** (PR #137, #138, #139). Technique : tailles en `px` (Outlook ignore
+`rem`), version texte dérivée du HTML, `List-Unsubscribe` avec un vrai un-clic, preheaders,
+`color-scheme`, **tout envoi passe par `sendEmail`** ([lib/resend.ts](src/lib/resend.ts)). Visuel :
+`hero()` choisit photo de l'animal, puis illustration PNG (Gmail supprime les SVG,
+`scripts/generate-email-assets.mjs` les génère), puis emoji ; boutons en table. Copie : le français
+mélangeait tutoiement et vouvoiement, parfois dans le même mail, un test garde le registre.
 
-**#20 — CLAUDE.md ramené de 869 lignes à moins de 700.** Rien n'est perdu, tout ce qui sort est
-archivé ici : backlog clos (#1 à #18), cases cochées de la checklist de mise en production, Session
-65, test du webhook via Stripe CLI, et version longue de « Deployment & Staging » (197 lignes) dont
-CLAUDE.md ne garde que la règle, sans le récit de l'incident. Conventions et Definition of Done non
-touchées, c'est la partie réellement relue. Retiré parce que faux et non parce que long : la palette
-`--cream`/`--brown`/`--amber` du « Design system », absente de `globals.css`, lue par personne.
-
-**#12(b) — annuler pendant qu'un changement de plan est programmé.** Le scénario n'était pas
-confirmable en lisant le code ; il devient sans objet, `stripe/cancel` **libère** le schedule avant
-de poser `cancel_at_period_end`. Sans ça, deux issues, les deux mauvaises : Stripe refuse la mise à
-jour (annulation impossible tant qu'un changement est en file), ou la phase 2 démarre au pivot et
-l'utilisateur reste facturé sur le nouveau plan après avoir lu « Abonnement annulé ». Libération
-qui échoue = 500, rien n'est annulé : mieux qu'une annulation qui se dit réussie. Trouvés en chemin,
-corrigés dans la même PR : `gift/redeem` avait encore le trou bouché par la PR #121 sur `upgrade`
-(racheter un cadeau effaçait une annulation en attente **et** brûlait le code) ; un changement
-programmé était invisible après rechargement ; `/redeem` annonçait « code invalide » à un abonné dont
-le cadeau venait d'être programmé. **Non vérifié en navigateur**, aucune route Stripe ne répond sur
-les previews.
+**Cadeaux datés** (PR #140) : le `scheduledAt` passé à Resend était ignoré par le SDK 3.5.0, tout
+partait immédiatement. Resend plafonne à 30 jours et un cadeau se planifie à six mois, donc la
+planification est maison, table `gift_deliveries` et cron quotidien. SDK monté en 6.25.0 (`reply_to`
+devient `replyTo`), et le code promo expire un an après la **livraison**, plus après l'achat.
