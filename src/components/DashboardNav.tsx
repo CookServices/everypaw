@@ -57,7 +57,7 @@ function SuggestionModal({ isFR, onClose }: { isFR: boolean; onClose: () => void
           <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
             <p style={{ fontSize: "2rem", margin: "0 0 .5rem" }}>🐾</p>
             <p style={{ color: "#3D2B1F", fontWeight: 500 }}>
-              {isFR ? "Merci pour ta suggestion !" : "Thanks for your suggestion!"}
+              {isFR ? "Merci pour votre suggestion !" : "Thanks for your suggestion!"}
             </p>
             <button
               onClick={onClose}
@@ -93,7 +93,7 @@ function SuggestionModal({ isFR, onClose }: { isFR: boolean; onClose: () => void
             </p>
             {status === "error" && (
               <p style={{ color: "#c0392b", fontSize: ".8rem", margin: ".5rem 0 0" }}>
-                {isFR ? "Erreur lors de l'envoi. Réessaie." : "Something went wrong. Please try again."}
+                {isFR ? "Erreur lors de l'envoi. Réessayez." : "Something went wrong. Please try again."}
               </p>
             )}
             <div style={{ display: "flex", gap: ".75rem", marginTop: "1rem", justifyContent: "flex-end" }}>

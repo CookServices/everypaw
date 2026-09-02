@@ -646,7 +646,7 @@ export default function DashboardPage() {
                   {interviewError && (
                     <p style={{ fontSize: ".8rem", color: "var(--ep-error-ink)", margin: 0, fontWeight: 400 }}>
                       {isFR
-                        ? "Échec de l'enregistrement. Vérifie ta connexion et réessaie."
+                        ? "Échec de l'enregistrement. Vérifiez votre connexion et réessayez."
                         : "Couldn't save your answer. Check your connection and try again."}
                     </p>
                   )}
@@ -710,7 +710,7 @@ export default function DashboardPage() {
             {subscribeError && (
               <p style={{ fontSize: ".8rem", color: "var(--ep-alert)", marginTop: ".75rem", textAlign: "center" }}>
                 {isFR
-                  ? "Une erreur est survenue. Vérifie ta connexion ou réessaie."
+                  ? "Une erreur est survenue. Vérifiez votre connexion ou réessayez."
                   : "Something went wrong. Please check your connection and try again."}
               </p>
             )}
