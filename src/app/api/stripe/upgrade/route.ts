@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import type { Currency } from "@/lib/currency";
-import { PRICE_MAP, resolveSubscriptionId } from "@/lib/stripe-helpers";
+import { attachedScheduleId, PRICE_MAP, resolveSubscriptionId } from "@/lib/stripe-helpers";
 
 import { stripe } from "@/lib/stripe";
 
@@ -66,9 +66,7 @@ export async function POST(req: Request) {
     // Schedule the plan change at end of current billing period via subscription schedules.
     // This avoids any proration charge and any $0 invoice, the new price applies cleanly
     // at the next renewal, as if the user had subscribed to the new plan from day one.
-    const existingScheduleId = typeof subscription.schedule === "string"
-      ? subscription.schedule
-      : (subscription.schedule as Stripe.SubscriptionSchedule | null)?.id ?? null;
+    const existingScheduleId = attachedScheduleId(subscription);
 
     let schedule: Stripe.SubscriptionSchedule;
 
