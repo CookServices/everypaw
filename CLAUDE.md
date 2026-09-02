@@ -209,12 +209,12 @@ WAITLIST_TO_EMAIL              # email destinataire waitlist (optionnel — warn
 GELATO_API_KEY                  # print-on-demand — requis par /api/gelato/order et /api/gelato/status/[orderId]
 
 NEXT_PUBLIC_APP_URL             # base URL utilisée pour les liens absolus (emails, redirects Stripe/Gelato)
-PDF_ACCESS_SECRET                # signe le token HMAC court-terme de /api/book-pdf — fallback sur SUPABASE_SERVICE_ROLE_KEY si absent (le renseigner explicitement en prod)
+PDF_ACCESS_SECRET              # signe le token HMAC de /api/book-pdf ; fallback sur SUPABASE_SERVICE_ROLE_KEY si absent
 CRON_SECRET                    # protège les routes /api/cron/*
+GA_API_SECRET / META_CAPI_TOKEN # événements d'achat serveur (P0-1), Production seule, sans donnée utilisateur
 
 # Auth Hook (Supabase → /api/emails/auth-hook)
-SUPABASE_HOOK_SECRET           # format "v1,whsec_<base64>" — copier depuis Supabase > Auth > Hooks > Send Email > Reveal
-                               # Si absent → hook retourne 401 → Supabase retourne 500 sur signup/reset
+SUPABASE_HOOK_SECRET           # "v1,whsec_<base64>", depuis Supabase > Auth > Hooks > Send Email > Reveal ; absent = 401 du hook, 500 au signup
 ```
 
 Liste tenue à jour depuis `.env.local.example` (source de vérité — vérifier ce fichier en cas de doute, il est plus facile à garder synchrone que ce tableau).
