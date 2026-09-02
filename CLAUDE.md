@@ -49,11 +49,7 @@ Règles clés : terracotta = seul accent (One Voice) · texte émotionnel en Geo
 - Mémorial : `--ep-memorial` `#8B6B4A`.
 - **Exception** (hex inline tolérés) : palettes produit — les 5 thèmes de couverture livre (order), couleurs mood/milestone (pets), ombres `rgba(0,0,0,…)`. Ce sont des données design, pas des tokens.
 
-### Surfaces passées à la chaîne impeccable
-
-Landing hero (`/`+`/fr`), `/dashboard`, et les 5 pages animal (`pets/[id]` Journal/Histoires/Étapes, `order` Livre, `books` Bibliothèque). Conventions appliquées : eyebrows supprimés, héros agrandis (Georgia), couleurs tokenisées, progress bars en `transform: scaleX` (pas `width`).
-
-Skill `/impeccable <command>` pour critique/audit/polish/live. Snapshots de critique sous `.impeccable/critique/`.
+**Surfaces déjà passées à la chaîne impeccable** (skill `/impeccable <command>`, snapshots sous `.impeccable/critique/`) : landing hero (`/`+`/fr`), `/dashboard`, et les 5 pages animal (`pets/[id]` Journal/Histoires/Étapes, `order` Livre, `books` Bibliothèque) — eyebrows supprimés, héros agrandis (Georgia), couleurs tokenisées, progress bars en `transform: scaleX` (pas `width`).
 
 ---
 
@@ -93,199 +89,97 @@ Déploiement sur **Vercel** — push sur `main` = auto-deploy. Les variables d'e
 
 ## Deployment & Staging
 
-**Architecture: two Vercel projects, one repo (free plan)**
+**Architecture : deux projets Vercel, un seul repo (plan Hobby)**
 
-The Hobby plan does not allow a separate Preview environment alongside Production on a single
-project, so the repo is connected to **two** Vercel projects:
+Le plan Hobby n'autorise pas un environnement Preview séparé à côté de Production sur un même
+projet, donc le repo est connecté à **deux** projets :
 
-| Project | Role | URL |
+| Projet | Rôle | URL |
 | --- | --- | --- |
 | `everypaw` | Production | `everypaw.app` |
-| `everypaw-staging` | Preview (per PR) | `everypaw-staging-git-<branch>-*.vercel.app` |
+| `everypaw-staging` | Preview (par PR) | `everypaw-staging-git-<branche>-*.vercel.app` |
 
-**Both still share the same Supabase project** — `everypaw-staging` is a separate *Vercel* project,
-not a separate database. The name is misleading: there is no isolated staging data.
+**Les deux pointent vers la même base Supabase** — `everypaw-staging` est un projet *Vercel*
+distinct, pas une base distincte. Le nom induit en erreur : il n'existe aucune donnée de staging
+isolée.
 
-### Workflow
+Workflow : branche de feature → push → PR → tester sur l'URL de preview `everypaw-staging` → review
+et approbation → merge sur `main`, qui déploie la production. La PR affiche **aussi** une preview du
+projet `everypaw` : l'ignorer, ce projet est configuré en Production seule et ses previews renvoient
+500 sur toute route service-role.
 
-```
-1. Feature branch → Push to GitHub
-2. Create PR → both projects post a preview URL
-3. Test on the everypaw-staging preview URL (shares prod Supabase DB)
-4. Review + Approve PR (GitHub ruleset required)
-5. Merge main → Auto deploy prod (everypaw.app)
-```
+Ruleset `main-protection` sur `main` : review de PR obligatoire, force-push bloqué, aucun status check
+requis (TODO : en ajouter un une fois le build Vercel remonté). Aucune exception, pas même un commit
+docs-only du propriétaire du repo.
 
-A PR comment shows a preview for `everypaw` too. **Ignore it** — that project is configured for
-Production only, so its previews 500 on every service-role route (see below).
+### Ce qu'une preview prouve, et ce qu'elle ne prouve pas
 
-### Environment Variable Scoping
+`everypaw-staging` ne porte que **trois** variables, les trois Supabase : toute route lisant un autre
+secret (Stripe, Gelato, Anthropic, `CRON_SECRET`, `NEXT_PUBLIC_APP_URL`) échoue en preview sur un
+**500 à corps vide**, un throw non rattrapé qui ressemble à un bug de code sans en être un. Y ajouter
+la `STRIPE_SECRET_KEY` live n'est pas un fix gratuit, les previews sont publiquement joignables.
 
-Vercel bakes env vars at build time and scopes them per environment, **per project**. Adding a
-variable to one project does nothing for the other, and an existing deployment never picks up a
-newly added variable — it needs a redeploy.
+Une preview prouve donc l'UI, les lectures Supabase et **quel** endpoint un bouton appelle, jamais ce
+que fait cet endpoint : tout ce qui est derrière un paiement ou une commande d'impression se vérifie
+en production. Les crons, eux, ne tournent pas sur une preview (test manuel, ou prod).
 
-`SUPABASE_SERVICE_ROLE_KEY` must be present on the **Preview** scope of `everypaw-staging`.
-Without it, `getServiceSupabase()` throws and **every service-role path 500s**: all 8 crons, the
-Stripe webhook and subscription routes, Gelato order, the PDF routes, account deletion,
-pet-members, memorial tributes, share-card, plus the public SSR pages `pets/[id]` and
-`memorial/[id]`. The app still loads and hydrates (the `NEXT_PUBLIC_*` vars are separate), which
-makes the failure look like an application bug rather than a config gap.
+**Aucun flux email ne peut non plus s'y terminer** : `validateRedirectTo`
+([lib/auth.ts](src/lib/auth.ts)) remplace tout hostname qui ne matche pas `NEXT_PUBLIC_APP_URL` par
+l'URL de prod (garde anti-open-redirect), donc le lien reçu atterrit sur `everypaw.app`. Terminer le
+flux sur la prod puis se connecter sur la preview, les deux partagent la même base. Depuis la Session
+64, signup/recovery/email_change passent de toute façon par `${APP_URL}/auth/confirm`.
 
-To check the current scoping without reading any secret value:
+### Variables d'environnement : scope et pièges
+
+Vercel fige les variables au build et les scope par environnement **et par projet**. En ajouter une
+à un projet ne fait rien pour l'autre, et un déploiement existant ne récupère jamais une variable
+ajoutée après coup — il faut redéployer. Auditer les scopes sans lire aucune valeur, une fois par
+projet (la colonne `environments` doit afficher Preview, pas seulement Production) :
 
 ```bash
 npx vercel link --yes --project everypaw-staging
-npx vercel env ls          # shows name + environments, never values
+npx vercel env ls          # noms + environnements, jamais les valeurs
 ```
 
-Quick probe for whether a deployment has the service key: open a public pet page
-(`/pets/<id>`). It calls `getServiceSupabase()` with no auth, so it renders when the key is
-present and returns a server exception when it is missing. Do **not** probe with an API route
-that checks auth first — it returns 401 either way and tells you nothing.
+Trois pièges :
 
-### GitHub Branch Protection (`main`)
+- Dans le dashboard, le scope Preview simple vit sous **Environments** et fonctionne en Hobby.
+  **Preview Branches**, juste à côté, est du per-branch et est réservé au plan Pro : y buter ne veut
+  pas dire que le scope Preview est indisponible.
+- Une variable de type Secret ne peut pas devenir Config (« Saved secrets are write-only ») et son
+  champ Value est vide à l'édition. Pour lui ajouter un scope sans risquer la valeur de production,
+  créer une **entrée séparée** ciblant le nouvel environnement et laisser l'originale intacte.
+- `vercel env add <clé> preview --value <v>` est inutilisable en non-interactif (le CLI exige une
+  branche). Passer par le dashboard.
 
-Ruleset `main-protection` (configured 2026-07-23):
-- ✓ Require PR review before merge
-- ✓ Block force pushes
-- ✓ No status checks required (TODO: add after Vercel build status configured)
+Sonde pour savoir si un déploiement a bien la clé service : ouvrir une page publique `/pets/<id>`,
+elle appelle `getServiceSupabase()` sans auth. Ne **pas** sonder avec une route API qui vérifie
+l'auth d'abord, elle renvoie 401 dans les deux cas et n'apprend rien.
 
-### Test Data Discipline
+### Discipline données de test
 
-Preview deployments share production Supabase (no separate staging DB = free tier limitation).
-This holds despite the `everypaw-staging` project name — every preview writes to real production
-data, so the rules below are not optional.
+Les previews écrivent dans la base de **production** (pas de staging DB, contrainte du free tier) :
+comptes de test yopmail uniquement, jamais de données utilisateur de production committées ou
+poussées, entrées de test nettoyées après usage.
 
-**Rules:**
-- Use yopmail test accounts only
-- Never commit/push production user data
-- Clean test entries before demo
-
-**Comptes de test : ne pas se fier à une liste écrite, la requêter.** Au 2026-09-01 les cinq
-comptes `test-*@yopmail.com` historiquement documentés (`test-free`, `test-digital`,
-`test-print-fresh`, `test-print-ordered`, `test-print-multi`) **n'existent plus**. Ce n'est pas
-`purge_test_data.sql` qui les a retirés, il réinitialise les profils sans toucher aux comptes
-auth ; ils ont probablement été supprimés via `/api/account/delete`, qui lui supprime le profil
-et le compte auth en cascade. Les comptes réellement présents ce jour-là étaient
-`testopera@`, `testux@` et `testvide@`, tous en plan free.
-
-Avant tout test, lister ce qui existe :
+**Ne pas se fier à une liste de comptes écrite, la requêter** — celle qui vivait ici pointait cinq
+comptes supprimés depuis :
 
 ```sql
 SELECT id, email, plan, book_credits FROM profiles
 WHERE email LIKE '%@yopmail.com' ORDER BY email;
 ```
 
-⚠️ **`supabase/seed_print_multi.sql` et `purge_test_data.sql` sont périmés** : ils ciblent les
-UUID codés en dur des comptes disparus. Deux pièges dans le seed, rencontrés en vrai :
-son `UPDATE profiles ... WHERE id = uid` d'ouverture **n'échoue pas** quand le compte n'existe
-pas (un UPDATE sans correspondance affecte zéro ligne en silence), la vraie erreur ne surgit que
-vingt lignes plus loin sur une contrainte de clé étrangère ; et il **désactive le trigger**
-`trg_enforce_free_entry_limit`, qui reste désactivé en production si le script échoue entre la
-désactivation et la réactivation. Préférer un script qui résout l'identifiant depuis l'email,
-lève une exception explicite si le compte est absent, et ne touche à aucun trigger.
+⚠️ `supabase/seed_print_multi.sql` et `purge_test_data.sql` sont périmés (UUID codés en dur de
+comptes disparus) et le seed **désactive** `trg_enforce_free_entry_limit`, qu'il laisse désactivé en
+production s'il échoue au milieu. Préférer un script qui résout l'identifiant depuis l'email et lève
+une exception explicite s'il est absent.
 
-### Preview Limitations
-
-- Crons (weekly-reminder, monthly-story, etc.) do NOT run on preview — test manually or on prod
-- Stripe webhook testing → use Stripe test mode, not preview
-- Long-running tasks may timeout (preview cold-starts)
-- **Email flows can NOT be completed on a preview** — they always land back on production
-- **An env var scoped to Production only is absent on preview**, and every route that needs it
-  fails there with an unhandled 500 (see below)
-
-#### Why email flows redirect to production
-
-`validateRedirectTo` (`lib/auth.ts`) compares the requested `redirect_to` hostname against
-`NEXT_PUBLIC_APP_URL` and falls back to the production URL when it does not match. This is an
-open-redirect guard, so it fires for every `*.vercel.app` preview host.
-
-Affected: password reset, signup confirmation, email change.
-
-Concretely, for a password reset requested from a preview:
-
-1. `forgot-password` sends `redirect_to = <preview-origin>/auth/update-password`
-2. `validateRedirectTo` rejects the preview hostname and substitutes the production URL
-3. The emailed link lands on `everypaw.app/auth/update-password`, so the recovery session
-   belongs to the **production** domain
-4. Entering the new password back on the preview fails with "Lien de réinitialisation invalide
-   ou expiré" — `auth/update-password` only reads the session from the URL hash, and there is
-   none on that origin
-
-**Workaround:** finish the email flow on `everypaw.app`, then sign in on the preview. Preview and
-production share the same Supabase project, so the credential works on both.
-
-#### Env vars need the Preview scope explicitly
-
-Vercel env vars carry a target scope. One added to Production alone simply does not exist in
-preview deployments, and nothing warns you: the deployment builds and serves normally until a
-request hits code that reads the variable.
-
-`SUPABASE_SERVICE_ROLE_KEY` sat in Production scope alone for 119 days (found 2026-09-01, fixed
-the same day). Every preview request reaching `getServiceSupabase()` threw:
-
-```
-Error: Missing environment variable(s): SUPABASE_SERVICE_ROLE_KEY.
-Service-role Supabase calls cannot run. Check the environment scope (Preview vs Production).
-```
-
-That is **24 API routes**: `gelato/order`, `stripe/{book-checkout,subscription,webhook}`,
-`account/delete`, `invite/[token]`, `memorial/tributes`, `pet-members`, `share-card`,
-`book-pdf`, `preview-pdf`, and the 7 crons. "Just test it on preview" was quietly false for all
-of them throughout that window, which is worth remembering when reading older session notes that
-claim a preview test passed.
-
-**Wider than that one key (found 2026-09-01, Session 67, not fixed).** The `everypaw-staging`
-project holds **only three** variables, all Supabase:
-
-```
-SUPABASE_SERVICE_ROLE_KEY      Preview
-NEXT_PUBLIC_SUPABASE_ANON_KEY  Preview
-NEXT_PUBLIC_SUPABASE_URL       Preview
-```
-
-So every route reading any other secret fails on preview: all the Stripe routes (`checkout`,
-`book-checkout`, `upgrade`, `cancel`, `webhook`…) miss `STRIPE_SECRET_KEY`, story generation
-misses `ANTHROPIC_API_KEY`, `gelato/order` misses `GELATO_API_KEY`, the crons miss `CRON_SECRET`,
-and anything building an absolute link misses `NEXT_PUBLIC_APP_URL`. Observed as a bare **500 with
-an empty body** (unhandled throw), which looks like a code bug and is not one.
-
-Consequence for the workflow: a preview proves the UI, the data reads through Supabase, and which
-endpoint a button calls, **but never what that endpoint does**. Anything past a payment or a print
-order has to be checked on production. Adding the live `STRIPE_SECRET_KEY` to this project is not
-a free fix: preview deployments are publicly reachable (see the Deployment Protection note in the
-session history), so weigh that before doing it.
-
-Auditing the scopes:
-
-```bash
-vercel env ls
-```
-
-The `environments` column must show Preview, not only Production. Run it once per project
-(`npx vercel link --yes --project everypaw-staging` first), the two projects are audited
-separately.
-
-Two traps when fixing one:
-
-- Adding a scope does **not** touch existing deployments. Redeploy before retesting, with
-  `vercel redeploy <preview-url>` or a fresh push.
-- In the dashboard, plain Preview scoping lives under the **Environments** submenu and works on
-  the Hobby plan. **Preview Branches**, right next to it, is per-branch values and is Pro-only,
-  so hitting a paywall there does not mean Preview scoping is unavailable.
-
-**Note (Session 64) :** les liens signup/recovery/email_change ne passent plus par `confirmation_url`
-PKCE ni par `validateRedirectTo` — ils pointent tous vers `${APP_URL}/auth/confirm` (jamais une origine
-preview), ce qui rend la substitution ci-dessus sans effet pratique pour ces 3 flux. Détail complet
-(cause racine, fix, validation prod) dans « Historique des sessions » → Session 64.
-
-### When You Need Real Staging
-
-If you need isolated test data (persistent staging DB, crons running, webhook testing):
-- Upgrade Supabase to Pro (~$25/mo) to unlock preview branches
-- Create `staging` branch → separate Supabase project → own env vars in Vercel
-- Not currently implemented (cost/complexity trade-off)
+Vraie recette, le jour où le besoin se présente (base isolée, crons qui tournent, webhooks
+testables) : Supabase Pro (~25 $/mois) débloque les preview branches, puis branche `staging` →
+projet Supabase séparé → variables dédiées. Non implémenté, arbitrage coût/complexité. Historique
+des pannes de cet environnement (clé service absente des previews pendant 119 jours, projet staging
+cassé, Deployment Protection activée mais non appliquée) : `docs/SESSIONS.md`.
 
 ---
 
@@ -301,14 +195,10 @@ ANTHROPIC_API_KEY
 # Stripe — 11 vars exactement (mode LIVE ; catalogue : 2 produits, prix EUR/USD sous le même produit)
 STRIPE_SECRET_KEY              # sk_live_... depuis 2026-07-07
 STRIPE_WEBHOOK_SECRET          # endpoint live we_1TqHQkRmAiDTHhpuLkV9Udz4 (6 events, dont invoice.payment_succeeded)
-STRIPE_PRICE_ID_DIGITAL_EUR    # plan digital 4,99 €/mois (Europe)
-STRIPE_PRICE_ID_DIGITAL_USD    # plan digital $4.99/mo (reste du monde)
-STRIPE_PRICE_PRINT_ANNUAL_EUR  # plan print annuel EUR (79 €/an)
-STRIPE_PRICE_PRINT_ANNUAL_USD  # plan print annuel USD ($79/year)
-STRIPE_GIFT_PRICE_ID_DIGITAL_EUR   # gift one-time 4,99 € (1 mois Digital offert)
-STRIPE_GIFT_PRICE_ID_DIGITAL_USD   # gift one-time $4.99
-STRIPE_GIFT_PRICE_ID_PRINT_EUR     # gift one-time 79 € (1 an Print offert)
-STRIPE_GIFT_PRICE_ID_PRINT_USD     # gift one-time $79
+STRIPE_PRICE_ID_DIGITAL_EUR / _USD      # abonnement digital 4,99 €/mois · $4.99/mo
+STRIPE_PRICE_PRINT_ANNUAL_EUR / _USD    # abonnement print annuel 79 €/an · $79/year
+STRIPE_GIFT_PRICE_ID_DIGITAL_EUR / _USD # gift one-time, 1 mois Digital offert
+STRIPE_GIFT_PRICE_ID_PRINT_EUR / _USD   # gift one-time, 1 an Print offert
 STRIPE_GIFT_COUPON_ID          # coupon 100% off, duration "once" (1ère facture gratuite)
 
 RESEND_API_KEY
@@ -430,11 +320,9 @@ Le webhook (`/api/stripe/webhook`) gère :
 - `invoice.payment_succeeded` — source unique pour les book credits Print (ajouté 2026-05-28) ; remet `payment_past_due: false` en tête de handler pour **tout** paiement réussi (avant les gates Print/365j qui return early)
 - `invoice.payment_failed` — set `payment_past_due: true` + log `events_log` (type `stripe_payment_failed`, idempotent par `stripe_event_id`) + email Resend avec lien billing portal Stripe (`return_url` → `/dashboard/settings`) **uniquement à la 1ère tentative** (`attempt_count <= 1`, les retries dunning Stripe ne re-spamment pas) ; ne downgrade pas (Stripe gère les retries, `customer.subscription.deleted` gère le downgrade final). Note : `invoice.payment_failed` doit être activé dans la config webhook Stripe (fait 2026-06-11, migration appliquée). Côté UI, le dashboard (`/dashboard`) lit `payment_past_due` et affiche une bannière rouge bilingue (clés i18n `dashboard.payment_issue_*`) avec lien vers `/dashboard/settings`.
 
-  **Test webhook via Stripe CLI (2026-07-13)** — procédure locale réutilisable :
-  1. `stripe login` (compte Everypaw `acct_...RmAiDTHhpu`). 2. `.env.local` : `SUPABASE_SERVICE_ROLE_KEY` (depuis Supabase → Settings → API `service_role`) + `STRIPE_WEBHOOK_SECRET` = le `whsec_` affiché par `stripe listen`. 3. `npm run dev` (⚠️ prend le 1er port libre, souvent **3001** si 3000 occupé — le `stripe listen --forward-to` doit viser le **bon port**). 4. `stripe listen --forward-to localhost:3001/api/stripe/webhook` (le `whsec_` est **stable par compte**, inchangé entre relances). 5. `stripe trigger invoice.payment_failed` (3e terminal).
-  - **Résultat Niveau 1 validé** : event `invoice.payment_failed` → `[200]`, log `[webhook] invoice.payment_failed: no profile for customer: cus_...` → **signature vérifiée fail-closed + 200 + chemin "profil introuvable" sans crash**. Le customer jetable du `trigger` ne matche aucun profil → 0 write DB (retour avant l'insert `events_log`).
-  - **Niveau 2 (flag + events_log + email + idempotence par `stripe events resend`) non exécuté** : requiert `STRIPE_SECRET_KEY` en **`sk_test`** (le billing portal du mail cible un customer test — une `sk_live` échoue « No such customer », l'email est capté par le try/catch, non-fatal) + un profil dont `stripe_customer_id` matche l'event (toucherait un profil prod). Le flag/events_log/email reste validé par revue de code + le handler tourne en prod sur les vrais échecs de paiement live.
-  - ⚠️ En local, `NEXT_PUBLIC_SUPABASE_URL` pointe la **prod** : rester au Niveau 1 (aucun write) sauf projet Supabase de test dédié.
+  **Test du webhook en local via Stripe CLI** : procédure complète et résultats archivés dans
+  `docs/SESSIONS.md`. Niveau 1 validé (signature vérifiée fail-closed, 200, zéro write) ; niveau 2
+  non exécuté, il exigerait une `sk_test` et un profil de test dédié.
 
 **Idempotence webhook (2026-05-22)** : protection contre les retries Stripe.
 - Abonnement : compare `stripe_subscription_id` en DB avant d'agir — skip si déjà activé.
@@ -540,19 +428,15 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 
 | Route | Description |
 |---|---|
-| `/` | Landing page (EN par défaut) |
-| `/auth/signup` | Inscription |
-| `/dashboard` | Dashboard principal |
 | `/dashboard/pets/[id]` | Profil animal + journal (tabs: journal / histoires IA / étapes) |
 | `/dashboard/pets/[id]/order` | Commande livre — bouton "Sauvegarder cette config" (brouillon), chargement config via `?configId=`, CTA redirige vers Stripe si `plan=print && book_credits=0` |
 | `/dashboard/pets/[id]/books` | Historique livres & brouillons — liste `book_configs`, statut Gelato temps réel, tracking, reprendre/recommander/supprimer |
-| `/dashboard/settings` | Préférences utilisateur |
 | `/pets/[id]` | Profil public animal |
 | `/memorial/[id]` | Page mémorial publique ✅ — design dark, photo, message, histoires IA, OG meta |
 | `/memorial` | Landing marketing publique « pet memorial book » (server component, ton sobre, palette cream+sage) — distincte des pages user `/memorial/[id]` |
 | `/blog` | Index blog SEO (cluster « pet memory ») — cards des articles publiés, empty state si aucun |
 | `/blog/[slug]` | Article : 1 `page.tsx` écrit à la main par slug, via `ArticleLayout` + JSON-LD Article |
-| `/fr/blog` | Index blog FR — mêmes 9 articles, slugs traduits |
+| `/fr/blog` | Index blog FR — mêmes 12 articles, slugs traduits |
 | `/fr/blog/[slug-fr]` | Article FR : `page.tsx` par slug FR, `ArticleLayout locale="fr"`, hreflang réciproque vers l'article EN |
 | `/fr/memorial` | Landing mémorial FR, réutilise `getTranslations("fr").memorial_landing`, hreflang réciproque avec `/memorial` |
 | `/gift` | Page cadeau |
@@ -599,20 +483,8 @@ currency: "USD"
 
 ## Design system
 
-### Palette de couleurs
-
-```css
---cream:        #F7F2EA   /* fond principal dashboard */
---cream-card:   #FDFAF5   /* fond cartes / sidebar */
---cream-dark:   #EDE5D4   /* fond secondaire */
---brown:        #3D2B1F   /* texte principal */
---brown-mid:    #7A5C44   /* texte secondaire / muted */
---brown-light:  #9A8070   /* très muted */
---amber:        #C8813A   /* accent / CTA / états actifs */
---amber-light:  #E8A96A   /* hover accent */
---sage:         #6B7B5E   /* accents verts */
---error:        #A32D2D   /* erreurs / danger */
-```
+Palette : voir « Design Context » en tête de fichier, les tokens `--ep-*` de `globals.css` sont la
+seule source (la liste `--cream`/`--brown`/`--amber` qui vivait ici n'existait plus nulle part).
 
 ### Typographie
 
@@ -651,13 +523,11 @@ currency: "USD"
 
 **Livre imprimé** : page order avec personnalisations (5 thèmes couverture, titre custom, dédicace, sélection chapitres, filtre année, photo couverture custom, 4 layouts/chapitre), brouillons `book_configs` (max 15), aperçu HTML (`preview-pdf` POST session) + PDF réel Gelato (`book-pdf`, `@react-pdf/renderer`, token HMAC), commande Gelato (devise dynamique, pageCount calculé), crédits livre atomiques (RPC `try_consume_book_credit` verrou FOR UPDATE avant Gelato, `restore_book_credit` si échec), statut commande temps réel, historique/duplication/re-commande (`books`).
 
-**Monétisation** : checkout + upgrade avec proration preview, webhook idempotent (dedup `events_log` par `stripe_event_id`), achat livre one-time à prix dynamique, flow cadeau complet (achat one-time → code promo → redeem avec coupon 100%, schedule si déjà abonné), factures, réactivation, changement de plan fin de période, gestion `payment_past_due` (bannière + email dunning 1ère tentative).
+**Monétisation** : checkout + upgrade avec proration preview, webhook idempotent (dedup `events_log` par `stripe_event_id`), achat livre one-time à prix dynamique, flow cadeau complet (achat one-time → code promo → redeem avec coupon 100%, schedule si déjà abonné), factures, réactivation, changement de plan fin de période, gestion `payment_past_due` (bannière + email dunning 1ère tentative). Détail : « Plans & monétisation ».
 
-**Emails** (Resend) : templates harmonisés `src/lib/email-templates.ts` (`baseLayout`), auth hook Supabase (Standard Webhooks, HMAC fail-closed), crons rappel hebdo / histoire mensuelle / on-this-day / anniversaires / streak / prompts quotidiens / rétention D1-D7-D30 / nudge premier chapitre (J+2-3, `first-story-nudge`), unsubscribe tokenisé.
+**Emails** (Resend) : templates harmonisés `src/lib/email-templates.ts` (`baseLayout`), auth hook Supabase (Standard Webhooks, HMAC fail-closed), unsubscribe tokenisé, et 8 crons listés dans « Cron jobs ».
 
-**Pages publiques** : profil animal `/pets/[id]`, mémorial `/memorial/[id]` (dark, OG meta, hommages modérés rate-limités), share card Instagram (`/api/share-card`, edge, PNG square/story).
-
-**i18n** : hybride (Session 57) — pages marketing (`/`, `/fr`, `/gift`, `/fr/gift`) en langue **figée par URL**, server-rendered, composants client locale-aware partagés (plus de duplication `/fr`) ; dashboard + reste en `useLocale` auto (`navigator.language`). `messages/{en,fr}.json`, lien switch crawlable dans le footer marketing.
+**Pages publiques** : profil animal `/pets/[id]`, mémorial `/memorial/[id]` (dark, OG meta, hommages modérés rate-limités), share card Instagram (`/api/share-card`, edge, PNG square/story). i18n hybride (marketing figé par URL, reste en `useLocale`) : voir « Architecture › i18n ».
 
 **SEO / RGPD** : canonicals par page (relatives, résolues via `metadataBase`), `app/robots.ts` + `app/sitemap.ts` (routes metadata Next), noindex sur login/signup, metas dédiées gift/legal, homepage optimisée "ai pet journal" / "pet memory book" (title + H2 hero + H2 livre + CTA gift), JSON-LD homepage dans le server `page.tsx` : Organization + SoftwareApplication (sans aggregateRating — placeholders interdits) + FAQPage construit dynamiquement depuis `messages/en.json` `faq.q1..q6/a1..a6` (zéro drift schema/contenu), hreflang réciproque sur les 4 routes marketing (`/`↔`/fr`, `/gift`↔`/fr/gift`), cookie banner, export données JSON, suppression de compte complète. `aggregateRating` factice retiré partout (Session 57).
 
@@ -665,7 +535,7 @@ currency: "USD"
 
 **Qualité** : logs gatés (`src/lib/log.ts`, `DEBUG_LOGS=1`), rate-limit persistant Postgres (`checkRateLimitDb`), tests Vitest (plan guards, priceIdToPlan, calcPageCount, parseStoryResponse), hook SessionStart `npm install`.
 
-Meta Pixel événements custom : CompleteRegistration (signup) + ViewContent (landing) — installés via src/lib/pixel.ts
+**Mesure** : GA4 + Meta Pixel, tous deux gatés au consentement cookie (`src/components/Trackers.tsx`, `src/lib/consent.ts`). Événements Pixel custom via `src/lib/pixel.ts` : `CompleteRegistration` (signup), `ViewContent` (landing).
 
 ---
 
@@ -741,94 +611,49 @@ Un bug ici est soit un bug financier, soit un doublon visible côté client — 
 
 ## Checklist avant mise en production
 
-- [x] Passer `STRIPE_SECRET_KEY` de `sk_test_...` à `sk_live_...` ✅ (2026-07-07, session 55)
-- [x] Mettre à jour les `STRIPE_PRICE_ID_*` et `STRIPE_WEBHOOK_SECRET` en mode Live ✅ (2026-07-07 — catalogue live + endpoint webhook live `we_1TqHQk…`, 6 events dont `invoice.payment_succeeded` ajouté après coup, il manquait)
-- [x] Publier l'application Google OAuth (retirer le mode Test) ✅
-- [ ] Tester le webhook Stripe en mode Live avec un vrai paiement (page paiement OK 07-07 ; reste à valider l'activation du plan après paiement réel)
-- [x] Vérifier que le cron weekly-reminder envoie bien les emails ✅ (sent:1 + email FR reçu, après fix `profiles.language` commit `c50bffc`)
-- [x] Vérifier que Gelato est configuré avec une carte de paiement valide ✅
-- [x] Exécuter `round2_security_fixes_2026_05_23.sql` + `round3_security_fixes_2026_05_26.sql` dans Supabase ✅
-- [x] ~~Configurer `STRIPE_PRICE_BOOK_ONCE_EUR` + `STRIPE_PRICE_BOOK_ONCE_USD` dans Vercel~~ (obsolète — prix livre dynamique, vars supprimées)
-- [x] Exécuter `fix_book_credits_print_plan_2026_05_27.sql` dans Supabase ✅
+Tout est coché sauf un point (le détail des items faits est archivé dans `docs/SESSIONS.md`) :
+
+- [ ] **Tester le webhook Stripe en mode Live avec un vrai paiement** — la page de paiement est
+  validée depuis le 2026-07-07, l'activation du plan **après** un paiement réel ne l'est toujours
+  pas.
 
 ---
 
 ## Contexte marché
 
-- **Cible** : pet parents US/UK, très attachés émotionnellement à leurs animaux
-- **Différenciateur** : seule app combinant journal IA + livre imprimé physique
-- **Concurrents directs** : 11Pets, PetNoter, DogNote (aucun ne propose un livre imprimé)
-- **Canaux d'acquisition** : Reddit, Twitter/X, groupes Facebook pet parents, Product Hunt
-- **Stratégie** : validation organique avant publicité payante
+Cible : pet parents US/UK, très attachés émotionnellement. Différenciateur : seule app combinant journal IA et livre imprimé physique (11Pets, PetNoter et DogNote n'impriment rien). Acquisition : Reddit, X, groupes Facebook de pet parents, Product Hunt, validation organique avant toute publicité payante. Positionnement et principes produit détaillés : `PRODUCT.md`.
 
 ---
 
 ---
 
-## Optimisation & dette technique (audit Pareto 2026-06-18)
+## Optimisation & dette technique
 
-Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10 items.
+Backlog numéroté, ouvert par l'audit Pareto du 2026-06-18 puis alimenté session après session.
+**Clos : #1, #2, #3, #5, #6, #7, #9, #10, #11, #13, #14, #15, #16, #17, #18, #19, #20** — cause, fix
+et vérification de chacun dans `docs/SESSIONS.md` → « Backlog dette technique, items clos ».
 
-**Livré (commits sur `main`) :**
-- **#1 Logs gatés** — `src/lib/log.ts` : `log.debug/info` silencieux sauf `DEBUG_LOGS=1` ; `warn/error` toujours. `console.*` → `log.*` sur 30 routes API (stop fuite user ids/payloads en logs prod).
-- **#3 Client Anthropic unique** — `src/lib/anthropic.ts` : `callClaude()` (model `claude-sonnet-4-6`, version, timeout 30s, 1 retry sur 429/5xx/network) + `parseStoryResponse()`. Refacto des 4 sites (generate, generate-origins, story.ts ×2). Model id défini **une seule fois**.
-- **#5 Singleton Supabase browser** — `src/lib/supabase/client.ts` réutilise une instance au lieu d'en créer une par render.
-- **#7 Rate-limit persistant** — `checkRateLimitDb()` via RPC Postgres atomique `check_rate_limit` (migration `add_rate_limits_2026_06_18.sql` **appliquée en prod ✓**). Table `rate_limits` RLS-on sans policy, fonction SECURITY DEFINER, **fail-open**. Rewire 7 routes (contact, waitlist, gift-checkout, export-data, memorial tributes, suggestion, unsubscribe). L'ancien limiter in-memory (`checkRateLimit`) reste dispo mais non fiable serverless.
-- **#10 Tests Vitest** — `npm test` ; `vitest.config.ts` avec alias `@`→`src` **manuel** (⚠️ PAS `vite-tsconfig-paths` : ESM-only, casse le config loader CJS). 4 fichiers (`plan.test.ts`, `book-pages.test.ts`, `anthropic.test.ts`, `story.test.ts`), 21 cas au 2026-07-15 — ne pas figer ce nombre dans la doc, se fier à `npm test` pour l'état réel.
+**Ouvert :**
 
-**Écarté — #2 `select("*")` → colonnes explicites :** analysé, **aucun gain réel**, non appliqué. Toutes les occurrences restantes sont soit `select("*", { count, head: true })` (zéro ligne transférée), soit des selects dont **toutes les colonnes sont consommées** (PDF book/preview, gelato/order, book-configs, pet detail). Le seul candidat (5 entries récentes dashboard) gardait `content` (affiché) et cassait le type `Entry` → revert. Ne pas re-tenter sans nouveau besoin.
+- **#4 Rendu statique CDN de la landing** — bloqué par construction : le root `layout.tsx` lit
+  `headers()` (`x-pathname`) uniquement pour fixer `<html lang>`, ce qui force **tout** le site en
+  dynamique, aucune page servie par le CDN sauf `robots` et `sitemap`. Le fix est une
+  restructuration en `/[locale]/`, avec un risque SEO réel sur le hreflang bilingue.
+- **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` dans un
+  `useEffect` (waterfall, requêtes exposées côté client). Une migration RSC donnerait les données au
+  premier paint et réduirait la surface, mais le blast-radius est large pour un gain utilisateur
+  faible.
+- **#12(b) `stripe/upgrade` programmé puis `cancel`** — le scénario (a) est corrigé (Session 65,
+  PR [#121](https://github.com/CookServices/everypaw/pull/121) : `upgrade` et `upgrade-preview`
+  refusent 400 quand `cancel_at_period_end` est vrai). Le (b), annuler alors qu'un Subscription
+  Schedule est actif, n'est pas confirmable en lisant le code : il faut un abonnement Stripe en
+  **test mode** et des Test clocks. Plan de test donné à Julien, jamais exécuté.
 
-**Pages légales FR — ✅ résolu (Session 59, 2026-07-17), vérifié 2026-07-22 :** les 3 redirects retirés de `next.config.js`, vraies pages FR servies (`cgv` 100L, `confidentialite` 57L, `mentions` 56L), metadata complètes (canonical + og) + hreflang réciproque EN↔FR sur les 6 pages légales, 3 URLs FR dans le sitemap. Plus de code mort à ce sujet.
+**Ne pas re-tenter — #2 `select("*")` → colonnes explicites** : analysé, aucun gain réel. Les
+occurrences restantes sont soit `select("*", { count, head: true })` (zéro ligne transférée), soit
+des selects dont toutes les colonnes sont consommées. Le seul candidat cassait le type `Entry`.
 
-**Reportés — gros refactors (fort blast-radius) :**
-- ~~**#11 Gate GA4 + Meta Pixel au consentement cookie**~~ ✅ **résolu (Session 66, PR [#127](https://github.com/CookServices/everypaw/pull/127))** : blocage dur des deux trackers, aucun script injecté avant acceptation.
-  - **Le nœud** : `layout.tsx` est un composant serveur, la décision vit dans `localStorage`. Le serveur ne peut donc pas la lire, et les `<Script>` ont dû sortir vers un composant client, [Trackers.tsx](src/components/Trackers.tsx), qui ne rend rien tant que le consentement manque.
-  - [lib/consent.ts](src/lib/consent.ts) porte le contrat, 12 tests. Clé **versionnée** (`cookie_consent_v2`) : les consentements recueillis sous l'ancien bandeau l'ont été sur une information fausse, ils ne valaient rien, tout le monde est resollicité. L'écriture émet un événement `window` parce que l'événement `storage` natif **ne se déclenche pas** dans l'onglet qui écrit ; sans lui, accepter n'allumerait les trackers qu'au rechargement suivant.
-  - Le `<noscript>` du pixel Meta est supprimé : il tire vers Facebook sans JavaScript, donc sans consentement possible. **Conséquence assumée** : les visiteurs sans JavaScript ne sont plus comptés.
-  - Retrait du consentement ajouté (hors périmètre initial, mais exigé par le RGPD) : « Gérer les cookies » dans les deux variantes de [PublicFooter](src/components/PublicFooter.tsx) efface la décision et ramène le bandeau.
-  - Le bandeau suit désormais la locale de la **page** et non `navigator.language`, sinon il pouvait s'afficher en français à côté d'un bouton de footer en anglais.
-  - Vérifié sur preview Vercel : avant choix et après Refuser, `gtag` et `fbq` indéfinis avec zéro requête vers Google ou Meta ; après Accepter, les deux deviennent des fonctions et les requêtes partent. Retrait vérifié aussi, bandeau qui revient sans rechargement.
-  - A nécessité d'ajouter `NEXT_PUBLIC_GA_MEASUREMENT_ID` et `NEXT_PUBLIC_META_PIXEL_ID` au scope Preview (cf. « Env vars need the Preview scope explicitly »). Les entrées Production existantes sont de type Secret, donc non convertibles en Config : de nouvelles entrées Preview ont été créées à côté, sans toucher aux premières.
-- **#4 Rendu statique CDN landing** — bloqué : root `layout.tsx` lit `headers()` (x-pathname) juste pour fixer `<html lang>` fr/en → force **tout** le site en dynamique. Fix = restructurer en `/[locale]/` (recoupe #6). Risque SEO bilingue (hreflang) si bricolé.
-- ~~**#6 Dédup landing**~~ ✅ **résolu (Session 57)** — `/` et `/fr` partagent `home-client.tsx` (`<Home locale>`), plus de copie manuelle. Idem gift (`gift-client.tsx`).
-- **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` en `useEffect` (waterfall, requêtes exposées client). Migration RSC = data au 1er paint, moins de surface.
-- ~~**#9 Split god-components**~~ ✅ **résolu (Session 66, PR [#123](https://github.com/CookServices/everypaw/pull/123))** : les 3 god-components sont traités.
-  - `pets/[id]/page.tsx` : 2122 à 1017 l (PR #83-85, 2026-07-23), sauf onglet journal (~50 state, volontairement laissé).
-  - `order/page.tsx` : 1625 à 769 l. Les 4 render-closures restantes extraites (`SuccessStep`, `UpsellBanners`, `ConfirmStep`, `AddressStep`), puis `renderPreviewStep` (492 l) splitté en 5 sous-composants (`YearAndTheme`, `BookCover`, `ContentSummary`, `ChapterSelector`, `PreviewActions`) plutôt qu'un composant unique à ~55 props.
-  - `settings/page.tsx` : 878 à 577 l, 6 sections extraites (`SubscriptionSection`, `InvoicesSection`, `PreferencesSection`, `AccountSecuritySection`, `DataExportSection`, `DangerZoneSection`). Pas de blocage theme props ici, les couleurs sont en dur.
-  - **Blocage "theme props" levé** en gardant des props plates, comme `Stepper.tsx`/`PreviewModal.tsx` déjà extraits : ni Context ni bundle d'objets introduits, aucune nouvelle convention. Types `Address` (order) et `Invoice` (settings) dédupliqués dans leurs `constants.ts` respectifs.
-  - Vérifié sur preview Vercel, compte réel : les 6 sections de settings (dont `InvoicesSection` correctement absente à 0 facture), l'étape aperçu de order, et le câblage des props par interaction (changement de thème et titre custom se propagent bien de `YearAndTheme` vers `BookCover`, saisie du code cadeau, ouverture de la modale de suppression). `tsc --noEmit` sans nouvelle erreur.
-  - **Non vérifié** : les étapes adresse et paiement, voir #15.
-- **#12 Interaction `stripe/cancel`/`reactivate` ↔ `stripe/upgrade` (Session 64→65)** — scénario (a) : ~~annuler puis appeler `upgrade`~~ ✅ **résolu (Session 65, PR [#121](https://github.com/CookServices/everypaw/pull/121))** — confirmé par lecture de code (`subscriptionSchedules.update()` écrasait `end_behavior` à `"release"` sans jamais lire `cancel_at_period_end`, ce qui levait silencieusement l'annulation, DB/UI comprises via le webhook). Fix : `upgrade` et `upgrade-preview` refusent désormais (400) si `cancel_at_period_end` est vrai, message "reactivate first". **Scénario (b) reste ouvert** : upgrade programmé (schedule actif) puis `cancel` — pas confirmable par lecture de code seule, nécessite une souscription Stripe test-mode réelle (plan de test donné à Julien en session, pas encore exécuté).
-- ~~**#13 `OnboardingModal` ignore `hasPets`/`hasEntries`/`hasStories`**~~ ✅ **résolu (Session 65, PR [#119](https://github.com/CookServices/everypaw/pull/119))** — chaque étape affiche désormais sa copie `*_done` déjà écrite (`step1_done`/`step2_done`/`step3_done`) et une action neutre (avancer/fermer) quand le jalon correspondant est déjà atteint.
-- ~~**#14 Clés i18n mortes `onboarding.step2_cta`/`step3_cta`**~~ ✅ **résolu (Session 65, PR [#119](https://github.com/CookServices/everypaw/pull/119))** — câblées comme label principal des étapes 2/3 côté "pas encore fait" (remplace le générique `next`/`start`), plus `got_it` câblé pour l'étape 3 "déjà fait".
-- ~~**#15 Étapes adresse et paiement de `order` jamais reparcourues depuis le split**~~ ✅ **résolu (Session 66)** : parcours déroulé en production sur un compte Print créditée, sans passer commande.
-  - Vérifié dans `AddressStep` : validation sur formulaire vide (on reste sur l'étape, libellés « Champ requis », bordures `rgb(163,45,45)`), effacement par champ à la saisie, autocomplete pays, estimation de livraison réactive (`~5–10 €` en France, `~8–14 CHF` en Suisse), dédicace et compteur, en-tête produit avec « 1 crédit utilisé · reste 0 ».
-  - Vérifié dans `ConfirmStep` : récapitulatif d'adresse, résumé de commande et prix, stepper.
-  - **Le câblage des props, seul vrai risque du refacto, est prouvé** : « Modifier l'adresse » passe par la prop `setStep`, transmise dans le même objet que `handleOrder` ; il ramène à l'étape 2 avec adresse et dédicace préservées.
-  - **Non couvert, volontairement** : le clic sur « Passer la commande ». Ses deux branches coûtent de l'argent (`startBookCheckout` sans crédit, sinon `handleOrder` qui appelle Gelato et fait imprimer puis expédier un livre). Il n'existe **pas** de mode sandbox Gelato dans le code, une seule `GELATO_API_KEY` sur l'API de production. Résiduel accepté : `handleOrder` n'a pas été déplacé par #123 et son câblage est prouvé par le bouton voisin.
-  - Détail utile : le champ pays est pré-rempli depuis `navigator.language`, donc un navigateur français voit 5 erreurs sur 6 champs requis au submit vide, pas 6. Ce n'est pas un défaut d'affichage.
-- ~~**#16 La CSP casse tout le JavaScript client en `next dev`**~~ ✅ **résolu (Session 66, PR [#128](https://github.com/CookServices/everypaw/pull/128))** : `'unsafe-eval'` ajouté au `script-src` **en développement uniquement**, via `process.env.NODE_ENV !== "production"` dans [next.config.js](next.config.js).
-  - Le symptôme était silencieux et trompeur : serveur qui répond 200, markup rendu côté serveur correct, mais aucun composant client hydraté. En développant #11 il a fallu un A/B en retirant les changements pour constater que l'ancien bandeau ne s'affichait pas davantage.
-  - **Vérification à refaire si ce header est retouché** : la chaîne `script-src` produite en production doit rester identique à celle d'avant. Contrôlée par comparaison directe avec la version de `main` (`NODE_ENV=production node -e "require('./next.config.js').headers()..."`), et l'en-tête réellement servi en dev contrôlé par `curl -D -`. Ne pas se contenter de relire le code : c'est la seule garantie que le correctif n'affaiblit pas la production.
-
-- ~~**#17 Prix affiché sur la page order jamais confronté au montant réellement débité**~~ ✅ **résolu (Session 67, PR [#132](https://github.com/CookServices/everypaw/pull/132))** : deux défauts distincts, tous deux corrigés.
-  - **Deux prix contradictoires dans l'encart produit** : la ligne de specs `order.product_specs` citait un montant en dur (`~29 €` / `~$29`) à côté du prix calculé par `calcGelatoBookPrice` (`28 €`). Le montant est retiré de la chaîne, qui ne décrit plus que le papier et le pelliculage — le format était aussi répété, il est déjà dans `product_detail` juste au-dessus.
-  - **Devise codée en dur** : `extraBookPriceLabel` écrivait toujours `€`, alors que `stripe/book-checkout` choisit la devise Stripe depuis `x-vercel-ip-country`. Un visiteur hors zone euro voyait `28 €` et était débité `$28`. La page lit désormais `/api/currency` (même source que settings et upgrade) et formate via `formatAmount(currency, amount)` ([currency.ts](src/lib/currency.ts), 2 tests).
-  - **Le livre mémorial affichait un `59 €` figé** alors qu'il passe par le même checkout et le même prix dynamique. Il affiche le prix calculé ; `memorial.order_price` supprimée, `memorial.order_note` ne cite plus de montant.
-  - **Non vérifié** : le montant réellement débité côté Stripe. `stripe/book-checkout` renvoie 500 sur preview faute de `STRIPE_SECRET_KEY` (voir « Env vars need the Preview scope explicitly »), et l'affichage USD n'est pas testable depuis la France, `/api/currency` suivant le pays de la requête. À faire sur la prod : ouvrir le checkout et comparer le montant affiché par Stripe **sans finaliser le paiement**.
-  - Dette laissée : `order.product_price` (`29,00 €` / `$29.00`) n'est lue nulle part, morte avant cette session.
-
-- ~~**#18 Un abonné Digital doit pouvoir commander un livre, payant dès le premier**~~ ✅ **résolu (Session 67, PR [#132](https://github.com/CookServices/everypaw/pull/132))** : le CTA principal est désormais l'unique point d'entrée, sur tous les plans.
-  - Rendu partout : désactivé en Free (la gate reste visible), actif sur tout plan payant sans crédit, et **libellé avec le prix** (« Acheter un livre, 28 € + livraison » en Digital, « Commander un exemplaire supplémentaire, … » en Print) pour annoncer que c'est payant.
-  - **Le bouton d'achat de l'encart est supprimé** : il appelait `startBookCheckout` depuis l'étape aperçu, donc avant l'adresse. Au retour de Stripe, la commande auto partait avec une adresse vide, Gelato refusait, et l'utilisateur se retrouvait payé avec une commande échouée et un crédit restauré. L'achat passe maintenant par aperçu → adresse → confirmation → checkout.
-  - **`ConfirmStep` ne peut plus commander sans paiement** : sa branche ne couvrait que `plan === "print" && credits === 0`, donc un Digital arrivé là appelait `handleOrder`, c'est-à-dire une commande Gelato gratuite. Elle couvre tout plan payant sans crédit.
-  - Vérifié sur preview (compte Digital, 0 crédit, 24 chapitres) : libellé et prix du CTA, passage par l'étape adresse, encart sans bouton, et au clic sur « Passer la commande » un appel à `/api/stripe/book-checkout` et **aucun** à `/api/gelato/order` — contrôlé en interceptant `window.fetch` pour bloquer la route Gelato avant le clic, aucune commande n'a pu partir.
-- **#19 Chaînes i18n mortes citant d'anciens prix (Session 67)** : `order.product_price` (`29,00 €` / `$29.00`) n'est lue par aucun composant, le prix affiché vient de `calcGelatoBookPrice`. Vérifié au `grep` : `landing.free_book`, `landing.pricing_book_note` et `landing.order_book` (tous à `29 €`, plus `49 €` et `9,99 €` ailleurs dans le fichier) ne sont lues nulle part non plus — ce sont des restes de l'ancien catalogue (livre à la carte, print mensuel) supprimé le 2026-07-07. Rien n'est affiché à l'utilisateur aujourd'hui, donc c'est du nettoyage, pas un bug. Antérieur à la Session 67, repéré en traitant #17. À faire : passer les clés `messages/{en,fr}.json` au crible des usages réels et supprimer les orphelines, dans les deux fichiers à la fois.
-
-- **#20 CLAUDE.md dépasse sa propre limite (Session 67)** : le fichier fait 866 lignes alors que la consigne en tête dit de rester sous 700. Le dépassement est antérieur et s'aggrave à chaque session. Fix = pousser vers `docs/SESSIONS.md` ce qui n'est plus opérationnel, en priorité les entrées de backlog barrées (#6, #9, #11, #13, #14, #15, #16, #17, #18 pèsent une cinquantaine de lignes à elles seules) plutôt que les conventions, qui sont la partie réellement lue à chaque session.
-
-*Dernière mise à jour : 2026-09-01 (Session 67 : backlog #17 et #18 clos ; trou de variables d'environnement du projet `everypaw-staging` documenté, non corrigé ; #19 et #20 ouverts sur deux dettes de documentation)*
+*Dernière mise à jour : 2026-09-02 (Session 68 : #19 et #20 clos, restent #4, #8 et #12(b))*
 
 ---
 
@@ -836,24 +661,6 @@ Audit complet (perf / qualité / sécu / archi / robustesse) + rapport Pareto 10
 
 Historique complet (sessions 1 à 53, sprints, audits sécurité, UX) : **[docs/SESSIONS.md](docs/SESSIONS.md)**.
 Seules les 2 dernières sessions sont conservées ici ; à chaque nouvelle session, déplacer la plus ancienne vers l'archive.
-
-### ✅ Session 65 — Onboarding comptes vides, incohérences dashboard, message auth (2026-08-31)
-
-Session en 3 lots indépendants, chacun validé sur preview Vercel avant merge (PR [#117](https://github.com/CookServices/everypaw/pull/117)).
-
-**Lot 1 — Onboarding par défaut créait des comptes vides** (5/9 inscrits réels sans animal) : le bouton principal de l'étape 1 du modal ("Suivant", plein, orange) avançait sans rien créer, le vrai CTA de création (`/dashboard/pets/new`) était le lien secondaire à opacité réduite ; `onboarding_completed` passait à `true` sur simple fermeture du modal, sans qu'aucun animal existe. Fix : hiérarchie de l'étape 1 inversée (CTA principal = créer le profil), nouveau champ `profiles.onboarding_dismissed` (migration `add_onboarding_dismissed_2026_08_31.sql`, appliquée en prod) qui pilote désormais seul l'affichage du modal ; `onboarding_completed` n'est écrit `true` qu'à la création réussie d'un animal (`pets/new/page.tsx`), reflète enfin la réalité. Le bouton "Réinitialiser le guide" (settings) écrivait l'ancien flag — corrigé au passage (même incohérence, découverte en cours de lot). Piège de migration : `onboarding_dismissed` par défaut `false` pour tous les comptes existants aurait fait réapparaître le modal chez tous les utilisateurs ayant déjà un animal — rattrapage SQL à deux requêtes donné à Julien (voir mémoire projet Everypaw), la deuxième (backfill `dismissed=true` pour tout compte avec animal) n'est pas optionnelle.
-
-**Lot 2 — Trois défauts dashboard constatés en prod (31/08/2026, compte free, 1 animal)** : (a) la question hebdomadaire affichait un trou grammatical quand le nom de l'animal était vide (`petName ?? ""` puis substitution) — fallback générique "your pet"/"ton animal" ajouté pour les 52 questions × 2 langues, plus un badge nom+avatar sur la carte quand plusieurs animaux existent (root cause réelle non corrigée : `localStorage.lastPetId` jamais nettoyé, peut pointer un animal supprimé) ; (b) la carte "Next AI chapter" annonçait toujours une date de génération, même sur plan free ou compte sans assez d'entrées — `getChapterEligibility()` extraite dans `plan-guards.ts`, partagée par le cron `monthly-story` et le dashboard, 3 états réels (`not_included`/`needs_entries`/`eligible`) ; (c) le compteur d'entrées affichait un total mensuel contre un plafond qui est en réalité lifetime (`10` vient de `canAddEntry`, pas de `monthlyEntryCount`) — dénominateur et libellé corrigés pour utiliser la même source que la limite réelle. Bug de build découvert en cours de route : `getChapterEligibility` importée depuis `@/lib/plan` (qui tire `next/headers` via `supabase/server.ts`) dans un composant client cassait le build Vercel — même pattern déjà documenté (Session build cassé du 2026-06-11) ; fix = importer depuis `@/lib/plan-guards` (zero imports) à la place.
-
-**Lot 3 — Message générique sur `auth_error=exchange_failed`** : texte en dur "Une erreur est survenue" dans un encart rouge, alors que ce code correspond aujourd'hui exclusivement à un échec OAuth Google (`/auth/callback`, PKCE cross-device — les liens de confirmation email passent par `/auth/confirm` depuis la Session 64 et ne déclenchent plus ce cas). Fix : clé i18n dédiée `auth.session_exchange_failed` ("Ton compte est prêt. Réessaie de te connecter." / "Your account is ready. Try signing in again."), affichée dans le style `notice` neutre (déjà utilisé par `confirm_failed`) au lieu du rouge erreur, `showResend` resté `false` (renvoyer un lien de confirmation n'a pas de sens pour un échec OAuth).
-
-**Validé sur preview** : Lot 1 (hiérarchie modal, capture écran), Lot 2b/2c (cartes dashboard, compte free réel), Lot 3 FR (`exchange_failed` + non-régression `confirm_failed`). Non testé : Lot 3 en anglais (pas de moyen de forcer `navigator.language` dans le Browser pane utilisé), déclenchement réel cross-device du bug OAuth (nécessite deux appareils physiques).
-
-**Reste à faire côté Julien** :
-- Exécuter le rattrapage SQL onboarding (2 requêtes, voir mémoire projet) si pas déjà fait — sans la 2ᵉ requête, tous les comptes existants avec animal revoient le modal d'onboarding.
-- Vérifier `exchange_failed` en anglais (navigateur perso en EN) — non testable depuis cette session.
-- **Backlog #13/#14** (voir section Optimisation & dette technique) : `OnboardingModal` ignore `hasPets`/`hasEntries`/`hasStories` (2ᵉ invocation du modal montre la mauvaise étape), clés i18n `step2_cta`/`step3_cta` mortes — trouvés pendant le Lot 1, pas corrigés, hors périmètre.
-
 
 ### ✅ Session 67 — Prix de la page order et accès Digital à la commande (2026-09-01)
 
@@ -865,6 +672,27 @@ Backlog #17 et #18 traités ensemble, ils touchent le même encart produit. PR [
 
 **Vérification** : preview Vercel, compte `testopera@yopmail.com` basculé en `plan=digital, book_credits=0`. Libellé et prix du CTA, passage par l'adresse, encart sans bouton, et au clic sur « Passer la commande » un appel à `/api/stripe/book-checkout` et **aucun** à `/api/gelato/order`. Méthode réutilisable pour tester un bouton qui coûte de l'argent : patcher `window.fetch` dans la page pour bloquer la route dangereuse **avant** de cliquer, puis vérifier qu'elle n'a pas été appelée.
 
-**Trouvé au passage, non corrigé** : le projet Vercel `everypaw-staging` ne contient que 3 variables (les 3 Supabase). Toutes les routes Stripe, Gelato, Anthropic et les crons renvoient un 500 à corps vide sur preview. Documenté dans « Env vars need the Preview scope explicitly ». Conséquence : une preview prouve l'UI et quel endpoint un bouton appelle, jamais ce que cet endpoint fait.
+**Trouvé au passage, non corrigé** : le projet Vercel `everypaw-staging` ne contient que 3 variables (les 3 Supabase). Toutes les routes Stripe, Gelato, Anthropic et les crons renvoient un 500 à corps vide sur preview. Documenté dans « Deployment & Staging ». Conséquence : une preview prouve l'UI et quel endpoint un bouton appelle, jamais ce que cet endpoint fait.
 
 **Reste à faire côté Julien** : comparer sur la prod le prix affiché et le montant réel de la page Stripe (sans finaliser le paiement), et remettre le compte de test en free (`UPDATE profiles SET plan='free', is_premium=false, book_credits=0 WHERE email='testopera@yopmail.com';`).
+
+### ✅ Session 68 — Clés i18n orphelines et CLAUDE.md remis sous sa limite (2026-09-02)
+
+Backlog #19 et #20, les deux dettes de documentation ouvertes en fin de Session 67.
+
+**#19 — 85 clés i18n sans lecteur, retirées des deux fichiers** (667 → 582 feuilles chacun). Pour
+chaque feuille de `messages/en.json` : le nom de la clé apparaît-il quelque part dans `src/` ? Les
+trois accès dynamiques du repo ont été vérifiés et laissés intacts — `t.pet["species_" + v]`,
+`t.interview["q" + n]` via `getWeeklyQuestion`, `faq.q1..q6`/`a1..a6` lus par index pour le JSON-LD
+des landings ; sans ça, les 52 questions de l'interview hebdomadaire partaient à tort. Le gros des
+clés retirées vient de l'ancien catalogue supprimé le 2026-07-07 (`order.product_price`,
+`landing.free_book`, `landing.pricing_book_note`… tous à 29 €/49 €/9,99 €), de la page waitlist et
+du tableau d'upgrade réécrit. Suppression ligne à ligne plutôt que re-sérialisation du JSON : 170 suppressions et rien d'autre, jeu de clés identique des deux côtés.
+
+**#20 — CLAUDE.md ramené de 869 lignes à moins de 700.** Rien n'est perdu, tout ce qui sort est
+archivé ici : backlog clos (#1 à #18), cases cochées de la checklist de mise en production, Session
+65, procédure de test du webhook via Stripe CLI, et version longue de « Deployment & Staging »
+(197 lignes) dont CLAUDE.md ne garde que la règle, sans le récit de l'incident. Conventions et
+Definition of Done non touchées : c'est la partie réellement relue à chaque session. Retiré au
+passage, parce que faux et non parce que long : la palette `--cream`/`--brown`/`--amber` du « Design
+system », qui n'existe plus dans `globals.css` et que plus aucun composant ne lit.
