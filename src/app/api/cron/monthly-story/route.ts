@@ -4,10 +4,10 @@ import { getServiceSupabase, getChapterEligibility } from "@/lib/plan";
 import type { Plan } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
-import { getResendClient } from "@/lib/resend";
+import { sendEmail } from "@/lib/resend";
 import { generateAndSaveStory } from "@/lib/story";
 import { getProfileLocaleById } from "@/lib/locale";
-import { baseLayout, emoji, eyebrow, heading, paragraph, ctaButton, unsubscribeLink, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
+import { baseLayout, emoji, eyebrow, heading, paragraph, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 
 // Sequential AI generation across N pets, each callClaude up to ~30s. Vercel Hobby
 // caps function duration at 60s, so the batch must fit there. If the eligible-pet
@@ -22,7 +22,6 @@ export async function GET(req: Request) {
 
   const startedAt = Date.now();
   const supabase = getServiceSupabase();
-  const resend = getResendClient();
 
   // month_key = previous month (cron fires on the 1st of the current month)
   const now = new Date();
@@ -163,7 +162,8 @@ export async function GET(req: Request) {
           ? "Unsubscribe from monthly story emails"
           : "Se désinscrire des emails d'histoires mensuelles";
 
-      await resend.emails.send({
+      await sendEmail({
+      unsubscribeUrl: oneClickUnsubscribeUrl(unsubscribeUrl),
         from: "Everypaw <hello@everypaw.app>",
         to: profile.email,
         subject,
@@ -182,6 +182,7 @@ export async function GET(req: Request) {
           ctaButton(storiesUrl, ctaLabel),
           unsubscribeLink(unsubscribeUrl, unsubscribeLabel),
           locale === "en" ? "en" : "fr",
+          locale === "en" ? `A new chapter of ${petNameSafe}'s story is ready.` : `Un nouveau chapitre de l'histoire de ${petNameSafe} est prêt.`,
         ),
       });
     } catch (err) {

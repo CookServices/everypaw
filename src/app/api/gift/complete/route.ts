@@ -1,7 +1,7 @@
 import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
+import { sendEmail } from "@/lib/resend";
 import Stripe from "stripe";
-import { Resend } from "resend";
 import { stripe } from "@/lib/stripe";
 import { escapeHtml } from "@/lib/html";
 import { baseLayout, emoji, heading, paragraph, quote, codeBox, ctaButton, finePrint, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
@@ -59,6 +59,7 @@ function buildEmailHtml({
     finePrint(c.footer),
     "",
     locale,
+    locale === "en" ? `${senderName} gifted you 12 months of Everypaw.` : `${senderName} vous offre 12 mois d'Everypaw.`,
   );
 }
 
@@ -119,11 +120,13 @@ export async function POST(req: Request) {
     { idempotencyKey: `gift-complete-${sessionId}` },
   );
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
   const redeemUrl = `${process.env.NEXT_PUBLIC_APP_URL}/redeem?code=${promotionCode.code}`;
   const c = copy[emailLocale];
 
-  const emailPayload: Parameters<typeof resend.emails.send>[0] = {
+  // Note: `scheduledAt` is accepted here but ignored by Resend 3.5.0, which has
+  // no scheduling API. A gift bought with a future delivery date is sent right
+  // away. Fixing it means upgrading the SDK, out of scope here.
+  const emailPayload: Parameters<typeof sendEmail>[0] = {
     from: "Everypaw <hello@everypaw.app>",
     to: recipient_email,
     subject: c.subject(),
@@ -150,7 +153,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    await resend.emails.send(emailPayload);
+    await sendEmail(emailPayload);
   } catch (err) {
     // Release the claim so a retry can resend after a genuine send failure.
     if (pi?.id) {

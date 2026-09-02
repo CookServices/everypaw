@@ -1,6 +1,6 @@
 import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
+import { sendEmail } from "@/lib/resend";
 import { escapeHtml } from "@/lib/html";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 import { baseLayout, heroSection, paragraph, quote, divider, colorSection, ctaButton, BRAND } from "@/lib/email-templates";
@@ -41,10 +41,9 @@ export async function POST(req: Request) {
   }
 
   const to = SUBJECT_ROUTING[subject];
-  const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
-    await resend.emails.send({
+    await sendEmail({
       from: "Everypaw Contact <noreply@everypaw.app>",
       to,
       reply_to: email,

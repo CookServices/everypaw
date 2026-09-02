@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
-import { getResendClient } from "@/lib/resend";
-import { baseLayout, heroSection, quote, ctaButton, unsubscribeLink, divider, colorSection, BRAND } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/resend";
+import { baseLayout, heroSection, quote, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
 
 // Prompts rotate daily by day-of-year index
 const PROMPTS_EN: Record<string, string[]> = {
@@ -93,7 +93,6 @@ export async function GET(req: Request) {
   if (authError) return authError;
 
   const supabase = getServiceSupabase();
-  const resend = getResendClient();
 
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
@@ -172,9 +171,11 @@ export async function GET(req: Request) {
       ctaButton("https://everypaw.app/dashboard", isFR ? `Écrire pour ${petName}` : `Write for ${petName}`),
       unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
       isFR ? "fr" : "en",
+      isFR ? "Une idée pour votre moment du jour." : "An idea for today's moment.",
     );
 
-    await resend.emails.send({
+    await sendEmail({
+      unsubscribeUrl: oneClickUnsubscribeUrl(unsubscribeUrl),
       from: "Everypaw <hello@everypaw.app>",
       to: profile.email,
       subject,

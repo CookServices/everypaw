@@ -1,6 +1,6 @@
 import { log } from "@/lib/log";
-import { Resend } from "resend";
 import { NextResponse } from "next/server";
+import { sendEmail } from "@/lib/resend";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { escapeHtml } from "@/lib/html";
@@ -30,10 +30,8 @@ export async function POST(req: Request) {
     // non-blocking
   }
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
   try {
-    const { error: resendError } = await resend.emails.send({
+    const { error: resendError } = await sendEmail({
       from: "Everypaw <noreply@everypaw.app>",
       to: "julien.mauduit@gmail.com",
       reply_to: userEmail !== "unknown" ? userEmail : undefined,

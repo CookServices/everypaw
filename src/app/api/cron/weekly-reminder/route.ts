@@ -2,16 +2,15 @@ import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
-import { getResendClient } from "@/lib/resend";
+import { sendEmail } from "@/lib/resend";
 import { getWeeklyQuestion, currentISOWeekBounds } from "@/lib/interview";
-import { baseLayout, emoji, eyebrow, quote, ctaButton, paragraph, unsubscribeLink, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
+import { baseLayout, emoji, eyebrow, quote, ctaButton, paragraph, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
   if (authError) return authError;
 
   const supabase = getServiceSupabase();
-  const resend = getResendClient();
 
   const { start: weekStart, end: weekEnd } = currentISOWeekBounds();
 
@@ -61,9 +60,7 @@ export async function GET(req: Request) {
       ? `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`
       : "https://everypaw.app/dashboard";
 
-    const subject = isFrench
-      ? `✍️ ${question}`
-      : `✍️ ${question}`;
+    const subject = `✍️ ${question}`;
 
     const ctaLabel = isFrench ? `Répondre pour ${petNameHtml}` : `Answer for ${petNameHtml}`;
     const weekNote = isFrench
@@ -84,13 +81,15 @@ export async function GET(req: Request) {
         BRAND.accent,
         "#FDFAF5"
       ) +
-      paragraph(isFrench ? "Prenez une minute pour répondre — chaque détail compte !" : "Take a moment to answer — every detail matters!") +
+      paragraph(isFrench ? "Prenez une minute pour répondre, chaque détail compte." : "Take a moment to answer, every detail matters.") +
       ctaButton("https://everypaw.app/dashboard", ctaLabel),
       unsubscribeLink(unsubscribeUrl, unsubLabel),
       isFrench ? "fr" : "en",
+      isFrench ? "Une question pour se souvenir de cette semaine." : "One question to remember this week by.",
     );
 
-    await resend.emails.send({
+    await sendEmail({
+      unsubscribeUrl: oneClickUnsubscribeUrl(unsubscribeUrl),
       from: "Everypaw <hello@everypaw.app>",
       to: profile.email,
       subject,

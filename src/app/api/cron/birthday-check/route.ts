@@ -3,16 +3,15 @@ import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
-import { getResendClient } from "@/lib/resend";
+import { sendEmail } from "@/lib/resend";
 import { generateAndSaveBirthdayLetter } from "@/lib/story";
-import { baseLayout, heroSection, paragraph, quote, ctaButton, ctaButtonOutline, unsubscribeLink, divider, colorSection, BRAND } from "@/lib/email-templates";
+import { baseLayout, heroSection, paragraph, quote, ctaButton, ctaButtonOutline, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
   if (authError) return authError;
 
   const supabase = getServiceSupabase();
-  const resend = getResendClient();
 
   const today = new Date();
   const mm = String(today.getMonth() + 1).padStart(2, "0");
@@ -152,9 +151,11 @@ export async function GET(req: Request) {
       ctaButton("https://everypaw.app/dashboard", isFR ? "Écrire une entrée d'anniversaire" : "Write a birthday entry"),
       unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
       isFR ? "fr" : "en",
+      isFR ? "C'est un jour à marquer dans le journal." : "A day worth writing down.",
     );
 
-    await resend.emails.send({
+    await sendEmail({
+      unsubscribeUrl: oneClickUnsubscribeUrl(unsubscribeUrl),
       from: "Everypaw <hello@everypaw.app>",
       to: profile.email,
       subject,

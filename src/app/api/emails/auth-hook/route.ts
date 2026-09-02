@@ -1,7 +1,7 @@
 import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
+import { sendEmail } from "@/lib/resend";
 import { createHmac, timingSafeEqual } from "crypto";
-import { Resend } from "resend";
 import { getProfileLocale } from "@/lib/locale";
 import { isSafeRelativePath } from "@/lib/validation";
 import {
@@ -102,8 +102,6 @@ export async function POST(req: Request) {
   }
 
   const lang = await getProfileLocale(email);
-
-  const resend = new Resend(process.env.RESEND_API_KEY);
   let subject: string;
   let html: string;
   let toEmail = email;
@@ -166,7 +164,7 @@ export async function POST(req: Request) {
   log.debug("[auth-hook] Sending email type:", actionType, "to:", toEmail, "lang:", lang);
 
   try {
-    const { error } = await resend.emails.send({
+    const { error } = await sendEmail({
       from: "Everypaw <noreply@everypaw.app>",
       to: toEmail,
       subject,

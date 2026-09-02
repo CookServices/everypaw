@@ -2,15 +2,14 @@ import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
-import { getResendClient } from "@/lib/resend";
-import { baseLayout, heroSection, paragraph, ctaButton, unsubscribeLink, divider, colorSection, BRAND } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/resend";
+import { baseLayout, heroSection, paragraph, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
   if (authError) return authError;
 
   const supabase = getServiceSupabase();
-  const resend = getResendClient();
 
   const now = new Date();
   const fourDaysAgo = new Date(now); fourDaysAgo.setDate(now.getDate() - 4);
@@ -105,9 +104,11 @@ export async function GET(req: Request) {
       ctaButton("https://everypaw.app/dashboard", isFR ? "Ajouter un moment" : "Add a moment"),
       unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders"),
       isFR ? "fr" : "en",
+      isFR ? "Votre série est sur le point de s'arrêter." : "Your streak is about to end.",
     );
 
-    await resend.emails.send({
+    await sendEmail({
+      unsubscribeUrl: oneClickUnsubscribeUrl(unsubscribeUrl),
       from: "Everypaw <hello@everypaw.app>",
       to: profile.email,
       subject,
