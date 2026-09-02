@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
-import { getResendClient } from "@/lib/resend";
+import { sendEmail } from "@/lib/resend";
+import { baseLayout, ctaButton, heroSection, paragraph } from "@/lib/email-templates";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 
 import { UUID_REGEX } from "@/lib/validation";
@@ -149,32 +150,23 @@ export async function POST(req: Request) {
           ? `🕊️ Quelqu'un a laissé un hommage pour ${petNameEsc}`
           : `🕊️ Someone left a tribute for ${petNameEsc}`;
 
-        const html = isFR ? `
-          <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-            <p style="font-size: 28px; margin: 0 0 12px;">🕊️</p>
-            <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 12px;">Un hommage a été déposé pour ${petNameEsc}</h1>
-            <p style="font-size: 15px; line-height: 1.7; color: #7A5C44; margin: 0 0 24px;">
-              Quelqu'un a souhaité partager un souvenir ou un message sur la page mémorial de ${petNameEsc}. Vous pouvez l'approuver ou le rejeter depuis le tableau de bord.
-            </p>
-            <a href="https://everypaw.app/dashboard/pets/${pet.id}?tab=tributes" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-              Voir les hommages
-            </a>
-          </div>
-        ` : `
-          <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #3D2B1F;">
-            <p style="font-size: 28px; margin: 0 0 12px;">🕊️</p>
-            <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 12px;">A tribute was left for ${petNameEsc}</h1>
-            <p style="font-size: 15px; line-height: 1.7; color: #7A5C44; margin: 0 0 24px;">
-              Someone shared a memory or message on ${petNameEsc}'s memorial page. You can approve or reject it from your dashboard.
-            </p>
-            <a href="https://everypaw.app/dashboard/pets/${pet.id}?tab=tributes" style="display: inline-block; background: #C8813A; color: #FDFAF5; padding: 12px 24px; border-radius: 100px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-              Review tributes
-            </a>
-          </div>
-        `;
+        const tributesUrl = `https://everypaw.app/dashboard/pets/${pet.id}?tab=tributes`;
+        const html = baseLayout(
+          isFR
+            ? heroSection("🕊️", `Un hommage a été déposé pour ${petNameEsc}`) +
+              paragraph(`Quelqu'un a souhaité partager un souvenir ou un message sur la page mémorial de ${petNameEsc}. Vous pouvez l'approuver ou le rejeter depuis le tableau de bord.`) +
+              ctaButton(tributesUrl, "Voir les hommages")
+            : heroSection("🕊️", `A tribute was left for ${petNameEsc}`) +
+              paragraph(`Someone shared a memory or message on ${petNameEsc}'s memorial page. You can approve or reject it from your dashboard.`) +
+              ctaButton(tributesUrl, "Review tributes"),
+          "",
+          isFR ? "fr" : "en",
+          isFR
+            ? "Un message vous attend sur la page mémorial."
+            : "A message is waiting on the memorial page.",
+        );
 
-        const resend = getResendClient();
-        await resend.emails.send({
+        await sendEmail({
           from: "Everypaw <hello@everypaw.app>",
           to: profile.email,
           subject,

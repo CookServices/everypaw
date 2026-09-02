@@ -1,7 +1,7 @@
 import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
+import { sendEmail } from "@/lib/resend";
 import Stripe from "stripe";
-import { Resend } from "resend";
 import { getServiceSupabase, priceIdToPlan } from "@/lib/plan";
 import { buildPaymentFailedEmail } from "@/lib/auth-emails";
 
@@ -386,8 +386,7 @@ export async function POST(req: Request) {
         });
 
         const { subject, html } = buildPaymentFailedEmail(lang, portalSession.url);
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        const { error: emailError } = await resend.emails.send({
+        const { error: emailError } = await sendEmail({
           from: "Everypaw <noreply@everypaw.app>",
           to: userEmail,
           subject,

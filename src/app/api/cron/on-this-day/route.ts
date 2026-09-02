@@ -2,15 +2,14 @@ import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
-import { getResendClient } from "@/lib/resend";
-import { baseLayout, emoji, heading, paragraph, quote, ctaButton, unsubscribeLink, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/resend";
+import { baseLayout, emoji, heading, paragraph, quote, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
   if (authError) return authError;
 
   const supabase = getServiceSupabase();
-  const resend = getResendClient();
 
   const today = new Date();
   const currentYear = today.getFullYear();
@@ -102,9 +101,11 @@ export async function GET(req: Request) {
       ctaButton("https://everypaw.app/dashboard", isFR ? `Voir le journal de ${petName}` : `See ${petName}'s journal`),
       `${printPromo}<br />${unsubscribeLink(unsubscribeUrl, isFR ? "Se désabonner des rappels" : "Unsubscribe from reminders")}`,
       isFR ? "fr" : "en",
+      isFR ? "Un souvenir refait surface aujourd'hui." : "A memory resurfaces today.",
     );
 
-    await resend.emails.send({
+    await sendEmail({
+      unsubscribeUrl: oneClickUnsubscribeUrl(unsubscribeUrl),
       from: "Everypaw <hello@everypaw.app>",
       to: profile.email,
       subject,

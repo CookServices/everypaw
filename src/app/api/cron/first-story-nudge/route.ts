@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
-import { getResendClient } from "@/lib/resend";
+import { sendEmail } from "@/lib/resend";
 import { shouldShowFirstStoryNudge } from "@/lib/story";
-import { baseLayout, emoji, heading, paragraph, ctaButton, unsubscribeLink, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
+import { baseLayout, emoji, heading, paragraph, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 import { getTranslations } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 
@@ -22,7 +22,6 @@ export async function GET(req: Request) {
   if (authError) return authError;
 
   const supabase = getServiceSupabase();
-  const resend = getResendClient();
 
   const now = new Date();
   const windowStart = new Date(now.getTime() - 3 * 86_400_000).toISOString();
@@ -106,7 +105,8 @@ export async function GET(req: Request) {
       const subject = nudge.email_subject.replace("{petName}", pet.name);
       const body = nudge.email_body.replace("{count}", String(entryCount ?? 0)).replace("{petName}", pet.name);
 
-      await resend.emails.send({
+      await sendEmail({
+      unsubscribeUrl: oneClickUnsubscribeUrl(unsubscribeUrl),
         from: "Everypaw <hello@everypaw.app>",
         to: profile.email,
         subject,
@@ -124,6 +124,7 @@ export async function GET(req: Request) {
           ctaButton(`https://everypaw.app/dashboard/pets/${pet.id}?tab=stories`, escapeHtml(nudge.email_cta)),
           unsubscribeLink(unsubscribeUrl, nudge.email_unsubscribe),
           locale,
+          locale === "en" ? "Your free AI chapter is waiting." : "Votre chapitre IA offert vous attend.",
         ),
       });
 

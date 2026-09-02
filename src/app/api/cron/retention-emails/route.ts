@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
-import { getResendClient } from "@/lib/resend";
-import { baseLayout, heading, paragraph, ctaButton, heroSection, quote, unsubscribeLink, divider, colorSection, BRAND } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/resend";
+import { baseLayout, heading, paragraph, ctaButton, heroSection, quote, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
 import { estimateBookPages } from "@/lib/book";
 import { getTranslations } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
@@ -15,8 +15,8 @@ function btn(url: string, label: string): string {
   return ctaButton(url, escapeHtml(label));
 }
 
-function wrap(body: string, unsubscribeUrl: string, unsubscribeLabel: string, lang: "fr" | "en" = "fr"): string {
-  return baseLayout(body, unsubscribeLink(unsubscribeUrl, unsubscribeLabel), lang);
+function wrap(body: string, unsubscribeUrl: string, unsubscribeLabel: string, lang: "fr" | "en" = "fr", preheaderText = ""): string {
+  return baseLayout(body, unsubscribeLink(unsubscribeUrl, unsubscribeLabel), lang, preheaderText);
 }
 
 function h1(text: string): string {
@@ -50,7 +50,6 @@ export async function GET(req: Request) {
   if (authError) return authError;
 
   const supabase = getServiceSupabase();
-  const resend = getResendClient();
 
   const now = new Date();
 
@@ -126,6 +125,7 @@ export async function GET(req: Request) {
           ) +
           btn("https://everypaw.app/dashboard/pets/new", re.d1_no_pet_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
+          locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
         );
       } else {
         const firstPet = alivePets[0];
@@ -152,7 +152,8 @@ export async function GET(req: Request) {
               "#FDFAF5"
             ) +
             btn(`https://everypaw.app/dashboard/pets/${firstPet.id}`, re.d1_no_entry_cta),
-            unsubscribeUrl, re.unsubscribe,
+            unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
+            locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
           );
         } else {
           const remaining = Math.max(0, 3 - ec);
@@ -171,12 +172,14 @@ export async function GET(req: Request) {
               "#FDFAF5"
             ) +
             btn(`https://everypaw.app/dashboard/pets/${firstPet.id}`, re.d1_entry_cta),
-            unsubscribeUrl, re.unsubscribe,
+            unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
+            locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
           );
         }
       }
 
-      await resend.emails.send({
+      await sendEmail({
+      unsubscribeUrl: oneClickUnsubscribeUrl(unsubscribeUrl),
         from: "Everypaw <hello@everypaw.app>",
         to: profile.email,
         subject,
@@ -258,7 +261,7 @@ export async function GET(req: Request) {
         subject = re.d7_story_subject.replace("{petName}", storyPet.name);
         body = wrap(
           heroSection("📖", re.d7_story_title) +
-          `<h2 style="font-family:Georgia,serif;font-size:1.1rem;font-weight:600;color:${BRAND.text};margin:0 0 8px;">${titleSafe}</h2>` +
+          `<h2 style="font-family:Georgia,serif;font-size:18px;font-weight:600;color:${BRAND.text};margin:0 0 8px;">${titleSafe}</h2>` +
           quote(excerpt) +
           divider() +
           colorSection(
@@ -270,6 +273,7 @@ export async function GET(req: Request) {
           ) +
           btn(`https://everypaw.app/dashboard/pets/${storyPet.id}?tab=stories`, re.d7_story_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
+          locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
         );
       } else {
         // Best entry with photo
@@ -311,10 +315,12 @@ export async function GET(req: Request) {
           p(re.d7_no_story_body) +
           btn(`https://everypaw.app/dashboard/pets/${entryPet.id}`, re.d7_no_story_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
+          locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
         );
       }
 
-      await resend.emails.send({
+      await sendEmail({
+      unsubscribeUrl: oneClickUnsubscribeUrl(unsubscribeUrl),
         from: "Everypaw <hello@everypaw.app>",
         to: profile.email,
         subject,
@@ -416,6 +422,7 @@ export async function GET(req: Request) {
           ) +
           btn("https://everypaw.app/dashboard/settings", re.d30_free_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
+          locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
         );
       } else {
         // Paid user, pages estimate + upcoming chapter date
@@ -443,10 +450,12 @@ export async function GET(req: Request) {
           ) +
           btn(`https://everypaw.app/dashboard/pets/${firstPet.id}`, re.d30_paid_cta),
           unsubscribeUrl, re.unsubscribe, locale === "en" ? "en" : "fr",
+          locale === "en" ? "A small nudge from Everypaw." : "Un petit rappel d'Everypaw.",
         );
       }
 
-      await resend.emails.send({
+      await sendEmail({
+      unsubscribeUrl: oneClickUnsubscribeUrl(unsubscribeUrl),
         from: "Everypaw <hello@everypaw.app>",
         to: profile.email,
         subject,

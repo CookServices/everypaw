@@ -2,7 +2,7 @@ import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase, canInviteMembers } from "@/lib/plan";
-import { getResendClient } from "@/lib/resend";
+import { sendEmail } from "@/lib/resend";
 import { escapeHtml } from "@/lib/html";
 import { baseLayout, heading, paragraph, ctaButton, finePrint } from "@/lib/email-templates";
 import crypto from "node:crypto";
@@ -174,9 +174,6 @@ async function sendInviteEmail(
   const isFR = (ownerProfile?.language ?? "en").toLowerCase().startsWith("fr");
   const lang: "fr" | "en" = isFR ? "fr" : "en";
 
-  let resend;
-  try { resend = getResendClient(); } catch { return; }
-
   const subject = isFR
     ? `Vous êtes invité(e) à rejoindre le journal de ${petName} sur Everypaw`
     : `You're invited to join ${petName}'s journal on Everypaw`;
@@ -193,10 +190,11 @@ async function sendInviteEmail(
         finePrint(`This invitation expires in ${INVITE_TTL_DAYS} days. If you didn't expect this email, you can safely ignore it.`),
     "",
     lang,
+    isFR ? `Rejoignez le journal de ${safePet} sur Everypaw.` : `Join ${safePet}'s journal on Everypaw.`,
   );
 
   try {
-    await resend.emails.send({
+    await sendEmail({
       from: "Everypaw <hello@everypaw.app>",
       to: toEmail,
       subject,

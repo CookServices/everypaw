@@ -1,6 +1,6 @@
 import { log } from "@/lib/log";
-import { Resend } from "resend";
 import { NextResponse } from "next/server";
+import { sendEmail } from "@/lib/resend";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 import { escapeHtml } from "@/lib/html";
 import { baseLayout, heroSection, paragraph, divider, colorSection, ctaButton, BRAND } from "@/lib/email-templates";
@@ -11,8 +11,6 @@ export async function POST(req: Request) {
   if (!allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
-
-  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const { email } = await req.json();
 
@@ -25,7 +23,7 @@ export async function POST(req: Request) {
 
   try {
     // 1. Confirmation email to the user
-    await resend.emails.send({
+    await sendEmail({
       from: "Everypaw <hello@everypaw.app>",
       to: email,
       subject: "You're on the list 🐾",
@@ -47,7 +45,7 @@ export async function POST(req: Request) {
     // 2. Internal notification (optional, only if env var is set)
     const notifTo = process.env.WAITLIST_TO_EMAIL;
     if (notifTo) {
-      await resend.emails.send({
+      await sendEmail({
         from: "Everypaw Waitlist <hello@everypaw.app>",
         to: notifTo,
         subject: `New waitlist signup: ${email}`,
