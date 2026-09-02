@@ -10,8 +10,9 @@ export default function RedeemPage() {
   const { t, locale } = useLocale();
   const isFR = locale === "fr";
   const [code, setCode] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "error" | "scheduled">("idle");
   const [error, setError] = useState("");
+  const [scheduledPlan, setScheduledPlan] = useState<{ plan: string; activatesAt: number } | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -39,10 +40,25 @@ export default function RedeemPage() {
     const data = await res.json();
     if (data.url) {
       window.location.href = data.url;
-    } else {
-      setError(data.error || t.redeem.error_invalid);
-      setStatus("error");
+      return;
     }
+    // An already-subscribed user gets the gift queued for the next renewal instead
+    // of a checkout URL. Without this branch the page fell through to the error
+    // message and told them the code was invalid, right after burning it.
+    if (data.scheduled) {
+      setScheduledPlan({ plan: data.plan, activatesAt: data.activatesAt });
+      setStatus("scheduled");
+      return;
+    }
+    if (data.code === "cancel_pending") {
+      setError(isFR
+        ? "Votre abonnement est en cours d'annulation. Annulez la résiliation depuis vos paramètres, puis réessayez, votre code reste valable."
+        : "Your subscription is being cancelled. Keep your subscription from your settings, then try again, your code stays valid.");
+      setStatus("error");
+      return;
+    }
+    setError(data.error || t.redeem.error_invalid);
+    setStatus("error");
   };
 
   const redeemRedirect = `/redeem${code ? `?code=${encodeURIComponent(code)}` : ""}`;
@@ -91,6 +107,24 @@ export default function RedeemPage() {
                   {isFR ? "Créer un compte" : "Create an account"}
                 </Link>
               </div>
+            </div>
+          ) : status === "scheduled" && scheduledPlan ? (
+            /* Already subscribed, the gift starts at the next renewal */
+            <div style={{ background: "rgba(107,123,94,.08)", border: "1px solid rgba(107,123,94,.25)", borderRadius: 14, padding: "1rem 1.25rem", textAlign: "left" }}>
+              <p style={{ fontSize: ".95rem", fontWeight: 600, color: "#3D2B1F", margin: "0 0 .35rem" }}>
+                {isFR ? "Code cadeau activé !" : "Gift code activated!"}
+              </p>
+              <p style={{ fontSize: ".85rem", color: "#6B7B5E", margin: "0 0 1rem", fontWeight: 300, lineHeight: 1.6 }}>
+                {isFR
+                  ? `Vous avez déjà un abonnement en cours. Votre plan ${scheduledPlan.plan === "print_annual" ? "Premium Print" : "Premium Digital"} offert prendra le relais le ${new Date(scheduledPlan.activatesAt * 1000).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}.`
+                  : `You already have a running subscription. Your gifted ${scheduledPlan.plan === "print_annual" ? "Premium Print" : "Premium Digital"} plan takes over on ${new Date(scheduledPlan.activatesAt * 1000).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}.`}
+              </p>
+              <Link
+                href="/dashboard"
+                style={{ display: "block", padding: ".75rem", borderRadius: 100, background: "#C8813A", color: "#FDFAF5", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, textDecoration: "none", textAlign: "center" }}
+              >
+                {isFR ? "Aller au tableau de bord" : "Go to dashboard"}
+              </Link>
             </div>
           ) : authChecked ? (
             /* Logged in, show redeem form */
