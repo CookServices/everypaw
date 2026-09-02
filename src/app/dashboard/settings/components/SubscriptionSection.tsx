@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { inputStyle, btnPrimary, btnOutline } from "../constants";
-import type { Plan, SubscriptionInfo } from "../constants";
+import type { Plan, ScheduledChange, SubscriptionInfo } from "../constants";
 
 type GiftStatus = "idle" | "loading" | "success" | "error";
 
@@ -12,6 +12,7 @@ interface Props {
   currency: Currency;
   cancelledAt: number | null;
   subscription: SubscriptionInfo | null;
+  scheduledChange: ScheduledChange | null;
   profileRenewalDate: number | null;
   bookCredits: number;
   formatDate: (ts: number) => string;
@@ -41,6 +42,7 @@ export default function SubscriptionSection({
   currency,
   cancelledAt,
   subscription,
+  scheduledChange,
   profileRenewalDate,
   bookCredits,
   formatDate,
@@ -107,6 +109,17 @@ export default function SubscriptionSection({
                       : (renewalStr ? `📖 Your free book has already been ordered · Next: ${renewalStr}` : "📖 Your free book has already been ordered");
                   })()}
             </p>
+          )}
+
+          {/* Changement de plan programmé (upgrade ou code cadeau) */}
+          {scheduledChange && !cancelledAt && (
+            <div style={{ background: "rgba(200,129,58,.07)", border: "1px solid rgba(200,129,58,.25)", borderRadius: 10, padding: ".75rem 1rem", marginBottom: "1rem" }}>
+              <p style={{ fontSize: ".8rem", color: "#7A5C44", margin: 0 }}>
+                {isFR
+                  ? `Changement de formule programmé : ${scheduledChange.plan === "print" ? "Premium Print" : scheduledChange.plan === "digital" ? "Premium Digital" : "nouvelle formule"} le ${formatDate(scheduledChange.at)}. Annuler votre abonnement abandonne ce changement.`
+                  : `Plan change scheduled: ${scheduledChange.plan === "print" ? "Premium Print" : scheduledChange.plan === "digital" ? "Premium Digital" : "new plan"} on ${formatDate(scheduledChange.at)}. Cancelling your subscription drops that change.`}
+              </p>
+            </div>
           )}
 
           {/* Annulation en cours */}
