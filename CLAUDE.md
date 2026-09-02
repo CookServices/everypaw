@@ -14,6 +14,8 @@ En fin de session, si des décisions importantes ont été prises ou du code sig
 
 Ne demande pas confirmation — fais-le directement avant de clore. Garder ce fichier < 700 lignes : tout historique détaillé va dans `docs/SESSIONS.md`.
 
+**Chantier en cours : conversion vers le plan Print.** Roadmap et décisions dans `docs/print/roadmap.md`, les dix specs exécutables dans `docs/print/specs.md`. Une spec = une PR.
+
 Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suivre l'ordre d'implémentation recommandé pour toute nouvelle feature (voir section dédiée).
 
 ---
@@ -643,11 +645,9 @@ fix et vérification de chacun dans `docs/SESSIONS.md` → « Backlog dette tech
 
 - **#4 Rendu statique CDN de la landing** — bloqué par construction : le root `layout.tsx` lit
   `headers()` (`x-pathname`) uniquement pour fixer `<html lang>`, ce qui force **tout** le site en
-  dynamique, aucune page servie par le CDN sauf `robots` et `sitemap`. Fix = restructuration en
-  `/[locale]/`, avec un risque SEO réel sur le hreflang bilingue.
+  dynamique. Fix = restructuration en `/[locale]/`, avec un risque SEO réel sur le hreflang.
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` dans un
-  `useEffect` (waterfall, requêtes exposées côté client). Une migration RSC donnerait les données au
-  premier paint, mais gros blast-radius pour un gain utilisateur faible.
+  `useEffect` (waterfall, requêtes exposées côté client). Gros blast-radius, gain utilisateur faible.
 **Ne pas re-tenter — #2 `select("*")` → colonnes explicites** : analysé, aucun gain réel. Les
 occurrences restantes sont soit `select("*", { count, head: true })` (zéro ligne transférée), soit
 des selects dont toutes les colonnes servent. Le seul candidat cassait le type `Entry`.
