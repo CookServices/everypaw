@@ -78,7 +78,7 @@ export default function StoriesTab({
           isFR={isFR}
           dateLocale={dateLocale}
           petId={pet.id}
-          entries={entries}
+          entryDates={allEntryDates}
           stories={stories}
           userPlan={userPlan}
           onStoryAdded={onStoryAdded}
