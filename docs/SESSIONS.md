@@ -5,6 +5,49 @@
 
 ---
 
+### ✅ Session 68 — Backlog vidé, onglet journal extrait, chantier emails en trois lots (2026-09-02)
+
+**Backlog #19, #20, #12(b) clos.** #19 : 85 clés i18n sans lecteur retirées (667 à 582 feuilles) ; les
+trois accès dynamiques du repo ont été vérifiés avant de couper (`t.pet["species_" + v]`,
+`t.interview["q" + n]` via `getWeeklyQuestion`, `faq.q1..q6` lus par index), sans quoi les 52
+questions d'interview partaient à tort. #20 : fichier ramené de 869 lignes sous les 700, le retiré
+est archivé dans `docs/SESSIONS.md`. #12(b) : `stripe/cancel` **libère** le schedule avant de poser
+`cancel_at_period_end`, ce qui rend le scénario sans objet plutôt que dépendant d'une sémantique
+Stripe invérifiable. Trouvés en chemin : `gift/redeem` avait encore le trou bouché par la PR #121 sur
+`upgrade`, un changement programmé était invisible après rechargement, et `/redeem` annonçait « code invalide » à un abonné dont le cadeau venait d'être programmé.
+
+**Phase 2b de la découpe** (PR #136) : hook `useEntryComposer` puis `JournalTab`. `pets/[id]/page.tsx`
+passe de 1035 à 764 lignes, 2122 à 764 depuis le début (−64 %). Composer passé en prop unique, le
+reste dérivé dans le composant.
+
+**Chantier emails, trois lots** (PR #137, #138, #139). Technique : tailles en `px` (Outlook ignore
+`rem`), version texte dérivée du HTML, `List-Unsubscribe` avec un vrai un-clic, preheaders,
+`color-scheme`, **tout envoi passe par `sendEmail`** ([lib/resend.ts](src/lib/resend.ts)). Visuel :
+`hero()` choisit photo de l'animal, puis illustration PNG (Gmail supprime les SVG,
+`scripts/generate-email-assets.mjs` les génère), puis emoji ; boutons en table. Copie : le français
+mélangeait tutoiement et vouvoiement, parfois dans le même mail, un test garde le registre.
+
+**Cadeaux datés** (PR #140) : le `scheduledAt` passé à Resend était ignoré par le SDK 3.5.0, tout
+partait immédiatement. Resend plafonne à 30 jours et un cadeau se planifie à six mois, donc la
+planification est maison, table `gift_deliveries` et cron quotidien. SDK monté en 6.25.0 (`reply_to`
+devient `replyTo`), et le code promo expire un an après la **livraison**, plus après l'achat.
+
+---
+
+### ✅ Session 67 — Prix de la page order et accès Digital à la commande (2026-09-01)
+
+Backlog #17 et #18 traités ensemble, ils touchent le même encart produit. PR [#132](https://github.com/CookServices/everypaw/pull/132), 3 commits, détail complet dans « Optimisation & dette technique ».
+
+**#17 — le prix affiché était faux deux fois.** La ligne de specs citait un montant écrit en dur (`~29 €`) à côté du prix calculé (`28 €`) : les deux avaient dérivé, le montant est retiré de la chaîne i18n. Et `extraBookPriceLabel` codait l'euro en dur alors que `stripe/book-checkout` choisit la devise depuis `x-vercel-ip-country` — un visiteur hors zone euro lisait `28 €` et était débité `$28`. La page lit `/api/currency` et formate via un nouvel helper `formatAmount` (`src/lib/currency.ts`, 2 tests). Le livre mémorial, qui affichait un `59 €` figé alors qu'il passe par le même checkout, affiche le prix calculé.
+
+**#18 — Digital et Print partagent enfin un point d'entrée.** Le CTA principal est rendu sur tous les plans (désactivé en Free), libellé avec le prix quand l'achat est payant. Deux bugs trouvés en câblant ça : le bouton d'achat de l'encart appelait le checkout **avant** l'étape adresse, donc la commande auto au retour de Stripe partait avec une adresse vide et échouait chez Gelato (bouton supprimé) ; et `ConfirmStep` ne routait vers le paiement que pour Print, un Digital arrivé là aurait déclenché une commande Gelato **sans paiement** (branche élargie à tout plan payant sans crédit).
+
+**Vérification** : preview Vercel, compte `testopera@yopmail.com` basculé en `plan=digital, book_credits=0`. Libellé et prix du CTA, passage par l'adresse, encart sans bouton, et au clic sur « Passer la commande » un appel à `/api/stripe/book-checkout` et **aucun** à `/api/gelato/order`. Méthode réutilisable pour tester un bouton qui coûte de l'argent : patcher `window.fetch` dans la page pour bloquer la route dangereuse **avant** de cliquer, puis vérifier qu'elle n'a pas été appelée.
+
+**Trouvé au passage, non corrigé** : le projet Vercel `everypaw-staging` ne contient que 3 variables (les 3 Supabase), donc toute route Stripe, Gelato, Anthropic ou cron renvoie un 500 à corps vide sur preview. Une preview prouve l'UI et quel endpoint un bouton appelle, jamais ce que fait cet endpoint.
+
+---
+
 ### ✅ Session 63 — Fix `allow_promotion_codes` manquant sur checkout Stripe (2026-08-28)
 
 Testeur passé en abonnement Digital n'a vu aucun champ code promo sur la page Stripe Checkout. Audit : 4 routes appellent `stripe.checkout.sessions.create`, aucune ne passait `allow_promotion_codes`.
