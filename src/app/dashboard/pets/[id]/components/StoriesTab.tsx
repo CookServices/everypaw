@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Entry, Story } from "@/types";
+import { Entry, Pet, Story } from "@/types";
+import BookPreviewCard from "./BookPreviewCard";
 import { fmtDateOrdinal } from "@/lib/date";
 import { STORY_STYLES } from "../constants";
 import { Translations } from "./types";
 
 export default function StoriesTab({
-  t, isFR, dateLocale, petName, stories, entries, allEntryDates,
+  t, isFR, dateLocale, pet, petName, stories, entries, allEntryDates,
   showFirstStoryNudge, onOpenGenerateModal, generating, generatingMsgIdx,
   userPlan, sharingStoryId, onShare, onOpenShareCard,
   hasMoreEntries, filterYear, filterMonth, onLoadMore, loadingMore,
@@ -15,6 +16,7 @@ export default function StoriesTab({
   t: Translations;
   isFR: boolean;
   dateLocale: string;
+  pet: Pet | null;
   petName: string;
   stories: Story[];
   entries: Entry[];
@@ -53,6 +55,19 @@ export default function StoriesTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      {/* The book, from the first chapter on: a free user decides whether to pay
+          long before the order page's seven-chapter threshold. */}
+      {pet && stories.length > 0 && (
+        <BookPreviewCard
+          t={t}
+          isFR={isFR}
+          pet={pet}
+          stories={stories}
+          entries={entries}
+          userPlan={userPlan}
+        />
+      )}
+
       {/* First-story nudge, disappears for good once a story exists for this pet */}
       {showFirstStoryNudge && (
         <div style={{ background: "rgba(200,129,58,.06)", borderRadius: 16, padding: "1.25rem 1.5rem", border: "1px solid rgba(200,129,58,.2)", display: "flex", flexDirection: "column", gap: ".5rem" }}>

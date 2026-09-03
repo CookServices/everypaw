@@ -713,7 +713,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
 
         {tab === "stories" && (
           <StoriesTab
-            t={t} isFR={isFR} dateLocale={dateLocale} petName={pet.name}
+            t={t} isFR={isFR} dateLocale={dateLocale} pet={pet} petName={pet.name}
             stories={stories} entries={entries} allEntryDates={allEntryDates}
             showFirstStoryNudge={showFirstStoryNudge}
             onOpenGenerateModal={() => { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); }}

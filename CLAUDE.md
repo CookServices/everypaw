@@ -428,6 +428,7 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/api/currency` | Retourne `{ currency: "EUR"\|"USD" }` via `x-vercel-ip-country` (le champ `country` a été supprimé — privacy) |
 | `/api/book-pdf` | **Génération PDF réel** (200×200mm, `application/pdf`) — `GET` pour Gelato (token HMAC signé requis), `@react-pdf/renderer`, même params que `preview-pdf` |
 | `/api/preview-pdf` | Preview PDF HTML — `POST` pour l'aperçu in-app (session utilisateur requise, vérifie ownership du pet). `GET` (anciennement pour Gelato) remplacé par `book-pdf` |
+| `/api/events/book-preview` | Marque `book_preview_opened` dans `events_log` (unique par utilisateur et animal, un rejeu n'est pas une erreur) — session requise, propriétaire de l'animal uniquement |
 | `/api/export-data` | Export RGPD — `GET` (session requise) retourne JSON avec toutes les données utilisateur : profil, pets, entrées, histoires, milestones, book_configs |
 
 ---
@@ -564,7 +565,7 @@ fenêtre récente n'a pas fini de mûrir.
 | `with_pet` | Au moins une ligne `pets`. Un animal supprimé depuis ne compte plus. |
 | `with_3_entries` | Au moins trois lignes `entries`, toutes dates confondues, tous animaux confondus. Trois entrées = le seuil d'éligibilité du chapitre mensuel, pas un chiffre rond arbitraire. |
 | `with_story` | Au moins une ligne `stories`, **quel que soit son type** : une histoire générée par le cron mensuel compte comme une histoire demandée à la main. |
-| `with_book_preview` | Au moins une ligne `book_configs`. **Approximation assumée** : il n'existe aucun événement d'ouverture d'aperçu aujourd'hui, et une config est enregistrée plus tard qu'une simple ouverture, donc ce nombre sous-estime. P1-1 pose `book_preview_opened` dans `events_log` et le remplacera. |
+| `with_book_preview` | Au moins une ligne `events_log` de type `book_preview_opened`, posée par `POST /api/events/book-preview` quand l'aperçu s'ouvre. L'événement n'existe que depuis le 2026-09-03 : une fenêtre antérieure rend 0, ce n'est pas un bug. |
 | `print_subscribers` | `profiles.plan = 'print'` **à l'instant de la requête**, pas au moment de la souscription. Un abonné de la cohorte qui a résilié depuis n'y est plus : ce nombre mesure le stock converti et survivant, pas le flux. |
 
 ---
@@ -704,3 +705,8 @@ livre cherchait `events_log` par `stripe_event_id` sans filtrer `event_type`.
 **P0-2** : `supabase/analytics/funnel.sql`, définitions ci-dessus, rangé dans le dossier
 `analytics` existant plutôt que le `queries` de la spec. Validé sur un Postgres 17 jetable via
 `funnel.fixture.sql`, mutations comprises.
+
+**P1-1, la couverture dès la première histoire** : `BookPreviewCard` en tête de l'onglet Histoires,
+aperçu ouvert sur tous les plans, commande fermée avec son motif en plan gratuit. L'artwork de
+couverture est extrait de `BookCover` en `CoverArt` partagé plutôt que redessiné. `POST
+/api/events/book-preview` pose l'événement qui remplace l'approximation `book_configs` de P0-2.
