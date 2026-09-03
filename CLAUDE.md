@@ -710,3 +710,8 @@ livre cherchait `events_log` par `stripe_event_id` sans filtrer `event_type`.
 aperçu ouvert sur tous les plans, commande fermée avec son motif en plan gratuit. L'artwork de
 couverture est extrait de `BookCover` en `CoverArt` partagé plutôt que redessiné. `POST
 /api/events/book-preview` pose l'événement qui remplace l'approximation `book_configs` de P0-2.
+
+**P1-2, le rattrapage des mois passés** : `src/lib/story-backfill.ts` (pur, 10 tests) liste les mois
+ayant trois entrées et aucun chapitre qui chevauche, `BackfillCard` les génère un par un via
+`/api/generate`. Séquentiel obligatoire, la route compte les générations du jour ; le plafond de dix
+est une fin normale, pas une erreur. Le mois en cours est laissé au cron mensuel.

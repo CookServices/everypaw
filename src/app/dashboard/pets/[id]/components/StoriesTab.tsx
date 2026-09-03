@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Entry, Pet, Story } from "@/types";
 import BookPreviewCard from "./BookPreviewCard";
+import BackfillCard from "./BackfillCard";
 import { fmtDateOrdinal } from "@/lib/date";
 import { STORY_STYLES } from "../constants";
 import { Translations } from "./types";
@@ -11,7 +12,7 @@ export default function StoriesTab({
   t, isFR, dateLocale, pet, petName, stories, entries, allEntryDates,
   showFirstStoryNudge, onOpenGenerateModal, generating, generatingMsgIdx,
   userPlan, sharingStoryId, onShare, onOpenShareCard,
-  hasMoreEntries, filterYear, filterMonth, onLoadMore, loadingMore,
+  hasMoreEntries, filterYear, filterMonth, onLoadMore, loadingMore, onStoryAdded,
 }: {
   t: Translations;
   isFR: boolean;
@@ -34,6 +35,7 @@ export default function StoriesTab({
   filterMonth: string | null;
   onLoadMore: () => void;
   loadingMore: boolean;
+  onStoryAdded: (storyId: string) => void | Promise<void>;
 }) {
   const generatingMessages = [
     t.journal.generating_1.replace("{name}", petName),
@@ -65,6 +67,21 @@ export default function StoriesTab({
           stories={stories}
           entries={entries}
           userPlan={userPlan}
+        />
+      )}
+
+      {/* The months with entries but no chapter: without this, a subscriber
+          waits for the monthly cron and reaches a printable book in seven. */}
+      {pet && (
+        <BackfillCard
+          t={t}
+          isFR={isFR}
+          dateLocale={dateLocale}
+          petId={pet.id}
+          entries={entries}
+          stories={stories}
+          userPlan={userPlan}
+          onStoryAdded={onStoryAdded}
         />
       )}
 
