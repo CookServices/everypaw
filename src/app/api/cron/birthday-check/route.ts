@@ -173,8 +173,10 @@ export async function GET(req: Request) {
         illustration: "star",
         emoji: "🎂",
         heading: isFR
+          // The space before "!" is French typography, and only French: English
+          // sets the mark tight against the word.
           ? `Joyeux anniversaire, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !`
-          : `Happy birthday, ${petName}${ageLabel ? `, ${ageLabel}` : ""} !`,
+          : `Happy birthday, ${petName}${ageLabel ? `, ${ageLabel}` : ""}!`,
       }) +
       paragraph(isFR
         ? `C'est une belle occasion de noter ce moment dans son journal. Décrivez comment ${petName} est aujourd'hui, ce qu'il ou elle aime, ce qui a changé cette année, dans quelques ans, vous serez heureux de l'avoir noté.`
