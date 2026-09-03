@@ -14,7 +14,7 @@ En fin de session, si des décisions importantes ont été prises ou du code sig
 
 Ne demande pas confirmation — fais-le directement avant de clore. Garder ce fichier < 700 lignes : tout historique détaillé va dans `docs/SESSIONS.md`.
 
-**Chantier en cours : conversion vers le plan Print.** Roadmap et décisions dans `docs/print/roadmap.md`, les dix specs exécutables dans `docs/print/specs.md`. Une spec = une PR.
+**Chantier en cours : conversion vers le plan Print.** Roadmap et décisions dans `docs/print/roadmap.md`, les dix specs exécutables dans `docs/print/specs.md`. Une spec = une PR. Phases 0 à 2 livrées le 2026-09-03 (huit specs, PR #145 à #152) ; reste la phase 3, datée janvier 2027, et les deux points de la « Checklist avant mise en production ».
 
 Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suivre l'ordre d'implémentation recommandé pour toute nouvelle feature (voir section dédiée).
 
@@ -211,7 +211,7 @@ GELATO_API_KEY                  # print-on-demand — requis par /api/gelato/ord
 NEXT_PUBLIC_APP_URL             # base URL utilisée pour les liens absolus (emails, redirects Stripe/Gelato)
 PDF_ACCESS_SECRET              # signe le token HMAC de /api/book-pdf ; fallback sur SUPABASE_SERVICE_ROLE_KEY si absent
 CRON_SECRET                    # protège les routes /api/cron/*
-GA_API_SECRET / META_CAPI_TOKEN # événements d'achat serveur (P0-1), Production seule, sans donnée utilisateur
+GA_API_SECRET / META_CAPI_TOKEN # événements d'achat serveur (P0-1), posées en Production le 2026-09-03
 
 # Auth Hook (Supabase → /api/emails/auth-hook)
 SUPABASE_HOOK_SECRET           # "v1,whsec_<base64>", depuis Supabase > Auth > Hooks > Send Email > Reveal ; absent = 401 du hook, 500 au signup
@@ -653,6 +653,15 @@ Tout est coché sauf un point (le détail des items faits est archivé dans `doc
 - [ ] **Tester le webhook Stripe en mode Live avec un vrai paiement** — la page de paiement est
   validée depuis le 2026-07-07, l'activation du plan **après** un paiement réel ne l'est toujours
   pas.
+- [ ] **Passer une commande Gelato réelle avec la pagination de P1-3, avant le 7 novembre 2026.**
+  C'est le troisième critère d'acceptation de P1-3, le seul qu'aucun test ne peut fermer : les
+  tests prouvent que le nombre déclaré égale le nombre de pages rendues, seul l'imprimeur prouve
+  que le fichier est accepté. Un refus se paie cher, le crédit livre est consommé avant l'appel.
+  **Après le 7 novembre le pipeline d'impression est gelé jusqu'au 31 décembre** (`book-pdf`,
+  `paginateBook`, `gelato/order`), donc un correctif éventuel doit être trouvé avant cette date.
+- [ ] **Passe visuelle des parcours des phases 1 et 2** (aperçu depuis l'onglet Histoires,
+  rattrapage des mois, encart cadeau entre le 15 novembre et le 24 décembre, email d'anniversaire,
+  pied de page mémorial côté propriétaire).
 
 ---
 
@@ -698,56 +707,15 @@ avant de poser `cancel_at_period_end`. Phase 2b de la découpe (PR #136) : `useE
 datés (PR #140) : Resend plafonne sa planification à 30 jours, d'où `gift_deliveries` et son cron.
 Détail complet dans `docs/SESSIONS.md`.
 
-### ✅ Session 69 — Chantier Print, phases 0 et 1 (2026-09-03)
+### ✅ Session 69 — Chantier Print, phases 0 à 2 livrées (2026-09-03)
 
-Cinq specs, cinq PR empilées ([#145](https://github.com/CookServices/everypaw/pull/145) à
-[#149](https://github.com/CookServices/everypaw/pull/149)). Détail dans les PR, seuls les pièges
-durables sont ici.
+Huit specs, huit PR empilées ([#145](https://github.com/CookServices/everypaw/pull/145) à
+[#152](https://github.com/CookServices/everypaw/pull/152)) : événements d'achat serveur, requête du
+tunnel, couverture dès la première histoire, rattrapage des mois passés, livre rempli, campagne
+cadeau, anniversaire qui mène au livre, chemin depuis la page mémorial. Détail complet dans
+`docs/SESSIONS.md`.
 
-**P0-1** : `src/lib/analytics-server.ts` rapporte souscriptions, renouvellements et achats de livre à
-GA4 et Meta depuis le webhook, sans donnée utilisateur. Les abonnements partent de
-`invoice.payment_succeeded`, pas de `checkout.session.completed` qui fire pour le même achat, et
-au-dessus du gate Print, sinon une facture Digital `return` avant d'être comptée. Piège : le dedup du
-crédit livre cherchait `events_log` par `stripe_event_id` sans filtrer `event_type`.
-
-**P0-2** : `supabase/analytics/funnel.sql`, définitions ci-dessus, validé sur un Postgres jetable via
-`funnel.fixture.sql`.
-
-**P1-1** : `BookPreviewCard` en tête de l'onglet Histoires, aperçu ouvert sur tous les plans,
-commande fermée avec son motif en plan gratuit. `CoverArt` extrait de `BookCover` plutôt que
-redessiné. `POST /api/events/book-preview` pose l'événement qui remplace l'approximation de P0-2.
-
-**P1-2** : `src/lib/story-backfill.ts` liste les mois ayant trois entrées et aucun chapitre qui
-chevauche, `BackfillCard` les génère un par un. Séquentiel obligatoire, `/api/generate` compte les
-générations du jour ; le plafond de dix est une fin normale. Le mois en cours reste au cron.
-
-**P1-3** : `paginateBook` remplace `calcPageCount` et devient la source unique des six appelants.
-Photos non rattachées 2 par page (plafond 30 pages), étapes 8 par page, pages blanches réduites au
-complément final, seuil de commande passé de 7 chapitres à 14 pages remplies. Le pire cas facturé
-par `stripe/book-checkout` compte désormais photos et étapes, et reste celui qu'affiche la page
-order. Invariant testé sur trois compositions : pages déclarées = pages rendues. Dans la foulée, le
-prix d'un livre supplémentaire est passé du pire cas au prix de la **sélection réellement commandée**
-(jusqu'à 5 € d'écart depuis que les photos pèsent des pages), ce qui a imposé le plafond en trois
-morceaux décrit dans « Prix Stripe jamais depuis le client » et la survie de la sélection à la
-redirection Stripe (`ep_order_<id>_sel` en sessionStorage, sans quoi la commande automatique du
-retour repartait sur tous les chapitres et se faisait refuser).
-
-**P2-1, campagne cadeau de fin d'année** : `isGiftCampaignActive` (`lib/gift-campaign.ts`, pur,
-récurrent du 15 novembre au 24 décembre) pilote `GiftCampaignCard` sur le tableau de bord, en plan
-gratuit seulement. Dates en dur dans le module et non en variable d'environnement : l'encart doit
-s'éteindre sans déploiement, et une variable Vercel est figée au build de toute façon. Les six
-articles cadeaux (trois EN, trois FR) renvoient enfin vers `/gift`, qu'aucun ne liait. La mise en
-file d'un cadeau daté, deuxième critère d'acceptation, est désormais couverte par un test de route.
-
-**P2-2, l'anniversaire mène au livre** : l'email d'anniversaire propose de relier l'année quand
-l'animal a déjà des chapitres, avec le bon appel à l'action selon ce que le lecteur peut faire
-(commander s'il est Print avec un crédit, découvrir Print sinon). Le comptage **exclut les lettres
-d'anniversaire** que ce cron écrit lui-même, sinon tout animal serait éligible, et il passe par
-`.or("story_type.is.null,story_type.neq.birthday")` : en Postgres `NULL <> 'birthday'` vaut NULL,
-donc un `.neq` écarterait justement les chapitres générés à la main. Namespace i18n `birthday`,
-jusque-là vide dans les deux fichiers, enfin rempli.
-
-**P2-3, un chemin depuis la page mémorial** : le pied de la page mémorial invitait tout le monde à
-s'inscrire, y compris le propriétaire, déjà connecté. Il lui propose désormais de réunir les
-souvenirs dans un livre (`/dashboard/pets/<id>/order`), au même endroit et dans le même registre
-retenu ; les visiteurs gardent l'invitation d'origine. Aucune requête ajoutée, `isOwner` existait.
+Les pièges durables sont remontés dans les sections concernées de ce fichier : « Les six nombres du
+tunnel » pour les définitions, « Gelato — Configuration livre » pour `paginateBook`, « Prix Stripe
+jamais depuis le client » pour le plafond en trois morceaux, « Mesure » pour les événements
+serveur. Deux points restent ouverts, dans « Checklist avant mise en production ».

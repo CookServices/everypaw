@@ -34,6 +34,62 @@ devient `replyTo`), et le code promo expire un an après la **livraison**, plus 
 
 ---
 
+### ✅ Session 69 — Chantier Print, phases 0 et 1 (2026-09-03)
+
+Cinq specs, cinq PR empilées ([#145](https://github.com/CookServices/everypaw/pull/145) à
+[#149](https://github.com/CookServices/everypaw/pull/149)). Détail dans les PR, seuls les pièges
+durables sont ici.
+
+**P0-1** : `src/lib/analytics-server.ts` rapporte souscriptions, renouvellements et achats de livre à
+GA4 et Meta depuis le webhook, sans donnée utilisateur. Les abonnements partent de
+`invoice.payment_succeeded`, pas de `checkout.session.completed` qui fire pour le même achat, et
+au-dessus du gate Print, sinon une facture Digital `return` avant d'être comptée. Piège : le dedup du
+crédit livre cherchait `events_log` par `stripe_event_id` sans filtrer `event_type`.
+
+**P0-2** : `supabase/analytics/funnel.sql`, définitions ci-dessus, validé sur un Postgres jetable via
+`funnel.fixture.sql`.
+
+**P1-1** : `BookPreviewCard` en tête de l'onglet Histoires, aperçu ouvert sur tous les plans,
+commande fermée avec son motif en plan gratuit. `CoverArt` extrait de `BookCover` plutôt que
+redessiné. `POST /api/events/book-preview` pose l'événement qui remplace l'approximation de P0-2.
+
+**P1-2** : `src/lib/story-backfill.ts` liste les mois ayant trois entrées et aucun chapitre qui
+chevauche, `BackfillCard` les génère un par un. Séquentiel obligatoire, `/api/generate` compte les
+générations du jour ; le plafond de dix est une fin normale. Le mois en cours reste au cron.
+
+**P1-3** : `paginateBook` remplace `calcPageCount` et devient la source unique des six appelants.
+Photos non rattachées 2 par page (plafond 30 pages), étapes 8 par page, pages blanches réduites au
+complément final, seuil de commande passé de 7 chapitres à 14 pages remplies. Le pire cas facturé
+par `stripe/book-checkout` compte désormais photos et étapes, et reste celui qu'affiche la page
+order. Invariant testé sur trois compositions : pages déclarées = pages rendues. Dans la foulée, le
+prix d'un livre supplémentaire est passé du pire cas au prix de la **sélection réellement commandée**
+(jusqu'à 5 € d'écart depuis que les photos pèsent des pages), ce qui a imposé le plafond en trois
+morceaux décrit dans « Prix Stripe jamais depuis le client » et la survie de la sélection à la
+redirection Stripe (`ep_order_<id>_sel` en sessionStorage, sans quoi la commande automatique du
+retour repartait sur tous les chapitres et se faisait refuser).
+
+**P2-1, campagne cadeau de fin d'année** : `isGiftCampaignActive` (`lib/gift-campaign.ts`, pur,
+récurrent du 15 novembre au 24 décembre) pilote `GiftCampaignCard` sur le tableau de bord, en plan
+gratuit seulement. Dates en dur dans le module et non en variable d'environnement : l'encart doit
+s'éteindre sans déploiement, et une variable Vercel est figée au build de toute façon. Les six
+articles cadeaux (trois EN, trois FR) renvoient enfin vers `/gift`, qu'aucun ne liait. La mise en
+file d'un cadeau daté, deuxième critère d'acceptation, est désormais couverte par un test de route.
+
+**P2-2, l'anniversaire mène au livre** : l'email d'anniversaire propose de relier l'année quand
+l'animal a déjà des chapitres, avec le bon appel à l'action selon ce que le lecteur peut faire
+(commander s'il est Print avec un crédit, découvrir Print sinon). Le comptage **exclut les lettres
+d'anniversaire** que ce cron écrit lui-même, sinon tout animal serait éligible, et il passe par
+`.or("story_type.is.null,story_type.neq.birthday")` : en Postgres `NULL <> 'birthday'` vaut NULL,
+donc un `.neq` écarterait justement les chapitres générés à la main. Namespace i18n `birthday`,
+jusque-là vide dans les deux fichiers, enfin rempli.
+
+**P2-3, un chemin depuis la page mémorial** : le pied de la page mémorial invitait tout le monde à
+s'inscrire, y compris le propriétaire, déjà connecté. Il lui propose désormais de réunir les
+souvenirs dans un livre (`/dashboard/pets/<id>/order`), au même endroit et dans le même registre
+retenu ; les visiteurs gardent l'invitation d'origine. Aucune requête ajoutée, `isOwner` existait.
+
+---
+
 ### ✅ Session 67 — Prix de la page order et accès Digital à la commande (2026-09-01)
 
 Backlog #17 et #18 traités ensemble, ils touchent le même encart produit. PR [#132](https://github.com/CookServices/everypaw/pull/132), 3 commits, détail complet dans « Optimisation & dette technique ».
