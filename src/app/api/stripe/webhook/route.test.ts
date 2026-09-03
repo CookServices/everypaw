@@ -44,13 +44,21 @@ function post(body = "raw-body", sig = "sig") {
   });
 }
 
+const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
+
 beforeEach(() => {
   db = createSupabaseStub();
   constructEvent.mockReset();
   sessionsRetrieve.mockReset();
   portalCreate.mockReset();
   emailSend.mockClear();
+  fetchMock.mockClear();
+  vi.stubGlobal("fetch", fetchMock);
   vi.unstubAllEnvs();
+  // Purchase reporting off by default: these cases describe the money paths
+  // alone, and the analytics block is skipped whole when unconfigured.
+  vi.stubEnv("GA_API_SECRET", "");
+  vi.stubEnv("META_CAPI_TOKEN", "");
 });
 
 describe("signature verification", () => {
@@ -431,5 +439,125 @@ describe("invoice.payment_succeeded", () => {
 
     expect(res.status).toBe(500);
     expect(db.inserts).toHaveLength(0);
+  });
+});
+
+describe("server-side purchase events (P0-1)", () => {
+  const PRINT_PRICE = "price_print_eur";
+  const DIGITAL_PRICE = "price_digital_eur";
+
+  beforeEach(() => {
+    vi.stubEnv("STRIPE_PRICE_PRINT_ANNUAL_EUR", PRINT_PRICE);
+    vi.stubEnv("STRIPE_PRICE_ID_DIGITAL_EUR", DIGITAL_PRICE);
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TEST");
+    vi.stubEnv("GA_API_SECRET", "ga-secret");
+    vi.stubEnv("NEXT_PUBLIC_META_PIXEL_ID", "123456");
+    vi.stubEnv("META_CAPI_TOKEN", "meta-token");
+  });
+
+  function invEvent(over: Record<string, unknown> = {}) {
+    return {
+      id: "evt_inv_analytics", type: "invoice.payment_succeeded",
+      data: {
+        object: {
+          customer: "cus_1", billing_reason: "subscription_cycle", subscription: "sub_1",
+          amount_paid: 7900, currency: "eur",
+          lines: { data: [{ price: { id: PRINT_PRICE }, period: { end: 1900000000 } }] },
+          ...over,
+        },
+      },
+    };
+  }
+
+  it("reports a Digital invoice, which the Print-only gate would drop", async () => {
+    constructEvent.mockReturnValue(invEvent({
+      amount_paid: 499,
+      lines: { data: [{ price: { id: DIGITAL_PRICE } }] },
+    }));
+    db.queueRead({ data: null });             // past-due update
+    db.queueRead({ data: { id: "user_1" } }); // profile behind the customer
+    db.queueRead({ data: null });             // not reported yet
+
+    const res = await POST(post());
+
+    expect(res.status).toBe(200);
+    expect(db.rpcs).toHaveLength(0); // still no book credit for Digital
+    expect(db.inserts[0].row).toMatchObject({
+      user_id: "user_1",
+      event_type: "analytics_purchase",
+      metadata: { stripe_event_id: "evt_inv_analytics", plan: "digital", amount_cents: 499 },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2); // GA4 + Meta
+  });
+
+  it("leaves the Print book credit intact, though both rows share the event id", async () => {
+    constructEvent.mockReturnValue(invEvent());
+    db.queueRead({ data: null });             // past-due update
+    db.queueRead({ data: { id: "user_1" } }); // profile, analytics side
+    db.queueRead({ data: null });             // purchase not reported yet
+    db.queueRead({ data: null });             // analytics insert
+    db.queueRead({ data: { id: "user_1" } }); // profile, credit side
+    db.queueRead({ data: null });             // credit dedup: not granted yet
+    db.queueRead({ data: { last_book_credit_at: null } });
+    db.queueRpc({ error: null });
+
+    const res = await POST(post());
+
+    expect(res.status).toBe(200);
+    expect(db.rpcs).toEqual([{ fn: "increment_book_credits", args: { p_user_id: "user_1" } }]);
+    expect(db.inserts.map(i => (i.row as { event_type: string }).event_type)).toEqual([
+      "analytics_purchase",
+      "stripe_invoice_book_credit",
+    ]);
+    // The stub answers reads from a queue, filters and all, so the protection
+    // has to be asserted on the query itself: the credit lookup must exclude the
+    // analytics row, which carries the very same stripe_event_id.
+    const creditDedup = db.queries.find(q =>
+      q.table === "events_log"
+      && q.filters.some(f => f.method === "contains")
+      && q.filters.some(f => f.method === "eq" && f.args[0] === "event_type" && f.args[1] === "stripe_invoice_book_credit"),
+    );
+    expect(creditDedup).toBeDefined();
+  });
+
+  it("reports nothing twice when Stripe replays the invoice", async () => {
+    constructEvent.mockReturnValue(invEvent());
+    db.queueRead({ data: null });                      // past-due update
+    db.queueRead({ data: { id: "user_1" } });          // profile, analytics side
+    db.queueRead({ data: { id: "already-reported" } }); // purchase already sent
+    db.queueRead({ data: { id: "user_1" } });          // profile, credit side
+    db.queueRead({ data: { id: "already-credited" } }); // credit already granted
+
+    const res = await POST(post());
+
+    expect(res.status).toBe(200);
+    expect(db.inserts).toHaveLength(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("reports a one-time book purchase with the amount charged", async () => {
+    constructEvent.mockReturnValue({
+      id: "evt_book_analytics",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_1", mode: "payment", amount_total: 2800, currency: "usd",
+          metadata: { user_id: "user_1", plan: "book_only" },
+        },
+      },
+    });
+    db.queueRead({ data: null }); // credit dedup
+    db.queueRpc({ error: null });
+    db.queueRead({ data: null }); // credit row insert
+    db.queueRead({ data: null }); // purchase not reported yet
+
+    const res = await POST(post());
+
+    expect(res.status).toBe(200);
+    expect(db.inserts[1].row).toMatchObject({
+      event_type: "analytics_purchase",
+      metadata: { plan: "book_only", amount_cents: 2800, currency: "usd", billing_reason: "book_purchase" },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

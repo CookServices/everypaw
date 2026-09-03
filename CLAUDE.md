@@ -543,7 +543,7 @@ Palette : « Design Context » en tête de fichier, les tokens `--ep-*` de `glob
 
 **Qualité** : logs gatés (`src/lib/log.ts`, `DEBUG_LOGS=1`), rate-limit persistant Postgres (`checkRateLimitDb`), tests Vitest (plan guards, priceIdToPlan, calcPageCount, parseStoryResponse), hook SessionStart `npm install`.
 
-**Mesure** : GA4 + Meta Pixel, tous deux gatés au consentement cookie (`src/components/Trackers.tsx`, `src/lib/consent.ts`). Événements Pixel custom via `src/lib/pixel.ts` : `CompleteRegistration` (signup), `ViewContent` (landing).
+**Mesure** : GA4 + Meta Pixel, tous deux gatés au consentement cookie (`src/components/Trackers.tsx`, `src/lib/consent.ts`). Événements Pixel custom via `src/lib/pixel.ts` : `CompleteRegistration` (signup), `ViewContent` (landing). Les achats, eux, sont rapportés **côté serveur** depuis le webhook Stripe (`src/lib/analytics-server.ts`, spec P0-1) : le paiement se termine sur le domaine de Stripe et les trackers navigateur sont derrière le consentement, donc un abonnement payé par quelqu'un qui a refusé les cookies n'existerait nulle part. L'événement part sans aucune donnée utilisateur — les identifiants exigés par GA4 (`client_id`) et Meta (`user_data`) sont dérivés de l'identifiant d'événement Stripe, donc uniques par achat et non rattachables à un compte. Dédup par `events_log` (`event_type` `analytics_purchase`, `stripe_event_id`), envoi jamais bloquant, bloc entier ignoré si `GA_API_SECRET` et `META_CAPI_TOKEN` sont absents.
 
 ---
 
@@ -611,7 +611,7 @@ Une tâche (feature, fix, refacto) n'est **pas terminée** tant que les checks c
 
 Un bug ici est soit un bug financier, soit un doublon visible côté client — vérifier explicitement qu'aucune régression n'a été introduite :
 - Guards de plan (`canAddEntry` / `canGenerateStory` / `canOrderBook`) et leur exclusion des stories `origins`/`birthday` du quota.
-- Idempotence webhook Stripe (dedup `events_log` par `stripe_event_id`) et source unique des book credits Print (`invoice.payment_succeeded`).
+- Idempotence webhook Stripe (dedup `events_log` par `stripe_event_id`) et source unique des book credits Print (`invoice.payment_succeeded`). Plusieurs lignes `events_log` portent désormais le **même** `stripe_event_id` (le crédit livre et l'événement d'achat serveur) : toute recherche de dedup doit filtrer sur `event_type` en plus, sans quoi une ligne d'analytics fait passer un crédit livre pour déjà attribué.
 - Cohérence `pageCount` entre `gelato/order` et `book-pdf` (même algo `hasOrphanPhotos`), et cohérence du prix livre (`calcGelatoBookPrice`) avec le tableau des plans.
 - `x-pathname` posé par `src/middleware.ts` (utilisé par le root layout pour `<html lang>`).
 

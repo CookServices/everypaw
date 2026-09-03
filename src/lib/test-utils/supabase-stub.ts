@@ -15,12 +15,19 @@ export type StubResult = { data?: unknown; error?: unknown; count?: number | nul
 export type RecordedInsert = { table: string; row: unknown };
 export type RecordedUpdate = { table: string; values: unknown };
 export type RecordedRpc = { fn: string; args: unknown };
+/**
+ * A chain as it was awaited: the table plus the filters applied to it. Results
+ * come from the FIFO queue whatever the filters say, so this is how a test
+ * asserts that a lookup was actually scoped the way it claims to be.
+ */
+export type RecordedQuery = { table: string; filters: { method: string; args: unknown[] }[] };
 
 export function createSupabaseStub() {
   const reads: StubResult[] = [];
   const inserts: RecordedInsert[] = [];
   const updates: RecordedUpdate[] = [];
   const rpcs: RecordedRpc[] = [];
+  const queries: RecordedQuery[] = [];
   const rpcResults: StubResult[] = [];
   const throwingTables = new Set<string>();
 
@@ -53,13 +60,17 @@ export function createSupabaseStub() {
   // `then` (awaiting the chain) or from single()/maybeSingle().
   function makeBuilder(table: string) {
     const builder: Record<string, unknown> = {};
+    const filters: { method: string; args: unknown[] }[] = [];
     const chain = () => builder;
 
     for (const m of [
       "select", "eq", "neq", "in", "not", "is", "gte", "lte", "gt", "lt",
       "contains", "order", "limit", "range", "filter", "match",
     ]) {
-      builder[m] = chain;
+      builder[m] = (...args: unknown[]) => {
+        filters.push({ method: m, args });
+        return builder;
+      };
     }
 
     builder.insert = (row: unknown) => {
@@ -74,6 +85,7 @@ export function createSupabaseStub() {
 
     builder.single = async () => {
       if (throwingTables.has(table)) throw new Error(`stub: ${table} read failed`);
+      queries.push({ table, filters: [...filters] });
       return nextRead();
     };
     builder.maybeSingle = builder.single;
@@ -81,6 +93,7 @@ export function createSupabaseStub() {
     // Awaiting the chain directly (e.g. `await db.from(t).insert(...)`).
     builder.then = (resolve: (v: StubResult) => unknown, reject?: (e: unknown) => unknown) => {
       if (throwingTables.has(table)) return reject?.(new Error(`stub: ${table} write failed`));
+      queries.push({ table, filters: [...filters] });
       return resolve(nextRead());
     };
 
@@ -103,6 +116,7 @@ export function createSupabaseStub() {
     inserts,
     updates,
     rpcs,
+    queries,
     /** Reads queued but never consumed — a mismatch between test and handler. */
     unusedReads: () => reads.length,
   };
