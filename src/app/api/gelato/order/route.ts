@@ -100,12 +100,6 @@ export async function POST(req: Request) {
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  // Atomically consume a book credit before calling Gelato (prevents race conditions)
-  const { data: consumed, error: creditError } = await supabase.rpc("try_consume_book_credit", { p_user_id: user.id });
-  if (creditError || !consumed) {
-    return NextResponse.json({ error: "no_book_credits" }, { status: 403 });
-  }
-
   // Determine currency from user's country header
   const country = req.headers.get("x-vercel-ip-country");
   const currency = getCurrencyFromCountry(country);
@@ -147,6 +141,61 @@ export async function POST(req: Request) {
     hasDedication,
     hasTributes: !!includeTributes,
   }).declaredPages;
+
+  // A purchased book may not be larger than the book that was paid for.
+  // Book credits are a bare integer, so nothing links a payment to an order:
+  // the purchases are read back from events_log, where the webhook records the
+  // page count each one paid for. The cap only bites when EVERY credit held is
+  // a purchased one, so a Print subscriber ordering their included book (which
+  // has no per-page price) is never held to the size of an extra copy they
+  // also bought.
+  const { data: creditProfile } = await supabase
+    .from("profiles")
+    .select("book_credits")
+    .eq("id", user.id)
+    .single();
+
+  const { data: purchaseGrants } = await supabase
+    .from("events_log")
+    .select("id, metadata, triggered_at")
+    .eq("user_id", user.id)
+    .eq("event_type", "stripe_book_checkout")
+    .order("triggered_at", { ascending: true });
+
+  const unconsumedGrants = (purchaseGrants ?? []).filter(
+    (g: { metadata: Record<string, unknown> | null }) =>
+      typeof g.metadata?.page_count === "number" && !g.metadata?.consumed_by,
+  ) as { id: string; metadata: Record<string, unknown> }[];
+
+  const heldCredits = creditProfile?.book_credits ?? 0;
+  const capApplies = unconsumedGrants.length > 0 && unconsumedGrants.length >= heldCredits;
+  const paidPages = unconsumedGrants.reduce(
+    (max, g) => Math.max(max, g.metadata.page_count as number), 0,
+  );
+
+  if (capApplies && pageCount > paidPages) {
+    log.warn("[gelato/order] book larger than paid:", pageCount, ">", paidPages, "user:", user.id);
+    return NextResponse.json(
+      { error: "book_larger_than_paid", paidPages, pages: pageCount },
+      { status: 403 },
+    );
+  }
+
+  // Grant to mark spent once Gelato accepts: the cheapest one that covers this
+  // book, so a bigger purchase stays available for a bigger order.
+  const grantToConsume = capApplies
+    ? [...unconsumedGrants]
+        .sort((a, b) => (a.metadata.page_count as number) - (b.metadata.page_count as number))
+        .find(g => (g.metadata.page_count as number) >= pageCount) ?? null
+    : null;
+
+  // Atomically consume a book credit before calling Gelato (prevents race
+  // conditions). After the cap check on purpose: refusing an order whose credit
+  // was already consumed would need a compensating restore.
+  const { data: consumed, error: creditError } = await supabase.rpc("try_consume_book_credit", { p_user_id: user.id });
+  if (creditError || !consumed) {
+    return NextResponse.json({ error: "no_book_credits" }, { status: 403 });
+  }
 
   // Cover dimensions: call Gelato API, fallback to formula.
   // Interior pages = pageCount (content) + 2 (endpapers). Spine empirically ~0.38mm/page for 170gsm coated silk hardcover.
@@ -330,6 +379,16 @@ export async function POST(req: Request) {
         .eq("user_id", user.id);
     } else {
       await supabase.from("book_configs").insert(configPayload);
+    }
+
+    // Mark the purchase spent, so its allowance cannot fund a second book.
+    // After Gelato accepted: a grant burned on an order that never shipped
+    // would cost the buyer the book they paid for.
+    if (grantToConsume) {
+      await supabase.from("events_log")
+        .update({ metadata: { ...grantToConsume.metadata, consumed_by: data.id } })
+        .eq("id", grantToConsume.id)
+        .eq("user_id", user.id);
     }
 
     return NextResponse.json({ orderId: data.id, status: data.orderStatus });

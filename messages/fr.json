@@ -450,7 +450,8 @@
     "layout_photo_hero": "Photo",
     "layout_split": "Côte à côte",
     "layout_text_only": "Texte",
-    "too_few_content": "Pas encore assez de pages remplies pour imprimer un livre : il en faut {pages}. Les chapitres, les photos et les étapes comptent."
+    "too_few_content": "Pas encore assez de pages remplies pour imprimer un livre : il en faut {pages}. Les chapitres, les photos et les étapes comptent.",
+    "book_larger_than_paid": "Ce livre fait désormais {pages} pages alors que {paid} ont été payées. Réduisez la sélection, ou achetez un livre à la nouvelle taille."
   },
   "memorial": {
     "mark_passed": "Enregistrer le décès…",

@@ -7,6 +7,7 @@ import { paginateBook } from "@/lib/book-pages";
 
 import { stripe } from "@/lib/stripe";
 import { UUID_REGEX } from "@/lib/validation";
+import { collectOrphanPhotoUrls, MIN_YEAR, MAX_YEAR } from "@/lib/book-shared";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { petId } = await req.json().catch(() => ({}));
+  const { petId, storyIds, year } = await req.json().catch(() => ({}));
 
   if (!petId || typeof petId !== "string" || !UUID_REGEX.test(petId)) {
     return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
@@ -34,30 +35,54 @@ export async function POST(req: Request) {
   // client-supplied pageCount here would let anyone declare the cheapest
   // page count while still receiving a book sized to their full content.
   //
-  // Worst case, not the exact filtered count the user will end up choosing
-  // on the order screen (year filter, story selection, dedication, tributes
-  // aren't known yet at checkout time): ALL of this pet's stories, every photo
-  // counted as unclaimed, every milestone, dedication and tributes assumed
-  // present. paginateBook is monotonic in every input, so this is always >=
-  // whatever /api/gelato/order computes for any subset of the same content, at
-  // the cost of sometimes charging slightly more than the final book needs.
-  // The order page shows this same worst case, so the price displayed is the
-  // price charged.
-  const [{ count: storyCount }, { data: photoEntries }, { count: milestoneCount }] = await Promise.all([
-    db.from("stories").select("id", { count: "exact", head: true }).eq("pet_id", petId),
-    db.from("entries").select("photo_urls").eq("pet_id", petId).not("photo_urls", "is", null),
-    db.from("milestones").select("id", { count: "exact", head: true }).eq("pet_id", petId),
+  // The buyer declares which chapters and which year they are about to order,
+  // and the price is computed for THAT book. The declaration is never trusted
+  // on its own: the content behind it is read from the database, and
+  // /api/gelato/order refuses to print a book larger than the pages paid for
+  // (recorded in the session metadata below). Declaring a small book to pay
+  // less therefore buys a small book, which is the point.
+  //
+  // Without a declaration (an older client, or a caller that sends only a pet)
+  // the price falls back to the worst case: all chapters, every photo counted
+  // as unclaimed, every milestone. paginateBook is monotonic, so that fallback
+  // is never below what the final order computes.
+  const declaredStoryIds: string[] | null = Array.isArray(storyIds)
+    && storyIds.length > 0
+    && storyIds.every((id: unknown) => typeof id === "string" && UUID_REGEX.test(id))
+      ? storyIds
+      : null;
+
+  const declaredYear = Number.isInteger(year) && year >= MIN_YEAR && year <= MAX_YEAR ? year as number : null;
+
+  const [{ data: stories }, { data: photoEntries }, { data: milestones }] = await Promise.all([
+    db.from("stories").select("id, period_start, period_end, created_at").eq("pet_id", petId),
+    db.from("entries").select("id, entry_date, photo_urls").eq("pet_id", petId),
+    db.from("milestones").select("id, achieved_at").eq("pet_id", petId),
   ]);
 
-  const photoCount = (photoEntries ?? []).reduce(
-    (total: number, e: { photo_urls: string[] | null }) => total + (e.photo_urls?.length ?? 0),
-    0,
-  );
+  const inYear = (date: string | null) =>
+    declaredYear === null || (!!date && new Date(date).getFullYear() === declaredYear);
+
+  const selectedStories = (stories ?? []).filter(s =>
+    (declaredStoryIds === null || declaredStoryIds.includes(s.id))
+    && inYear(s.period_start ?? s.created_at));
+  const entriesInYear = (photoEntries ?? []).filter(e => inYear(e.entry_date));
+  const milestonesInYear = (milestones ?? []).filter(m => inYear(m.achieved_at));
+
+  // With a declaration, photos inside a selected chapter are composed in that
+  // chapter and cost no page of their own. Without one, they all count.
+  const orphanPhotoCount = declaredStoryIds === null && declaredYear === null
+    ? entriesInYear.reduce((total, e) => total + (e.photo_urls?.length ?? 0), 0)
+    : collectOrphanPhotoUrls(entriesInYear, selectedStories).length;
 
   const pageCount = paginateBook({
-    storyCount: storyCount ?? 0,
-    orphanPhotoCount: photoCount,
-    milestoneCount: milestoneCount ?? 0,
+    storyCount: declaredStoryIds === null && declaredYear === null
+      ? (stories ?? []).length
+      : selectedStories.length,
+    orphanPhotoCount,
+    milestoneCount: milestonesInYear.length,
+    // Both are one page each and neither is known here: assumed present, which
+    // can only round the price up, never below what the order will declare.
     hasDedication: true,
     hasTributes: true,
   }).declaredPages;
@@ -94,6 +119,9 @@ export async function POST(req: Request) {
       user_id: user.id,
       plan: "book_only",
       pet_id: petId,
+      // Read back by the webhook, then by /api/gelato/order as the ceiling on
+      // the book this payment may print.
+      page_count: String(pageCount),
     },
   });
 

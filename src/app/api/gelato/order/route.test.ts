@@ -322,3 +322,94 @@ describe("declared page count", () => {
     expect(declaredPageCount()).toBe(28); // one chapter, no photo page of its own
   });
 });
+
+describe("a purchased book may not exceed the pages paid for", () => {
+  // Book credits are a bare integer, so the link between a payment and the size
+  // of the book it bought lives in events_log. Without this check, declaring a
+  // one-chapter book at checkout and ordering the full one reopens the hole
+  // closed in session 64.
+  const bigBook = Array.from({ length: 30 }, (_, i) => ({
+    id: `e${i}`, entry_date: "2026-07-01", photo_urls: ["https://x/a.jpg", "https://x/b.jpg"],
+  }));
+
+  /** pet, entries, stories, milestones, then the credit and the grants. */
+  function queueWithGrants(opts: {
+    entries?: unknown[];
+    credits: number;
+    grants: unknown[];
+  }) {
+    db.queueRead({ data: { id: PET_ID, user_id: "user_1" } });
+    db.queueRead({ data: opts.entries ?? [] });
+    db.queueRead({ data: [] });
+    db.queueRead({ data: [] });
+    db.queueRead({ data: { book_credits: opts.credits } });
+    db.queueRead({ data: opts.grants });
+    db.queueRpc({ data: true, error: null });
+  }
+
+  it("refuses the order, and leaves the credit untouched", async () => {
+    queueWithGrants({
+      entries: bigBook,                       // 60 photos -> 32 declared pages
+      credits: 1,
+      grants: [{ id: "g1", metadata: { page_count: 28 }, triggered_at: "2026-09-01" }],
+    });
+
+    const res = await POST(post(validBody()));
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ error: "book_larger_than_paid", paidPages: 28, pages: 32 });
+    expect(db.rpcs).toHaveLength(0);          // no credit spent on a refused order
+    expect(fetchMock).not.toHaveBeenCalled(); // Gelato never contacted
+  });
+
+  it("lets a subscriber spend an included credit on a bigger book", async () => {
+    // Two credits, one purchase: the second credit came with the Print plan and
+    // its book has no per-page price, so the purchase must not shrink it.
+    queueWithGrants({
+      entries: bigBook,
+      credits: 2,
+      grants: [{ id: "g1", metadata: { page_count: 28 }, triggered_at: "2026-09-01" }],
+    });
+
+    const res = await POST(post(validBody()));
+
+    expect(res.status).toBe(200);
+    expect(db.rpcs).toEqual([{ fn: "try_consume_book_credit", args: { p_user_id: "user_1" } }]);
+  });
+
+  it("marks the purchase spent once Gelato has accepted the order", async () => {
+    queueWithGrants({
+      credits: 1,
+      grants: [{ id: "g1", metadata: { page_count: 28, stripe_session_id: "cs_1" }, triggered_at: "2026-09-01" }],
+    });
+
+    await POST(post(validBody()));
+
+    const spent = db.updates.find(u => u.table === "events_log");
+    expect(spent?.values).toMatchObject({
+      metadata: { page_count: 28, stripe_session_id: "cs_1", consumed_by: "gel_1" },
+    });
+  });
+
+  it("spends nothing when the credit did not come from a purchase", async () => {
+    queueWithGrants({ credits: 1, grants: [] });
+
+    const res = await POST(post(validBody()));
+
+    expect(res.status).toBe(200);
+    expect(db.updates.find(u => u.table === "events_log")).toBeUndefined();
+  });
+
+  it("ignores a purchase already spent on another book", async () => {
+    queueWithGrants({
+      entries: bigBook,
+      credits: 1,
+      grants: [{ id: "g1", metadata: { page_count: 200, consumed_by: "gelato-order-0" }, triggered_at: "2026-09-01" }],
+    });
+
+    const res = await POST(post(validBody()));
+
+    // The only grant is spent, so nothing caps this order.
+    expect(res.status).toBe(200);
+  });
+});

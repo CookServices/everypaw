@@ -101,6 +101,31 @@ describe("checkout.session.completed - one-time book purchase", () => {
     });
   });
 
+  it("records the pages the buyer paid for, which caps the book they can order", async () => {
+    constructEvent.mockReturnValue({
+      ...bookEvent,
+      data: { object: { ...bookEvent.data.object, metadata: { user_id: "user_1", plan: "book_only", page_count: "36" } } },
+    });
+    db.queueRead({ data: null });
+    db.queueRpc({ error: null });
+
+    await POST(post());
+
+    expect(db.inserts[0].row).toMatchObject({ metadata: { page_count: 36 } });
+  });
+
+  it("records no page count when the session carries none, rather than a bogus one", async () => {
+    // Sessions created before this existed: no cap rather than a cap of zero,
+    // which would refuse every order.
+    constructEvent.mockReturnValue(bookEvent);
+    db.queueRead({ data: null });
+    db.queueRpc({ error: null });
+
+    await POST(post());
+
+    expect((db.inserts[0].row as { metadata: Record<string, unknown> }).metadata).not.toHaveProperty("page_count");
+  });
+
   it("is idempotent: a replayed event grants no second credit", async () => {
     constructEvent.mockReturnValue(bookEvent);
     db.queueRead({ data: { id: "already-logged" } }); // dedup lookup: seen
