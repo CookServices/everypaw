@@ -415,3 +415,23 @@ describe("the file matches the order", () => {
     expect(documentProps!.blankPagesCount).toBe(3);
   });
 });
+
+describe("one declared page is one physical page", () => {
+  // react-pdf splits a Page whose content overflows into two physical pages,
+  // which silently breaks the count declared to Gelato: the order is refused
+  // and the book credit has already been spent. Found on a real render, where
+  // a photo page overflowed its budget by four tenths of a point and turned 24
+  // declared pages into 48. `wrap={false}` makes the arithmetic non-critical,
+  // so every Page in this route must carry it.
+  //
+  // Asserted on the source because the renderer is stubbed here: the page
+  // components are never invoked, so their props cannot be inspected.
+  it("carries wrap={false} on every Page of the route", async () => {
+    const { readFileSync } = await import("node:fs");
+    const source = readFileSync(new URL("./route.tsx", import.meta.url), "utf8");
+    const tags = source.match(/<Page[^>]*/g) ?? [];
+
+    expect(tags.length).toBeGreaterThan(5);
+    expect(tags.filter(tag => !tag.includes("wrap={false}"))).toEqual([]);
+  });
+});

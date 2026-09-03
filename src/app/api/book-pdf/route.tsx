@@ -115,7 +115,7 @@ function WrapCoverPage({
   const frontLeft = WRAP_BLEED + TRIM + spinePt; // x-start of front panel
 
   return (
-    <Page size={[coverWidthPt, coverHeightPt]}>
+    <Page wrap={false} size={[coverWidthPt, coverHeightPt]}>
       {/* Full background */}
       <View style={{ position: "absolute", top: 0, left: 0, width: coverWidthPt, height: coverHeightPt, backgroundColor: colors.bg }} />
 
@@ -160,7 +160,7 @@ function DedicationPage({
   dedication: string;
 }) {
   return (
-    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
+    <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: BLEED_INT + PAD }}>
         <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 18, textAlign: "center" }}>
           {strings.dedication}
@@ -268,7 +268,7 @@ function ChapterPage({
   if (layout === "photo_hero") {
     const heroUrl = safeUrl(photoUrls[0] ?? "");
     return (
-      <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+      <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
         {heroUrl ? (
           <PdfImage src={heroUrl} style={{ width: PW_INNER, height: PH_INNER * 0.36, objectFit: "cover" }} />
         ) : null}
@@ -284,7 +284,7 @@ function ChapterPage({
     const splitUrls = photoUrls.slice(0, 2).filter(safeUrl);
     const colW = (CONTENT_W - 16) / 2;
     return (
-      <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+      <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
         <View style={{ flexDirection: "row", padding: BP, flex: 1, gap: 16, overflow: "hidden" }}>
           <View style={{ flex: 1, overflow: "hidden" }}>
             {Header}
@@ -302,7 +302,7 @@ function ChapterPage({
 
   if (layout === "text_only") {
     return (
-      <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+      <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
         <View style={{ padding: BP, flex: 1, overflow: "hidden" }}>
           {Header}
           {BodyText}
@@ -315,7 +315,7 @@ function ChapterPage({
   const photoW = photoUrls.length === 1 ? CONTENT_W : (CONTENT_W - 8) / 2;
   const safePhotoUrls = photoUrls.filter(safeUrl);
   return (
-    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+    <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
       <View style={{ padding: BP, flex: 1, overflow: "hidden" }}>
         {Header}
         <View style={{ flex: 1, overflow: "hidden" }}>{BodyText}</View>
@@ -343,7 +343,7 @@ function NoStoriesPage({
   petName: string;
 }) {
   return (
-    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+    <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
       <View style={{ padding: BLEED_INT + PAD, flex: 1 }}>
         <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 4 }}>
           {strings.chapter.toUpperCase()} 1
@@ -371,10 +371,18 @@ function PhotoPage({
 }) {
   const BP = BLEED_INT + PAD;
   const contentW = PW_INNER - BP * 2;
-  // Two stacked frames, minus the label band and the gap between them.
-  const photoH = (PH_INNER - BP * 2 - 26 - 10) / 2;
+  // Two stacked frames, minus the label band and the gap between them. The
+  // label was budgeted at 26pt and actually takes 26.4 (7pt of text on a 1.2
+  // line, plus its 18pt margin), which overflowed the page by four tenths of a
+  // point and made react-pdf spill every photo page onto a second physical
+  // page: 24 declared pages, 48 rendered, and a file Gelato would refuse.
+  // Hence a measured label and four points of slack, on top of the wrap={false}
+  // below which makes the arithmetic non-critical.
+  const LABEL_BAND = 30;
+  const PHOTO_GAP = 10;
+  const photoH = Math.floor((PH_INNER - BP * 2 - LABEL_BAND - PHOTO_GAP) / 2) - 2;
   return (
-    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
+    <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
       <View style={{ padding: BP, flex: 1, overflow: "hidden" }}>
         <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 18 }}>
           {strings.moments.toUpperCase()}
@@ -403,7 +411,7 @@ function MilestonesPage({
 }) {
   const BP = BLEED_INT + PAD;
   return (
-    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+    <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
       <View style={{ padding: BP, flex: 1 }}>
         <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 20 }}>
           {strings.milestones}
@@ -436,7 +444,7 @@ function TributesPage({
 }) {
   const BP = BLEED_INT + PAD;
   return (
-    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
+    <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
       <View style={{ padding: BP, flex: 1 }}>
         <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 4 }}>
           {strings.tributes}
@@ -460,7 +468,7 @@ function TributesPage({
 }
 
 function BlankPage() {
-  return <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }} />;
+  return <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }} />;
 }
 
 // ── Main document ─────────────────────────────────────────────────────────────
