@@ -657,5 +657,10 @@
     "upgrade_cta": "Upgrade",
     "added_by": "Added by {name}",
     "max_members": "Max 5 members per pet"
+  },
+  "gift_campaign": {
+    "title": "Give a year of Everypaw",
+    "body": "A gift subscription, not a parcel: nothing arrives before Christmas. Your recipient starts their pet's journal, and orders their printed book once it holds a year worth keeping.",
+    "cta": "See the gift plans"
   }
 }

@@ -117,7 +117,8 @@ export default function Page() {
           <a href="/memorial">memorial page</a> lets them create a quiet place online with their pet&rsquo;s photo,
           their own message, and tributes from others. It&rsquo;s the kind of gift that works best when you set up
           the space and invite them to fill it when they&rsquo;re ready, rather than handing them a task during the
-          hardest week.
+          hardest week. A{" "}
+          <a href="/gift">gift subscription</a> covers the year it takes to fill.
         </p>
         <p>
           For more ideas on keepsakes that the pet owner can create for themselves, the{" "}

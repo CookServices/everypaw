@@ -117,7 +117,8 @@ export default function Page() {
           <a href="/fr/memorial">page mémorial d&rsquo;Everypaw</a> lui permet de créer un endroit calme en ligne avec
           la photo de son animal, son propre message, et des hommages d&rsquo;autres personnes. C&rsquo;est le genre
           de cadeau qui fonctionne le mieux quand vous préparez l&rsquo;espace vous-même et l&rsquo;invitez à le
-          remplir quand il sera prêt, plutôt que de lui confier une tâche pendant la semaine la plus difficile.
+          remplir quand il sera prêt, plutôt que de lui confier une tâche pendant la semaine la plus difficile. Un{" "}
+          <a href="/fr/gift">abonnement offert</a> couvre l&rsquo;année qu&rsquo;il faut pour le remplir.
         </p>
         <p>
           Pour plus d&rsquo;idées de souvenirs que le propriétaire peut créer lui-même, l&rsquo;article{" "}

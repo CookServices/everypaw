@@ -84,7 +84,8 @@ export default function Page() {
         </p>
         <p>
           Everypaw has a <a href="/memorial">memorial page feature</a> designed for this: a quiet, permanent space with
-          their photo, your message, their AI-generated stories, and a place for tributes from others.
+          their photo, your message, their AI-generated stories, and a place for tributes from others. It can also be{" "}
+          <a href="/gift">given as a subscription</a>, which spares the grieving person the setup.
         </p>
 
         <h2>4. A letter you don&rsquo;t send</h2>

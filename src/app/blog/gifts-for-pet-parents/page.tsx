@@ -72,7 +72,9 @@ export default function Page() {
           A subscription to a pet journaling app that turns daily notes into something lasting. Everypaw, for
           example, takes one-sentence entries and turns them into monthly AI-generated story chapters, then a
           printed hardcover book at the end of the year. It&rsquo;s a gift that builds over twelve months rather
-          than sitting on a shelf after one use.
+          than sitting on a shelf after one use. You can{" "}
+          <a href="/gift">give a year of Everypaw</a> directly: the recipient gets a code, and orders their
+          printed book once their journal holds a year worth keeping.
         </p>
 
         <h3>4. A custom photo book from their camera roll</h3>
