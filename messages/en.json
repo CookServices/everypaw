@@ -629,6 +629,9 @@
     "cta_free_plan": "Premium"
   },
   "birthday": {
+    "book_prompt": "A year of {name} is enough for a book. Everything written since last birthday can be bound into a hardcover, chapter by chapter.",
+    "book_cta_order": "Order their book",
+    "book_cta_discover": "See the Print plan"
   },
   "members": {
     "tab": "Household",
