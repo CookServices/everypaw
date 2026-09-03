@@ -487,7 +487,13 @@ currency: "USD"
 
 **Pricing livre dynamique** : `calcGelatoBookPrice(pageCount)` dans `src/lib/gelato-pricing.ts`. COGS Gelato : `15.46 + max(0,(n-30)/2)×0.395`. Marge fixe : +12€/USD. Résultat passé par `Math.ceil` → prix minimum (28 pages) = **28€/$28** (pas 27,46 — le COGS brut est 27.46, le prix affiché/facturé est arrondi au-dessus). Cohérent avec le tableau des plans plus haut.
 
-**pageCount** : calculé par `calcPageCount(storiesCount, hasOrphanPhotos, hasDedication)` dans `src/lib/book.ts`. Doit correspondre exactement entre `gelato/order` et `book-pdf` (même algo best-match pour `hasOrphanPhotos`). Format Gelato : multiple de 4, minimum 28.
+**pageCount** : calculé par `paginateBook()` dans `src/lib/book-pages.ts` (P1-3), seule source du
+nombre de pages. Un chapitre par page, **2 photos orphelines par page** (plafond 30 pages, soit 60
+photos), **8 étapes par page**, plus dédicace et hommages s'ils existent ; les pages blanches ne sont
+plus que le complément final au multiple de 4, minimum 28. `gelato/order` et `book-pdf` doivent
+déclarer et rendre exactement le même nombre (mêmes helpers : `collectOrphanPhotoUrls` pour les
+photos non rattachées, `chunk` pour la pagination), sans quoi Gelato refuse le fichier. Seuil de
+commande : `MIN_FILLED_PAGES_TO_ORDER` (14 pages **remplies**, pas 7 chapitres).
 
 ---
 
@@ -542,7 +548,7 @@ Palette : « Design Context » en tête de fichier, les tokens `--ep-*` de `glob
 
 **Sécurité** : 13 rounds de review (détail dans docs/SESSIONS.md) — les règles qui en découlent sont codifiées dans « Conventions de code » ci-dessous. Un audit indépendant plus récent (2026-07-06, `docs/AUDIT_REPORT.md` + `docs/AUDIT_PLAN.md` + `docs/AUDIT_REPORT_QUALITY.md`) a trouvé 13 findings dont 1 CRITIQUE (RPC crédits-livre exposées à tout utilisateur authentifié, self-crediting possible) ; 12/13 corrigés le jour même, dont le critique via `revoke_book_credit_rpc_2026_07_06.sql`. **Avant tout nouveau round de sécurité, lire ces 3 fichiers** — ils documentent aussi les zones volontairement non auditées (composants client Z8, scripts one-shot).
 
-**Qualité** : logs gatés (`src/lib/log.ts`, `DEBUG_LOGS=1`), rate-limit persistant Postgres (`checkRateLimitDb`), tests Vitest (plan guards, priceIdToPlan, calcPageCount, parseStoryResponse), hook SessionStart `npm install`.
+**Qualité** : logs gatés (`src/lib/log.ts`, `DEBUG_LOGS=1`), rate-limit persistant Postgres (`checkRateLimitDb`), tests Vitest (plan guards, priceIdToPlan, paginateBook, parseStoryResponse), hook SessionStart `npm install`.
 
 **Mesure** : GA4 + Meta Pixel, tous deux gatés au consentement cookie (`src/components/Trackers.tsx`, `src/lib/consent.ts`). Événements Pixel custom via `src/lib/pixel.ts` : `CompleteRegistration` (signup), `ViewContent` (landing). Les achats sont rapportés **côté serveur** depuis le webhook Stripe (`src/lib/analytics-server.ts`, spec P0-1), sans aucune donnée utilisateur : les identifiants exigés par GA4 et Meta sont dérivés de l'identifiant d'événement Stripe, donc uniques par achat et non rattachables à un compte. Dédup par `events_log` (`analytics_purchase`), envoi jamais bloquant, bloc ignoré si `GA_API_SECRET` et `META_CAPI_TOKEN` sont absents.
 
@@ -595,7 +601,7 @@ fenêtre récente n'a pas fini de mûrir.
 - **Confirmation email** (`/auth/confirm`, `type=signup|recovery|email_change`) : vérifie `token_hash` côté serveur via `supabase.auth.verifyOtp({ type })` — jamais via le `confirmation_url` PKCE fourni par Supabase, qui exige le `code_verifier` du navigateur d'origine (absent si le lien est ouvert ailleurs, cause du bug production du 2026-08-31, voir Session 64). `email_change` a en plus un bug distinct (token vide, voir Session 64) : "Secure email change" étant désactivé, `token_hash_new` arrive en chaîne vide plutôt qu'absent → toujours utiliser `||` pour retomber sur `token_hash`, jamais `??`. Les anciennes routes `confirm-signup`/`change-email`/`reset-password` (auth Bearer simple, jamais appelées depuis la bascule vers `auth-hook`) ont été supprimées à cette occasion.
 - **`/api/generate`** : ne jamais faire confiance aux données du body client (petName, species, bio, entries). Re-fetcher depuis la DB après vérification de l'ownership du pet.
 - **`/api/gelato/order`** : toujours filtrer les updates de stories par `user_id` (même avec service role). Consommer les crédits via `try_consume_book_credit` **avant** l'appel Gelato, et restaurer via `restore_book_credit` en cas d'échec.
-- **Prix Stripe jamais depuis le client** : `/api/stripe/book-checkout` calculait le prix depuis un `pageCount` envoyé par le client (juste validé `28-500`) — `/api/gelato/order` recalcule le vrai `pageCount` côté serveur indépendamment et ne le compare jamais au prix payé, donc n'importe qui pouvait payer le minimum en déclarant `pageCount: 28` et recevoir un livre à la taille réelle de son contenu. Corrigé Session 64 (PR #115) : le prix se calcule désormais côté serveur au pire cas (`calcPageCount` sur toutes les stories du pet, dédicace/photos orphelines/tributs supposés présents — fonction monotone, donc toujours ≥ ce que `gelato/order` calculera réellement). Règle générale : **tout montant facturé doit être recalculé côté serveur à partir de données de confiance, jamais accepté tel quel depuis le body client** — vaut pour toute future route Stripe `price_data`/`unit_amount` dynamique.
+- **Prix Stripe jamais depuis le client** : `/api/stripe/book-checkout` calculait le prix depuis un `pageCount` envoyé par le client (juste validé `28-500`) — `/api/gelato/order` recalcule le vrai `pageCount` côté serveur indépendamment et ne le compare jamais au prix payé, donc n'importe qui pouvait payer le minimum en déclarant `pageCount: 28` et recevoir un livre à la taille réelle de son contenu. Corrigé Session 64 (PR #115) : le prix se calcule désormais côté serveur au pire cas (`paginateBook` sur toutes les stories, toutes les photos comptées comme orphelines, toutes les étapes, dédicace et tributs supposés présents — fonction monotone, donc toujours ≥ ce que `gelato/order` calculera réellement). Règle générale : **tout montant facturé doit être recalculé côté serveur à partir de données de confiance, jamais accepté tel quel depuis le body client** — vaut pour toute future route Stripe `price_data`/`unit_amount` dynamique.
 - **`/api/preview-pdf`** : l'accès GET (Gelato) nécessite un token HMAC signé généré par `gelato/order`. L'accès POST (in-app) nécessite une session + vérification de l'ownership du pet. Ne jamais exposer le contenu du livre sans authentification. Les URLs insérées dans du CSS (`url('...')`) doivent être passées par `safeCssUrl()` qui échappe les apostrophes.
 - **Client vs server-only imports** : ne jamais faire importer, par un module utilisé dans un composant `"use client"`, un fichier dont la chaîne d'imports statique touche `supabase/server.ts` / `next/headers` (ex. `plan.ts`, `book.ts` avant son split). Casse le build (« importing a component that needs next/headers ... not supported in pages/ »). Pattern de fix : extraire la logique pure (zéro import) dans un module frère (`book-pages.ts`, `plan-guards.ts`) et faire réexporter par l'original pour compat. Un `import type { ... }` est toujours sûr (effacé à la compilation) — seuls les imports de valeurs/fonctions posent problème.
 - **Helpers partagés** : pour escaper du HTML → `escapeHtml()` dans `src/lib/html.ts`. Pour escaper du XML dans les prompts IA → `escapeXml()` dans `src/lib/html.ts`. Pour détecter la locale d'un profil → `src/lib/locale.ts` (utilise `getServiceSupabase()` — pas de session requise). Pour le calcul du nombre de pages → `src/lib/book.ts`. Pour les tokens PDF → `src/lib/pdf-token.ts`. Pour mapper les erreurs Supabase Auth → messages FR/EN → `src/lib/auth-errors.ts` (`getSignupError`). Pour `verifyBearer` (Bearer token constant-time) et `validateRedirectTo` (open redirect guard) → `src/lib/auth.ts`. Ne pas réimplémenter ces fonctions inline.
@@ -620,7 +626,7 @@ Une tâche (feature, fix, refacto) n'est **pas terminée** tant que les checks c
 ### Checks à exécuter avant de déclarer un travail fini
 
 1. `npx tsc --noEmit` → zéro erreur.
-2. `npm test` → tous les tests verts, pas seulement ceux du fichier touché (couvre les guards de plan, `priceIdToPlan`, `calcPageCount`, `parseStoryResponse`, `evaluateFirstStoryNudge`).
+2. `npm test` → tous les tests verts, pas seulement ceux du fichier touché (couvre les guards de plan, `priceIdToPlan`, `paginateBook`, `parseStoryResponse`, `evaluateFirstStoryNudge`).
 3. `npm run build` avant tout push sur `main` ou toute PR — attrape les erreurs que `tsc --noEmit` seul ne voit pas (imports client/server incompatibles, edge runtime).
 4. Nouvelles clés i18n → présentes dans `messages/en.json` **et** `messages/fr.json` (jamais une seule).
 5. Route API nouvelle/modifiée → ownership vérifié (le `petId`/`storyId` du body/params appartient à l'utilisateur authentifié), identifiants validés via `UUID_REGEX`, aucun détail d'erreur interne (Stripe/Gelato/Anthropic) renvoyé au client.
@@ -635,7 +641,7 @@ Une tâche (feature, fix, refacto) n'est **pas terminée** tant que les checks c
 Un bug ici est soit un bug financier, soit un doublon visible côté client — vérifier explicitement qu'aucune régression n'a été introduite :
 - Guards de plan (`canAddEntry` / `canGenerateStory` / `canOrderBook`) et leur exclusion des stories `origins`/`birthday` du quota.
 - Idempotence webhook Stripe (dedup `events_log` par `stripe_event_id`) et source unique des book credits Print (`invoice.payment_succeeded`). Plusieurs lignes `events_log` portent désormais le **même** `stripe_event_id` (le crédit livre et l'événement d'achat serveur) : toute recherche de dedup doit filtrer sur `event_type` en plus, sans quoi une ligne d'analytics fait passer un crédit livre pour déjà attribué.
-- Cohérence `pageCount` entre `gelato/order` et `book-pdf` (même algo `hasOrphanPhotos`), et cohérence du prix livre (`calcGelatoBookPrice`) avec le tableau des plans.
+- Cohérence `pageCount` entre `gelato/order` et `book-pdf` : les deux passent par `paginateBook` et `collectOrphanPhotoUrls`, un écart fait refuser le fichier par Gelato alors que le crédit est déjà consommé. Cohérence du prix livre (`calcGelatoBookPrice`) avec le tableau des plans, et **le pire cas affiché sur la page order doit rester celui que `stripe/book-checkout` facture**.
 - `x-pathname` posé par `src/middleware.ts` (utilisé par le root layout pour `<html lang>`).
 
 ---
@@ -685,33 +691,38 @@ Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dern
 
 ### ✅ Session 68 — Backlog vidé, onglet journal extrait, chantier emails (2026-09-02)
 
-Backlog #19, #20 et #12(b) clos : 85 clés i18n mortes retirées après vérification des trois accès
-dynamiques du repo, et `stripe/cancel` libère le schedule avant de poser `cancel_at_period_end`.
-Phase 2b de la découpe (PR #136) : `useEntryComposer` puis `JournalTab`, `pets/[id]/page.tsx` de
-1035 à 764 lignes. Emails en trois lots (PR #137 à #139) : `px`, version texte,
-`List-Unsubscribe`, visuels PNG, registre FR vouvoyé tenu par un test. Cadeaux datés (PR #140) :
-Resend plafonne sa planification à 30 jours, d'où `gift_deliveries` et son cron. Détail complet
-dans `docs/SESSIONS.md`.
+Backlog #19, #20 et #12(b) clos : 85 clés i18n mortes retirées, `stripe/cancel` libère le schedule
+avant de poser `cancel_at_period_end`. Phase 2b de la découpe (PR #136) : `useEntryComposer` puis
+`JournalTab`, `pets/[id]/page.tsx` de 1035 à 764 lignes. Emails en trois lots (PR #137 à #139) :
+`px`, version texte, `List-Unsubscribe`, visuels PNG, registre FR vouvoyé tenu par un test. Cadeaux
+datés (PR #140) : Resend plafonne sa planification à 30 jours, d'où `gift_deliveries` et son cron.
+Détail complet dans `docs/SESSIONS.md`.
 
-### ✅ Session 69 — Chantier Print, phase 0 : mesurer le tunnel (2026-09-03)
+### ✅ Session 69 — Chantier Print, phases 0 et 1 (2026-09-03)
 
-**P0-1** (PR [#145](https://github.com/CookServices/everypaw/pull/145)) : `src/lib/analytics-server.ts`
-rapporte chaque souscription, renouvellement et achat de livre à GA4 et Meta depuis le webhook,
-sans donnée utilisateur. Les abonnements partent de `invoice.payment_succeeded`, pas de
-`checkout.session.completed` qui fire pour le même achat, et l'appel est **au-dessus** du gate
-Print, sinon une facture Digital `return` avant d'être comptée. Bug évité : le dedup du crédit
-livre cherchait `events_log` par `stripe_event_id` sans filtrer `event_type`.
+Cinq specs, cinq PR empilées ([#145](https://github.com/CookServices/everypaw/pull/145) à
+[#149](https://github.com/CookServices/everypaw/pull/149)). Détail dans les PR, seuls les pièges
+durables sont ici.
 
-**P0-2** : `supabase/analytics/funnel.sql`, définitions ci-dessus, rangé dans le dossier
-`analytics` existant plutôt que le `queries` de la spec. Validé sur un Postgres 17 jetable via
-`funnel.fixture.sql`, mutations comprises.
+**P0-1** : `src/lib/analytics-server.ts` rapporte souscriptions, renouvellements et achats de livre à
+GA4 et Meta depuis le webhook, sans donnée utilisateur. Les abonnements partent de
+`invoice.payment_succeeded`, pas de `checkout.session.completed` qui fire pour le même achat, et
+au-dessus du gate Print, sinon une facture Digital `return` avant d'être comptée. Piège : le dedup du
+crédit livre cherchait `events_log` par `stripe_event_id` sans filtrer `event_type`.
 
-**P1-1, la couverture dès la première histoire** : `BookPreviewCard` en tête de l'onglet Histoires,
-aperçu ouvert sur tous les plans, commande fermée avec son motif en plan gratuit. L'artwork de
-couverture est extrait de `BookCover` en `CoverArt` partagé plutôt que redessiné. `POST
-/api/events/book-preview` pose l'événement qui remplace l'approximation `book_configs` de P0-2.
+**P0-2** : `supabase/analytics/funnel.sql`, définitions ci-dessus, validé sur un Postgres jetable via
+`funnel.fixture.sql`.
 
-**P1-2, le rattrapage des mois passés** : `src/lib/story-backfill.ts` (pur, 10 tests) liste les mois
-ayant trois entrées et aucun chapitre qui chevauche, `BackfillCard` les génère un par un via
-`/api/generate`. Séquentiel obligatoire, la route compte les générations du jour ; le plafond de dix
-est une fin normale, pas une erreur. Le mois en cours est laissé au cron mensuel.
+**P1-1** : `BookPreviewCard` en tête de l'onglet Histoires, aperçu ouvert sur tous les plans,
+commande fermée avec son motif en plan gratuit. `CoverArt` extrait de `BookCover` plutôt que
+redessiné. `POST /api/events/book-preview` pose l'événement qui remplace l'approximation de P0-2.
+
+**P1-2** : `src/lib/story-backfill.ts` liste les mois ayant trois entrées et aucun chapitre qui
+chevauche, `BackfillCard` les génère un par un. Séquentiel obligatoire, `/api/generate` compte les
+générations du jour ; le plafond de dix est une fin normale. Le mois en cours reste au cron.
+
+**P1-3** : `paginateBook` remplace `calcPageCount` et devient la source unique des six appelants.
+Photos non rattachées 2 par page (plafond 30 pages), étapes 8 par page, pages blanches réduites au
+complément final, seuil de commande passé de 7 chapitres à 14 pages remplies. Le pire cas facturé
+par `stripe/book-checkout` compte désormais photos et étapes, et reste celui qu'affiche la page
+order. Invariant testé sur trois compositions : pages déclarées = pages rendues.

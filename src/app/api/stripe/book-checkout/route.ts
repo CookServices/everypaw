@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/plan";
 import { getCurrencyFromCountry } from "@/lib/currency";
 import { calcGelatoBookPrice } from "@/lib/gelato-pricing";
-import { calcPageCount } from "@/lib/book-pages";
+import { paginateBook } from "@/lib/book-pages";
 
 import { stripe } from "@/lib/stripe";
 import { UUID_REGEX } from "@/lib/validation";
@@ -36,17 +36,31 @@ export async function POST(req: Request) {
   //
   // Worst case, not the exact filtered count the user will end up choosing
   // on the order screen (year filter, story selection, dedication, tributes
-  // aren't known yet at checkout time): use ALL of this pet's stories with
-  // dedication/orphan-photos/tributes all assumed present. calcPageCount is
-  // monotonic in every input, so this is always >= whatever /api/gelato/order
-  // computes for any subset of this same content, at the cost of sometimes
-  // charging slightly more than the eventual filtered book actually needs.
-  const { count: storyCount } = await db
-    .from("stories")
-    .select("id", { count: "exact", head: true })
-    .eq("pet_id", petId);
+  // aren't known yet at checkout time): ALL of this pet's stories, every photo
+  // counted as unclaimed, every milestone, dedication and tributes assumed
+  // present. paginateBook is monotonic in every input, so this is always >=
+  // whatever /api/gelato/order computes for any subset of the same content, at
+  // the cost of sometimes charging slightly more than the final book needs.
+  // The order page shows this same worst case, so the price displayed is the
+  // price charged.
+  const [{ count: storyCount }, { data: photoEntries }, { count: milestoneCount }] = await Promise.all([
+    db.from("stories").select("id", { count: "exact", head: true }).eq("pet_id", petId),
+    db.from("entries").select("photo_urls").eq("pet_id", petId).not("photo_urls", "is", null),
+    db.from("milestones").select("id", { count: "exact", head: true }).eq("pet_id", petId),
+  ]);
 
-  const pageCount = calcPageCount(storyCount ?? 0, true, true, true);
+  const photoCount = (photoEntries ?? []).reduce(
+    (total: number, e: { photo_urls: string[] | null }) => total + (e.photo_urls?.length ?? 0),
+    0,
+  );
+
+  const pageCount = paginateBook({
+    storyCount: storyCount ?? 0,
+    orphanPhotoCount: photoCount,
+    milestoneCount: milestoneCount ?? 0,
+    hasDedication: true,
+    hasTributes: true,
+  }).declaredPages;
 
   const country = req.headers.get("x-vercel-ip-country");
   const currency = getCurrencyFromCountry(country);

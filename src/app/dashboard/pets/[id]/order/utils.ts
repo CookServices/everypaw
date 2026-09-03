@@ -1,25 +1,28 @@
 import type { Story, Entry, Pet } from "./constants";
+import { paginateBook, hasEnoughContentToOrder } from "@/lib/book-pages";
+import { collectOrphanPhotoUrls } from "@/lib/book-shared";
 
-// Matches calcPageCount: content only, multiple of 4, min 28.
-// Total PDF pages = estimatedPages + 3 structural (cover, endpaper, back cover).
+// The order threshold and the declared page count both come from the shared
+// pagination (lib/book-pages.ts), so the number shown here is the number the
+// Gelato order will declare for the same selection.
 export function estimateOrderPages(
   visibleStories: Story[],
   filteredEntries: Entry[],
-  selectedStoryIds: string[]
+  selectedStoryIds: string[],
+  milestoneCount: number
 ): { estimatedPages: number; tooFewContent: boolean } {
   const selected = visibleStories.filter(s => selectedStoryIds.includes(s.id));
-  const hasOrphanPhotos = filteredEntries.some(e => {
-    if (!e.photo_urls?.length) return false;
-    const d = new Date(e.entry_date);
-    return !selected.some(story => {
-      const start = story.period_start ? new Date(story.period_start) : null;
-      const end = story.period_end ? new Date(story.period_end) : null;
-      return !!start && d >= start && (!end || d <= end);
-    });
+  const orphanPhotoCount = collectOrphanPhotoUrls(filteredEntries, selected).length;
+  const pagination = paginateBook({
+    storyCount: selected.length,
+    orphanPhotoCount,
+    milestoneCount,
+    hasDedication: false,
+    hasTributes: false,
   });
-  const contentPages = Math.max(selected.length, 1) + (hasOrphanPhotos ? 1 : 0);
-  const rounded = Math.ceil(contentPages / 4) * 4;
-  return { estimatedPages: Math.max(28, rounded), tooFewContent: selected.length < 7 };
+  // "Too few" now means too few FILLED pages: the old rule asked for seven
+  // chapters and ignored the photos and milestones that fill a book too.
+  return { estimatedPages: pagination.declaredPages, tooFewContent: !hasEnoughContentToOrder(pagination) };
 }
 
 export function calcCoverPeriod(

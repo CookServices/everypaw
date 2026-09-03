@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { paginateBook, chunk, PHOTOS_PER_PAGE, MILESTONES_PER_PAGE, MAX_BOOK_PHOTOS } from "@/lib/book-pages";
 import { validatePdfToken } from "@/lib/pdf-token";
 import { escapeHtml } from "@/lib/html";
 import { getServiceSupabase } from "@/lib/plan";
@@ -6,7 +7,7 @@ import { UUID_REGEX } from "@/lib/validation";
 import {
   COVER_THEMES, VALID_THEMES, VALID_LANGS, VALID_LAYOUTS,
   MAX_DEDICATION_LENGTH, MAX_CUSTOM_TITLE_LENGTH, MIN_YEAR, MAX_YEAR,
-  safeUrl, bestStoryIndexForDate,
+  safeUrl, bestStoryIndexForDate, collectOrphanPhotoUrls,
   type Lang, type ThemeId, type LayoutType,
 } from "@/lib/book-shared";
 
@@ -26,6 +27,7 @@ const STRINGS = {
     dedication: "A message from your family",
     tributes: "Tributes",
     tributesSubtitle: "Messages from family & friends",
+    milestones: "Milestones",
     noStories: (name: string) => `No stories yet. Add journal entries and generate ${name}'s first story.`,
     backTitle: "Every moment remembered.",
     backText: "This book was created with love using Everypaw, the AI journal that turns your pet's daily moments into stories worth keeping forever.",
@@ -39,6 +41,7 @@ const STRINGS = {
     dedication: "Un message de votre famille",
     tributes: "Hommages",
     tributesSubtitle: "Messages de proches et d'amis",
+    milestones: "Étapes",
     noStories: (name: string) => `Aucune histoire pour l'instant. Ajoutez des entrées et générez la première histoire de ${name}.`,
     backTitle: "Chaque moment, à jamais.",
     backText: "Ce livre a été créé avec amour grâce à Everypaw, le journal IA qui transforme les moments du quotidien de votre animal en histoires à garder pour toujours.",
@@ -65,13 +68,14 @@ async function buildHtml(params: {
   const s = STRINGS[lang] ?? STRINGS.en;
   const colors = COVER_THEMES[theme] ?? COVER_THEMES.classic;
 
-  const [{ data: pet }, { data: allStories }, { data: allEntries }, { data: approvedTributes }] = await Promise.all([
+  const [{ data: pet }, { data: allStories }, { data: allEntries }, { data: approvedTributes }, { data: allMilestones }] = await Promise.all([
     supabase.from("pets").select("*").eq("id", petId).single(),
     supabase.from("stories").select("*").eq("pet_id", petId).order("created_at", { ascending: true }),
     supabase.from("entries").select("*").eq("pet_id", petId).order("entry_date", { ascending: true }),
     includeTributes
       ? supabase.from("memorial_tributes").select("id, author_name, message, created_at").eq("pet_id", petId).eq("status", "approved").order("created_at", { ascending: true })
       : Promise.resolve({ data: null }),
+    supabase.from("milestones").select("id, title, achieved_at").eq("pet_id", petId).order("achieved_at", { ascending: true }),
   ]);
 
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
@@ -112,24 +116,25 @@ async function buildHtml(params: {
     if (idx !== undefined && chapterPhotos[idx].length < 4) chapterPhotos[idx].push(entry);
   }
 
-  // Orphan entries not covered by any story period
-  const orphanEntries = entries.filter(e => e.photo_urls?.length > 0 && !entryToStoryIdx.has(e.id)).slice(0, 6);
-  const hasOrphanPhotos = orphanEntries.length > 0;
+  // Photos and milestones paginate exactly as they do in the printed book
+  // (lib/book-pages.ts): the preview is what the buyer judges the book on, so
+  // it must not show a thinner book than the one Gelato will print.
+  const orphanPhotoUrls = collectOrphanPhotoUrls(entries, stories).slice(0, MAX_BOOK_PHOTOS);
+  const photoPages = chunk(orphanPhotoUrls, PHOTOS_PER_PAGE);
 
-  // ── Page count & blank-page padding ───────────────────────────────────────
-  // Gelato requires: (a) minimum 28 pages, (b) multiples of 4 (hardcover signatures).
-  // We compute the exact number of pages the HTML will generate and add blank
-  // pages before the back cover so the PDF always matches the declared pageCount.
-  const storyPageCount = stories.length > 0 ? stories.length : 1; // placeholder chapter counts
-  const actualPages =
-    1 +                           // cover
-    (hasDedication ? 1 : 0) +    // dedication
-    storyPageCount +              // chapters (or 1 placeholder)
-    (hasOrphanPhotos ? 1 : 0) +  // orphan photos page
-    (hasTributes ? 1 : 0) +      // tributes page
-    1;                            // back cover
-  const targetPages = Math.max(28, Math.ceil(actualPages / 4) * 4);
-  const blankPagesToAdd = targetPages - actualPages;
+  const milestones = yearFilter
+    ? (allMilestones ?? []).filter((m: { achieved_at: string }) => new Date(m.achieved_at).getFullYear() === yearFilter)
+    : (allMilestones ?? []);
+  const milestonePages = chunk(milestones, MILESTONES_PER_PAGE);
+
+  // Blank pages pad the tail out to the printer's multiple of four, nothing more.
+  const blankPagesToAdd = paginateBook({
+    storyCount: stories.length,
+    orphanPhotoCount: orphanPhotoUrls.length,
+    milestoneCount: milestones.length,
+    hasDedication,
+    hasTributes,
+  }).blankPages;
   const blankPagesHtml = blankPagesToAdd > 0
     ? Array(blankPagesToAdd).fill('<div class="blank-page"></div>').join("\n  ")
     : "";
@@ -290,19 +295,31 @@ async function buildHtml(params: {
   </div>
   `}
 
-  <!-- Orphan photos page (entries not covered by any story period) -->
-  ${hasOrphanPhotos ? `
+  <!-- Photo pages: the photos no chapter claims, two to a page -->
+  ${photoPages.map(urls => `
   <div class="photo-page">
     <div class="chapter-num" style="margin-bottom: 1.5rem;">${escapeHtml(s.moments)}</div>
     <div class="photo-grid">
-      ${orphanEntries.flatMap(e => (e.photo_urls as string[]).slice(0, 1)).map((url: string) => `
+      ${urls.map((url: string) => `
         <div>
           ${safeUrl(url) ? `<img src="${safeUrl(url)}" alt="" />` : ""}
         </div>
       `).join("")}
     </div>
   </div>
-  ` : ""}
+  `).join("")}
+
+  <!-- Milestone pages, eight to a page -->
+  ${milestonePages.map(batch => `
+  <div class="photo-page" style="padding: 4rem 3rem 5rem;">
+    <div class="chapter-num" style="margin-bottom: 1.5rem;">${escapeHtml(s.milestones)}</div>
+    ${batch.map((milestone: { id: string; title: string; achieved_at: string }) => `
+    <div style="margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid rgba(61,43,31,.08);">
+      <div style="font-family: 'Playfair Display', serif; font-size: 1.05rem; color: #3D2B1F; margin-bottom: .3rem;">${escapeHtml(milestone.title)}</div>
+      <div style="font-size: .78rem; color: #7A5C44; font-family: 'DM Sans', sans-serif;">${escapeHtml(new Date(milestone.achieved_at).toLocaleDateString(lang === "fr" ? "fr-FR" : "en-US", { day: "numeric", month: "long", year: "numeric" }))}</div>
+    </div>`).join("")}
+  </div>
+  `).join("")}
 
   <!-- Tributes page -->
   ${hasTributes ? `

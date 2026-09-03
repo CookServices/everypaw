@@ -449,7 +449,8 @@
     "layout_classic": "Classique",
     "layout_photo_hero": "Photo",
     "layout_split": "Côte à côte",
-    "layout_text_only": "Texte"
+    "layout_text_only": "Texte",
+    "too_few_content": "Pas encore assez de pages remplies pour imprimer un livre : il en faut {pages}. Les chapitres, les photos et les étapes comptent."
   },
   "memorial": {
     "mark_passed": "Enregistrer le décès…",

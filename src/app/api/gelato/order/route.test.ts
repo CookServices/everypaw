@@ -59,6 +59,16 @@ function queueHappyPath() {
   db.queueRpc({ data: true, error: null });                      // try_consume_book_credit
   db.queueRead({ data: [] });                                    // entries
   db.queueRead({ data: [] });                                    // stories
+  db.queueRead({ data: [] });                                    // milestones
+}
+
+/** Same three reads, with content in them. */
+function queueContent(entries: unknown[], stories: unknown[], milestones: unknown[] = []) {
+  db.queueRead({ data: { id: PET_ID, user_id: "user_1" } });
+  db.queueRpc({ data: true, error: null });
+  db.queueRead({ data: entries });
+  db.queueRead({ data: stories });
+  db.queueRead({ data: milestones });
 }
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -270,5 +280,45 @@ describe("successful order", () => {
     const orderCall = fetchMock.mock.calls.find(c => String(c[0]).includes("/v4/orders"));
     const payload = JSON.parse((orderCall![1] as { body: string }).body);
     expect(new URL(payload.items[0].files[0].url).searchParams.get("coverWidthMm")).toBe("444");
+  });
+});
+
+describe("declared page count", () => {
+  // The number sent here and the number of pages in the PDF must agree: Gelato
+  // refuses the order otherwise, and the credit has already been consumed.
+  function declaredPageCount() {
+    const orderCall = fetchMock.mock.calls.find(c => String(c[0]).includes("/v4/orders"));
+    return JSON.parse((orderCall![1] as { body: string }).body).items[0].pageCount;
+  }
+
+  it("declares the printer's minimum for a book with nothing in it", async () => {
+    queueHappyPath();
+    await POST(post(validBody()));
+
+    expect(declaredPageCount()).toBe(28);
+  });
+
+  it("counts unclaimed photos two to a page and milestones eight to a page", async () => {
+    // 60 photos -> 30 pages, 12 milestones -> 2 pages, 1 placeholder chapter:
+    // 33 content pages, rounded up to the next multiple of four.
+    const entries = Array.from({ length: 30 }, (_, i) => ({
+      id: `e${i}`, entry_date: "2026-07-01", photo_urls: ["https://x/a.jpg", "https://x/b.jpg"],
+    }));
+    const milestones = Array.from({ length: 12 }, (_, i) => ({ id: `m${i}`, achieved_at: "2026-03-01" }));
+    queueContent(entries, [], milestones);
+
+    await POST(post(validBody()));
+
+    expect(declaredPageCount()).toBe(36);
+  });
+
+  it("does not charge a page for a photo its chapter already carries", async () => {
+    const stories = [{ id: STORY_ID, period_start: "2026-01-01", period_end: "2026-01-31", created_at: "2026-01-01" }];
+    const entries = [{ id: "e1", entry_date: "2026-01-15", photo_urls: ["https://x/a.jpg"] }];
+    queueContent(entries, stories);
+
+    await POST(post(validBody()));
+
+    expect(declaredPageCount()).toBe(28); // one chapter, no photo page of its own
   });
 });

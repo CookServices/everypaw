@@ -13,11 +13,11 @@ import {
 import { validatePdfToken } from "@/lib/pdf-token";
 import { getServiceSupabase } from "@/lib/plan";
 import { UUID_REGEX } from "@/lib/validation";
-import { calcPageCount } from "@/lib/book-pages";
+import { paginateBook, chunk, PHOTOS_PER_PAGE, MILESTONES_PER_PAGE, MAX_BOOK_PHOTOS } from "@/lib/book-pages";
 import {
   COVER_THEMES, VALID_THEMES, VALID_LANGS, VALID_LAYOUTS,
   MAX_DEDICATION_LENGTH, MAX_CUSTOM_TITLE_LENGTH, MIN_YEAR, MAX_YEAR,
-  safeUrl, bestStoryIndexForDate,
+  safeUrl, bestStoryIndexForDate, collectOrphanPhotoUrls,
   type Lang, type ThemeId, type LayoutType,
 } from "@/lib/book-shared";
 
@@ -48,6 +48,7 @@ const STRINGS = {
     dedication: "A MESSAGE FROM YOUR FAMILY",
     tributes: "TRIBUTES",
     tributesSubtitle: "Messages from family & friends",
+    milestones: "MILESTONES",
     noStories: (name: string) => `No stories yet. Add journal entries and generate ${name}'s first story.`,
     backTitle: "Every moment remembered.",
     backText: "This book was created with love using Everypaw, the AI journal that turns your pet's daily moments into stories worth keeping forever.",
@@ -61,6 +62,7 @@ const STRINGS = {
     dedication: "UN MESSAGE DE VOTRE FAMILLE",
     tributes: "HOMMAGES",
     tributesSubtitle: "Messages de proches et d'amis",
+    milestones: "ÉTAPES",
     noStories: (name: string) => `Aucune histoire pour l'instant. Ajoutez des entrées et générez la première histoire de ${name}.`,
     backTitle: "Chaque moment, à jamais.",
     backText: "Ce livre a été créé avec amour grâce à Everypaw, le journal IA qui transforme les moments du quotidien de votre animal en histoires à garder pour toujours.",
@@ -83,6 +85,7 @@ type StoryRow = {
 };
 type EntryRow = { id: string; photo_urls: string[]; entry_date: string };
 type TributeRow = { id: string; author_name: string; message: string; created_at: string };
+type MilestoneRow = { id: string; title: string; achieved_at: string };
 
 // ── Page components ──────────────────────────────────────────────────────────
 
@@ -352,32 +355,71 @@ function NoStoriesPage({
   );
 }
 
-function OrphanPhotosPage({
+/**
+ * One page of photos no chapter claims. Two to a page (PHOTOS_PER_PAGE): the
+ * point of P1-3 is a book that is full, and a contact sheet of six would leave
+ * most of the binding blank again.
+ */
+function PhotoPage({
   colors,
   strings,
-  orphanEntries,
+  photoUrls,
 }: {
   colors: ThemeColors;
   strings: Strings;
-  orphanEntries: EntryRow[];
+  photoUrls: string[];
 }) {
-  const urls = orphanEntries
-    .flatMap((e) => (e.photo_urls as string[]).slice(0, 1))
-    .filter(safeUrl)
-    .slice(0, 6);
-  const CONTENT_W = PW - PAD * 2;
-  const photoW = (CONTENT_W - 8) / 2;
+  const BP = BLEED_INT + PAD;
+  const contentW = PW_INNER - BP * 2;
+  // Two stacked frames, minus the label band and the gap between them.
+  const photoH = (PH_INNER - BP * 2 - 26 - 10) / 2;
   return (
     <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
-      <View style={{ padding: BLEED_INT + PAD, flex: 1, overflow: "hidden" }}>
+      <View style={{ padding: BP, flex: 1, overflow: "hidden" }}>
         <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 18 }}>
           {strings.moments.toUpperCase()}
         </Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {urls.map((url, j) => (
-            <PdfImage key={j} src={url} style={{ width: photoW, height: 160, objectFit: "cover", borderRadius: 10 }} />
+        <View style={{ flexDirection: "column", gap: 10 }}>
+          {photoUrls.map((url, j) => (
+            <PdfImage key={j} src={url} style={{ width: contentW, height: photoH, objectFit: "cover", borderRadius: 10 }} />
           ))}
         </View>
+      </View>
+    </Page>
+  );
+}
+
+/** One page of milestones, eight to a page: they are one-liners, already dated. */
+function MilestonesPage({
+  colors,
+  strings,
+  milestones,
+  lang,
+}: {
+  colors: ThemeColors;
+  strings: Strings;
+  milestones: MilestoneRow[];
+  lang: Lang;
+}) {
+  const BP = BLEED_INT + PAD;
+  return (
+    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+      <View style={{ padding: BP, flex: 1 }}>
+        <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 20 }}>
+          {strings.milestones}
+        </Text>
+        {milestones.map((milestone) => (
+          <View key={milestone.id} style={{ marginBottom: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "rgba(61,43,31,0.08)" }}>
+            <Text style={{ fontSize: 11, fontFamily: "TinosBold", color: "#3D2B1F", marginBottom: 3 }}>
+              {milestone.title}
+            </Text>
+            <Text style={{ fontSize: 8, fontFamily: "Sans", color: "#7A5C44" }}>
+              {new Date(milestone.achieved_at).toLocaleDateString(lang === "fr" ? "fr-FR" : "en-US", {
+                day: "numeric", month: "long", year: "numeric",
+              })}
+            </Text>
+          </View>
+        ))}
       </View>
     </Page>
   );
@@ -428,9 +470,10 @@ interface BookDocumentProps {
   birthdate: string | null;
   stories: StoryRow[];
   chapterPhotos: EntryRow[][];
-  orphanEntries: EntryRow[];
+  /** Photos no chapter claims, already split into pages of PHOTOS_PER_PAGE. */
+  photoPages: string[][];
+  milestones: MilestoneRow[];
   hasDedication: boolean;
-  hasOrphanPhotos: boolean;
   dedication: string;
   lang: Lang;
   coverPhotoUrl: string | null;
@@ -448,9 +491,9 @@ function BookDocument({
   birthdate,
   stories,
   chapterPhotos,
-  orphanEntries,
+  photoPages,
+  milestones,
   hasDedication,
-  hasOrphanPhotos,
   dedication,
   lang,
   coverPhotoUrl,
@@ -465,6 +508,7 @@ function BookDocument({
   const colors = COVER_THEMES[theme];
   const strings = STRINGS[lang];
   const hasTributes = tributes && tributes.length > 0;
+  const milestonePages = chunk(milestones, MILESTONES_PER_PAGE);
 
   return (
     <Document>
@@ -496,9 +540,12 @@ function BookDocument({
       ) : (
         <NoStoriesPage colors={colors} strings={strings} petName={petName} />
       )}
-      {hasOrphanPhotos && (
-        <OrphanPhotosPage colors={colors} strings={strings} orphanEntries={orphanEntries} />
-      )}
+      {photoPages.map((urls, i) => (
+        <PhotoPage key={`photos-${i}`} colors={colors} strings={strings} photoUrls={urls} />
+      ))}
+      {milestonePages.map((batch, i) => (
+        <MilestonesPage key={`milestones-${i}`} colors={colors} strings={strings} milestones={batch} lang={lang} />
+      ))}
       {hasTributes && (
         <TributesPage colors={colors} strings={strings} tributes={tributes!} />
       )}
@@ -593,13 +640,14 @@ export async function GET(req: Request) {
 
   // Fetch data
   const supabase = getServiceSupabase();
-  const [{ data: pet }, { data: allStories }, { data: allEntries }, { data: tributesData }] = await Promise.all([
+  const [{ data: pet }, { data: allStories }, { data: allEntries }, { data: tributesData }, { data: allMilestones }] = await Promise.all([
     supabase.from("pets").select("*").eq("id", petId).single(),
     supabase.from("stories").select("*").eq("pet_id", petId).order("created_at", { ascending: true }),
     supabase.from("entries").select("*").eq("pet_id", petId).order("entry_date", { ascending: true }),
     includeTributes
       ? supabase.from("memorial_tributes").select("id, author_name, message, created_at").eq("pet_id", petId).eq("status", "approved").order("created_at", { ascending: true })
       : Promise.resolve({ data: null }),
+    supabase.from("milestones").select("id, title, achieved_at").eq("pet_id", petId).order("achieved_at", { ascending: true }),
   ]);
 
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
@@ -640,19 +688,24 @@ export async function GET(req: Request) {
     if (idx !== undefined && chapterPhotos[idx].length < 4) chapterPhotos[idx].push(entry);
   }
 
-  const orphanEntries = entries
-    .filter((e) => e.photo_urls?.length > 0 && !entryToStoryIdx.has(e.id))
-    .slice(0, 6);
-  const hasOrphanPhotos = orphanEntries.length > 0;
+  // Photos and milestones paginate; blank pages are only the tail padding.
+  // Every count below comes from the same helpers gelato/order uses, because
+  // Gelato refuses a file whose page count contradicts the order.
+  const orphanPhotoUrls = collectOrphanPhotoUrls(entries, stories).slice(0, MAX_BOOK_PHOTOS);
+  const photoPages = chunk(orphanPhotoUrls, PHOTOS_PER_PAGE);
 
-  // pageCount declared to Gelato = content pages only (cover + endpaper + back cover are structural).
-  // Total PDF pages = contentPages + blankPagesCount + 3 structural = targetContentPages + 3.
-  const storyPageCount = stories.length > 0 ? stories.length : 1;
-  const contentPages = (hasDedication ? 1 : 0) + storyPageCount + (hasOrphanPhotos ? 1 : 0) + (hasTributes ? 1 : 0);
-  // Same declared page count as gelato/order (calcPageCount) so the PDF's blank
-  // padding matches what was ordered.
-  const targetContentPages = calcPageCount(storyPageCount, hasOrphanPhotos, hasDedication, hasTributes);
-  const blankPagesCount = targetContentPages - contentPages;
+  const milestones: MilestoneRow[] = yearFilter
+    ? (allMilestones ?? []).filter((m: MilestoneRow) => new Date(m.achieved_at).getFullYear() === yearFilter)
+    : (allMilestones ?? []);
+
+  const pagination = paginateBook({
+    storyCount: stories.length,
+    orphanPhotoCount: orphanPhotoUrls.length,
+    milestoneCount: milestones.length,
+    hasDedication,
+    hasTributes,
+  });
+  const blankPagesCount = pagination.blankPages;
 
   try {
     const buffer = await renderToBuffer(
@@ -661,9 +714,9 @@ export async function GET(req: Request) {
         birthdate={pet.birthdate ?? null}
         stories={stories}
         chapterPhotos={chapterPhotos}
-        orphanEntries={orphanEntries}
+        photoPages={photoPages}
+        milestones={milestones}
         hasDedication={hasDedication}
-        hasOrphanPhotos={hasOrphanPhotos}
         dedication={dedication}
         lang={lang}
         coverPhotoUrl={coverPhotoUrl}

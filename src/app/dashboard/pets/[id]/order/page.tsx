@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
 import { calcGelatoBookPrice } from "@/lib/gelato-pricing";
-import { calcPageCount } from "@/lib/book-pages";
+import { paginateBook, MAX_BOOK_PHOTOS } from "@/lib/book-pages";
 import { formatAmount, type Currency } from "@/lib/currency";
 import type { Step, LayoutType, ThemeId, Story, Entry, Pet, Profile } from "./constants";
 import { SHIPPING_BY_COUNTRY, COVER_THEMES } from "./constants";
@@ -51,6 +51,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [customTitle, setCustomTitle] = useState("");
   const [storyLayouts, setStoryLayouts] = useState<Record<string, LayoutType>>({});
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [milestones, setMilestones] = useState<{ id: string; achieved_at: string }[]>([]);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [previewStale, setPreviewStale] = useState(false);
   const [downloadLoading, setDownloadLoading] = useState(false);
@@ -97,7 +98,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         supabase.from("stories").select("id, title, content, period_start, period_end, created_at").eq("pet_id", id).order("created_at", { ascending: true }),
         supabase.from("entries").select("id, photo_urls, entry_date").eq("pet_id", id).order("entry_date", { ascending: true }),
         supabase.from("profiles").select("plan, book_credits, subscription_renewal_date").eq("id", user.id).single(),
-      ]).then(([{ data: petData }, { data: storiesData }, { data: entriesData }, { data: profileData }]) => {
+        supabase.from("milestones").select("id, achieved_at").eq("pet_id", id),
+      ]).then(([{ data: petData }, { data: storiesData }, { data: entriesData }, { data: profileData }, { data: milestonesData }]) => {
         if (petData) {
           if ((petData as typeof petData & { user_id?: string }).user_id !== user.id) {
             window.location.href = "/dashboard";
@@ -107,6 +109,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         }
         if (storiesData) setStories(storiesData);
         if (entriesData) setEntries(entriesData);
+        if (milestonesData) setMilestones(milestonesData);
         if (profileData) {
           setProfile(profileData as Profile);
           // Renewal date from profile (stored by webhook on each billing cycle)
@@ -362,11 +365,17 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
   const petName = pet?.name ?? "";
   const photoEntries = filteredEntries.filter(e => e.photo_urls?.length > 0);
-  const photoCount = Math.min(photoEntries.flatMap(e => e.photo_urls).length, 6);
+  // The book now paginates photos, so the pill is capped by what a book can hold.
+  const photoCount = Math.min(photoEntries.flatMap(e => e.photo_urls).length, MAX_BOOK_PHOTOS);
 
   // Estimated content page count (no dedication, filled at address step).
   // Total PDF pages = estimatedPages + 3 structural (cover, endpaper, back cover).
-  const { estimatedPages, tooFewContent } = estimateOrderPages(visibleStories, filteredEntries, selectedStoryIds);
+  const filteredMilestones = yearFilter === null
+    ? milestones
+    : milestones.filter(m => new Date(m.achieved_at).getFullYear() === yearFilter);
+  const { estimatedPages, tooFewContent } = estimateOrderPages(
+    visibleStories, filteredEntries, selectedStoryIds, filteredMilestones.length,
+  );
 
   // Cover photo picker uses the same year filter as the rest of the preview
   const availablePhotos = filteredEntries
@@ -504,10 +513,17 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const labelColor = isMemorial ? "rgba(247,242,234,.4)" : "var(--ep-text-muted)";
   const accentColor = isMemorial ? "var(--ep-memorial)" : "var(--ep-brand)";
   // Matches the server-side worst-case computation in /api/stripe/book-checkout:
-  // all of this pet's stories, dedication/orphan-photos/tributes all assumed
-  // present. Shown price must never be lower than what Stripe will actually
-  // charge (that route ignores any client-supplied page count).
-  const worstCasePages = calcPageCount(stories.length, true, true, true);
+  // all of this pet's stories, every photo counted as unclaimed, every
+  // milestone, dedication and tributes assumed present. Shown price must never
+  // be lower than what Stripe will actually charge (that route ignores any
+  // client-supplied page count).
+  const worstCasePages = paginateBook({
+    storyCount: stories.length,
+    orphanPhotoCount: entries.flatMap(e => e.photo_urls ?? []).length,
+    milestoneCount: milestones.length,
+    hasDedication: true,
+    hasTributes: true,
+  }).declaredPages;
   const extraBookPrice = calcGelatoBookPrice(worstCasePages);
   const extraBookPriceLabel = formatAmount(currency, extraBookPrice);
   // Memorial books go through the same checkout and the same dynamic pricing,
