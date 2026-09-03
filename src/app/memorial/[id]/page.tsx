@@ -201,16 +201,25 @@ export default async function MemorialPage({ params, searchParams }: { params: {
           locale={locale}
         />
 
-        {/* CTA */}
+        {/* Foot of the page: the one place a quiet invitation belongs. Visitors
+            came to pay their respects and are shown what Everypaw is; the owner
+            is already signed in, so inviting them to start a story would be
+            meaningless. They are offered the book instead, in the same restrained
+            register as the rest of the page: no price, no urgency, no argument. */}
         <div style={{ textAlign: "center", borderTop: "1px solid rgba(247,242,234,.06)", paddingTop: "3rem", marginTop: "3rem" }}>
           <p style={{ fontSize: ".8rem", color: "rgba(247,242,234,.3)", fontFamily: "sans-serif", marginBottom: ".5rem", letterSpacing: ".04em" }}>
             Everypaw
           </p>
           <p style={{ fontSize: "1rem", fontStyle: "italic", color: "rgba(247,242,234,.5)", marginBottom: "1.5rem" }}>
-            {t.memorial.cta_title}
+            {isOwner
+              ? t.memorial.owner_book_title.replace("{name}", pet.name)
+              : t.memorial.cta_title}
           </p>
-          <Link href="/auth/signup" style={{ display: "inline-block", background: "rgba(200,129,58,.15)", border: "1px solid rgba(200,129,58,.3)", color: "#C8813A", padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, textDecoration: "none", fontFamily: "sans-serif" }}>
-            {t.memorial.cta_button}
+          <Link
+            href={isOwner ? `/dashboard/pets/${params.id}/order` : "/auth/signup"}
+            style={{ display: "inline-block", background: "rgba(200,129,58,.15)", border: "1px solid rgba(200,129,58,.3)", color: "#C8813A", padding: ".625rem 1.5rem", borderRadius: 100, fontSize: ".8rem", fontWeight: 500, textDecoration: "none", fontFamily: "sans-serif" }}
+          >
+            {isOwner ? t.memorial.owner_book_link : t.memorial.cta_button}
           </Link>
         </div>
       </main>

@@ -746,3 +746,8 @@ d'anniversaire** que ce cron écrit lui-même, sinon tout animal serait éligibl
 `.or("story_type.is.null,story_type.neq.birthday")` : en Postgres `NULL <> 'birthday'` vaut NULL,
 donc un `.neq` écarterait justement les chapitres générés à la main. Namespace i18n `birthday`,
 jusque-là vide dans les deux fichiers, enfin rempli.
+
+**P2-3, un chemin depuis la page mémorial** : le pied de la page mémorial invitait tout le monde à
+s'inscrire, y compris le propriétaire, déjà connecté. Il lui propose désormais de réunir les
+souvenirs dans un livre (`/dashboard/pets/<id>/order`), au même endroit et dans le même registre
+retenu ; les visiteurs gardent l'invitation d'origine. Aucune requête ajoutée, `isOwner` existait.
