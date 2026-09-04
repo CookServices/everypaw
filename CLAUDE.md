@@ -12,7 +12,12 @@ En fin de session, si des décisions importantes ont été prises ou du code sig
 3. Note les décisions d'architecture dans "Conventions de code"
 4. Mets à jour la date de dernière session
 
-Ne demande pas confirmation — fais-le directement avant de clore. Garder ce fichier < 700 lignes : tout historique détaillé va dans `docs/SESSIONS.md`.
+Ne demande pas confirmation — fais-le directement avant de clore. Garder ce fichier **< 750 lignes** :
+tout historique détaillé va dans `docs/SESSIONS.md`. La cible était de 700 ; relevée le 2026-09-04
+parce que la session 69 y a ajouté quatre corps de règles opérationnelles (pagination du livre,
+plafond du prix en trois morceaux, définitions du tunnel, caches qui mentent) et que tenir 700
+revenait à rogner des phrases utiles. Ce qui doit partir en premier reste l'historique, jamais les
+conventions : ce sont elles qui sont lues à chaque session.
 
 **Chantier en cours : conversion vers le plan Print.** Roadmap et décisions dans `docs/print/roadmap.md`, les dix specs exécutables dans `docs/print/specs.md`. Une spec = une PR. Phases 0 à 2 livrées le 2026-09-03 (huit specs, PR #145 à #152) ; reste la phase 3, datée janvier 2027, et les deux points de la « Checklist avant mise en production ».
 
