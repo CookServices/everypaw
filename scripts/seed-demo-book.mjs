@@ -193,17 +193,53 @@ async function main() {
   }
 
   // ── Entrées ──────────────────────────────────────────────────────────────
+  // La répartition n'est pas cosmétique. Une photo dont la date tombe dans la
+  // période d'un chapitre est composée DANS ce chapitre (quatre au plus) et ne
+  // fait aucune page ; seules les photos qu'aucun chapitre ne réclame se
+  // paginent, deux par page. Les photos vont donc en priorité aux entrées hors
+  // période, sinon elles disparaissent dans les chapitres et le livre maigrit.
   const { data: entries } = await db
     .from("entries").select("id, entry_date").eq("pet_id", pet.id).order("entry_date");
 
+  const { data: periods } = await db
+    .from("stories").select("period_start, period_end").eq("pet_id", pet.id);
+
+  /** Miroir de bestStoryIndexForDate : un chapitre réclame la date qu'il couvre. */
+  const claimed = (date) => (periods ?? []).some((p) => {
+    const d = date.slice(0, 10);
+    return p.period_start && d >= p.period_start && (!p.period_end || d <= p.period_end);
+  });
+
+  const orphanEntries = (entries ?? []).filter((e) => !claimed(e.entry_date));
+  const insideEntries = (entries ?? []).filter((e) => claimed(e.entry_date));
+
+  const plan = new Map();
+  if (uploaded.length > 0) {
+    let cursor = 0;
+    const next = (n) => {
+      const out = [];
+      for (let k = 0; k < n && cursor < uploaded.length; k += 1, cursor += 1) out.push(uploaded[cursor]);
+      return out;
+    };
+    // Une poignée pour illustrer les chapitres, le reste aux entrées hors
+    // période : ce sont les seules qui fabriquent des pages.
+    const forChapters = Math.min(CHAPTERS.length, Math.floor(uploaded.length * 0.15));
+    const chapterPicks = insideEntries.slice(0, forChapters);
+    for (const e of chapterPicks) plan.set(e.id, next(1));
+
+    const remaining = uploaded.length - cursor;
+    const perOrphan = Math.max(1, Math.ceil(remaining / Math.max(orphanEntries.length, 1)));
+    for (const e of orphanEntries) plan.set(e.id, next(perOrphan));
+    // Tout ce qui reste après ça retombe sur les dernières entrées hors période.
+    for (const e of orphanEntries) {
+      if (cursor >= uploaded.length) break;
+      plan.set(e.id, [...(plan.get(e.id) ?? []), ...next(2)]);
+    }
+  }
+
   for (const [i, e] of (entries ?? []).entries()) {
     const patch = { content: MOMENTS[i % MOMENTS.length] };
-    if (uploaded.length > 0) {
-      // Deux photos par entrée porteuse, le reste sans photo : ce sont les
-      // photos non rattachées qui se paginent deux par page.
-      const take = uploaded.slice((i * 2) % uploaded.length, ((i * 2) % uploaded.length) + 2);
-      patch.photo_urls = take.length === 2 ? take : [];
-    }
+    if (uploaded.length > 0) patch.photo_urls = plan.get(e.id) ?? [];
     const { error } = await db.from("entries").update(patch).eq("id", e.id);
     if (error) throw error;
   }
@@ -214,19 +250,31 @@ async function main() {
   console.log("entrées   :", (entries ?? []).length);
 
   // Ce que le livre fera, avant d'engager une commande. Reproduit paginateBook :
-  // chapitres selon leur texte, photos 2 par page (plafond 30 pages), étapes 8
-  // par page, complément final au multiple de 4, minimum 28.
-  const { data: withPhotos } = await db
-    .from("entries").select("photo_urls").eq("pet_id", pet.id);
-  const photoCount = (withPhotos ?? []).reduce((n, e) => n + (e.photo_urls?.length ?? 0), 0);
-  const chapterPages = check.reduce(
-    (n, c) => n + 1 + Math.ceil(Math.max(0, c.content.trim().length - 2000) / 2000), 0);
-  const photoPages = Math.ceil(Math.min(photoCount, 60) / 2);
+  // chapitres selon leur texte et les photos qu'ils absorbent, photos orphelines
+  // 2 par page (plafond 30 pages), étapes 8 par page, complément final au
+  // multiple de 4, minimum 28.
+  const { data: after } = await db
+    .from("entries").select("entry_date, photo_urls").eq("pet_id", pet.id);
+
+  let orphanPhotos = 0;
+  let insidePhotos = 0;
+  for (const e of after ?? []) {
+    const n = e.photo_urls?.length ?? 0;
+    if (claimed(e.entry_date)) insidePhotos += n; else orphanPhotos += n;
+  }
+
+  const chapterPages = check.reduce((n, c) => {
+    // Capacité de la première page : 2000 caractères, moins 640 par rangée de
+    // deux photos composées dans le chapitre.
+    const capacity = 2000 - Math.ceil(Math.min(4, 2) / 2) * 640;
+    return n + 1 + Math.ceil(Math.max(0, c.content.trim().length - capacity) / 2000);
+  }, 0);
+  const photoPages = Math.ceil(Math.min(orphanPhotos, 60) / 2);
   const milestonePages = Math.ceil(MILESTONES.length / 8);
   const content = chapterPages + photoPages + milestonePages;
   const declared = Math.max(28, Math.ceil(content / 4) * 4);
 
-  console.log("photos    :", photoCount);
+  console.log(`photos    : ${orphanPhotos + insidePhotos} (${orphanPhotos} en pages, ${insidePhotos} dans les chapitres)`);
   console.log(
     `livre     : ${chapterPages} p. chapitres + ${photoPages} p. photos + ${milestonePages} p. étapes`
     + ` = ${content} remplies, ${declared} déclarées, ${declared - content} blanches`,
