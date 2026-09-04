@@ -449,7 +449,9 @@
     "layout_classic": "Classic",
     "layout_photo_hero": "Photo",
     "layout_split": "Split",
-    "layout_text_only": "Text"
+    "layout_text_only": "Text",
+    "too_few_content": "Not enough filled pages to print a book yet: {pages} are needed. Chapters, photos and milestones all count.",
+    "book_larger_than_paid": "This book now runs to {pages} pages, but {paid} were paid for. Narrow the selection back down, or buy a book for the new size."
   },
   "memorial": {
     "mark_passed": "Record passing…",

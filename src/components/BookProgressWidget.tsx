@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { calcPageCount } from "@/lib/book-pages";
+import { paginateBook } from "@/lib/book-pages";
+import { collectOrphanPhotoUrls } from "@/lib/book-shared";
 import { useLocale } from "@/hooks/useLocale";
 import type { Plan } from "@/lib/plan";
 import type { Pet } from "@/types";
@@ -27,24 +28,32 @@ export default function BookProgressWidget({ pet, plan, refreshKey = 0 }: Props)
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
-      const [{ count: stCount }, { data: photoEntries }] = await Promise.all([
+      const [{ data: stories }, { data: photoEntries }, { count: milestoneCount }] = await Promise.all([
         supabase
           .from("stories")
-          .select("*", { count: "exact", head: true })
+          .select("period_start, period_end")
           .eq("pet_id", pet.id)
           .neq("status", "draft"),
         supabase
           .from("entries")
-          .select("photo_urls")
-          .eq("pet_id", pet.id)
-          .not("photo_urls", "is", null),
+          .select("id, entry_date, photo_urls")
+          .eq("pet_id", pet.id),
+        supabase
+          .from("milestones")
+          .select("id", { count: "exact", head: true })
+          .eq("pet_id", pet.id),
       ]);
-      const sc = stCount ?? 0;
-      const hasOrphanPhotos = (photoEntries ?? []).some(
-        (e: { photo_urls: string[] | null }) => Array.isArray(e.photo_urls) && e.photo_urls.length > 0,
-      );
+      const sc = (stories ?? []).length;
       setStoriesCount(sc);
-      setPages(calcPageCount(sc, hasOrphanPhotos, false));
+      // Same pagination as the PDF: the widget must not promise a fuller book
+      // than the order page will show.
+      setPages(paginateBook({
+        storyCount: sc,
+        orphanPhotoCount: collectOrphanPhotoUrls(photoEntries ?? [], stories ?? []).length,
+        milestoneCount: milestoneCount ?? 0,
+        hasDedication: false,
+        hasTributes: false,
+      }).declaredPages);
     };
     load();
   }, [pet.id, refreshKey]);

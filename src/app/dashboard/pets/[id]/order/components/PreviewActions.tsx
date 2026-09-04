@@ -1,3 +1,4 @@
+import { MIN_FILLED_PAGES_TO_ORDER } from "@/lib/book-pages";
 import type { Dispatch, SetStateAction } from "react";
 import { getTranslations, type Locale } from "@/lib/i18n";
 import type { Story, Entry, Pet, Profile, Step } from "../constants";
@@ -113,9 +114,7 @@ export default function PreviewActions({
       )}
       {tooFewContent && selectedStoryIds.length > 0 && (
         <div style={{ background: "rgba(163,45,45,.06)", border: "1px solid rgba(163,45,45,.25)", borderRadius: 12, padding: ".75rem 1rem", marginBottom: ".25rem", fontSize: ".8rem", color: "var(--ep-alert)", fontFamily: "sans-serif" }}>
-          {locale === "fr"
-            ? "Pas assez de chapitres pour imprimer un livre (minimum 7 chapitres requis)."
-            : "Not enough chapters to print a book (minimum 7 chapters required)."}
+          {t.order.too_few_content.replace("{pages}", String(MIN_FILLED_PAGES_TO_ORDER))}
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>

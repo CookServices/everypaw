@@ -59,3 +59,32 @@ export function bestStoryIndexForDate(
   }
   return bestIdx;
 }
+
+/** An entry, reduced to what the photo-collection below reads. */
+export type PhotoEntry = { id: string; entry_date: string; photo_urls: string[] | null };
+
+/**
+ * Every photo that no chapter claims, in entry-date order.
+ *
+ * Photos of an entry a chapter covers are composed inside that chapter, so
+ * only the rest need pages of their own. Single source of truth: the Gelato
+ * page count, the order-page estimate and the PDF must all count the same
+ * photos, or Gelato receives a file whose page count contradicts the order.
+ *
+ * Not capped here: the cap belongs to the pagination, which knows how many
+ * photos fit on a page (`MAX_PHOTO_PAGES` in `book-pages.ts`).
+ */
+export function collectOrphanPhotoUrls(
+  entries: PhotoEntry[],
+  stories: { period_start: string | null; period_end: string | null }[],
+): string[] {
+  const urls: string[] = [];
+  for (const entry of entries) {
+    if (!entry.photo_urls?.length) continue;
+    if (bestStoryIndexForDate(new Date(entry.entry_date), stories) >= 0) continue;
+    for (const url of entry.photo_urls) {
+      if (safeUrl(url)) urls.push(url);
+    }
+  }
+  return urls;
+}

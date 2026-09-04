@@ -6,7 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/hooks/useLocale";
 import { calcGelatoBookPrice } from "@/lib/gelato-pricing";
-import { calcPageCount } from "@/lib/book-pages";
+import { paginateBook, MAX_BOOK_PHOTOS } from "@/lib/book-pages";
+import { collectOrphanPhotoUrls } from "@/lib/book-shared";
 import { formatAmount, type Currency } from "@/lib/currency";
 import type { Step, LayoutType, ThemeId, Story, Entry, Pet, Profile } from "./constants";
 import { SHIPPING_BY_COUNTRY, COVER_THEMES } from "./constants";
@@ -51,6 +52,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [customTitle, setCustomTitle] = useState("");
   const [storyLayouts, setStoryLayouts] = useState<Record<string, LayoutType>>({});
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [milestones, setMilestones] = useState<{ id: string; achieved_at: string }[]>([]);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [previewStale, setPreviewStale] = useState(false);
   const [downloadLoading, setDownloadLoading] = useState(false);
@@ -97,7 +99,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         supabase.from("stories").select("id, title, content, period_start, period_end, created_at").eq("pet_id", id).order("created_at", { ascending: true }),
         supabase.from("entries").select("id, photo_urls, entry_date").eq("pet_id", id).order("entry_date", { ascending: true }),
         supabase.from("profiles").select("plan, book_credits, subscription_renewal_date").eq("id", user.id).single(),
-      ]).then(([{ data: petData }, { data: storiesData }, { data: entriesData }, { data: profileData }]) => {
+        supabase.from("milestones").select("id, achieved_at").eq("pet_id", id),
+      ]).then(([{ data: petData }, { data: storiesData }, { data: entriesData }, { data: profileData }, { data: milestonesData }]) => {
         if (petData) {
           if ((petData as typeof petData & { user_id?: string }).user_id !== user.id) {
             window.location.href = "/dashboard";
@@ -107,6 +110,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         }
         if (storiesData) setStories(storiesData);
         if (entriesData) setEntries(entriesData);
+        if (milestonesData) setMilestones(milestonesData);
         if (profileData) {
           setProfile(profileData as Profile);
           // Renewal date from profile (stored by webhook on each billing cycle)
@@ -201,10 +205,21 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         setAwaitingCredit(false);
         if ((p?.book_credits ?? 0) > 0) {
           setProfile(prev => prev ? { ...prev, book_credits: p!.book_credits } : prev);
+          let paid: { storyIds: string[]; year: number | null } | undefined;
           try {
+            const raw = sessionStorage.getItem(`ep_order_${id}_sel`);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed?.storyIds)) {
+                paid = { storyIds: parsed.storyIds, year: typeof parsed.year === "number" ? parsed.year : null };
+                setSelectedStoryIds(parsed.storyIds);
+                setYearFilter(paid.year);
+              }
+            }
             sessionStorage.removeItem(`ep_order_${id}_addr`);
+            sessionStorage.removeItem(`ep_order_${id}_sel`);
           } catch {}
-          handleOrder();
+          handleOrder(paid);
         } else {
           // Payment went through but the webhook hasn't credited within 20s.
           // Surface it explicitly and offer a manual retry (which consumes the
@@ -362,11 +377,17 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
   const petName = pet?.name ?? "";
   const photoEntries = filteredEntries.filter(e => e.photo_urls?.length > 0);
-  const photoCount = Math.min(photoEntries.flatMap(e => e.photo_urls).length, 6);
+  // The book now paginates photos, so the pill is capped by what a book can hold.
+  const photoCount = Math.min(photoEntries.flatMap(e => e.photo_urls).length, MAX_BOOK_PHOTOS);
 
   // Estimated content page count (no dedication, filled at address step).
   // Total PDF pages = estimatedPages + 3 structural (cover, endpaper, back cover).
-  const { estimatedPages, tooFewContent } = estimateOrderPages(visibleStories, filteredEntries, selectedStoryIds);
+  const filteredMilestones = yearFilter === null
+    ? milestones
+    : milestones.filter(m => new Date(m.achieved_at).getFullYear() === yearFilter);
+  const { estimatedPages, tooFewContent } = estimateOrderPages(
+    visibleStories, filteredEntries, selectedStoryIds, filteredMilestones.length,
+  );
 
   // Cover photo picker uses the same year filter as the rest of the preview
   const availablePhotos = filteredEntries
@@ -424,11 +445,20 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     setCheckoutLoading(true);
     try {
       // Persist the address so it survives the Stripe redirect
-      try { sessionStorage.setItem(`ep_order_${id}_addr`, JSON.stringify(address)); } catch {}
+      try {
+        sessionStorage.setItem(`ep_order_${id}_addr`, JSON.stringify(address));
+        // The book being paid for, so the order placed on the way back is the
+        // same book. Stripe's redirect remounts the page and the selection
+        // would otherwise reset to every chapter.
+        sessionStorage.setItem(`ep_order_${id}_sel`, JSON.stringify({ storyIds: selectedStoryIds, year: yearFilter }));
+      } catch {}
       const res = await fetch("/api/stripe/book-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ petId: id }),
+        // The book about to be ordered, so the price is that book's price.
+        // The server re-reads the content behind these ids and gelato/order
+        // refuses to print more pages than were paid for.
+        body: JSON.stringify({ petId: id, storyIds: selectedStoryIds, year: yearFilter ?? undefined }),
       });
       const data = await res.json();
       if (data.url) { window.location.href = data.url; return; }
@@ -440,7 +470,13 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     }
   };
 
-  const handleOrder = async () => {
+  // `paid` carries the selection that was priced at checkout, restored from
+  // sessionStorage after the Stripe redirect. Without it the page would default
+  // back to every chapter and order a book larger than the one paid for, which
+  // /api/gelato/order now refuses.
+  const handleOrder = async (paid?: { storyIds: string[]; year: number | null }) => {
+    const orderStoryIds = paid?.storyIds ?? selectedStoryIds;
+    const orderYear = paid ? paid.year : yearFilter;
     setLoading(true);
     try {
       const res = await fetch("/api/gelato/order", {
@@ -450,10 +486,10 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           petId: id,
           shippingAddress: address,
           memorial: isMemorial,
-          selectedStoryIds,
+          selectedStoryIds: orderStoryIds,
           dedicationText: dedicationText.trim() || null,
           coverPhotoUrl,
-          yearFilter,
+          yearFilter: orderYear,
           lang: locale,
           coverTheme,
           customTitle: customTitle.trim() || null,
@@ -468,6 +504,12 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         setPaymentPending(false);
         setOrderId(data.orderId);
         setStep("success");
+      } else if (data.error === "book_larger_than_paid") {
+        // The selection grew between paying and ordering: say so rather than
+        // showing a generic failure the user cannot act on.
+        alert(t.order.book_larger_than_paid
+          .replace("{paid}", String(data.paidPages))
+          .replace("{pages}", String(data.pages)));
       } else {
         // Keep the payment-pending retry screen up if this was a post-payment retry
         alert(t.order.order_failed);
@@ -503,11 +545,19 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const textMuted = isMemorial ? "rgba(247,242,234,.5)" : "var(--ep-text-muted)";
   const labelColor = isMemorial ? "rgba(247,242,234,.4)" : "var(--ep-text-muted)";
   const accentColor = isMemorial ? "var(--ep-memorial)" : "var(--ep-brand)";
-  // Matches the server-side worst-case computation in /api/stripe/book-checkout:
-  // all of this pet's stories, dedication/orphan-photos/tributes all assumed
-  // present. Shown price must never be lower than what Stripe will actually
-  // charge (that route ignores any client-supplied page count).
-  const worstCasePages = calcPageCount(stories.length, true, true, true);
+  // Same inputs as /api/stripe/book-checkout for the same declaration: the
+  // selected chapters, the same year, the photos no selected chapter claims,
+  // dedication and tributes assumed present. The shown price is the charged
+  // price; the server recomputes it from the database rather than trusting
+  // anything sent from here.
+  const selectedStories = visibleStories.filter(s => selectedStoryIds.includes(s.id));
+  const worstCasePages = paginateBook({
+    storyCount: selectedStories.length,
+    orphanPhotoCount: collectOrphanPhotoUrls(filteredEntries, selectedStories).length,
+    milestoneCount: filteredMilestones.length,
+    hasDedication: true,
+    hasTributes: true,
+  }).declaredPages;
   const extraBookPrice = calcGelatoBookPrice(worstCasePages);
   const extraBookPriceLabel = formatAmount(currency, extraBookPrice);
   // Memorial books go through the same checkout and the same dynamic pricing,

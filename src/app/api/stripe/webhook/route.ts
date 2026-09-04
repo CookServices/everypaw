@@ -59,10 +59,19 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Database update failed" }, { status: 500 });
       }
 
+      // page_count is what the buyer paid for. /api/gelato/order reads it back
+      // to refuse a book larger than the one that was priced: book credits are
+      // a bare integer, so this row is the only link between a payment and the
+      // size of the book it bought.
+      const paidPages = Number(session.metadata?.page_count);
       await supabase.from("events_log").insert({
         user_id: userId,
         event_type: "stripe_book_checkout",
-        metadata: { stripe_event_id: event.id, stripe_session_id: session.id },
+        metadata: {
+          stripe_event_id: event.id,
+          stripe_session_id: session.id,
+          ...(Number.isFinite(paidPages) && paidPages > 0 ? { page_count: paidPages } : {}),
+        },
       });
 
       await recordPurchaseOnce(supabase, {

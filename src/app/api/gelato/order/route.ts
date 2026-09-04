@@ -5,8 +5,8 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getCurrencyFromCountry } from "@/lib/currency";
 import { getServiceSupabase } from "@/lib/plan";
 import { generatePdfToken } from "@/lib/pdf-token";
-import { calcPageCount } from "@/lib/book-pages";
-import { bestStoryIndexForDate } from "@/lib/book-shared";
+import { paginateBook } from "@/lib/book-pages";
+import { collectOrphanPhotoUrls } from "@/lib/book-shared";
 
 import { stripe } from "@/lib/stripe";
 
@@ -100,20 +100,15 @@ export async function POST(req: Request) {
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  // Atomically consume a book credit before calling Gelato (prevents race conditions)
-  const { data: consumed, error: creditError } = await supabase.rpc("try_consume_book_credit", { p_user_id: user.id });
-  if (creditError || !consumed) {
-    return NextResponse.json({ error: "no_book_credits" }, { status: 403 });
-  }
-
   // Determine currency from user's country header
   const country = req.headers.get("x-vercel-ip-country");
   const currency = getCurrencyFromCountry(country);
 
-  // Fetch entries + stories to compute page count accurately
-  const [{ data: allEntries }, { data: allStories }] = await Promise.all([
+  // Fetch entries + stories + milestones to compute page count accurately
+  const [{ data: allEntries }, { data: allStories }, { data: allMilestones }] = await Promise.all([
     supabase.from("entries").select("id, photo_urls, entry_date").eq("pet_id", petId),
     supabase.from("stories").select("id, period_start, period_end, created_at").eq("pet_id", petId),
+    supabase.from("milestones").select("id, achieved_at").eq("pet_id", petId),
   ]);
 
   const filteredEntries = yearFilter
@@ -129,20 +124,78 @@ export async function POST(req: Request) {
     activeStories = activeStories.filter(s => selectedStoryIds.includes(s.id));
   }
 
-  // hasOrphanPhotos: shared best-match logic (bestStoryIndexForDate) to guarantee
-  // the page count matches what book-pdf actually renders.
-  const entryToStorySet = new Set<string>();
-  for (const entry of filteredEntries) {
-    if (!entry.photo_urls?.length) continue;
-    if (bestStoryIndexForDate(new Date(entry.entry_date), activeStories) >= 0) {
-      entryToStorySet.add(entry.id);
-    }
-  }
-  const hasOrphanPhotos = filteredEntries.some(e => e.photo_urls?.length > 0 && !entryToStorySet.has(e.id));
+  // Photos, milestones and page count all come from the shared helpers, so the
+  // number declared here is exactly the number of pages book-pdf will render.
+  // Gelato refuses a file whose page count contradicts the order.
+  const orphanPhotoUrls = collectOrphanPhotoUrls(filteredEntries, activeStories);
+  const milestones = yearFilter
+    ? (allMilestones ?? []).filter(m => new Date(m.achieved_at).getFullYear() === yearFilter)
+    : (allMilestones ?? []);
 
   const hasDedication = !!(dedicationText && dedicationText.trim().length > 0);
   const storyCount = activeStories.length;
-  const pageCount = calcPageCount(storyCount, hasOrphanPhotos, hasDedication, !!includeTributes);
+  const pageCount = paginateBook({
+    storyCount,
+    orphanPhotoCount: orphanPhotoUrls.length,
+    milestoneCount: milestones.length,
+    hasDedication,
+    hasTributes: !!includeTributes,
+  }).declaredPages;
+
+  // A purchased book may not be larger than the book that was paid for.
+  // Book credits are a bare integer, so nothing links a payment to an order:
+  // the purchases are read back from events_log, where the webhook records the
+  // page count each one paid for. The cap only bites when EVERY credit held is
+  // a purchased one, so a Print subscriber ordering their included book (which
+  // has no per-page price) is never held to the size of an extra copy they
+  // also bought.
+  const { data: creditProfile } = await supabase
+    .from("profiles")
+    .select("book_credits")
+    .eq("id", user.id)
+    .single();
+
+  const { data: purchaseGrants } = await supabase
+    .from("events_log")
+    .select("id, metadata, triggered_at")
+    .eq("user_id", user.id)
+    .eq("event_type", "stripe_book_checkout")
+    .order("triggered_at", { ascending: true });
+
+  const unconsumedGrants = (purchaseGrants ?? []).filter(
+    (g: { metadata: Record<string, unknown> | null }) =>
+      typeof g.metadata?.page_count === "number" && !g.metadata?.consumed_by,
+  ) as { id: string; metadata: Record<string, unknown> }[];
+
+  const heldCredits = creditProfile?.book_credits ?? 0;
+  const capApplies = unconsumedGrants.length > 0 && unconsumedGrants.length >= heldCredits;
+  const paidPages = unconsumedGrants.reduce(
+    (max, g) => Math.max(max, g.metadata.page_count as number), 0,
+  );
+
+  if (capApplies && pageCount > paidPages) {
+    log.warn("[gelato/order] book larger than paid:", pageCount, ">", paidPages, "user:", user.id);
+    return NextResponse.json(
+      { error: "book_larger_than_paid", paidPages, pages: pageCount },
+      { status: 403 },
+    );
+  }
+
+  // Grant to mark spent once Gelato accepts: the cheapest one that covers this
+  // book, so a bigger purchase stays available for a bigger order.
+  const grantToConsume = capApplies
+    ? [...unconsumedGrants]
+        .sort((a, b) => (a.metadata.page_count as number) - (b.metadata.page_count as number))
+        .find(g => (g.metadata.page_count as number) >= pageCount) ?? null
+    : null;
+
+  // Atomically consume a book credit before calling Gelato (prevents race
+  // conditions). After the cap check on purpose: refusing an order whose credit
+  // was already consumed would need a compensating restore.
+  const { data: consumed, error: creditError } = await supabase.rpc("try_consume_book_credit", { p_user_id: user.id });
+  if (creditError || !consumed) {
+    return NextResponse.json({ error: "no_book_credits" }, { status: 403 });
+  }
 
   // Cover dimensions: call Gelato API, fallback to formula.
   // Interior pages = pageCount (content) + 2 (endpapers). Spine empirically ~0.38mm/page for 170gsm coated silk hardcover.
@@ -326,6 +379,16 @@ export async function POST(req: Request) {
         .eq("user_id", user.id);
     } else {
       await supabase.from("book_configs").insert(configPayload);
+    }
+
+    // Mark the purchase spent, so its allowance cannot fund a second book.
+    // After Gelato accepted: a grant burned on an order that never shipped
+    // would cost the buyer the book they paid for.
+    if (grantToConsume) {
+      await supabase.from("events_log")
+        .update({ metadata: { ...grantToConsume.metadata, consumed_by: data.id } })
+        .eq("id", grantToConsume.id)
+        .eq("user_id", user.id);
     }
 
     return NextResponse.json({ orderId: data.id, status: data.orderStatus });
