@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { paginateBook, chunk, PHOTOS_PER_PAGE, MILESTONES_PER_PAGE, MAX_BOOK_PHOTOS } from "@/lib/book-pages";
+import { paginateBook, chunk, splitChapterText, PHOTOS_PER_PAGE, MILESTONES_PER_PAGE, MAX_BOOK_PHOTOS } from "@/lib/book-pages";
 import { validatePdfToken } from "@/lib/pdf-token";
 import { escapeHtml } from "@/lib/html";
 import { getServiceSupabase } from "@/lib/plan";
@@ -128,8 +128,14 @@ async function buildHtml(params: {
   const milestonePages = chunk(milestones, MILESTONES_PER_PAGE);
 
   // Blank pages pad the tail out to the printer's multiple of four, nothing more.
+  const chapterInputs = stories.map((story, i) => ({
+    contentLength: (story.content ?? "").trim().length,
+    layout: typeof layouts[story.id] === "string" ? layouts[story.id] : "classic",
+    photoCount: (chapterPhotos[i] ?? []).length,
+  }));
+
   const blankPagesToAdd = paginateBook({
-    storyCount: stories.length,
+    chapters: chapterInputs,
     orphanPhotoCount: orphanPhotoUrls.length,
     milestoneCount: milestones.length,
     hasDedication,

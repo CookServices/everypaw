@@ -5,10 +5,18 @@ import {
   MAX_BOOK_PHOTOS,
   MAX_PHOTO_PAGES,
   MIN_FILLED_PAGES_TO_ORDER,
+  CONTINUATION_PAGE_CHARS,
+  chapterPageCount,
+  firstPageCapacity,
+  splitChapterText,
 } from "./book-pages";
 
+/** A chapter short enough to sit on one page, which is the common case. */
+const shortChapter = { contentLength: 200 };
+const chapters = (n: number) => Array.from({ length: n }, () => shortChapter);
+
 const empty = {
-  storyCount: 0,
+  chapters: [],
   orphanPhotoCount: 0,
   milestoneCount: 0,
   hasDedication: false,
@@ -18,18 +26,18 @@ const empty = {
 describe("paginateBook", () => {
   it("enforces the 28-page printer minimum", () => {
     expect(paginateBook(empty).declaredPages).toBe(28);
-    expect(paginateBook({ ...empty, storyCount: 10 }).declaredPages).toBe(28);
+    expect(paginateBook({ ...empty, chapters: chapters(10) }).declaredPages).toBe(28);
   });
 
   it("declares a multiple of four", () => {
-    for (const storyCount of [0, 7, 29, 30, 31, 100]) {
-      expect(paginateBook({ ...empty, storyCount }).declaredPages % 4).toBe(0);
+    for (const n of [0, 7, 29, 30, 31, 100]) {
+      expect(paginateBook({ ...empty, chapters: chapters(n) }).declaredPages % 4).toBe(0);
     }
   });
 
   it("treats a book with no chapter as holding one placeholder page", () => {
     expect(paginateBook(empty).chapterPages).toBe(1);
-    expect(paginateBook({ ...empty, storyCount: 1 }).chapterPages).toBe(1);
+    expect(paginateBook({ ...empty, chapters: chapters(1) }).chapterPages).toBe(1);
   });
 
   it("lays photos out two to a page", () => {
@@ -53,7 +61,7 @@ describe("paginateBook", () => {
 
   it("fills the book the spec asks for: 3 chapters, 40 photos, 12 milestones", () => {
     // The acceptance criterion of P1-3: 28 pages, at most three of them blank.
-    const page = paginateBook({ ...empty, storyCount: 3, orphanPhotoCount: 40, milestoneCount: 12 });
+    const page = paginateBook({ ...empty, chapters: chapters(3), orphanPhotoCount: 40, milestoneCount: 12 });
 
     expect(page.contentPages).toBe(25);
     expect(page.declaredPages).toBe(28);
@@ -61,7 +69,7 @@ describe("paginateBook", () => {
   });
 
   it("keeps blank pages as tail padding only", () => {
-    const page = paginateBook({ ...empty, storyCount: 40 });
+    const page = paginateBook({ ...empty, chapters: chapters(40) });
 
     expect(page.contentPages).toBe(40);
     expect(page.declaredPages).toBe(40);
@@ -69,16 +77,16 @@ describe("paginateBook", () => {
   });
 
   it("counts the dedication and the tributes as pages of their own", () => {
-    const bare = paginateBook({ ...empty, storyCount: 40 });
-    const full = paginateBook({ ...empty, storyCount: 40, hasDedication: true, hasTributes: true });
+    const bare = paginateBook({ ...empty, chapters: chapters(40) });
+    const full = paginateBook({ ...empty, chapters: chapters(40), hasDedication: true, hasTributes: true });
 
     expect(full.contentPages).toBe(bare.contentPages + 2);
     expect(full.declaredPages).toBe(44);
   });
 
   it("never declares fewer pages when content grows, which is what lets checkout price a worst case", () => {
-    const base = paginateBook({ storyCount: 3, orphanPhotoCount: 10, milestoneCount: 4, hasDedication: false, hasTributes: false });
-    const more = paginateBook({ storyCount: 4, orphanPhotoCount: 11, milestoneCount: 5, hasDedication: true, hasTributes: true });
+    const base = paginateBook({ chapters: chapters(3), orphanPhotoCount: 10, milestoneCount: 4, hasDedication: false, hasTributes: false });
+    const more = paginateBook({ chapters: chapters(4), orphanPhotoCount: 11, milestoneCount: 5, hasDedication: true, hasTributes: true });
 
     expect(more.declaredPages).toBeGreaterThanOrEqual(base.declaredPages);
     expect(more.contentPages).toBeGreaterThan(base.contentPages);
@@ -96,11 +104,11 @@ describe("paginateBook", () => {
 describe("hasEnoughContentToOrder", () => {
   it("refuses a book of mostly blank paper", () => {
     // Three chapters and nothing else: 3 filled pages out of 28.
-    expect(hasEnoughContentToOrder(paginateBook({ ...empty, storyCount: 3 }))).toBe(false);
+    expect(hasEnoughContentToOrder(paginateBook({ ...empty, chapters: chapters(3) }))).toBe(false);
   });
 
   it("accepts a book once its filled pages reach the threshold", () => {
-    const page = paginateBook({ ...empty, storyCount: 4, orphanPhotoCount: 20 });
+    const page = paginateBook({ ...empty, chapters: chapters(4), orphanPhotoCount: 20 });
 
     expect(page.contentPages).toBe(MIN_FILLED_PAGES_TO_ORDER);
     expect(hasEnoughContentToOrder(page)).toBe(true);
@@ -108,9 +116,88 @@ describe("hasEnoughContentToOrder", () => {
 
   it("counts photos and milestones towards the threshold, not just chapters", () => {
     // The old rule asked for seven chapters and ignored everything else.
-    const page = paginateBook({ ...empty, storyCount: 2, orphanPhotoCount: 40, milestoneCount: 8 });
+    const page = paginateBook({ ...empty, chapters: chapters(2), orphanPhotoCount: 40, milestoneCount: 8 });
 
     expect(page.chapterPages).toBe(2);
     expect(hasEnoughContentToOrder(page)).toBe(true);
+  });
+});
+
+describe("a chapter longer than its page", () => {
+  // Before this, the surplus either spilled onto a page nobody had declared to
+  // Gelato, which got the file refused, or was clipped once wrap={false}
+  // stopped the spill. Both lose what the reader wrote.
+  const long = (chars: number) => "mot ".repeat(Math.ceil(chars / 4)).slice(0, chars);
+
+  it("takes one page when it fits", () => {
+    expect(chapterPageCount({ contentLength: 500, layout: "classic" })).toBe(1);
+    expect(chapterPageCount({ contentLength: 0 })).toBe(1);
+  });
+
+  it("takes a second page when it does not", () => {
+    const capacity = firstPageCapacity({ contentLength: 0, layout: "text_only" });
+
+    expect(chapterPageCount({ contentLength: capacity, layout: "text_only" })).toBe(1);
+    expect(chapterPageCount({ contentLength: capacity + 1, layout: "text_only" })).toBe(2);
+  });
+
+  it("counts photos against the text the first page holds", () => {
+    // Two photos take a row under the text in the classic layout.
+    const bare = firstPageCapacity({ contentLength: 0, layout: "classic", photoCount: 0 });
+    const withPhotos = firstPageCapacity({ contentLength: 0, layout: "classic", photoCount: 2 });
+
+    expect(withPhotos).toBeLessThan(bare);
+    expect(chapterPageCount({ contentLength: bare, layout: "classic", photoCount: 2 })).toBe(2);
+  });
+
+  it("gives the tightest layouts less room than the widest", () => {
+    const room = (layout: string) => firstPageCapacity({ contentLength: 0, layout });
+
+    expect(room("split")).toBeLessThan(room("photo_hero"));
+    expect(room("photo_hero")).toBeLessThan(room("text_only"));
+    expect(room("unknown-layout")).toBe(room("classic"));
+  });
+
+  it("declares the extra pages in the book", () => {
+    const chapter = { contentLength: 6000, layout: "text_only" as const };
+    const pages = chapterPageCount(chapter);
+    const book = paginateBook({ ...empty, chapters: [chapter] });
+
+    expect(pages).toBeGreaterThan(1);
+    expect(book.chapterPages).toBe(pages);
+  });
+});
+
+describe("splitChapterText", () => {
+  const long = (chars: number) => "mot ".repeat(Math.ceil(chars / 4)).slice(0, chars).trim();
+
+  it("splits into exactly as many pages as were declared", () => {
+    for (const chars of [100, 2000, 2001, 5000, 12000]) {
+      for (const layout of ["text_only", "classic", "photo_hero", "split"]) {
+        const chapter = { contentLength: chars, layout, photoCount: 2 };
+        expect(splitChapterText(long(chars), chapter)).toHaveLength(chapterPageCount(chapter));
+      }
+    }
+  });
+
+  it("loses no word, and cuts none in half", () => {
+    const text = long(5000);
+    const parts = splitChapterText(text, { contentLength: text.length, layout: "text_only" });
+
+    expect(parts.join(" ").split(/\s+/)).toEqual(text.split(/\s+/));
+    for (const part of parts) expect(part).not.toMatch(/^\S*[^\s]$|^m$|^mo$/);
+  });
+
+  it("keeps a continuation page within its own capacity", () => {
+    const text = long(9000);
+    const parts = splitChapterText(text, { contentLength: text.length, layout: "text_only" });
+
+    for (const part of parts.slice(1)) {
+      expect(part.length).toBeLessThanOrEqual(CONTINUATION_PAGE_CHARS);
+    }
+  });
+
+  it("returns one page for an empty chapter", () => {
+    expect(splitChapterText("", { contentLength: 0 })).toEqual([""]);
   });
 });

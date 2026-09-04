@@ -27,17 +27,24 @@ const META_ENDPOINT = "https://graph.facebook.com/v21.0";
 export const PURCHASE_EVENT_TYPE = "analytics_purchase";
 
 export type PurchaseInput = {
-  /** Owner of the payment. Written to events_log, never sent to a destination. */
-  userId: string;
-  /** "digital", "print" or "book_only". */
+  /** "digital", "print", "book_only", or a gift variant. */
   plan: string;
   amountCents: number;
   /** ISO code as Stripe returns it, lowercase. */
   currency: string;
   /** Stripe event id: transaction id, dedup key, and seed of both identifiers. */
   eventId: string;
-  /** "subscription_create", "subscription_cycle" or "book_purchase". */
+  /** "subscription_create", "subscription_cycle", "book_purchase", "gift". */
   billingReason: string;
+};
+
+/**
+ * A purchase that can be claimed against an account. A gift cannot: its
+ * checkout is anonymous, so it is reported without a claim.
+ */
+export type PurchaseClaim = PurchaseInput & {
+  /** Owner of the payment. Written to events_log, never sent to a destination. */
+  userId: string;
 };
 
 function gaConfig() {
@@ -174,7 +181,7 @@ export async function trackPurchase(input: PurchaseInput): Promise<void> {
  */
 export async function recordPurchaseOnce(
   supabase: SupabaseClient,
-  input: PurchaseInput,
+  input: PurchaseClaim,
 ): Promise<void> {
   if (!analyticsConfigured()) return;
 

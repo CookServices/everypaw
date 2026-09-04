@@ -165,6 +165,47 @@ describe("checkout.session.completed - one-time book purchase", () => {
   });
 });
 
+describe("checkout.session.completed - gift", () => {
+  const giftEvent = {
+    id: "evt_gift_1",
+    type: "checkout.session.completed",
+    data: {
+      object: {
+        id: "cs_gift", mode: "payment", amount_total: 7900, currency: "eur",
+        metadata: { gift: "true", plan: "print_annual", recipient_email: "friend@example.com" },
+      },
+    },
+  };
+
+  it("reports the money, though the buyer has no account", async () => {
+    // The gift checkout is anonymous: no user_id, so no events_log claim and
+    // no handler below would ever see it.
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TEST");
+    vi.stubEnv("GA_API_SECRET", "ga-secret");
+    constructEvent.mockReturnValue(giftEvent);
+
+    const res = await POST(post());
+
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, { body: string }])[1].body);
+    expect(body.events[0].params).toMatchObject({ value: 79, currency: "EUR", transaction_id: "evt_gift_1" });
+    expect(body.events[0].params.items[0].item_id).toBe("gift_print_annual");
+    // Nothing to write: the row would need a user_id.
+    expect(db.inserts).toHaveLength(0);
+    expect(db.rpcs).toHaveLength(0);
+  });
+
+  it("stays silent when no destination is configured", async () => {
+    constructEvent.mockReturnValue(giftEvent);
+
+    const res = await POST(post());
+
+    expect(res.status).toBe(200);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("checkout.session.completed - subscription", () => {
   function subEvent(metaPlan = "print_annual") {
     return {

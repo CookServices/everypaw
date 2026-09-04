@@ -47,9 +47,89 @@ export const MIN_FILLED_PAGES_TO_ORDER = 14;
 /** The most photos a book will ever lay out. */
 export const MAX_BOOK_PHOTOS = PHOTOS_PER_PAGE * MAX_PHOTO_PAGES;
 
+
+// ── Chapter text, and the pages it needs ────────────────────────────────────
+//
+// A chapter is not always one page. A generated story runs to roughly two
+// thousand characters, and the body area of a page in the classic layout holds
+// about fourteen hundred once two photos sit under the text. Before this, the
+// surplus either spilled onto a page nobody had declared to Gelato, which got
+// the file refused, or was clipped once `wrap={false}` stopped the spill. Both
+// lose something the reader wrote.
+//
+// The capacities below are derived from the page geometry in `api/book-pdf`
+// (206mm square, 40pt padding, 10pt body on a 1.9 line, ~103 characters a
+// line) with a margin taken off, because a page slightly emptier than it could
+// be costs nothing and clipped text costs a paragraph. The renderer and the
+// page count call the same function, so they cannot disagree on the split.
+
+/** Text a chapter's FIRST page holds, by layout, photos aside. */
+const FIRST_PAGE_CHARS: Record<string, number> = {
+  text_only: 2000,
+  classic: 2000,
+  photo_hero: 1100,
+  split: 950,
+};
+
+/** Each photo row under the text in the classic layout costs this much text. */
+const CHARS_PER_PHOTO_ROW = 640;
+
+/** A continuation page carries text alone, so it holds the most. */
+export const CONTINUATION_PAGE_CHARS = 2000;
+
+export type ChapterInput = {
+  /** Characters of the chapter body. Zero means "assume it fits one page". */
+  contentLength: number;
+  /** One of the four order-page layouts; anything else reads as classic. */
+  layout?: string;
+  /** Photos composed into the chapter, which eat into its first page. */
+  photoCount?: number;
+};
+
+/** Text the first page of this chapter holds. */
+export function firstPageCapacity(chapter: ChapterInput): number {
+  const base = FIRST_PAGE_CHARS[chapter.layout ?? "classic"] ?? FIRST_PAGE_CHARS.classic;
+  if ((chapter.layout ?? "classic") !== "classic") return base;
+  // Two photos to a row, and the row sits under the text.
+  const rows = Math.ceil(Math.min(chapter.photoCount ?? 0, 4) / 2);
+  return Math.max(400, base - rows * CHARS_PER_PHOTO_ROW);
+}
+
+/** Pages this chapter needs, never fewer than one. */
+export function chapterPageCount(chapter: ChapterInput): number {
+  const first = firstPageCapacity(chapter);
+  const overflow = Math.max(0, chapter.contentLength - first);
+  return 1 + Math.ceil(overflow / CONTINUATION_PAGE_CHARS);
+}
+
+/**
+ * The chapter's text, split into one string per page, on word boundaries so no
+ * word is cut in half. The renderer emits one page per entry, which is what
+ * keeps the rendered count equal to the declared one.
+ */
+export function splitChapterText(content: string, chapter: ChapterInput): string[] {
+  const text = content ?? "";
+  const pages: string[] = [];
+  let rest = text.trim();
+  let capacity = firstPageCapacity(chapter);
+
+  while (rest.length > capacity) {
+    // Break at the last space that fits, so a word never straddles two pages.
+    const window = rest.slice(0, capacity + 1);
+    const cut = window.lastIndexOf(" ");
+    const at = cut > capacity * 0.5 ? cut : capacity;
+    pages.push(rest.slice(0, at).trim());
+    rest = rest.slice(at).trim();
+    capacity = CONTINUATION_PAGE_CHARS;
+  }
+
+  pages.push(rest);
+  return pages;
+}
+
 export type BookContent = {
-  /** Chapters actually selected for this book. */
-  storyCount: number;
+  /** Chapters selected for this book, each with what it needs to be measured. */
+  chapters: ChapterInput[];
   /** Photos no chapter claims (see `collectOrphanPhotoUrls`). */
   orphanPhotoCount: number;
   milestoneCount: number;
@@ -80,8 +160,12 @@ export type BookPagination = {
  */
 export function paginateBook(content: BookContent): BookPagination {
   const dedicationPages = content.hasDedication ? 1 : 0;
-  // A book with no chapter still shows a page saying so.
-  const chapterPages = Math.max(content.storyCount, 1);
+  // A book with no chapter still shows a page saying so. A long chapter takes
+  // more than one, and the renderer splits its text the same way.
+  const chapterPages = Math.max(
+    content.chapters.reduce((total, chapter) => total + chapterPageCount(chapter), 0),
+    1,
+  );
   const photosUsed = Math.min(Math.max(content.orphanPhotoCount, 0), MAX_BOOK_PHOTOS);
   const photoPages = Math.ceil(photosUsed / PHOTOS_PER_PAGE);
   const milestonePages = Math.ceil(Math.max(content.milestoneCount, 0) / MILESTONES_PER_PAGE);

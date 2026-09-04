@@ -77,12 +77,19 @@ function queueData(opts: {
 
 const milestone = (id: string, achieved_at = "2026-03-01") => ({ id, title: `Milestone ${id}`, achieved_at });
 
+/** Photos composed into a chapter sit on its first page. */
+function photosOfChapter(props: Record<string, unknown>, chapterIndex = 0): unknown[] {
+  const pages = props.chapterPages as { chapterIndex: number; pageIndex: number; photos: unknown[] }[];
+  return pages.find(p => p.chapterIndex === chapterIndex && p.pageIndex === 0)?.photos ?? [];
+}
+
 /** Content pages the document will actually render, blanks excluded. */
 function renderedContentPages(props: Record<string, unknown>): number {
-  const stories = props.stories as unknown[];
+  const chapterPages = props.chapterPages as unknown[];
   const milestones = props.milestones as unknown[];
   return (props.hasDedication ? 1 : 0)
-    + Math.max(stories.length, 1)
+    // One entry per physical chapter page: a long chapter takes several.
+    + Math.max(chapterPages.length, 1)
     + (props.photoPages as unknown[]).length
     + Math.ceil(milestones.length / MILESTONES_PER_PAGE)
     + ((props.tributes as unknown[] | undefined)?.length ? 1 : 0);
@@ -194,7 +201,7 @@ describe("photo placement", () => {
     const entries = Array.from({ length: 6 }, (_, i) => entry(`e${i}`, "2026-01-1" + i));
     queueData({ stories: [story(S1, "2026-01-01", "2026-01-31")], entries });
     await GET(get());
-    expect((documentProps!.chapterPhotos as unknown[][])[0]).toHaveLength(4);
+    expect(photosOfChapter(documentProps!)).toHaveLength(4);
   });
 
   it("paginates the photos no chapter claims, two to a page", async () => {
@@ -229,7 +236,7 @@ describe("photo placement", () => {
     const entries = [entry("e1", "2026-01-10"), entry("e2", "2026-06-10")];
     queueData({ stories: [story(S1, "2026-01-01", "2026-01-31")], entries });
     await GET(get());
-    expect((documentProps!.chapterPhotos as unknown[][])[0]).toHaveLength(1);
+    expect(photosOfChapter(documentProps!)).toHaveLength(1);
     expect((documentProps!.photoPages as string[][]).flat()).toEqual(["https://x/a.jpg"]);
   });
 });
@@ -387,7 +394,13 @@ describe("the file matches the order", () => {
       const content = renderedContentPages(documentProps!);
       const blanks = documentProps!.blankPagesCount as number;
       const declared = paginateBook({
-        storyCount: (documentProps!.stories as unknown[]).length,
+        chapters: (documentProps!.stories as { id: string; content: string }[]).map(story => ({
+          contentLength: (story.content ?? "").trim().length,
+          layout: "classic",
+          photoCount: (documentProps!.chapterPages as { story: { id: string }; photos: unknown[]; pageIndex: number }[])
+            .filter(p => p.story.id === story.id && p.pageIndex === 0)
+            .reduce((n, p) => n + p.photos.length, 0),
+        })),
         orphanPhotoCount: (documentProps!.photoPages as string[][]).flat().length,
         milestoneCount: (documentProps!.milestones as unknown[]).length,
         hasDedication: !!documentProps!.hasDedication,
@@ -433,5 +446,31 @@ describe("one declared page is one physical page", () => {
 
     expect(tags.length).toBeGreaterThan(5);
     expect(tags.filter(tag => !tag.includes("wrap={false}"))).toEqual([]);
+  });
+});
+
+describe("a chapter too long for one page", () => {
+  it("is split, and every page of it is declared", async () => {
+    // ~6000 characters: three pages in the text-only layout, one declared each.
+    const longStory = {
+      ...story(S1, "2026-01-01", "2026-01-31"),
+      content: "mot ".repeat(1500).trim(),
+    };
+    db = createSupabaseStub();
+    queueData({ stories: [longStory], entries: [], milestones: [] });
+
+    await GET(get({ layouts: JSON.stringify({ [S1]: "text_only" }) }));
+
+    const pages = documentProps!.chapterPages as { pageIndex: number; text: string; photos: unknown[] }[];
+    expect(pages.length).toBeGreaterThan(1);
+    // Continuations carry text alone: no photos to repeat under it.
+    expect(pages.slice(1).every(p => p.photos.length === 0)).toBe(true);
+    // Nothing of the chapter is lost between the pages.
+    expect(pages.map(p => p.text).join(" ").split(/\s+/)).toEqual(longStory.content.split(/\s+/));
+    expect(renderedContentPages(documentProps!) + (documentProps!.blankPagesCount as number))
+      .toBe(paginateBook({
+        chapters: [{ contentLength: longStory.content.length, layout: "text_only", photoCount: 0 }],
+        orphanPhotoCount: 0, milestoneCount: 0, hasDedication: false, hasTributes: false,
+      }).declaredPages);
   });
 });

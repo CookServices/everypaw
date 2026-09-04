@@ -9,12 +9,27 @@ export function estimateOrderPages(
   visibleStories: Story[],
   filteredEntries: Entry[],
   selectedStoryIds: string[],
-  milestoneCount: number
+  milestoneCount: number,
+  layouts: Record<string, string> = {}
 ): { estimatedPages: number; tooFewContent: boolean } {
   const selected = visibleStories.filter(s => selectedStoryIds.includes(s.id));
   const orphanPhotoCount = collectOrphanPhotoUrls(filteredEntries, selected).length;
+  // Photos per chapter, counted as the renderer composes them: four at most,
+  // and they shorten the text the chapter's first page can hold.
+  const photosPerChapter = selected.map(story => filteredEntries.filter(e => {
+    if (!e.photo_urls?.length) return false;
+    const d = new Date(e.entry_date);
+    const start = story.period_start ? new Date(story.period_start) : null;
+    const end = story.period_end ? new Date(story.period_end) : null;
+    return !!start && d >= start && (!end || d <= end);
+  }).length);
+
   const pagination = paginateBook({
-    storyCount: selected.length,
+    chapters: selected.map((story, i) => ({
+      contentLength: (story.content ?? "").trim().length,
+      layout: layouts[story.id] ?? "classic",
+      photoCount: Math.min(photosPerChapter[i], 4),
+    })),
     orphanPhotoCount,
     milestoneCount,
     hasDedication: false,

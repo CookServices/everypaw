@@ -488,8 +488,11 @@ currency: "USD"
 **Pricing livre dynamique** : `calcGelatoBookPrice(pageCount)` dans `src/lib/gelato-pricing.ts`. COGS Gelato : `15.46 + max(0,(n-30)/2)×0.395`. Marge fixe : +12€/USD. Résultat passé par `Math.ceil` → prix minimum (28 pages) = **28€/$28** (pas 27,46 — le COGS brut est 27.46, le prix affiché/facturé est arrondi au-dessus). Cohérent avec le tableau des plans plus haut.
 
 **pageCount** : calculé par `paginateBook()` dans `src/lib/book-pages.ts` (P1-3), seule source du
-nombre de pages. Un chapitre par page, **2 photos orphelines par page** (plafond 30 pages, soit 60
-photos), **8 étapes par page**, plus dédicace et hommages s'ils existent ; les pages blanches ne sont
+nombre de pages. **Un chapitre prend autant de pages que son texte l'exige** (`chapterPageCount`,
+capacité selon la mise en page et le nombre de photos ; `splitChapterText` découpe le même texte
+côté rendu, donc déclaré et rendu ne peuvent pas diverger), **2 photos orphelines par page**
+(plafond 30 pages, soit 60 photos), **8 étapes par page**, plus dédicace et hommages s'ils
+existent ; les pages blanches ne sont
 plus que le complément final au multiple de 4, minimum 28. `gelato/order` et `book-pdf` doivent
 déclarer et rendre exactement le même nombre (mêmes helpers : `collectOrphanPhotoUrls` pour les
 photos non rattachées, `chunk` pour la pagination), sans quoi Gelato refuse le fichier. Seuil de
@@ -550,7 +553,7 @@ Palette : « Design Context » en tête de fichier, les tokens `--ep-*` de `glob
 
 **Qualité** : logs gatés (`src/lib/log.ts`, `DEBUG_LOGS=1`), rate-limit persistant Postgres (`checkRateLimitDb`), tests Vitest (plan guards, priceIdToPlan, paginateBook, parseStoryResponse), hook SessionStart `npm install`.
 
-**Mesure** : GA4 + Meta Pixel, tous deux gatés au consentement cookie (`src/components/Trackers.tsx`, `src/lib/consent.ts`). Événements Pixel custom via `src/lib/pixel.ts` : `CompleteRegistration` (signup), `ViewContent` (landing). Les achats sont rapportés **côté serveur** depuis le webhook Stripe (`src/lib/analytics-server.ts`, spec P0-1), sans aucune donnée utilisateur : les identifiants exigés par GA4 et Meta sont dérivés de l'identifiant d'événement Stripe, donc uniques par achat et non rattachables à un compte. Dédup par `events_log` (`analytics_purchase`), envoi jamais bloquant, bloc ignoré si `GA_API_SECRET` et `META_CAPI_TOKEN` sont absents.
+**Mesure** : GA4 + Meta Pixel, tous deux gatés au consentement cookie (`src/components/Trackers.tsx`, `src/lib/consent.ts`). Événements Pixel custom via `src/lib/pixel.ts` : `CompleteRegistration` (signup), `ViewContent` (landing). Les achats sont rapportés **côté serveur** depuis le webhook Stripe (`src/lib/analytics-server.ts`, spec P0-1), abonnements, renouvellements, livres à l'unité et **cadeaux** (dont le paiement est anonyme, donc sans ligne `events_log` : la déduplication tient à l'`event_id` Meta et au `transaction_id` GA4), sans aucune donnée utilisateur : les identifiants exigés par GA4 et Meta sont dérivés de l'identifiant d'événement Stripe, donc uniques par achat et non rattachables à un compte. Dédup par `events_log` (`analytics_purchase`), envoi jamais bloquant, bloc ignoré si `GA_API_SECRET` et `META_CAPI_TOKEN` sont absents.
 
 ---
 
@@ -641,7 +644,7 @@ Une tâche (feature, fix, refacto) n'est **pas terminée** tant que les checks c
 Un bug ici est soit un bug financier, soit un doublon visible côté client — vérifier explicitement qu'aucune régression n'a été introduite :
 - Guards de plan (`canAddEntry` / `canGenerateStory` / `canOrderBook`) et leur exclusion des stories `origins`/`birthday` du quota.
 - Idempotence webhook Stripe (dedup `events_log` par `stripe_event_id`) et source unique des book credits Print (`invoice.payment_succeeded`). Plusieurs lignes `events_log` portent désormais le **même** `stripe_event_id` (le crédit livre et l'événement d'achat serveur) : toute recherche de dedup doit filtrer sur `event_type` en plus, sans quoi une ligne d'analytics fait passer un crédit livre pour déjà attribué.
-- Cohérence `pageCount` entre `gelato/order` et `book-pdf` : les deux passent par `paginateBook` et `collectOrphanPhotoUrls`, un écart fait refuser le fichier par Gelato alors que le crédit est déjà consommé. Cohérence du prix livre (`calcGelatoBookPrice`) avec le tableau des plans, et **le pire cas affiché sur la page order doit rester celui que `stripe/book-checkout` facture**.
+- Cohérence `pageCount` entre `gelato/order` et `book-pdf` : les deux passent par `paginateBook`, `collectOrphanPhotoUrls` et `splitChapterText`, un écart fait refuser le fichier par Gelato alors que le crédit est déjà consommé. **Toute `<Page>` de `book-pdf` doit porter `wrap={false}`** (un test le vérifie sur le source) : sans lui react-pdf coupe en deux une page qui déborde, et le fichier ne correspond plus à la commande. Cohérence du prix livre (`calcGelatoBookPrice`) avec le tableau des plans, et **le pire cas affiché sur la page order doit rester celui que `stripe/book-checkout` facture**.
 - `x-pathname` posé par `src/middleware.ts` (utilisé par le root layout pour `<html lang>`).
 
 ---

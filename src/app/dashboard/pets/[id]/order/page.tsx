@@ -386,7 +386,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     ? milestones
     : milestones.filter(m => new Date(m.achieved_at).getFullYear() === yearFilter);
   const { estimatedPages, tooFewContent } = estimateOrderPages(
-    visibleStories, filteredEntries, selectedStoryIds, filteredMilestones.length,
+    visibleStories, filteredEntries, selectedStoryIds, filteredMilestones.length, storyLayouts,
   );
 
   // Cover photo picker uses the same year filter as the rest of the preview
@@ -552,7 +552,12 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   // anything sent from here.
   const selectedStories = visibleStories.filter(s => selectedStoryIds.includes(s.id));
   const worstCasePages = paginateBook({
-    storyCount: selectedStories.length,
+    // Same worst case as /api/stripe/book-checkout: tightest layout, four photos.
+    chapters: selectedStories.map(story => ({
+      contentLength: (story.content ?? "").trim().length,
+      layout: "split",
+      photoCount: 4,
+    })),
     orphanPhotoCount: collectOrphanPhotoUrls(filteredEntries, selectedStories).length,
     milestoneCount: filteredMilestones.length,
     hasDedication: true,
