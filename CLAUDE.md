@@ -543,7 +543,29 @@ Palette : « Design Context » en tête de fichier, les tokens `--ep-*` de `glob
 
 **Qualité** : logs gatés (`src/lib/log.ts`, `DEBUG_LOGS=1`), rate-limit persistant Postgres (`checkRateLimitDb`), tests Vitest (plan guards, priceIdToPlan, calcPageCount, parseStoryResponse), hook SessionStart `npm install`.
 
-**Mesure** : GA4 + Meta Pixel, tous deux gatés au consentement cookie (`src/components/Trackers.tsx`, `src/lib/consent.ts`). Événements Pixel custom via `src/lib/pixel.ts` : `CompleteRegistration` (signup), `ViewContent` (landing). Les achats, eux, sont rapportés **côté serveur** depuis le webhook Stripe (`src/lib/analytics-server.ts`, spec P0-1) : le paiement se termine sur le domaine de Stripe et les trackers navigateur sont derrière le consentement, donc un abonnement payé par quelqu'un qui a refusé les cookies n'existerait nulle part. L'événement part sans aucune donnée utilisateur — les identifiants exigés par GA4 (`client_id`) et Meta (`user_data`) sont dérivés de l'identifiant d'événement Stripe, donc uniques par achat et non rattachables à un compte. Dédup par `events_log` (`event_type` `analytics_purchase`, `stripe_event_id`), envoi jamais bloquant, bloc entier ignoré si `GA_API_SECRET` et `META_CAPI_TOKEN` sont absents.
+**Mesure** : GA4 + Meta Pixel, tous deux gatés au consentement cookie (`src/components/Trackers.tsx`, `src/lib/consent.ts`). Événements Pixel custom via `src/lib/pixel.ts` : `CompleteRegistration` (signup), `ViewContent` (landing). Les achats sont rapportés **côté serveur** depuis le webhook Stripe (`src/lib/analytics-server.ts`, spec P0-1), sans aucune donnée utilisateur : les identifiants exigés par GA4 et Meta sont dérivés de l'identifiant d'événement Stripe, donc uniques par achat et non rattachables à un compte. Dédup par `events_log` (`analytics_purchase`), envoi jamais bloquant, bloc ignoré si `GA_API_SECRET` et `META_CAPI_TOKEN` sont absents.
+
+---
+
+## Les six nombres du tunnel
+
+Requête hebdomadaire à lancer dans l'éditeur SQL Supabase : `supabase/analytics/funnel.sql`
+(jeu d'essai `funnel.fixture.sql`). Un nombre dont la définition bouge d'une semaine à l'autre
+ne vaut rien, donc les définitions vivent ici et la requête s'y conforme, jamais l'inverse.
+
+**Cohorte** = les comptes dont `profiles.created_at` tombe dans la fenêtre (début inclus, fin
+exclue), hors `@yopmail.com`. Les cinq marches suivantes se mesurent **à ce jour, sans limite de
+temps**, ce qui garde le même dénominateur d'un bout à l'autre du tunnel ; corollaire, une
+fenêtre récente n'a pas fini de mûrir.
+
+| Nombre | Définition exacte |
+|---|---|
+| `signups` | Comptes de la cohorte. C'est le dénominateur des cinq autres. |
+| `with_pet` | Au moins une ligne `pets`. Un animal supprimé depuis ne compte plus. |
+| `with_3_entries` | Au moins trois lignes `entries`, toutes dates confondues, tous animaux confondus. Trois entrées = le seuil d'éligibilité du chapitre mensuel, pas un chiffre rond arbitraire. |
+| `with_story` | Au moins une ligne `stories`, **quel que soit son type** : une histoire générée par le cron mensuel compte comme une histoire demandée à la main. |
+| `with_book_preview` | Au moins une ligne `book_configs`. **Approximation assumée** : il n'existe aucun événement d'ouverture d'aperçu aujourd'hui, et une config est enregistrée plus tard qu'une simple ouverture, donc ce nombre sous-estime. P1-1 pose `book_preview_opened` dans `events_log` et le remplacera. |
+| `print_subscribers` | `profiles.plan = 'print'` **à l'instant de la requête**, pas au moment de la souscription. Un abonné de la cohorte qui a résilié depuis n'y est plus : ce nombre mesure le stock converti et survivant, pas le flux. |
 
 ---
 
@@ -660,41 +682,25 @@ des selects dont toutes les colonnes servent. Le seul candidat cassait le type `
 
 Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dernières sessions restent ici, à chaque nouvelle session déplacer la plus ancienne vers l'archive.
 
-### ✅ Session 67 — Prix de la page order et accès Digital à la commande (2026-09-01)
+### ✅ Session 68 — Backlog vidé, onglet journal extrait, chantier emails (2026-09-02)
 
-Backlog #17 et #18 traités ensemble, ils touchent le même encart produit. PR [#132](https://github.com/CookServices/everypaw/pull/132), 3 commits, détail complet dans « Optimisation & dette technique ».
+Backlog #19, #20 et #12(b) clos : 85 clés i18n mortes retirées après vérification des trois accès
+dynamiques du repo, et `stripe/cancel` libère le schedule avant de poser `cancel_at_period_end`.
+Phase 2b de la découpe (PR #136) : `useEntryComposer` puis `JournalTab`, `pets/[id]/page.tsx` de
+1035 à 764 lignes. Emails en trois lots (PR #137 à #139) : `px`, version texte,
+`List-Unsubscribe`, visuels PNG, registre FR vouvoyé tenu par un test. Cadeaux datés (PR #140) :
+Resend plafonne sa planification à 30 jours, d'où `gift_deliveries` et son cron. Détail complet
+dans `docs/SESSIONS.md`.
 
-**#17 — le prix affiché était faux deux fois.** La ligne de specs citait un montant écrit en dur (`~29 €`) à côté du prix calculé (`28 €`) : les deux avaient dérivé, le montant est retiré de la chaîne i18n. Et `extraBookPriceLabel` codait l'euro en dur alors que `stripe/book-checkout` choisit la devise depuis `x-vercel-ip-country` — un visiteur hors zone euro lisait `28 €` et était débité `$28`. La page lit `/api/currency` et formate via un nouvel helper `formatAmount` (`src/lib/currency.ts`, 2 tests). Le livre mémorial, qui affichait un `59 €` figé alors qu'il passe par le même checkout, affiche le prix calculé.
+### ✅ Session 69 — Chantier Print, phase 0 : mesurer le tunnel (2026-09-03)
 
-**#18 — Digital et Print partagent enfin un point d'entrée.** Le CTA principal est rendu sur tous les plans (désactivé en Free), libellé avec le prix quand l'achat est payant. Deux bugs trouvés en câblant ça : le bouton d'achat de l'encart appelait le checkout **avant** l'étape adresse, donc la commande auto au retour de Stripe partait avec une adresse vide et échouait chez Gelato (bouton supprimé) ; et `ConfirmStep` ne routait vers le paiement que pour Print, un Digital arrivé là aurait déclenché une commande Gelato **sans paiement** (branche élargie à tout plan payant sans crédit).
+**P0-1** (PR [#145](https://github.com/CookServices/everypaw/pull/145)) : `src/lib/analytics-server.ts`
+rapporte chaque souscription, renouvellement et achat de livre à GA4 et Meta depuis le webhook,
+sans donnée utilisateur. Les abonnements partent de `invoice.payment_succeeded`, pas de
+`checkout.session.completed` qui fire pour le même achat, et l'appel est **au-dessus** du gate
+Print, sinon une facture Digital `return` avant d'être comptée. Bug évité : le dedup du crédit
+livre cherchait `events_log` par `stripe_event_id` sans filtrer `event_type`.
 
-**Vérification** : preview Vercel, compte `testopera@yopmail.com` basculé en `plan=digital, book_credits=0`. Libellé et prix du CTA, passage par l'adresse, encart sans bouton, et au clic sur « Passer la commande » un appel à `/api/stripe/book-checkout` et **aucun** à `/api/gelato/order`. Méthode réutilisable pour tester un bouton qui coûte de l'argent : patcher `window.fetch` dans la page pour bloquer la route dangereuse **avant** de cliquer, puis vérifier qu'elle n'a pas été appelée.
-
-**Trouvé au passage, non corrigé** : le projet Vercel `everypaw-staging` ne contient que 3 variables (les 3 Supabase), donc toute route Stripe, Gelato, Anthropic ou cron renvoie un 500 à corps vide sur preview. Une preview prouve l'UI et quel endpoint un bouton appelle, jamais ce que fait cet endpoint.
-
-### ✅ Session 68 — Backlog vidé, onglet journal extrait, chantier emails en trois lots (2026-09-02)
-
-**Backlog #19, #20, #12(b) clos.** #19 : 85 clés i18n sans lecteur retirées (667 à 582 feuilles) ; les
-trois accès dynamiques du repo ont été vérifiés avant de couper (`t.pet["species_" + v]`,
-`t.interview["q" + n]` via `getWeeklyQuestion`, `faq.q1..q6` lus par index), sans quoi les 52
-questions d'interview partaient à tort. #20 : fichier ramené de 869 lignes sous les 700, le retiré
-est archivé dans `docs/SESSIONS.md`. #12(b) : `stripe/cancel` **libère** le schedule avant de poser
-`cancel_at_period_end`, ce qui rend le scénario sans objet plutôt que dépendant d'une sémantique
-Stripe invérifiable. Trouvés en chemin : `gift/redeem` avait encore le trou bouché par la PR #121 sur
-`upgrade`, un changement programmé était invisible après rechargement, et `/redeem` annonçait « code invalide » à un abonné dont le cadeau venait d'être programmé.
-
-**Phase 2b de la découpe** (PR #136) : hook `useEntryComposer` puis `JournalTab`. `pets/[id]/page.tsx`
-passe de 1035 à 764 lignes, 2122 à 764 depuis le début (−64 %). Composer passé en prop unique, le
-reste dérivé dans le composant.
-
-**Chantier emails, trois lots** (PR #137, #138, #139). Technique : tailles en `px` (Outlook ignore
-`rem`), version texte dérivée du HTML, `List-Unsubscribe` avec un vrai un-clic, preheaders,
-`color-scheme`, **tout envoi passe par `sendEmail`** ([lib/resend.ts](src/lib/resend.ts)). Visuel :
-`hero()` choisit photo de l'animal, puis illustration PNG (Gmail supprime les SVG,
-`scripts/generate-email-assets.mjs` les génère), puis emoji ; boutons en table. Copie : le français
-mélangeait tutoiement et vouvoiement, parfois dans le même mail, un test garde le registre.
-
-**Cadeaux datés** (PR #140) : le `scheduledAt` passé à Resend était ignoré par le SDK 3.5.0, tout
-partait immédiatement. Resend plafonne à 30 jours et un cadeau se planifie à six mois, donc la
-planification est maison, table `gift_deliveries` et cron quotidien. SDK monté en 6.25.0 (`reply_to`
-devient `replyTo`), et le code promo expire un an après la **livraison**, plus après l'achat.
+**P0-2** : `supabase/analytics/funnel.sql`, définitions ci-dessus, rangé dans le dossier
+`analytics` existant plutôt que le `queries` de la spec. Validé sur un Postgres 17 jetable via
+`funnel.fixture.sql`, mutations comprises.

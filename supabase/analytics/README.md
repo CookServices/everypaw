@@ -1,4 +1,15 @@
-# Diagnostic de rétention — mode d'emploi
+# Requêtes d'analyse — mode d'emploi
+
+Deux fichiers, deux usages :
+
+- **`funnel.sql`** — les six nombres du tunnel, à relancer chaque semaine (spec P0-2).
+  Changer les deux dates du bloc `params`, Run, lire la ligne. Les définitions de
+  chaque nombre font foi dans `CLAUDE.md`, section « Les six nombres du tunnel » ;
+  `funnel.fixture.sql` permet de vérifier sur une base jetable qu'une définition
+  modifiée compte toujours ce qu'elle prétend compter.
+- **`retention_diagnostic.sql`** — le diagnostic ponctuel décrit ci-dessous.
+
+## Diagnostic de rétention
 
 `retention_diagnostic.sql` répond **aujourd'hui**, rétroactivement, à la question :
 *« où décrochent les utilisateurs ? »* — à partir des timestamps déjà en base
