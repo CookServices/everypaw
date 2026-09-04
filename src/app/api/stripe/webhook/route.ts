@@ -4,6 +4,7 @@ import { sendEmail } from "@/lib/resend";
 import Stripe from "stripe";
 import { getServiceSupabase, priceIdToPlan } from "@/lib/plan";
 import { buildPaymentFailedEmail } from "@/lib/auth-emails";
+import { analyticsConfigured, recordPurchaseOnce } from "@/lib/analytics-server";
 
 import { stripe } from "@/lib/stripe";
 
@@ -62,6 +63,15 @@ export async function POST(req: Request) {
         user_id: userId,
         event_type: "stripe_book_checkout",
         metadata: { stripe_event_id: event.id, stripe_session_id: session.id },
+      });
+
+      await recordPurchaseOnce(supabase, {
+        userId,
+        plan: "book_only",
+        amountCents: session.amount_total ?? 0,
+        currency: session.currency ?? "eur",
+        eventId: event.id,
+        billingReason: "book_purchase",
       });
 
       log.debug("[webhook] book credit added for user:", userId, "event:", event.id);
@@ -221,6 +231,31 @@ export async function POST(req: Request) {
     }
 
     if (billingReason === "subscription_cycle" || billingReason === "subscription_create") {
+      // Reported here, above the Print-only gate: a Digital invoice returns
+      // early below and its revenue would otherwise never be counted. The whole
+      // block is skipped when no destination is configured, so the money paths
+      // below run exactly as they did before.
+      if (analyticsConfigured()) {
+        const analyticsCustomerId = typeof invoice.customer === "string" ? invoice.customer : null;
+        const { data: buyerProfile } = analyticsCustomerId
+          ? await supabase.from("profiles").select("id").eq("stripe_customer_id", analyticsCustomerId).single()
+          : { data: null };
+
+        if (buyerProfile?.id) {
+          const paidPriceId = invoice.lines?.data?.[0]?.price?.id;
+          await recordPurchaseOnce(supabase, {
+            userId: buyerProfile.id,
+            plan: (paidPriceId ? priceIdToPlan(paidPriceId) : null) ?? "unknown",
+            amountCents: invoice.amount_paid ?? 0,
+            currency: invoice.currency ?? "eur",
+            eventId: event.id,
+            billingReason,
+          });
+        } else {
+          log.error("[webhook] analytics: no profile for customer:", analyticsCustomerId, "event:", event.id);
+        }
+      }
+
       const priceId = invoice.lines?.data?.[0]?.price?.id;
       const printPriceIds = [
         process.env.STRIPE_PRICE_PRINT_ANNUAL_EUR,
@@ -261,10 +296,14 @@ export async function POST(req: Request) {
           .maybeSingle();
         alreadyProcessed = !!existingSubCredit;
       } else {
+        // Filtered by event_type on purpose: the analytics row written above
+        // carries the same stripe_event_id, and without this filter it would
+        // look like the credit had already been granted.
         const { data: existingInvoice } = await supabase
           .from("events_log")
           .select("id")
           .eq("user_id", userId)
+          .eq("event_type", "stripe_invoice_book_credit")
           .contains("metadata", { stripe_event_id: event.id })
           .maybeSingle();
         alreadyProcessed = !!existingInvoice;
