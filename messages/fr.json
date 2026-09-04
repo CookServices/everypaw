@@ -629,6 +629,9 @@
     "cta_free_plan": "Premium"
   },
   "birthday": {
+    "book_prompt": "Une année de {name}, c'est déjà un livre. Tout ce qui a été écrit depuis le dernier anniversaire peut être relié en couverture rigide, chapitre après chapitre.",
+    "book_cta_order": "Commander son livre",
+    "book_cta_discover": "Voir la formule Print"
   },
   "members": {
     "tab": "Foyer",

@@ -738,3 +738,11 @@ gratuit seulement. Dates en dur dans le module et non en variable d'environnemen
 s'éteindre sans déploiement, et une variable Vercel est figée au build de toute façon. Les six
 articles cadeaux (trois EN, trois FR) renvoient enfin vers `/gift`, qu'aucun ne liait. La mise en
 file d'un cadeau daté, deuxième critère d'acceptation, est désormais couverte par un test de route.
+
+**P2-2, l'anniversaire mène au livre** : l'email d'anniversaire propose de relier l'année quand
+l'animal a déjà des chapitres, avec le bon appel à l'action selon ce que le lecteur peut faire
+(commander s'il est Print avec un crédit, découvrir Print sinon). Le comptage **exclut les lettres
+d'anniversaire** que ce cron écrit lui-même, sinon tout animal serait éligible, et il passe par
+`.or("story_type.is.null,story_type.neq.birthday")` : en Postgres `NULL <> 'birthday'` vaut NULL,
+donc un `.neq` écarterait justement les chapitres générés à la main. Namespace i18n `birthday`,
+jusque-là vide dans les deux fichiers, enfin rempli.

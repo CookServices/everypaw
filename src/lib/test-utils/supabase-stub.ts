@@ -67,7 +67,7 @@ export function createSupabaseStub() {
 
     for (const m of [
       "select", "eq", "neq", "in", "not", "is", "gte", "lte", "gt", "lt",
-      "contains", "order", "limit", "range", "filter", "match",
+      "contains", "order", "limit", "range", "filter", "match", "or",
     ]) {
       builder[m] = (...args: unknown[]) => {
         filters.push({ method: m, args });

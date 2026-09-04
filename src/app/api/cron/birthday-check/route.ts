@@ -5,6 +5,7 @@ import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
 import { generateAndSaveBirthdayLetter } from "@/lib/story";
+import { getTranslations } from "@/lib/i18n";
 import { baseLayout, hero, heroSection, paragraph, quote, ctaButton, ctaButtonOutline, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
@@ -39,7 +40,7 @@ export async function GET(req: Request) {
   const userIds = Array.from(new Set(pets.map(p => p.user_id)));
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, email, language, unsubscribe_token")
+    .select("id, email, language, unsubscribe_token, plan, book_credits")
     .eq("email_reminders", true)
     .in("id", userIds);
 
@@ -47,6 +48,22 @@ export async function GET(req: Request) {
 
   const profileMap: Record<string, typeof profiles[number]> = {};
   for (const p of profiles) profileMap[p.id] = p;
+
+  // Chapters each pet already had before today. The birthday letter this cron
+  // writes is excluded on purpose: counting it would make every pet qualify,
+  // since it is generated a few lines below. `or` rather than `neq` because a
+  // manually generated story has a null story_type, and NULL <> 'birthday' is
+  // NULL in Postgres, which would drop exactly the chapters that matter.
+  const { data: existingStories } = await supabase
+    .from("stories")
+    .select("pet_id")
+    .in("pet_id", pets.map(p => p.id))
+    .or("story_type.is.null,story_type.neq.birthday");
+
+  const chaptersByPet: Record<string, number> = {};
+  for (const row of existingStories ?? []) {
+    chaptersByPet[row.pet_id] = (chaptersByPet[row.pet_id] ?? 0) + 1;
+  }
 
   let sent = 0;
   let letters = 0;
@@ -132,6 +149,23 @@ export async function GET(req: Request) {
         ctaButtonOutline(storyUrl, isFR ? `Lire la lettre de ${petName}` : `Read ${petName}'s letter`)
       : "";
 
+    // A pet with chapters already has the makings of a book. Which call to
+    // action depends on whether the reader can order one today: a Print
+    // subscriber holding a credit orders, everyone else is shown the plan.
+    const chapters = chaptersByPet[pet.id] ?? 0;
+    const canOrderNow = profile.plan === "print" && (profile.book_credits ?? 0) > 0;
+    const bookCopy = getTranslations(isFR ? "fr" : "en").birthday;
+    const bookBlock = chapters > 0
+      ? divider() +
+        paragraph(bookCopy.book_prompt.replace("{name}", petName)) +
+        ctaButtonOutline(
+          canOrderNow
+            ? `https://everypaw.app/dashboard/pets/${pet.id}/order`
+            : "https://everypaw.app/dashboard/settings",
+          canOrderNow ? bookCopy.book_cta_order : bookCopy.book_cta_discover,
+        )
+      : "";
+
     const html = baseLayout(
       hero({
         photoUrl: pet.photo_url,
@@ -146,7 +180,8 @@ export async function GET(req: Request) {
         ? `C'est une belle occasion de noter ce moment dans son journal. Décrivez comment ${petName} est aujourd'hui, ce qu'il ou elle aime, ce qui a changé cette année, dans quelques ans, vous serez heureux de l'avoir noté.`
         : `Today is a perfect day to add a birthday entry to ${petName}'s journal. Describe how they are right now, what they love, what's changed this year, you'll be so glad you wrote it down.`) +
       letterBlock +
-      (letterBlock ? "<br>" : "") +
+      bookBlock +
+      (letterBlock || bookBlock ? "<br>" : "") +
       colorSection(
         isFR
           ? `<strong>Écrire maintenant.</strong> Chaque mot que vous ajoutez devient une partie permanente de son histoire.`
