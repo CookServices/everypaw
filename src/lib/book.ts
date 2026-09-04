@@ -28,7 +28,9 @@ export async function estimateBookPages(petId: string): Promise<number> {
   ]);
 
   return paginateBook({
-    storyCount: (stories ?? []).length,
+    // An estimate, so chapters count as one page each: their text is not
+    // fetched here, and a progress figure does not declare anything to Gelato.
+    chapters: (stories ?? []).map(() => ({ contentLength: 0 })),
     orphanPhotoCount: collectOrphanPhotoUrls(entries ?? [], stories ?? []).length,
     milestoneCount: milestoneCount ?? 0,
     hasDedication: false,

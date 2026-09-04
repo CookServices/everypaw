@@ -55,7 +55,7 @@ export async function POST(req: Request) {
   const declaredYear = Number.isInteger(year) && year >= MIN_YEAR && year <= MAX_YEAR ? year as number : null;
 
   const [{ data: stories }, { data: photoEntries }, { data: milestones }] = await Promise.all([
-    db.from("stories").select("id, period_start, period_end, created_at").eq("pet_id", petId),
+    db.from("stories").select("id, content, period_start, period_end, created_at").eq("pet_id", petId),
     db.from("entries").select("id, entry_date, photo_urls").eq("pet_id", petId),
     db.from("milestones").select("id, achieved_at").eq("pet_id", petId),
   ]);
@@ -75,10 +75,18 @@ export async function POST(req: Request) {
     ? entriesInYear.reduce((total, e) => total + (e.photo_urls?.length ?? 0), 0)
     : collectOrphanPhotoUrls(entriesInYear, selectedStories).length;
 
+  // Chapters are measured at their worst: the tightest layout and four photos,
+  // so the count can only exceed what the final order declares.
+  const pricedStories = declaredStoryIds === null && declaredYear === null
+    ? (stories ?? [])
+    : selectedStories;
+
   const pageCount = paginateBook({
-    storyCount: declaredStoryIds === null && declaredYear === null
-      ? (stories ?? []).length
-      : selectedStories.length,
+    chapters: pricedStories.map(story => ({
+      contentLength: (story.content ?? "").trim().length,
+      layout: "split",
+      photoCount: 4,
+    })),
     orphanPhotoCount,
     milestoneCount: milestonesInYear.length,
     // Both are one page each and neither is known here: assumed present, which

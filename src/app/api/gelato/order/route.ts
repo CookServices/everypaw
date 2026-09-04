@@ -6,7 +6,7 @@ import { getCurrencyFromCountry } from "@/lib/currency";
 import { getServiceSupabase } from "@/lib/plan";
 import { generatePdfToken } from "@/lib/pdf-token";
 import { paginateBook } from "@/lib/book-pages";
-import { collectOrphanPhotoUrls } from "@/lib/book-shared";
+import { collectOrphanPhotoUrls, bestStoryIndexForDate } from "@/lib/book-shared";
 
 import { stripe } from "@/lib/stripe";
 
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
   // Fetch entries + stories + milestones to compute page count accurately
   const [{ data: allEntries }, { data: allStories }, { data: allMilestones }] = await Promise.all([
     supabase.from("entries").select("id, photo_urls, entry_date").eq("pet_id", petId),
-    supabase.from("stories").select("id, period_start, period_end, created_at").eq("pet_id", petId),
+    supabase.from("stories").select("id, content, period_start, period_end, created_at").eq("pet_id", petId),
     supabase.from("milestones").select("id, achieved_at").eq("pet_id", petId),
   ]);
 
@@ -132,10 +132,24 @@ export async function POST(req: Request) {
     ? (allMilestones ?? []).filter(m => new Date(m.achieved_at).getFullYear() === yearFilter)
     : (allMilestones ?? []);
 
+  // Photos composed into each chapter, counted the way book-pdf composes them
+  // (best match, four per chapter at most): they eat into the text its first
+  // page can hold, so they change how many pages the chapter needs.
+  const chapterPhotoCount = activeStories.map(() => 0);
+  for (const entry of filteredEntries) {
+    if (!entry.photo_urls?.length) continue;
+    const idx = bestStoryIndexForDate(new Date(entry.entry_date), activeStories);
+    if (idx >= 0 && chapterPhotoCount[idx] < 4) chapterPhotoCount[idx] += 1;
+  }
+
   const hasDedication = !!(dedicationText && dedicationText.trim().length > 0);
   const storyCount = activeStories.length;
   const pageCount = paginateBook({
-    storyCount,
+    chapters: activeStories.map((story, i) => ({
+      contentLength: (story.content ?? "").trim().length,
+      layout: typeof storyLayouts?.[story.id] === "string" ? storyLayouts[story.id] as string : "classic",
+      photoCount: chapterPhotoCount[i],
+    })),
     orphanPhotoCount: orphanPhotoUrls.length,
     milestoneCount: milestones.length,
     hasDedication,

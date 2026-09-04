@@ -12,9 +12,14 @@ En fin de session, si des décisions importantes ont été prises ou du code sig
 3. Note les décisions d'architecture dans "Conventions de code"
 4. Mets à jour la date de dernière session
 
-Ne demande pas confirmation — fais-le directement avant de clore. Garder ce fichier < 700 lignes : tout historique détaillé va dans `docs/SESSIONS.md`.
+Ne demande pas confirmation — fais-le directement avant de clore. Garder ce fichier **< 750 lignes** :
+tout historique détaillé va dans `docs/SESSIONS.md`. La cible était de 700 ; relevée le 2026-09-04
+parce que la session 69 y a ajouté quatre corps de règles opérationnelles (pagination du livre,
+plafond du prix en trois morceaux, définitions du tunnel, caches qui mentent) et que tenir 700
+revenait à rogner des phrases utiles. Ce qui doit partir en premier reste l'historique, jamais les
+conventions : ce sont elles qui sont lues à chaque session.
 
-**Chantier en cours : conversion vers le plan Print.** Roadmap et décisions dans `docs/print/roadmap.md`, les dix specs exécutables dans `docs/print/specs.md`. Une spec = une PR.
+**Chantier en cours : conversion vers le plan Print.** Roadmap et décisions dans `docs/print/roadmap.md`, les dix specs exécutables dans `docs/print/specs.md`. Une spec = une PR. Phases 0 à 2 livrées le 2026-09-03 (huit specs, PR #145 à #152) ; reste la phase 3, datée janvier 2027, et les deux points de la « Checklist avant mise en production ».
 
 Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suivre l'ordre d'implémentation recommandé pour toute nouvelle feature (voir section dédiée).
 
@@ -85,6 +90,26 @@ npm test           # Run Vitest unit tests (vitest run)
 
 Pas de lint script. Tests unitaires via **Vitest** (`npm test`) sur la logique pure critique (`src/lib/*.test.ts`). Type-checker avec `npx tsc --noEmit` avant tout commit.
 
+### Vérifier en local : trois caches qui mentent
+
+Un contrôle manuel qui « échoue » n'est pas toujours un échec du code. Ces trois-là ont chacun
+fait conclure l'inverse de la vérité au moins une fois (session 69) :
+
+- **Le cache de `next dev`.** Quand des fichiers changent pendant une compilation, webpack se
+  corrompt et le serveur **sert l'ancien code sans rien dire**. Symptôme dans les logs :
+  `Error: Cannot find module './8948.js'` avec une pile `webpack-runtime`. Une route peut alors
+  rendre un résultat d'avant la modification alors que le fichier source et les tests unitaires
+  disent autre chose. Remède : arrêter le serveur, `rm -rf .next`, redémarrer. **Avant de
+  débugger un écart entre un test unitaire vert et un rendu faux, vérifier ce cache.**
+- **Le cache HTTP du navigateur sur `/api/book-pdf`.** Le lien signé garde le même `expires`
+  pendant une fenêtre, donc l'URL est identique d'un appel à l'autre et le navigateur ressert le
+  PDF précédent. Toute vérification manuelle du nombre de pages doit passer par
+  `fetch(url, { cache: "no-store" })`, sinon elle mesure le fichier d'avant. Sans effet en
+  production : chaque commande Gelato génère son propre lien.
+- **`npm run build` pendant qu'un `next dev` tourne** (même `.next/`) échoue sur des `ENOENT`
+  trompeurs, du genre `Failed to collect page data for /api/contact`. Arrêter le serveur de dev
+  d'abord.
+
 Déploiement sur **Vercel** — push sur `main` = auto-deploy. Les variables d'environnement (Supabase, Stripe, Gelato, Resend) vivent sur Vercel. En local : `npx vercel env pull .env.local` récupère les noms, mais les vars "Sensitive" reviennent **vides** (write-only) — les renseigner à la main si besoin (clé test Stripe recommandée en local).
 
 ---
@@ -135,28 +160,18 @@ flux sur la prod puis se connecter sur la preview, les deux partagent la même b
 
 Vercel fige les variables au build et les scope par environnement **et par projet**. En ajouter une
 à un projet ne fait rien pour l'autre, et un déploiement existant ne récupère jamais une variable
-ajoutée après coup — il faut redéployer. Auditer les scopes sans lire aucune valeur, une fois par
-projet (la colonne `environments` doit afficher Preview, pas seulement Production) :
+ajoutée après coup : il faut redéployer. Auditer les scopes sans lire de valeur :
+`npx vercel link --yes --project everypaw-staging` puis `npx vercel env ls`.
 
-```bash
-npx vercel link --yes --project everypaw-staging
-npx vercel env ls          # noms + environnements, jamais les valeurs
-```
+Trois pièges, détaillés dans `docs/SESSIONS.md` : le scope Preview simple vit sous **Environments**
+et marche en Hobby (**Preview Branches**, juste à côté, est du per-branch réservé au plan Pro) ; une
+variable de type Secret ne peut pas redevenir Config, donc pour lui ajouter un scope il faut créer
+une **entrée séparée** ciblant le nouvel environnement ; et `vercel env add <clé> preview` est
+inutilisable en non-interactif, passer par le dashboard.
 
-Trois pièges :
-
-- Dans le dashboard, le scope Preview simple vit sous **Environments** et fonctionne en Hobby.
-  **Preview Branches**, juste à côté, est du per-branch et est réservé au plan Pro : y buter ne veut
-  pas dire que le scope Preview est indisponible.
-- Une variable de type Secret ne peut pas devenir Config (« Saved secrets are write-only ») et son
-  champ Value est vide à l'édition. Pour lui ajouter un scope sans risquer la valeur de production,
-  créer une **entrée séparée** ciblant le nouvel environnement et laisser l'originale intacte.
-- `vercel env add <clé> preview --value <v>` est inutilisable en non-interactif (le CLI exige une
-  branche). Passer par le dashboard.
-
-Sonde pour savoir si un déploiement a bien la clé service : ouvrir une page publique `/pets/<id>`,
-elle appelle `getServiceSupabase()` sans auth. Ne **pas** sonder avec une route API qui vérifie
-l'auth d'abord, elle renvoie 401 dans les deux cas et n'apprend rien.
+Sonde pour savoir si un déploiement a la clé service : ouvrir une page publique `/pets/<id>`, elle
+appelle `getServiceSupabase()` sans auth. Ne **pas** sonder avec une route qui vérifie l'auth
+d'abord, elle renvoie 401 dans les deux cas et n'apprend rien.
 
 ### Discipline données de test
 
@@ -164,18 +179,14 @@ Les previews écrivent dans la base de **production** (pas de staging DB, contra
 comptes de test yopmail uniquement, jamais de données utilisateur de production committées ou
 poussées, entrées de test nettoyées après usage.
 
-**Ne pas se fier à une liste de comptes écrite, la requêter** — celle qui vivait ici pointait cinq
-comptes supprimés depuis :
+**Ne pas se fier à une liste de comptes écrite, la requêter** (`SELECT id, email, plan,
+book_credits FROM profiles WHERE email LIKE '%@yopmail.com'`) : celle qui vivait ici pointait cinq
+comptes supprimés depuis.
 
-```sql
-SELECT id, email, plan, book_credits FROM profiles
-WHERE email LIKE '%@yopmail.com' ORDER BY email;
-```
-
-⚠️ `supabase/seed_print_multi.sql` et `purge_test_data.sql` sont périmés (UUID codés en dur de
-comptes disparus) et le seed **désactive** `trg_enforce_free_entry_limit`, qu'il laisse désactivé en
-production s'il échoue au milieu. Préférer un script qui résout l'identifiant depuis l'email et lève
-une exception explicite s'il est absent.
+Pour alimenter un compte : `supabase/seed_visual_pass.sql`, qui résout l'identifiant depuis l'email,
+lève si le compte est absent, ne désactive aucun trigger et se rejoue. ⚠️ `seed_print_multi.sql` et
+`purge_test_data.sql` sont périmés (UUID de comptes disparus) et le premier **désactive**
+`trg_enforce_free_entry_limit`, qu'il laisse désactivé en production s'il échoue au milieu.
 
 Vraie recette, le jour où le besoin se présente (base isolée, crons qui tournent, webhooks
 testables) : Supabase Pro (~25 $/mois) débloque les preview branches, puis branche `staging` →
@@ -211,7 +222,7 @@ GELATO_API_KEY                  # print-on-demand — requis par /api/gelato/ord
 NEXT_PUBLIC_APP_URL             # base URL utilisée pour les liens absolus (emails, redirects Stripe/Gelato)
 PDF_ACCESS_SECRET              # signe le token HMAC de /api/book-pdf ; fallback sur SUPABASE_SERVICE_ROLE_KEY si absent
 CRON_SECRET                    # protège les routes /api/cron/*
-GA_API_SECRET / META_CAPI_TOKEN # événements d'achat serveur (P0-1), Production seule, sans donnée utilisateur
+GA_API_SECRET / META_CAPI_TOKEN # événements d'achat serveur (P0-1), posées en Production le 2026-09-03
 
 # Auth Hook (Supabase → /api/emails/auth-hook)
 SUPABASE_HOOK_SECRET           # "v1,whsec_<base64>", depuis Supabase > Auth > Hooks > Send Email > Reveal ; absent = 401 du hook, 500 au signup
@@ -488,8 +499,11 @@ currency: "USD"
 **Pricing livre dynamique** : `calcGelatoBookPrice(pageCount)` dans `src/lib/gelato-pricing.ts`. COGS Gelato : `15.46 + max(0,(n-30)/2)×0.395`. Marge fixe : +12€/USD. Résultat passé par `Math.ceil` → prix minimum (28 pages) = **28€/$28** (pas 27,46 — le COGS brut est 27.46, le prix affiché/facturé est arrondi au-dessus). Cohérent avec le tableau des plans plus haut.
 
 **pageCount** : calculé par `paginateBook()` dans `src/lib/book-pages.ts` (P1-3), seule source du
-nombre de pages. Un chapitre par page, **2 photos orphelines par page** (plafond 30 pages, soit 60
-photos), **8 étapes par page**, plus dédicace et hommages s'ils existent ; les pages blanches ne sont
+nombre de pages. **Un chapitre prend autant de pages que son texte l'exige** (`chapterPageCount`,
+capacité selon la mise en page et le nombre de photos ; `splitChapterText` découpe le même texte
+côté rendu, donc déclaré et rendu ne peuvent pas diverger), **2 photos orphelines par page**
+(plafond 30 pages, soit 60 photos), **8 étapes par page**, plus dédicace et hommages s'ils
+existent ; les pages blanches ne sont
 plus que le complément final au multiple de 4, minimum 28. `gelato/order` et `book-pdf` doivent
 déclarer et rendre exactement le même nombre (mêmes helpers : `collectOrphanPhotoUrls` pour les
 photos non rattachées, `chunk` pour la pagination), sans quoi Gelato refuse le fichier. Seuil de
@@ -550,7 +564,7 @@ Palette : « Design Context » en tête de fichier, les tokens `--ep-*` de `glob
 
 **Qualité** : logs gatés (`src/lib/log.ts`, `DEBUG_LOGS=1`), rate-limit persistant Postgres (`checkRateLimitDb`), tests Vitest (plan guards, priceIdToPlan, paginateBook, parseStoryResponse), hook SessionStart `npm install`.
 
-**Mesure** : GA4 + Meta Pixel, tous deux gatés au consentement cookie (`src/components/Trackers.tsx`, `src/lib/consent.ts`). Événements Pixel custom via `src/lib/pixel.ts` : `CompleteRegistration` (signup), `ViewContent` (landing). Les achats sont rapportés **côté serveur** depuis le webhook Stripe (`src/lib/analytics-server.ts`, spec P0-1), sans aucune donnée utilisateur : les identifiants exigés par GA4 et Meta sont dérivés de l'identifiant d'événement Stripe, donc uniques par achat et non rattachables à un compte. Dédup par `events_log` (`analytics_purchase`), envoi jamais bloquant, bloc ignoré si `GA_API_SECRET` et `META_CAPI_TOKEN` sont absents.
+**Mesure** : GA4 + Meta Pixel, tous deux gatés au consentement cookie (`src/components/Trackers.tsx`, `src/lib/consent.ts`). Événements Pixel custom via `src/lib/pixel.ts` : `CompleteRegistration` (signup), `ViewContent` (landing). Les achats sont rapportés **côté serveur** depuis le webhook Stripe (`src/lib/analytics-server.ts`, spec P0-1), abonnements, renouvellements, livres à l'unité et **cadeaux** (dont le paiement est anonyme, donc sans ligne `events_log` : la déduplication tient à l'`event_id` Meta et au `transaction_id` GA4), sans aucune donnée utilisateur : les identifiants exigés par GA4 et Meta sont dérivés de l'identifiant d'événement Stripe, donc uniques par achat et non rattachables à un compte. Dédup par `events_log` (`analytics_purchase`), envoi jamais bloquant, bloc ignoré si `GA_API_SECRET` et `META_CAPI_TOKEN` sont absents.
 
 ---
 
@@ -641,7 +655,7 @@ Une tâche (feature, fix, refacto) n'est **pas terminée** tant que les checks c
 Un bug ici est soit un bug financier, soit un doublon visible côté client — vérifier explicitement qu'aucune régression n'a été introduite :
 - Guards de plan (`canAddEntry` / `canGenerateStory` / `canOrderBook`) et leur exclusion des stories `origins`/`birthday` du quota.
 - Idempotence webhook Stripe (dedup `events_log` par `stripe_event_id`) et source unique des book credits Print (`invoice.payment_succeeded`). Plusieurs lignes `events_log` portent désormais le **même** `stripe_event_id` (le crédit livre et l'événement d'achat serveur) : toute recherche de dedup doit filtrer sur `event_type` en plus, sans quoi une ligne d'analytics fait passer un crédit livre pour déjà attribué.
-- Cohérence `pageCount` entre `gelato/order` et `book-pdf` : les deux passent par `paginateBook` et `collectOrphanPhotoUrls`, un écart fait refuser le fichier par Gelato alors que le crédit est déjà consommé. Cohérence du prix livre (`calcGelatoBookPrice`) avec le tableau des plans, et **le pire cas affiché sur la page order doit rester celui que `stripe/book-checkout` facture**.
+- Cohérence `pageCount` entre `gelato/order` et `book-pdf` : les deux passent par `paginateBook`, `collectOrphanPhotoUrls` et `splitChapterText`, un écart fait refuser le fichier par Gelato alors que le crédit est déjà consommé. **Toute `<Page>` de `book-pdf` doit porter `wrap={false}`** (un test le vérifie sur le source) : sans lui react-pdf coupe en deux une page qui déborde, et le fichier ne correspond plus à la commande. Cohérence du prix livre (`calcGelatoBookPrice`) avec le tableau des plans, et **le pire cas affiché sur la page order doit rester celui que `stripe/book-checkout` facture**.
 - `x-pathname` posé par `src/middleware.ts` (utilisé par le root layout pour `<html lang>`).
 
 ---
@@ -653,6 +667,15 @@ Tout est coché sauf un point (le détail des items faits est archivé dans `doc
 - [ ] **Tester le webhook Stripe en mode Live avec un vrai paiement** — la page de paiement est
   validée depuis le 2026-07-07, l'activation du plan **après** un paiement réel ne l'est toujours
   pas.
+- [ ] **Passer une commande Gelato réelle avec la pagination de P1-3, avant le 7 novembre 2026.**
+  C'est le troisième critère d'acceptation de P1-3, le seul qu'aucun test ne peut fermer : les
+  tests prouvent que le nombre déclaré égale le nombre de pages rendues, seul l'imprimeur prouve
+  que le fichier est accepté. Un refus se paie cher, le crédit livre est consommé avant l'appel.
+  **Après le 7 novembre le pipeline d'impression est gelé jusqu'au 31 décembre** (`book-pdf`,
+  `paginateBook`, `gelato/order`), donc un correctif éventuel doit être trouvé avant cette date.
+- [ ] **Passe visuelle des parcours des phases 1 et 2** (aperçu depuis l'onglet Histoires,
+  rattrapage des mois, encart cadeau entre le 15 novembre et le 24 décembre, email d'anniversaire,
+  pied de page mémorial côté propriétaire).
 
 ---
 
@@ -691,63 +714,19 @@ Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dern
 
 ### ✅ Session 68 — Backlog vidé, onglet journal extrait, chantier emails (2026-09-02)
 
-Backlog #19, #20 et #12(b) clos : 85 clés i18n mortes retirées, `stripe/cancel` libère le schedule
-avant de poser `cancel_at_period_end`. Phase 2b de la découpe (PR #136) : `useEntryComposer` puis
-`JournalTab`, `pets/[id]/page.tsx` de 1035 à 764 lignes. Emails en trois lots (PR #137 à #139) :
-`px`, version texte, `List-Unsubscribe`, visuels PNG, registre FR vouvoyé tenu par un test. Cadeaux
-datés (PR #140) : Resend plafonne sa planification à 30 jours, d'où `gift_deliveries` et son cron.
-Détail complet dans `docs/SESSIONS.md`.
+Backlog #19, #20 et #12(b) clos, `useEntryComposer` puis `JournalTab` extraits (`pets/[id]/page.tsx`
+de 1035 à 764 lignes), emails repris en trois lots et cadeaux datés mis en file par un cron maison
+puisque Resend plafonne sa planification à 30 jours. Détail dans `docs/SESSIONS.md`.
 
-### ✅ Session 69 — Chantier Print, phases 0 et 1 (2026-09-03)
+### ✅ Session 69 — Chantier Print, phases 0 à 2 livrées (2026-09-03)
 
-Cinq specs, cinq PR empilées ([#145](https://github.com/CookServices/everypaw/pull/145) à
-[#149](https://github.com/CookServices/everypaw/pull/149)). Détail dans les PR, seuls les pièges
-durables sont ici.
+Huit specs, huit PR empilées ([#145](https://github.com/CookServices/everypaw/pull/145) à
+[#152](https://github.com/CookServices/everypaw/pull/152)) : événements d'achat serveur, requête du
+tunnel, couverture dès la première histoire, rattrapage des mois passés, livre rempli, campagne
+cadeau, anniversaire qui mène au livre, chemin depuis la page mémorial. Détail complet dans
+`docs/SESSIONS.md`.
 
-**P0-1** : `src/lib/analytics-server.ts` rapporte souscriptions, renouvellements et achats de livre à
-GA4 et Meta depuis le webhook, sans donnée utilisateur. Les abonnements partent de
-`invoice.payment_succeeded`, pas de `checkout.session.completed` qui fire pour le même achat, et
-au-dessus du gate Print, sinon une facture Digital `return` avant d'être comptée. Piège : le dedup du
-crédit livre cherchait `events_log` par `stripe_event_id` sans filtrer `event_type`.
-
-**P0-2** : `supabase/analytics/funnel.sql`, définitions ci-dessus, validé sur un Postgres jetable via
-`funnel.fixture.sql`.
-
-**P1-1** : `BookPreviewCard` en tête de l'onglet Histoires, aperçu ouvert sur tous les plans,
-commande fermée avec son motif en plan gratuit. `CoverArt` extrait de `BookCover` plutôt que
-redessiné. `POST /api/events/book-preview` pose l'événement qui remplace l'approximation de P0-2.
-
-**P1-2** : `src/lib/story-backfill.ts` liste les mois ayant trois entrées et aucun chapitre qui
-chevauche, `BackfillCard` les génère un par un. Séquentiel obligatoire, `/api/generate` compte les
-générations du jour ; le plafond de dix est une fin normale. Le mois en cours reste au cron.
-
-**P1-3** : `paginateBook` remplace `calcPageCount` et devient la source unique des six appelants.
-Photos non rattachées 2 par page (plafond 30 pages), étapes 8 par page, pages blanches réduites au
-complément final, seuil de commande passé de 7 chapitres à 14 pages remplies. Le pire cas facturé
-par `stripe/book-checkout` compte désormais photos et étapes, et reste celui qu'affiche la page
-order. Invariant testé sur trois compositions : pages déclarées = pages rendues. Dans la foulée, le
-prix d'un livre supplémentaire est passé du pire cas au prix de la **sélection réellement commandée**
-(jusqu'à 5 € d'écart depuis que les photos pèsent des pages), ce qui a imposé le plafond en trois
-morceaux décrit dans « Prix Stripe jamais depuis le client » et la survie de la sélection à la
-redirection Stripe (`ep_order_<id>_sel` en sessionStorage, sans quoi la commande automatique du
-retour repartait sur tous les chapitres et se faisait refuser).
-
-**P2-1, campagne cadeau de fin d'année** : `isGiftCampaignActive` (`lib/gift-campaign.ts`, pur,
-récurrent du 15 novembre au 24 décembre) pilote `GiftCampaignCard` sur le tableau de bord, en plan
-gratuit seulement. Dates en dur dans le module et non en variable d'environnement : l'encart doit
-s'éteindre sans déploiement, et une variable Vercel est figée au build de toute façon. Les six
-articles cadeaux (trois EN, trois FR) renvoient enfin vers `/gift`, qu'aucun ne liait. La mise en
-file d'un cadeau daté, deuxième critère d'acceptation, est désormais couverte par un test de route.
-
-**P2-2, l'anniversaire mène au livre** : l'email d'anniversaire propose de relier l'année quand
-l'animal a déjà des chapitres, avec le bon appel à l'action selon ce que le lecteur peut faire
-(commander s'il est Print avec un crédit, découvrir Print sinon). Le comptage **exclut les lettres
-d'anniversaire** que ce cron écrit lui-même, sinon tout animal serait éligible, et il passe par
-`.or("story_type.is.null,story_type.neq.birthday")` : en Postgres `NULL <> 'birthday'` vaut NULL,
-donc un `.neq` écarterait justement les chapitres générés à la main. Namespace i18n `birthday`,
-jusque-là vide dans les deux fichiers, enfin rempli.
-
-**P2-3, un chemin depuis la page mémorial** : le pied de la page mémorial invitait tout le monde à
-s'inscrire, y compris le propriétaire, déjà connecté. Il lui propose désormais de réunir les
-souvenirs dans un livre (`/dashboard/pets/<id>/order`), au même endroit et dans le même registre
-retenu ; les visiteurs gardent l'invitation d'origine. Aucune requête ajoutée, `isOwner` existait.
+Les pièges durables sont remontés dans les sections concernées de ce fichier : « Les six nombres du
+tunnel » pour les définitions, « Gelato — Configuration livre » pour `paginateBook`, « Prix Stripe
+jamais depuis le client » pour le plafond en trois morceaux, « Mesure » pour les événements
+serveur. Deux points restent ouverts, dans « Checklist avant mise en production ».

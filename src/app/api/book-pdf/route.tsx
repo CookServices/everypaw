@@ -13,7 +13,7 @@ import {
 import { validatePdfToken } from "@/lib/pdf-token";
 import { getServiceSupabase } from "@/lib/plan";
 import { UUID_REGEX } from "@/lib/validation";
-import { paginateBook, chunk, PHOTOS_PER_PAGE, MILESTONES_PER_PAGE, MAX_BOOK_PHOTOS } from "@/lib/book-pages";
+import { paginateBook, chunk, splitChapterText, PHOTOS_PER_PAGE, MILESTONES_PER_PAGE, MAX_BOOK_PHOTOS } from "@/lib/book-pages";
 import {
   COVER_THEMES, VALID_THEMES, VALID_LANGS, VALID_LAYOUTS,
   MAX_DEDICATION_LENGTH, MAX_CUSTOM_TITLE_LENGTH, MIN_YEAR, MAX_YEAR,
@@ -86,6 +86,15 @@ type StoryRow = {
 type EntryRow = { id: string; photo_urls: string[]; entry_date: string };
 type TributeRow = { id: string; author_name: string; message: string; created_at: string };
 type MilestoneRow = { id: string; title: string; achieved_at: string };
+/** One physical page of one chapter. */
+type ChapterPageSlice = {
+  story: StoryRow;
+  layout: LayoutType;
+  chapterIndex: number;
+  pageIndex: number;
+  text: string;
+  photos: EntryRow[];
+};
 
 // ── Page components ──────────────────────────────────────────────────────────
 
@@ -115,7 +124,7 @@ function WrapCoverPage({
   const frontLeft = WRAP_BLEED + TRIM + spinePt; // x-start of front panel
 
   return (
-    <Page size={[coverWidthPt, coverHeightPt]}>
+    <Page wrap={false} size={[coverWidthPt, coverHeightPt]}>
       {/* Full background */}
       <View style={{ position: "absolute", top: 0, left: 0, width: coverWidthPt, height: coverHeightPt, backgroundColor: colors.bg }} />
 
@@ -160,7 +169,7 @@ function DedicationPage({
   dedication: string;
 }) {
   return (
-    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
+    <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: BLEED_INT + PAD }}>
         <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 18, textAlign: "center" }}>
           {strings.dedication}
@@ -183,6 +192,8 @@ function ChapterPage({
   layout,
   index,
   lang,
+  pageText,
+  continuation,
 }: {
   colors: ThemeColors;
   strings: Strings;
@@ -191,6 +202,10 @@ function ChapterPage({
   layout: LayoutType;
   index: number;
   lang: Lang;
+  /** This page's slice of the chapter. */
+  pageText: string;
+  /** A continuation carries text alone: no header to repeat, no photos. */
+  continuation: boolean;
 }) {
   const locale = lang === "fr" ? "fr-FR" : "en-US";
   const fmt = (d: string) =>
@@ -202,7 +217,9 @@ function ChapterPage({
   const end = story.period_end ? fmt(story.period_end) : null;
   const period = end && end !== start ? `${start} – ${end}` : start;
   const title = story.title ?? "";
-  const content = story.content ?? "";
+  // Handed in already split: a chapter longer than its page becomes several,
+  // and the split comes from the same helper that counted them.
+  const content = pageText;
 
   const photoUrls = photos
     .flatMap((e) => (e.photo_urls as string[]).slice(0, Math.ceil(4 / Math.max(photos.length, 1))))
@@ -212,7 +229,7 @@ function ChapterPage({
   const CONTENT_W = PW - PAD * 2;
   const CONTENT_H = PH - PAD * 2;
 
-  const Header = (
+  const Header = continuation ? null : (
     <>
       <Text
         style={{
@@ -265,10 +282,18 @@ function ChapterPage({
 
   const BP = BLEED_INT + PAD; // bleed + content padding
 
+  if (continuation) {
+    return (
+      <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+        <View style={{ padding: BP, flex: 1, overflow: "hidden" }}>{BodyText}</View>
+      </Page>
+    );
+  }
+
   if (layout === "photo_hero") {
     const heroUrl = safeUrl(photoUrls[0] ?? "");
     return (
-      <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+      <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
         {heroUrl ? (
           <PdfImage src={heroUrl} style={{ width: PW_INNER, height: PH_INNER * 0.36, objectFit: "cover" }} />
         ) : null}
@@ -284,7 +309,7 @@ function ChapterPage({
     const splitUrls = photoUrls.slice(0, 2).filter(safeUrl);
     const colW = (CONTENT_W - 16) / 2;
     return (
-      <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+      <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
         <View style={{ flexDirection: "row", padding: BP, flex: 1, gap: 16, overflow: "hidden" }}>
           <View style={{ flex: 1, overflow: "hidden" }}>
             {Header}
@@ -302,7 +327,7 @@ function ChapterPage({
 
   if (layout === "text_only") {
     return (
-      <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+      <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
         <View style={{ padding: BP, flex: 1, overflow: "hidden" }}>
           {Header}
           {BodyText}
@@ -315,7 +340,7 @@ function ChapterPage({
   const photoW = photoUrls.length === 1 ? CONTENT_W : (CONTENT_W - 8) / 2;
   const safePhotoUrls = photoUrls.filter(safeUrl);
   return (
-    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+    <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
       <View style={{ padding: BP, flex: 1, overflow: "hidden" }}>
         {Header}
         <View style={{ flex: 1, overflow: "hidden" }}>{BodyText}</View>
@@ -343,7 +368,7 @@ function NoStoriesPage({
   petName: string;
 }) {
   return (
-    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+    <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
       <View style={{ padding: BLEED_INT + PAD, flex: 1 }}>
         <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 4 }}>
           {strings.chapter.toUpperCase()} 1
@@ -371,10 +396,18 @@ function PhotoPage({
 }) {
   const BP = BLEED_INT + PAD;
   const contentW = PW_INNER - BP * 2;
-  // Two stacked frames, minus the label band and the gap between them.
-  const photoH = (PH_INNER - BP * 2 - 26 - 10) / 2;
+  // Two stacked frames, minus the label band and the gap between them. The
+  // label was budgeted at 26pt and actually takes 26.4 (7pt of text on a 1.2
+  // line, plus its 18pt margin), which overflowed the page by four tenths of a
+  // point and made react-pdf spill every photo page onto a second physical
+  // page: 24 declared pages, 48 rendered, and a file Gelato would refuse.
+  // Hence a measured label and four points of slack, on top of the wrap={false}
+  // below which makes the arithmetic non-critical.
+  const LABEL_BAND = 30;
+  const PHOTO_GAP = 10;
+  const photoH = Math.floor((PH_INNER - BP * 2 - LABEL_BAND - PHOTO_GAP) / 2) - 2;
   return (
-    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
+    <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
       <View style={{ padding: BP, flex: 1, overflow: "hidden" }}>
         <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 18 }}>
           {strings.moments.toUpperCase()}
@@ -403,7 +436,7 @@ function MilestonesPage({
 }) {
   const BP = BLEED_INT + PAD;
   return (
-    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
+    <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#FDFAF5" }}>
       <View style={{ padding: BP, flex: 1 }}>
         <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 20 }}>
           {strings.milestones}
@@ -436,7 +469,7 @@ function TributesPage({
 }) {
   const BP = BLEED_INT + PAD;
   return (
-    <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
+    <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }}>
       <View style={{ padding: BP, flex: 1 }}>
         <Text style={{ fontSize: 7, fontFamily: "SansBold", letterSpacing: 2, color: colors.accent, marginBottom: 4 }}>
           {strings.tributes}
@@ -460,7 +493,7 @@ function TributesPage({
 }
 
 function BlankPage() {
-  return <Page size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }} />;
+  return <Page wrap={false} size={[PW_INNER, PH_INNER]} style={{ backgroundColor: "#F7F2EA" }} />;
 }
 
 // ── Main document ─────────────────────────────────────────────────────────────
@@ -469,7 +502,8 @@ interface BookDocumentProps {
   petName: string;
   birthdate: string | null;
   stories: StoryRow[];
-  chapterPhotos: EntryRow[][];
+  /** One entry per physical chapter page, in reading order. */
+  chapterPages: ChapterPageSlice[];
   /** Photos no chapter claims, already split into pages of PHOTOS_PER_PAGE. */
   photoPages: string[][];
   milestones: MilestoneRow[];
@@ -490,7 +524,7 @@ function BookDocument({
   petName,
   birthdate,
   stories,
-  chapterPhotos,
+  chapterPages,
   photoPages,
   milestones,
   hasDedication,
@@ -528,15 +562,21 @@ function BookDocument({
       {hasDedication && (
         <DedicationPage colors={colors} strings={strings} dedication={dedication} />
       )}
-      {stories.length > 0 ? (
-        stories.map((story, i) => {
-          const layout: LayoutType = (VALID_LAYOUTS as readonly string[]).includes(layouts[story.id])
-            ? (layouts[story.id] as LayoutType)
-            : "classic";
-          return (
-            <ChapterPage key={story.id} colors={colors} strings={strings} story={story} photos={chapterPhotos[i] ?? []} layout={layout} index={i} lang={lang} />
-          );
-        })
+      {chapterPages.length > 0 ? (
+        chapterPages.map((slice, i) => (
+          <ChapterPage
+            key={`${slice.story.id}-${slice.pageIndex}`}
+            colors={colors}
+            strings={strings}
+            story={slice.story}
+            photos={slice.photos}
+            layout={slice.layout}
+            index={slice.chapterIndex}
+            lang={lang}
+            pageText={slice.text}
+            continuation={slice.pageIndex > 0}
+          />
+        ))
       ) : (
         <NoStoriesPage colors={colors} strings={strings} petName={petName} />
       )}
@@ -698,8 +738,30 @@ export async function GET(req: Request) {
     ? (allMilestones ?? []).filter((m: MilestoneRow) => new Date(m.achieved_at).getFullYear() === yearFilter)
     : (allMilestones ?? []);
 
+  // Chapter pages, split once and used both to declare and to render, so the
+  // two cannot disagree: a chapter longer than its page becomes several.
+  const chapterSlices: ChapterPageSlice[] = stories.flatMap((story, chapterIndex) => {
+    const layout: LayoutType = (VALID_LAYOUTS as readonly string[]).includes(layouts[story.id])
+      ? (layouts[story.id] as LayoutType)
+      : "classic";
+    const photos = chapterPhotos[chapterIndex] ?? [];
+    const chapter = {
+      contentLength: (story.content ?? "").trim().length,
+      layout,
+      photoCount: photos.length,
+    };
+    return splitChapterText(story.content ?? "", chapter).map((text, pageIndex) => ({
+      story, layout, chapterIndex, pageIndex, text,
+      photos: pageIndex === 0 ? photos : [],
+    }));
+  });
+
   const pagination = paginateBook({
-    storyCount: stories.length,
+    chapters: stories.map((story, i) => ({
+      contentLength: (story.content ?? "").trim().length,
+      layout: (VALID_LAYOUTS as readonly string[]).includes(layouts[story.id]) ? layouts[story.id] : "classic",
+      photoCount: (chapterPhotos[i] ?? []).length,
+    })),
     orphanPhotoCount: orphanPhotoUrls.length,
     milestoneCount: milestones.length,
     hasDedication,
@@ -713,7 +775,7 @@ export async function GET(req: Request) {
         petName={pet.name}
         birthdate={pet.birthdate ?? null}
         stories={stories}
-        chapterPhotos={chapterPhotos}
+        chapterPages={chapterSlices}
         photoPages={photoPages}
         milestones={milestones}
         hasDedication={hasDedication}

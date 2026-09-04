@@ -48,7 +48,8 @@ export default function BookProgressWidget({ pet, plan, refreshKey = 0 }: Props)
       // Same pagination as the PDF: the widget must not promise a fuller book
       // than the order page will show.
       setPages(paginateBook({
-        storyCount: sc,
+        // An estimate: one page per chapter, their text is not loaded here.
+        chapters: (stories ?? []).map(() => ({ contentLength: 0 })),
         orphanPhotoCount: collectOrphanPhotoUrls(photoEntries ?? [], stories ?? []).length,
         milestoneCount: milestoneCount ?? 0,
         hasDedication: false,

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { Entry, Story } from "@/types";
+import type { Story } from "@/types";
 import { planBackfill } from "@/lib/story-backfill";
 import { Translations } from "./types";
 
@@ -17,15 +17,21 @@ import { Translations } from "./types";
  * Sequential on purpose: `/api/generate` counts the day's generations, and ten
  * parallel calls would race that count. The daily ceiling is the only guard on
  * a paid model call, so hitting it is a normal outcome here, not an error.
+ *
+ * Counts months from `entryDates`, every date the pet holds, and not from the
+ * page's `entries`, which are paginated: reading those announced a gap of five
+ * months to a pet that had nine, and shrank the list of months on offer to
+ * whatever happened to be loaded.
  */
 export default function BackfillCard({
-  t, isFR, dateLocale, petId, entries, stories, userPlan, onStoryAdded,
+  t, isFR, dateLocale, petId, entryDates, stories, userPlan, onStoryAdded,
 }: {
   t: Translations;
   isFR: boolean;
   dateLocale: string;
   petId: string;
-  entries: Entry[];
+  /** Every entry date the pet holds, not just the page's current slice. */
+  entryDates: string[];
   stories: Story[];
   userPlan: string;
   onStoryAdded: (storyId: string) => void | Promise<void>;
@@ -35,7 +41,7 @@ export default function BackfillCard({
   const [limitHit, setLimitHit] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  const plan = planBackfill(entries, stories);
+  const plan = planBackfill(entryDates.map(entry_date => ({ entry_date })), stories);
   if (plan.months.length === 0) return null;
 
   const monthLabel = (monthKey: string) =>

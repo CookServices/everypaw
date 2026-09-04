@@ -4,7 +4,7 @@ import { sendEmail } from "@/lib/resend";
 import Stripe from "stripe";
 import { getServiceSupabase, priceIdToPlan } from "@/lib/plan";
 import { buildPaymentFailedEmail } from "@/lib/auth-emails";
-import { analyticsConfigured, recordPurchaseOnce } from "@/lib/analytics-server";
+import { analyticsConfigured, recordPurchaseOnce, trackPurchase } from "@/lib/analytics-server";
 
 import { stripe } from "@/lib/stripe";
 
@@ -30,6 +30,25 @@ export async function POST(req: Request) {
     const session = event.data.object as Stripe.Checkout.Session;
     const userId = session.metadata?.user_id;
     const metaPlan = session.metadata?.plan;
+
+    // A gift is paid for by someone who may have no account at all: that
+    // checkout is anonymous by design, so it carries no user_id and every
+    // handler below would skip it. The money is collected at once, so it is
+    // reported at once. There is no events_log claim to make without a user,
+    // so this leans on Meta's own event_id dedup and on GA4's transaction_id;
+    // a Stripe redelivery only happens after a non-2xx, which this path never
+    // returns.
+    if (session.mode === "payment" && session.metadata?.gift === "true") {
+      await trackPurchase({
+        plan: `gift_${session.metadata?.plan ?? "unknown"}`,
+        amountCents: session.amount_total ?? 0,
+        currency: session.currency ?? "eur",
+        eventId: event.id,
+        billingReason: "gift",
+      });
+      log.debug("[webhook] gift purchase reported, event:", event.id);
+      return NextResponse.json({ received: true });
+    }
 
     if (!userId) {
       log.error("[webhook] No user_id in session metadata, event:", event.id);
