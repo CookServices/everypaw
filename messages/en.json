@@ -101,7 +101,14 @@
     "share_error": "Could not create the card. Please try again.",
     "free_upsell_text": "That was Chapter 1. Premium writes the next one every month, and prints it.",
     "free_upsell_cta": "See plans",
-    "free_upsell_refresh": "Already upgraded? Refresh the page."
+    "free_upsell_refresh": "Already upgraded? Refresh the page.",
+    "book_card_title": "Your book so far",
+    "book_card_hint": "It grows with every chapter you add.",
+    "book_card_preview_cta": "See the preview",
+    "book_card_preview_loading": "Preparing the preview…",
+    "book_card_preview_error": "Could not open the preview. Try again in a moment.",
+    "book_card_order_cta": "Customize and order",
+    "book_card_free_reason": "Printing comes with a paid plan."
   },
   "first_story_nudge": {
     "card_title": "Your first chapter is ready to be written",

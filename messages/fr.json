@@ -101,7 +101,14 @@
     "share_error": "Impossible de créer la carte. Veuillez réessayer.",
     "free_upsell_text": "C'était le Chapitre 1. Premium écrit le suivant chaque mois, et l'imprime.",
     "free_upsell_cta": "Voir les plans",
-    "free_upsell_refresh": "Déjà passé à Premium ? Rafraîchis la page."
+    "free_upsell_refresh": "Déjà passé à Premium ? Rafraîchis la page.",
+    "book_card_title": "Votre livre à ce jour",
+    "book_card_hint": "Il s'étoffe à chaque nouveau chapitre.",
+    "book_card_preview_cta": "Voir l'aperçu",
+    "book_card_preview_loading": "Préparation de l'aperçu…",
+    "book_card_preview_error": "Impossible d'ouvrir l'aperçu. Réessayez dans un instant.",
+    "book_card_order_cta": "Personnaliser et commander",
+    "book_card_free_reason": "L'impression est comprise dans les formules payantes."
   },
   "first_story_nudge": {
     "card_title": "Votre premier chapitre est prêt à être écrit",

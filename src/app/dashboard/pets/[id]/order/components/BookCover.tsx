@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { Locale } from "@/lib/i18n";
+import CoverArt from "./CoverArt";
 
 interface Props {
   coverPhotoUrl: string | null;
@@ -44,36 +45,17 @@ export default function BookCover({
 }: Props) {
   return (
     <>
-      {/* Book cover */}
-      <div style={{
-        background: coverPhotoUrl ? "transparent" : bookBg,
-        backgroundImage: coverPhotoUrl
-          ? `linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.65)), url('${coverPhotoUrl}')`
-          : undefined,
-        backgroundSize: coverPhotoUrl ? "cover" : undefined,
-        backgroundPosition: coverPhotoUrl ? "center" : undefined,
-        borderRadius: 20, padding: "3rem 2rem",
-        textAlign: "center", marginBottom: "1.25rem",
-        boxShadow: "0 12px 40px rgba(0,0,0,.25)",
-        position: "relative", overflow: "hidden",
-        transition: "background .3s",
-      }}>
-        {/* Decorative spine line */}
-        <div style={{ position: "absolute", left: 18, top: 0, bottom: 0, width: 4, background: `${bookAccentColor}60`, borderRadius: 2 }} />
-        <div style={{ fontSize: "2.75rem", marginBottom: "1.25rem" }}>{isMemorial ? "🕊️" : "🐾"}</div>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: "1.9rem", fontWeight: 600, color: bookTitleColor, lineHeight: 1.25, marginBottom: ".75rem", transition: "color .3s" }}>
-          {displayCoverTitle}
-        </div>
-        {coverPeriod && (
-          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "1rem", color: "rgba(247,242,234,.45)", marginBottom: "1.5rem" }}>
-            {petName} · {coverPeriod}
-          </div>
-        )}
-        <div style={{ width: 48, height: 2, background: bookAccentColor, margin: "0 auto 1.5rem", borderRadius: 1, transition: "background .3s" }} />
-        <div style={{ fontSize: ".7rem", color: "rgba(247,242,234,.3)", letterSpacing: ".12em", textTransform: "uppercase" }}>
-          {bookCoverLabel}
-        </div>
-      </div>
+      <CoverArt
+        coverPhotoUrl={coverPhotoUrl}
+        bookBg={bookBg}
+        bookAccentColor={bookAccentColor}
+        bookTitleColor={bookTitleColor}
+        displayCoverTitle={displayCoverTitle}
+        isMemorial={isMemorial}
+        coverPeriod={coverPeriod}
+        petName={petName}
+        bookCoverLabel={bookCoverLabel}
+      />
 
       {/* Cover photo picker (Point 10), always visible */}
       <div style={{ marginBottom: "1.25rem" }}>

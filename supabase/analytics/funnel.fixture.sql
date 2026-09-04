@@ -23,7 +23,9 @@ create table profiles (id uuid primary key, email text, plan text, created_at ti
 create table pets (id uuid primary key, user_id uuid, created_at timestamptz);
 create table entries (id uuid primary key, user_id uuid, created_at timestamptz);
 create table stories (id uuid primary key, user_id uuid, created_at timestamptz);
-create table book_configs (id uuid primary key, user_id uuid, created_at timestamptz);
+create table events_log (id uuid primary key default gen_random_uuid(), user_id uuid,
+  pet_id uuid, event_type text, triggered_at timestamptz default now(),
+  unique (user_id, pet_id, event_type));
 
 -- u1: in window, pet, 3 entries, story, book config, plan print  -> counted everywhere
 -- u2: in window, pet, 2 entries only                             -> stops at with_pet
@@ -50,5 +52,5 @@ from profiles p, generate_series(1,2) g where p.email = 'b@x.com';
 insert into stories (id, user_id, created_at)
 select gen_random_uuid(), id, '2026-08-22' from profiles where email in ('a@x.com','d@x.com','test-print@yopmail.com');
 
-insert into book_configs (id, user_id, created_at)
-select gen_random_uuid(), id, '2026-08-23' from profiles where email in ('a@x.com','d@x.com','test-print@yopmail.com');
+insert into events_log (user_id, pet_id, event_type)
+select id, null, 'book_preview_opened' from profiles where email in ('a@x.com','d@x.com','test-print@yopmail.com');

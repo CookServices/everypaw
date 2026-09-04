@@ -45,10 +45,13 @@ per_user AS (
     (SELECT count(*) FROM pets         pe WHERE pe.user_id = c.user_id) AS pets_count,
     (SELECT count(*) FROM entries      e  WHERE e.user_id  = c.user_id) AS entries_count,
     (SELECT count(*) FROM stories      s  WHERE s.user_id  = c.user_id) AS stories_count,
-    -- Approximation assumée de « a ouvert un aperçu de livre » : il n'existe
-    -- aucun événement d'ouverture aujourd'hui. P1-1 pose `book_preview_opened`
-    -- dans events_log et remplacera ce compte.
-    (SELECT count(*) FROM book_configs b  WHERE b.user_id  = c.user_id) AS book_configs_count
+    -- Événement posé par P1-1 à l'ouverture de l'aperçu, une ligne par
+    -- (utilisateur, animal) grâce à l'unicité d'events_log. Il n'existe que
+    -- depuis le 2026-09-03 : une fenêtre antérieure rend 0, ce n'est pas un
+    -- bug de la requête.
+    (SELECT count(*) FROM events_log ev
+       WHERE ev.user_id = c.user_id
+         AND ev.event_type = 'book_preview_opened')                     AS preview_opened_count
   FROM cohort c
 )
 
@@ -59,6 +62,6 @@ SELECT
   count(*) FILTER (WHERE pets_count          >= 1)               AS with_pet,
   count(*) FILTER (WHERE entries_count       >= 3)               AS with_3_entries,
   count(*) FILTER (WHERE stories_count       >= 1)               AS with_story,
-  count(*) FILTER (WHERE book_configs_count  >= 1)               AS with_book_preview,
+  count(*) FILTER (WHERE preview_opened_count >= 1)               AS with_book_preview,
   count(*) FILTER (WHERE plan = 'print')                         AS print_subscribers
 FROM per_user;
