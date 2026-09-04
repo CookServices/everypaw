@@ -85,6 +85,26 @@ npm test           # Run Vitest unit tests (vitest run)
 
 Pas de lint script. Tests unitaires via **Vitest** (`npm test`) sur la logique pure critique (`src/lib/*.test.ts`). Type-checker avec `npx tsc --noEmit` avant tout commit.
 
+### Vérifier en local : trois caches qui mentent
+
+Un contrôle manuel qui « échoue » n'est pas toujours un échec du code. Ces trois-là ont chacun
+fait conclure l'inverse de la vérité au moins une fois (session 69) :
+
+- **Le cache de `next dev`.** Quand des fichiers changent pendant une compilation, webpack se
+  corrompt et le serveur **sert l'ancien code sans rien dire**. Symptôme dans les logs :
+  `Error: Cannot find module './8948.js'` avec une pile `webpack-runtime`. Une route peut alors
+  rendre un résultat d'avant la modification alors que le fichier source et les tests unitaires
+  disent autre chose. Remède : arrêter le serveur, `rm -rf .next`, redémarrer. **Avant de
+  débugger un écart entre un test unitaire vert et un rendu faux, vérifier ce cache.**
+- **Le cache HTTP du navigateur sur `/api/book-pdf`.** Le lien signé garde le même `expires`
+  pendant une fenêtre, donc l'URL est identique d'un appel à l'autre et le navigateur ressert le
+  PDF précédent. Toute vérification manuelle du nombre de pages doit passer par
+  `fetch(url, { cache: "no-store" })`, sinon elle mesure le fichier d'avant. Sans effet en
+  production : chaque commande Gelato génère son propre lien.
+- **`npm run build` pendant qu'un `next dev` tourne** (même `.next/`) échoue sur des `ENOENT`
+  trompeurs, du genre `Failed to collect page data for /api/contact`. Arrêter le serveur de dev
+  d'abord.
+
 Déploiement sur **Vercel** — push sur `main` = auto-deploy. Les variables d'environnement (Supabase, Stripe, Gelato, Resend) vivent sur Vercel. En local : `npx vercel env pull .env.local` récupère les noms, mais les vars "Sensitive" reviennent **vides** (write-only) — les renseigner à la main si besoin (clé test Stripe recommandée en local).
 
 ---
@@ -135,28 +155,18 @@ flux sur la prod puis se connecter sur la preview, les deux partagent la même b
 
 Vercel fige les variables au build et les scope par environnement **et par projet**. En ajouter une
 à un projet ne fait rien pour l'autre, et un déploiement existant ne récupère jamais une variable
-ajoutée après coup — il faut redéployer. Auditer les scopes sans lire aucune valeur, une fois par
-projet (la colonne `environments` doit afficher Preview, pas seulement Production) :
+ajoutée après coup : il faut redéployer. Auditer les scopes sans lire de valeur :
+`npx vercel link --yes --project everypaw-staging` puis `npx vercel env ls`.
 
-```bash
-npx vercel link --yes --project everypaw-staging
-npx vercel env ls          # noms + environnements, jamais les valeurs
-```
+Trois pièges, détaillés dans `docs/SESSIONS.md` : le scope Preview simple vit sous **Environments**
+et marche en Hobby (**Preview Branches**, juste à côté, est du per-branch réservé au plan Pro) ; une
+variable de type Secret ne peut pas redevenir Config, donc pour lui ajouter un scope il faut créer
+une **entrée séparée** ciblant le nouvel environnement ; et `vercel env add <clé> preview` est
+inutilisable en non-interactif, passer par le dashboard.
 
-Trois pièges :
-
-- Dans le dashboard, le scope Preview simple vit sous **Environments** et fonctionne en Hobby.
-  **Preview Branches**, juste à côté, est du per-branch et est réservé au plan Pro : y buter ne veut
-  pas dire que le scope Preview est indisponible.
-- Une variable de type Secret ne peut pas devenir Config (« Saved secrets are write-only ») et son
-  champ Value est vide à l'édition. Pour lui ajouter un scope sans risquer la valeur de production,
-  créer une **entrée séparée** ciblant le nouvel environnement et laisser l'originale intacte.
-- `vercel env add <clé> preview --value <v>` est inutilisable en non-interactif (le CLI exige une
-  branche). Passer par le dashboard.
-
-Sonde pour savoir si un déploiement a bien la clé service : ouvrir une page publique `/pets/<id>`,
-elle appelle `getServiceSupabase()` sans auth. Ne **pas** sonder avec une route API qui vérifie
-l'auth d'abord, elle renvoie 401 dans les deux cas et n'apprend rien.
+Sonde pour savoir si un déploiement a la clé service : ouvrir une page publique `/pets/<id>`, elle
+appelle `getServiceSupabase()` sans auth. Ne **pas** sonder avec une route qui vérifie l'auth
+d'abord, elle renvoie 401 dans les deux cas et n'apprend rien.
 
 ### Discipline données de test
 
@@ -164,18 +174,14 @@ Les previews écrivent dans la base de **production** (pas de staging DB, contra
 comptes de test yopmail uniquement, jamais de données utilisateur de production committées ou
 poussées, entrées de test nettoyées après usage.
 
-**Ne pas se fier à une liste de comptes écrite, la requêter** — celle qui vivait ici pointait cinq
-comptes supprimés depuis :
+**Ne pas se fier à une liste de comptes écrite, la requêter** (`SELECT id, email, plan,
+book_credits FROM profiles WHERE email LIKE '%@yopmail.com'`) : celle qui vivait ici pointait cinq
+comptes supprimés depuis.
 
-```sql
-SELECT id, email, plan, book_credits FROM profiles
-WHERE email LIKE '%@yopmail.com' ORDER BY email;
-```
-
-⚠️ `supabase/seed_print_multi.sql` et `purge_test_data.sql` sont périmés (UUID codés en dur de
-comptes disparus) et le seed **désactive** `trg_enforce_free_entry_limit`, qu'il laisse désactivé en
-production s'il échoue au milieu. Préférer un script qui résout l'identifiant depuis l'email et lève
-une exception explicite s'il est absent.
+Pour alimenter un compte : `supabase/seed_visual_pass.sql`, qui résout l'identifiant depuis l'email,
+lève si le compte est absent, ne désactive aucun trigger et se rejoue. ⚠️ `seed_print_multi.sql` et
+`purge_test_data.sql` sont périmés (UUID de comptes disparus) et le premier **désactive**
+`trg_enforce_free_entry_limit`, qu'il laisse désactivé en production s'il échoue au milieu.
 
 Vraie recette, le jour où le besoin se présente (base isolée, crons qui tournent, webhooks
 testables) : Supabase Pro (~25 $/mois) débloque les preview branches, puis branche `staging` →
@@ -703,12 +709,9 @@ Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dern
 
 ### ✅ Session 68 — Backlog vidé, onglet journal extrait, chantier emails (2026-09-02)
 
-Backlog #19, #20 et #12(b) clos : 85 clés i18n mortes retirées, `stripe/cancel` libère le schedule
-avant de poser `cancel_at_period_end`. Phase 2b de la découpe (PR #136) : `useEntryComposer` puis
-`JournalTab`, `pets/[id]/page.tsx` de 1035 à 764 lignes. Emails en trois lots (PR #137 à #139) :
-`px`, version texte, `List-Unsubscribe`, visuels PNG, registre FR vouvoyé tenu par un test. Cadeaux
-datés (PR #140) : Resend plafonne sa planification à 30 jours, d'où `gift_deliveries` et son cron.
-Détail complet dans `docs/SESSIONS.md`.
+Backlog #19, #20 et #12(b) clos, `useEntryComposer` puis `JournalTab` extraits (`pets/[id]/page.tsx`
+de 1035 à 764 lignes), emails repris en trois lots et cadeaux datés mis en file par un cron maison
+puisque Resend plafonne sa planification à 30 jours. Détail dans `docs/SESSIONS.md`.
 
 ### ✅ Session 69 — Chantier Print, phases 0 à 2 livrées (2026-09-03)
 

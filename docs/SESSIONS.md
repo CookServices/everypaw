@@ -34,6 +34,35 @@ devient `replyTo`), et le code promo expire un an après la **livraison**, plus 
 
 ---
 
+### 📌 Variables d'environnement Vercel — le détail des trois pièges (archivé de CLAUDE.md le 2026-09-04)
+
+Vercel fige les variables au build et les scope par environnement **et par projet**. En ajouter une
+à un projet ne fait rien pour l'autre, et un déploiement existant ne récupère jamais une variable
+ajoutée après coup — il faut redéployer. Auditer les scopes sans lire aucune valeur, une fois par
+projet (la colonne `environments` doit afficher Preview, pas seulement Production) :
+
+```bash
+npx vercel link --yes --project everypaw-staging
+npx vercel env ls          # noms + environnements, jamais les valeurs
+```
+
+Trois pièges :
+
+- Dans le dashboard, le scope Preview simple vit sous **Environments** et fonctionne en Hobby.
+  **Preview Branches**, juste à côté, est du per-branch et est réservé au plan Pro : y buter ne veut
+  pas dire que le scope Preview est indisponible.
+- Une variable de type Secret ne peut pas devenir Config (« Saved secrets are write-only ») et son
+  champ Value est vide à l'édition. Pour lui ajouter un scope sans risquer la valeur de production,
+  créer une **entrée séparée** ciblant le nouvel environnement et laisser l'originale intacte.
+- `vercel env add <clé> preview --value <v>` est inutilisable en non-interactif (le CLI exige une
+  branche). Passer par le dashboard.
+
+Sonde pour savoir si un déploiement a bien la clé service : ouvrir une page publique `/pets/<id>`,
+elle appelle `getServiceSupabase()` sans auth. Ne **pas** sonder avec une route API qui vérifie
+l'auth d'abord, elle renvoie 401 dans les deux cas et n'apprend rien.
+
+---
+
 ### ✅ Session 69 — Chantier Print, phases 0 et 1 (2026-09-03)
 
 Cinq specs, cinq PR empilées ([#145](https://github.com/CookServices/everypaw/pull/145) à
