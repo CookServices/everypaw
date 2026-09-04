@@ -235,7 +235,7 @@ async function buildHtml(params: {
   ${dedicationPage}
 
   <!-- Stories as chapters, photos embedded per chapter -->
-  ${stories.length > 0 ? stories.map((story, i) => {
+  ${stories.length > 0 ? stories.flatMap((story, i) => {
     const photos = chapterPhotos[i] ?? [];
     const layout: LayoutType = (VALID_LAYOUTS as readonly string[]).includes(layouts[story.id]) ? layouts[story.id] as LayoutType : "classic";
     const dateLocale = lang === "fr" ? "fr-FR" : "en-US";
@@ -247,10 +247,23 @@ async function buildHtml(params: {
     <div class="chapter-num">${escapeHtml(s.chapter)} ${i + 1}</div>
     <div class="chapter-period">${escapeHtml(periodLabel)}</div>
     <div class="chapter-title">${escapeHtml(story.title || `${pet.name}'s Story`)}</div>`;
-    const chapterText = `<div class="chapter-text">${escapeHtml(story.content).replace(/\n/g, "<br>")}</div>`;
+    // Split like the printed book: a chapter longer than its page becomes
+    // several here too, or the preview would show a thinner book than the one
+    // Gelato prints, and the blank padding would be off by the difference.
+    const slices = splitChapterText(story.content ?? "", chapterInputs[i]);
     const allPhotoUrls = photos.flatMap(e =>
       (e.photo_urls as string[]).slice(0, Math.ceil(4 / Math.max(photos.length, 1)))
     ).filter(u => safeUrl(u));
+
+    return slices.map((slice, pageIndex) => {
+    const chapterText = `<div class="chapter-text">${escapeHtml(slice).replace(/\n/g, "<br>")}</div>`;
+    // A continuation carries the text alone: no header to repeat, no photos.
+    if (pageIndex > 0) {
+      return `
+  <div class="chapter">
+    ${chapterText}
+  </div>`;
+    }
 
     let innerHtml = "";
     if (layout === "photo_hero") {
@@ -291,6 +304,7 @@ async function buildHtml(params: {
   <div class="chapter">
     ${innerHtml}
   </div>`;
+    }).join("");
   }).join("") : `
   <div class="chapter">
     <div class="chapter-num">${escapeHtml(s.chapter)} 1</div>
