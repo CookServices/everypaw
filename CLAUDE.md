@@ -550,9 +550,9 @@ Palette : « Design Context » en tête de fichier, les tokens `--ep-*` de `glob
 
 **Milestones** : détection auto à la création d'entrée (`src/lib/milestones.ts`), définitions extensibles en DB (`milestone_definitions`), fallback hardcodé.
 
-**Livre imprimé** : page order avec personnalisations (5 thèmes couverture, titre custom, dédicace, sélection chapitres, filtre année, photo couverture custom, 4 layouts/chapitre), brouillons `book_configs` (max 15), aperçu HTML (`preview-pdf` POST session) + PDF réel Gelato (`book-pdf`, `@react-pdf/renderer`, token HMAC), commande Gelato (devise dynamique, pageCount calculé), crédits livre atomiques (RPC `try_consume_book_credit` verrou FOR UPDATE avant Gelato, `restore_book_credit` si échec), statut commande temps réel, historique/duplication/re-commande (`books`).
+**Livre imprimé** : page order avec personnalisations (5 thèmes couverture, titre custom, dédicace, sélection chapitres, filtre année, photo couverture custom, 4 layouts/chapitre), brouillons `book_configs` (max 15), aperçu HTML (`preview-pdf` POST session) + PDF réel Gelato (`book-pdf`, `@react-pdf/renderer`, token HMAC), commande Gelato (devise dynamique, pageCount par `paginateBook` : chapitres découpés selon leur texte, photos 2/page, étapes 8/page), plafond « pages payées » au fulfillment, crédits livre atomiques (RPC `try_consume_book_credit` verrou FOR UPDATE avant Gelato, `restore_book_credit` si échec), statut commande temps réel, historique/duplication/re-commande (`books`).
 
-**Monétisation** : checkout + upgrade avec proration preview, webhook idempotent (dedup `events_log` par `stripe_event_id`), achat livre one-time à prix dynamique, flow cadeau complet (achat one-time → code promo → redeem avec coupon 100%, schedule si déjà abonné), factures, réactivation, changement de plan fin de période, gestion `payment_past_due` (bannière + email dunning 1ère tentative). Détail : « Plans & monétisation ».
+**Monétisation** : checkout + upgrade (au terme, sans proratisation), webhook idempotent (dedup `events_log` par `stripe_event_id`), achat livre one-time à prix dynamique, flow cadeau complet (achat one-time → code promo → redeem avec coupon 100%, schedule si déjà abonné), factures, réactivation, changement de plan fin de période, gestion `payment_past_due` (bannière + email dunning 1ère tentative). Détail : « Plans & monétisation ».
 
 **Emails** (Resend) : templates harmonisés `src/lib/email-templates.ts` (`baseLayout`), auth hook Supabase (Standard Webhooks, HMAC fail-closed), unsubscribe tokenisé, et 8 crons listés dans « Cron jobs ».
 
@@ -704,7 +704,7 @@ fix et vérification de chacun dans `docs/SESSIONS.md` → « Backlog dette tech
 occurrences restantes sont soit `select("*", { count, head: true })` (zéro ligne transférée), soit
 des selects dont toutes les colonnes servent. Le seul candidat cassait le type `Entry`.
 
-*Dernière mise à jour : 2026-09-02 (Session 68 : #12, #19 et #20 clos, restent #4 et #8)*
+*Dernière mise à jour : 2026-09-04 (sessions 69 et 70 : chantier Print livré, phases 0 à 2 ; le backlog dette est inchangé, restent #4 et #8)*
 
 ---
 
@@ -712,21 +712,38 @@ des selects dont toutes les colonnes servent. Le seul candidat cassait le type `
 
 Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dernières sessions restent ici, à chaque nouvelle session déplacer la plus ancienne vers l'archive.
 
-### ✅ Session 68 — Backlog vidé, onglet journal extrait, chantier emails (2026-09-02)
-
-Backlog #19, #20 et #12(b) clos, `useEntryComposer` puis `JournalTab` extraits (`pets/[id]/page.tsx`
-de 1035 à 764 lignes), emails repris en trois lots et cadeaux datés mis en file par un cron maison
-puisque Resend plafonne sa planification à 30 jours. Détail dans `docs/SESSIONS.md`.
-
 ### ✅ Session 69 — Chantier Print, phases 0 à 2 livrées (2026-09-03)
 
-Huit specs, huit PR empilées ([#145](https://github.com/CookServices/everypaw/pull/145) à
-[#152](https://github.com/CookServices/everypaw/pull/152)) : événements d'achat serveur, requête du
-tunnel, couverture dès la première histoire, rattrapage des mois passés, livre rempli, campagne
-cadeau, anniversaire qui mène au livre, chemin depuis la page mémorial. Détail complet dans
-`docs/SESSIONS.md`.
+Huit specs, huit PR (#145 à #152) : événements d'achat serveur, requête du tunnel, couverture dès la
+première histoire, rattrapage des mois passés, livre rempli, campagne cadeau, anniversaire qui mène
+au livre, chemin depuis la page mémorial. Les pièges durables vivent dans les sections concernées de
+ce fichier ; le récit complet est dans `docs/SESSIONS.md`.
 
-Les pièges durables sont remontés dans les sections concernées de ce fichier : « Les six nombres du
-tunnel » pour les définitions, « Gelato — Configuration livre » pour `paginateBook`, « Prix Stripe
-jamais depuis le client » pour le plafond en trois morceaux, « Mesure » pour les événements
-serveur. Deux points restent ouverts, dans « Checklist avant mise en production ».
+### ✅ Session 70 — Passe visuelle, pagination des chapitres, pile mergée (2026-09-04)
+
+**Un bug critique que seul un rendu réel pouvait montrer.** Le PDF sortait à **55 pages pour 31
+déclarées** : react-pdf coupe en deux une page dont le contenu déborde, et la page photo dépassait
+son budget de quatre dixièmes de point. Gelato aurait refusé le fichier, crédit déjà consommé. Deux
+couches de correctif, le budget mesuré et `wrap={false}` sur **toute** `<Page>` de la route, ce qui
+rend l'arithmétique non critique. `ChapterPage` a quatre branches, une par mise en page.
+
+**Puis le vrai sujet qu'il masquait** : un chapitre généré fait ~2 000 caractères, une page
+classique en accueille ~1 400 avec deux photos. Le surplus débordait (donc refus Gelato) ou était
+rogné. Un chapitre prend désormais autant de pages que son texte l'exige ; le comptage et le rendu
+appellent le même découpeur, donc ils ne peuvent pas diverger. Vérifié sur un chapitre de 5 173
+caractères : 35 pages rendues, 35 déclarées.
+
+**Passe visuelle des phases 1 et 2**, compte de test alimenté par `supabase/seed_visual_pass.sql`.
+Deux défauts trouvés : la carte de rattrapage comptait les entrées **paginées** de la page (5 mois
+annoncés pour 9), et `memorial.born` disait « Né(e) le septembre 2012 ». Les trois caches qui font
+mentir un contrôle local sont documentés en tête de fichier.
+
+**Cadeau rapporté comme achat** : son paiement est anonyme, donc sans ligne `events_log` ; la
+déduplication tient à l'`event_id` Meta et au `transaction_id` GA4.
+
+**Pile de neuf PR mergée** (#145 à #153). Piège : `gh pr merge` fusionne dans la **branche de base**,
+donc re-cibler chaque enfant sur `main` (`gh pr edit --base main`) **après** le merge du parent.
+
+**Premier relevé du tunnel** (#154, détail dans `docs/print/roadmap.md`) : 18 comptes réels depuis
+l'ouverture, 11 sans animal, **aucun brouillon de livre ni aucune commande, jamais**. Le goulot
+mesuré est en amont de ce chantier.
