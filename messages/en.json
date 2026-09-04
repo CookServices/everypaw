@@ -474,7 +474,9 @@
     "passed": "Passed away",
     "cta_title": "Keep their memory alive",
     "cta_desc": "Everypaw turns your pet's daily moments into a story you'll cherish forever.",
-    "cta_button": "Start your pet's story"
+    "cta_button": "Start your pet's story",
+    "owner_book_title": "The memories of {name} can be gathered into a book.",
+    "owner_book_link": "Gather their memories"
   },
   "memorial_landing": {
     "hero_h1": "A gentle way to honor their story",

@@ -474,7 +474,9 @@
     "passed": "Décédé(e) le",
     "cta_title": "Gardez leur mémoire vivante",
     "cta_desc": "Everypaw transforme les moments du quotidien de votre animal en une histoire que vous chérirez pour toujours.",
-    "cta_button": "Commencez l'histoire de votre animal"
+    "cta_button": "Commencez l'histoire de votre animal",
+    "owner_book_title": "Les souvenirs de {name} peuvent être réunis dans un livre.",
+    "owner_book_link": "Réunir ses souvenirs"
   },
   "memorial_landing": {
     "hero_h1": "Une façon douce d'honorer son histoire",
