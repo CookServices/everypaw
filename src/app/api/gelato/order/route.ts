@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getCurrencyFromCountry } from "@/lib/currency";
-import { getServiceSupabase } from "@/lib/plan";
+import { getServiceSupabase, canOrderBook } from "@/lib/plan";
+import type { Plan } from "@/lib/plan-guards";
 import { generatePdfToken } from "@/lib/pdf-token";
 import { paginateBook } from "@/lib/book-pages";
 import { collectOrphanPhotoUrls, bestStoryIndexForDate } from "@/lib/book-shared";
@@ -165,7 +166,7 @@ export async function POST(req: Request) {
   // also bought.
   const { data: creditProfile } = await supabase
     .from("profiles")
-    .select("book_credits")
+    .select("plan, book_credits")
     .eq("id", user.id)
     .single();
 
@@ -180,6 +181,15 @@ export async function POST(req: Request) {
     (g: { metadata: Record<string, unknown> | null }) =>
       typeof g.metadata?.page_count === "number" && !g.metadata?.consumed_by,
   ) as { id: string; metadata: Record<string, unknown> }[];
+
+  // Le plan gratuit ne commande pas de livre. La règle existait dans
+  // `canOrderBook` et n'était appliquée nulle part : seul le bouton de la page
+  // de commande était grisé, l'API acceptait. Même motif que le plafond des dix
+  // entrées, resté sans effet serveur jusqu'à ce qu'un trigger le pose.
+  if (canOrderBook((creditProfile?.plan ?? "free") as Plan, 1) === "upgrade_required") {
+    log.warn("[gelato/order] free plan cannot order, user:", user.id);
+    return NextResponse.json({ error: "upgrade_required" }, { status: 403 });
+  }
 
   const heldCredits = creditProfile?.book_credits ?? 0;
   const capApplies = unconsumedGrants.length > 0 && unconsumedGrants.length >= heldCredits;

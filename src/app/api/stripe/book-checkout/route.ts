@@ -29,6 +29,14 @@ export async function POST(req: Request) {
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   if (pet.user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  // Le plan gratuit n'achète pas de livre. `canOrderBook` n'est pas appelée
+  // telle quelle ici : elle refuserait aussi un abonné sans crédit, or c'est
+  // exactement la personne qui est en train d'en acheter un.
+  const { data: buyer } = await db.from("profiles").select("plan").eq("id", user.id).single();
+  if ((buyer?.plan ?? "free") === "free") {
+    return NextResponse.json({ error: "upgrade_required" }, { status: 403 });
+  }
+
   // Price must never be computed from client input: the actual page count
   // (and therefore the Gelato order placed later in /api/gelato/order) is
   // derived independently, server-side, from this pet's real content. A

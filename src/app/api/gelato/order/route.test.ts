@@ -60,6 +60,7 @@ function queueHappyPath() {
   db.queueRead({ data: [] });                                    // entries
   db.queueRead({ data: [] });                                    // stories
   db.queueRead({ data: [] });                                    // milestones
+  db.queueRead({ data: { plan: "print", book_credits: 1 } });     // plan + crédits
 }
 
 /** Same three reads, with content in them. */
@@ -69,6 +70,7 @@ function queueContent(entries: unknown[], stories: unknown[], milestones: unknow
   db.queueRead({ data: entries });
   db.queueRead({ data: stories });
   db.queueRead({ data: milestones });
+  db.queueRead({ data: { plan: "print", book_credits: 1 } });
 }
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -161,6 +163,10 @@ describe("input validation", () => {
 describe("book credit", () => {
   it("refuses the order when no credit can be consumed", async () => {
     db.queueRead({ data: { id: PET_ID, user_id: "user_1" } });
+    db.queueRead({ data: [] });
+    db.queueRead({ data: [] });
+    db.queueRead({ data: [] });
+    db.queueRead({ data: { plan: "print", book_credits: 0 } });
     db.queueRpc({ data: false, error: null });
 
     const res = await POST(post(validBody()));
@@ -342,7 +348,7 @@ describe("a purchased book may not exceed the pages paid for", () => {
     db.queueRead({ data: opts.entries ?? [] });
     db.queueRead({ data: [] });
     db.queueRead({ data: [] });
-    db.queueRead({ data: { book_credits: opts.credits } });
+    db.queueRead({ data: { plan: "print", book_credits: opts.credits } });
     db.queueRead({ data: opts.grants });
     db.queueRpc({ data: true, error: null });
   }
@@ -410,6 +416,40 @@ describe("a purchased book may not exceed the pages paid for", () => {
     const res = await POST(post(validBody()));
 
     // The only grant is spent, so nothing caps this order.
+    expect(res.status).toBe(200);
+  });
+});
+
+describe("the free plan cannot order a book", () => {
+  // The rule lived in canOrderBook and was called nowhere: only the order
+  // page's button was greyed out, while the API accepted. Same shape as the
+  // ten-entry cap, which had no server-side effect until a trigger gave it one.
+  it("refuses before consuming anything", async () => {
+    db.queueRead({ data: { id: PET_ID, user_id: "user_1" } });
+    db.queueRead({ data: [] });                       // entries
+    db.queueRead({ data: [] });                       // stories
+    db.queueRead({ data: [] });                       // milestones
+    db.queueRead({ data: { plan: "free", book_credits: 1 } });
+
+    const res = await POST(post(validBody()));
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ error: "upgrade_required" });
+    expect(db.rpcs).toHaveLength(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("still serves a paid plan", async () => {
+    db.queueRead({ data: { id: PET_ID, user_id: "user_1" } });
+    db.queueRead({ data: [] });
+    db.queueRead({ data: [] });
+    db.queueRead({ data: [] });
+    db.queueRead({ data: { plan: "digital", book_credits: 1 } });
+    db.queueRead({ data: [] });                       // grants
+    db.queueRpc({ data: true, error: null });
+
+    const res = await POST(post(validBody()));
+
     expect(res.status).toBe(200);
   });
 });

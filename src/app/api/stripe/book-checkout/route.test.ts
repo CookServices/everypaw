@@ -43,9 +43,10 @@ function post(body: unknown) {
   });
 }
 
-/** Reads in order: pet, stories, entries, milestones. */
-function queueContent(opts: { stories?: unknown[]; entries?: unknown[]; milestones?: unknown[] } = {}) {
+/** Reads in order: pet, buyer's plan, stories, entries, milestones. */
+function queueContent(opts: { stories?: unknown[]; entries?: unknown[]; milestones?: unknown[]; plan?: string } = {}) {
   db.queueRead({ data: { id: PET_ID, user_id: "user_1" } });
+  db.queueRead({ data: { plan: opts.plan ?? "digital" } });
   db.queueRead({ data: opts.stories ?? [] });
   db.queueRead({ data: opts.entries ?? [] });
   db.queueRead({ data: opts.milestones ?? [] });
@@ -179,5 +180,30 @@ describe("price of the declared book", () => {
       pet_id: PET_ID,
       page_count: "28",
     });
+  });
+});
+
+describe("the free plan cannot buy a book", () => {
+  it("refuses before creating a Stripe session", async () => {
+    db.queueRead({ data: { id: PET_ID, user_id: "user_1" } });
+    db.queueRead({ data: { plan: "free" } });
+
+    const res = await POST(post({ petId: PET_ID }));
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ error: "upgrade_required" });
+    expect(sessionCreate).not.toHaveBeenCalled();
+  });
+
+  it("sells to a subscriber who has no credit left, which is the whole point", async () => {
+    db.queueRead({ data: { id: PET_ID, user_id: "user_1" } });
+    db.queueRead({ data: { plan: "digital" } });
+    db.queueRead({ data: [] });
+    db.queueRead({ data: [] });
+    db.queueRead({ data: [] });
+
+    await POST(post({ petId: PET_ID, storyIds: [S1] }));
+
+    expect(sessionCreate).toHaveBeenCalledTimes(1);
   });
 });
