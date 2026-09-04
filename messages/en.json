@@ -108,7 +108,21 @@
     "book_card_preview_loading": "Preparing the preview…",
     "book_card_preview_error": "Could not open the preview. Try again in a moment.",
     "book_card_order_cta": "Customize and order",
-    "book_card_free_reason": "Printing comes with a paid plan."
+    "book_card_free_reason": "Printing comes with a paid plan.",
+    "backfill_title": "Catch up on past months",
+    "backfill_gap": "Your entries span {months} {monthWord}, and {chapters} chapters are written.",
+    "backfill_month_one": "month",
+    "backfill_month_many": "months",
+    "backfill_cta": "Write the {count} missing chapters",
+    "backfill_cta_one": "Write the missing chapter",
+    "backfill_running": "Writing {month}…",
+    "backfill_done": "{count} chapters written.",
+    "backfill_done_one": "1 chapter written.",
+    "backfill_limit": "Daily limit of 10 generations reached. The remaining months can be written tomorrow.",
+    "backfill_error": "Generation stopped. The chapters already written are kept, you can start again.",
+    "backfill_free_reason": "Writing past chapters comes with a paid plan.",
+    "backfill_skipped_title": "Months still short of entries",
+    "backfill_skipped_item": "{month}: {count} of 3 entries needed"
   },
   "first_story_nudge": {
     "card_title": "Your first chapter is ready to be written",

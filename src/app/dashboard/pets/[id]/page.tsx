@@ -352,6 +352,14 @@ export default function PetPage({ params }: { params: { id: string } }) {
     setGenerating(false);
   };
 
+  // A chapter written by the backfill card, folded into the list the tab reads
+  // so the month it covers stops being offered.
+  const addGeneratedStory = async (storyId: string) => {
+    const supabase = createClient();
+    const { data: saved } = await supabase.from("stories").select("*").eq("id", storyId).single();
+    if (saved) setStories(prev => [saved, ...prev]);
+  };
+
   const handleShare = async (story: Story) => {
     if (!pet) return;
     setSharingStoryId(story.id);
@@ -722,6 +730,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             onShare={handleShare} onOpenShareCard={openShareCard}
             hasMoreEntries={hasMoreEntries} filterYear={filterYear} filterMonth={filterMonth}
             onLoadMore={loadMoreEntries} loadingMore={loadingMore}
+            onStoryAdded={addGeneratedStory}
           />
         )}
         {tab === "milestones" && (

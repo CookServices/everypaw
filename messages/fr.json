@@ -108,7 +108,21 @@
     "book_card_preview_loading": "Préparation de l'aperçu…",
     "book_card_preview_error": "Impossible d'ouvrir l'aperçu. Réessayez dans un instant.",
     "book_card_order_cta": "Personnaliser et commander",
-    "book_card_free_reason": "L'impression est comprise dans les formules payantes."
+    "book_card_free_reason": "L'impression est comprise dans les formules payantes.",
+    "backfill_title": "Rattraper les mois passés",
+    "backfill_gap": "Vos entrées couvrent {months} {monthWord}, et {chapters} chapitres sont écrits.",
+    "backfill_month_one": "mois",
+    "backfill_month_many": "mois",
+    "backfill_cta": "Écrire les {count} chapitres manquants",
+    "backfill_cta_one": "Écrire le chapitre manquant",
+    "backfill_running": "Rédaction de {month}…",
+    "backfill_done": "{count} chapitres écrits.",
+    "backfill_done_one": "1 chapitre écrit.",
+    "backfill_limit": "Plafond de 10 générations par jour atteint. Les mois restants pourront être écrits demain.",
+    "backfill_error": "La génération s'est arrêtée. Les chapitres déjà écrits sont conservés, vous pouvez relancer.",
+    "backfill_free_reason": "L'écriture des chapitres passés est comprise dans les formules payantes.",
+    "backfill_skipped_title": "Mois encore trop courts en entrées",
+    "backfill_skipped_item": "{month} : {count} sur 3 entrées requises"
   },
   "first_story_nudge": {
     "card_title": "Votre premier chapitre est prêt à être écrit",
