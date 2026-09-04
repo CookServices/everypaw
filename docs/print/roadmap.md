@@ -31,6 +31,37 @@ pages), les étapes 8 par page, et les pages blanches ne sont plus que le compl�
 multiple de 4. Le seuil de commande compte désormais les pages remplies. Trois chapitres, quarante
 photos et douze étapes donnent 25 pages de contenu et 3 blanches.
 
+## Le constat mesuré, 2026-09-04
+
+Ce qui précède venait d'une lecture du code. Voici la première mesure, `funnel.sql` appliqué à
+toutes les fenêtres depuis l'ouverture, comptes de test exclus.
+
+| Mois | Inscrits | Animal | 3 entrées | Histoire | Aperçu | Print |
+|---|---|---|---|---|---|---|
+| 2026-05 | 4 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06 | 2 | 0 | 0 | 0 | 0 | 1 |
+| 2026-07 | 3 | 3 | 1 | 1 | 0 | 0 |
+| 2026-08 | 8 | 3 | 1 | 1 | 0 | 0 |
+| 2026-09 | 1 | 1 | 0 | 1 | 0 | 0 |
+
+**18 comptes réels depuis l'ouverture** : 15 gratuits, 2 Digital, 1 Print. Deux faits que le tableau
+ne montre pas et qui pèsent plus que lui :
+
+- **Zéro brouillon de livre, zéro commande, jamais.** Personne n'a atteint la page de commande.
+- **Deux des trois comptes payants n'ont aucun animal.** Ils ont payé sans rien créer.
+
+**Ce qui est solide, et ce qui ne l'est pas.** Aucun pourcentage sur 18 comptes n'est fiable. Ce qui
+tient, ce sont les zéros absolus et le fait que **11 inscrits sur 18 n'ont jamais créé d'animal**,
+répété quatre mois de suite. `with_book_preview` reste à 0 par construction : l'événement n'existe
+que depuis le déploiement du 2026-09-04, il ne dira quelque chose qu'à la mesure suivante. Le
+correctif d'onboarding du 31 août ne couvre que la fin d'août et septembre, trop tôt pour être jugé.
+
+**Ce que ça change pour ce chantier.** La prémisse tient : le livre était hors d'atteinte par
+construction, donc l'absence de commandes était garantie et ne condamne pas le travail des phases 1
+et 2. Ce que la mesure ajoute, c'est que **le goulot mesuré est en amont** — inscription vers animal,
+puis animal vers trois entrées. Une page de tarifs ne parle qu'à quelqu'un qui a vu son livre, donc
+la phase 3 est le point le moins urgent de la liste.
+
 ## Le calendrier
 
 | Phase | Fenêtre | Ce qui doit exister à la fin |
@@ -78,7 +109,8 @@ la phase 3.
 - **Pas de nouvelle acquisition avant la phase 1.** Envoyer du trafic sur un tunnel où le
   livre est hors d'atteinte revient à payer pour remplir un seau percé.
 - **Pas de refonte de la page de tarifs isolée.** Elle ne convertira pas mieux tant que
-  l'utilisateur n'a pas vu son propre livre.
+  l'utilisateur n'a pas vu son propre livre. La mesure du 2026-09-04 le confirme par l'absurde :
+  personne n'a encore atteint la page de commande.
 
 ## Décisions prises
 
@@ -96,6 +128,11 @@ la phase 3.
 
 - **Le plan Supabase.** Sans base de recette, chaque vérification de paiement se fait en
   production avec une vraie carte. C'est le goulot de toutes les validations en attente.
+- **Activation avant phase 3 ?** La mesure du 2026-09-04 place le goulot à l'inscription, pas au
+  prix. Faire de l'activation le chantier suivant, et repousser la phase 3 après une deuxième
+  mesure, est le choix que les chiffres suggèrent ; il n'est pas encore arrêté.
+- **Les deux payants sans animal.** Paiement puis abandon immédiat, ou attribution manuelle ? La
+  réponse change la lecture du tableau, et personne ne l'a vérifiée.
 
 ## Ce qui reste ouvert, et son échéance
 
@@ -107,5 +144,6 @@ la phase 3.
 
 ---
 
-*Rédigé le 2026-09-02 à partir de l'état du code, pas d'une analyse d'audience : Everypaw ne
-mesure pas encore ses conversions, ce que la phase 0 corrige.*
+*Rédigé le 2026-09-02 à partir de l'état du code, faute de mesure. La phase 0 a livré celle-ci le
+2026-09-03 et le premier relevé, versé ci-dessus, date du 2026-09-04 : à relancer chaque semaine,
+`supabase/analytics/funnel.sql`.*
