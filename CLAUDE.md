@@ -316,7 +316,7 @@ Système **3 plans strict** (depuis 2026-07-07) :
 | **Premium Digital** | 4,99 €/mois · $4.99/mo | IA illimitée, multi-profils, pas de livre inclus |
 | **Premium Print** | 79 €/an · $79/yr (annuel uniquement) | Tout le digital + 1 livre hardcover annuel |
 
-Livre supplémentaire (tout plan payant) : prix **dynamique** selon le nombre de pages (`calcGelatoBookPrice`, minimum 28 €/$28) — pas de Price ID Stripe. Les plans supprimés (`digital_annual`, `print_monthly`, livre à la carte à prix fixe) n'existent plus ni dans le code ni dans Stripe.
+Livre supplémentaire (tout plan payant) : prix **dynamique** selon le nombre de pages (`calcGelatoBookPrice`, minimum 28 €/$28) — pas de Price ID Stripe. Les plans supprimés (`digital_annual`, `print_monthly`, livre à la carte à prix fixe) n'existent plus ni dans le code ni dans Stripe. **Le plan gratuit ne commande ni n'achète de livre**, appliqué **côté serveur** depuis le 2026-09-04 : `book-checkout` refuse la vente (403 `upgrade_required`), `gelato/order` refuse la commande avant toute consommation de crédit. Avant ça `canOrderBook` n'était appelée nulle part et seul le bouton de la page de commande était grisé, l'API acceptait.
 
 ### Guards d'accès
 
