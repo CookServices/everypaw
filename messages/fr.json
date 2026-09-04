@@ -657,5 +657,10 @@
     "upgrade_cta": "Passer à Premium",
     "added_by": "Ajouté par {name}",
     "max_members": "5 membres max par animal"
+  },
+  "gift_campaign": {
+    "title": "Offrez une année d'Everypaw",
+    "body": "Un abonnement, pas un colis : rien n'arrive avant Noël. La personne à qui vous l'offrez commence le journal de son animal, et commande son livre imprimé quand il contient une année qui mérite d'être gardée.",
+    "cta": "Voir les formules cadeau"
   }
 }

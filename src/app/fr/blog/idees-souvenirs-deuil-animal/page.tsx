@@ -89,7 +89,8 @@ export default function Page() {
         <p>
           Everypaw propose une <a href="/fr/memorial">fonctionnalité de page mémorial</a> conçue pour ça : un espace
           calme et permanent avec sa photo, votre message, ses histoires générées par IA, et un endroit pour les
-          hommages des autres.
+          hommages des autres. Elle peut aussi{" "}
+          <a href="/fr/gift">s&rsquo;offrir en abonnement</a>, ce qui épargne la mise en place à la personne en deuil.
         </p>
 
         <h2>4. Une lettre que vous n&rsquo;envoyez pas</h2>

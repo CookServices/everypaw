@@ -74,7 +74,9 @@ export default function Page() {
           chose de durable. Everypaw, par exemple, prend des entrées d&rsquo;une phrase et les transforme en
           chapitres d&rsquo;histoire mensuels générés par IA, puis en un livre relié imprimé en fin d&rsquo;année.
           C&rsquo;est un cadeau qui se construit sur douze mois plutôt que de rester sur une étagère après un seul
-          usage.
+          usage. Vous pouvez{" "}
+          <a href="/fr/gift">offrir une année d&rsquo;Everypaw</a> directement : la personne reçoit un code, et
+          commande son livre imprimé quand son journal contient une année qui mérite d&rsquo;être gardée.
         </p>
 
         <h3>4. Un livre photo personnalisé à partir de sa pellicule</h3>

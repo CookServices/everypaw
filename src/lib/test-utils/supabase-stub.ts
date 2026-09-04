@@ -14,6 +14,7 @@ export type StubResult = { data?: unknown; error?: unknown; count?: number | nul
 
 export type RecordedInsert = { table: string; row: unknown };
 export type RecordedUpdate = { table: string; values: unknown };
+export type RecordedUpsert = { table: string; row: unknown };
 export type RecordedRpc = { fn: string; args: unknown };
 /**
  * A chain as it was awaited: the table plus the filters applied to it. Results
@@ -26,6 +27,7 @@ export function createSupabaseStub() {
   const reads: StubResult[] = [];
   const inserts: RecordedInsert[] = [];
   const updates: RecordedUpdate[] = [];
+  const upserts: RecordedUpsert[] = [];
   const rpcs: RecordedRpc[] = [];
   const queries: RecordedQuery[] = [];
   const rpcResults: StubResult[] = [];
@@ -81,6 +83,12 @@ export function createSupabaseStub() {
       updates.push({ table, values });
       return builder;
     };
+    // Recorded apart from inserts: a handler that upserts is claiming a row it
+    // may already own, which is a different fact to assert on.
+    builder.upsert = (row: unknown) => {
+      upserts.push({ table, row });
+      return builder;
+    };
     builder.delete = () => builder;
 
     builder.single = async () => {
@@ -115,6 +123,7 @@ export function createSupabaseStub() {
     throwOn,
     inserts,
     updates,
+    upserts,
     rpcs,
     queries,
     /** Reads queued but never consumed — a mismatch between test and handler. */

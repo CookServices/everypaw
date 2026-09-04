@@ -8,6 +8,7 @@ import OnboardingModal from "@/components/onboarding/OnboardingModal";
 import GettingStartedChecklist from "@/components/onboarding/GettingStartedChecklist";
 import OriginsFlow from "@/components/onboarding/OriginsFlow";
 import BookProgressWidget from "@/components/BookProgressWidget";
+import GiftCampaignCard from "@/components/GiftCampaignCard";
 import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { fmtDateOrdinal } from "@/lib/date";
@@ -319,6 +320,10 @@ export default function DashboardPage() {
             </Link>
           </div>
         )}
+
+        {/* Mid-November to Christmas Eve, free accounts only. Switches itself
+            off by date, no deploy needed. */}
+        <GiftCampaignCard t={t} locale={locale} plan={plan} />
 
         {!showOnboarding && (
           <GettingStartedChecklist

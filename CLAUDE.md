@@ -731,3 +731,10 @@ prix d'un livre supplémentaire est passé du pire cas au prix de la **sélectio
 morceaux décrit dans « Prix Stripe jamais depuis le client » et la survie de la sélection à la
 redirection Stripe (`ep_order_<id>_sel` en sessionStorage, sans quoi la commande automatique du
 retour repartait sur tous les chapitres et se faisait refuser).
+
+**P2-1, campagne cadeau de fin d'année** : `isGiftCampaignActive` (`lib/gift-campaign.ts`, pur,
+récurrent du 15 novembre au 24 décembre) pilote `GiftCampaignCard` sur le tableau de bord, en plan
+gratuit seulement. Dates en dur dans le module et non en variable d'environnement : l'encart doit
+s'éteindre sans déploiement, et une variable Vercel est figée au build de toute façon. Les six
+articles cadeaux (trois EN, trois FR) renvoient enfin vers `/gift`, qu'aucun ne liait. La mise en
+file d'un cadeau daté, deuxième critère d'acceptation, est désormais couverte par un test de route.
