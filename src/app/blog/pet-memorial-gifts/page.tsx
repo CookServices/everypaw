@@ -63,6 +63,10 @@ export default function Page() {
           If you have a memory of the pet, share it. Even a small one. &ldquo;I still think about the time Milo stole
           my sandwich at the barbecue&rdquo; is more comforting than most sympathy cards.
         </p>
+        <p>
+          If you&rsquo;re not sure where to start with the words, the{" "}
+          <a href="/blog/pet-sympathy-card">pet sympathy card guide</a> has examples and a few things worth avoiding.
+        </p>
 
         <h2>2. A meal they don&rsquo;t have to think about</h2>
         <p>

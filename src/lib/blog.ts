@@ -112,6 +112,30 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-09-04",
     published: true,
   },
+  {
+    slug: "pet-sympathy-card",
+    title: "What to Write in a Pet Sympathy Card (With Examples)",
+    description:
+      "Not sure what to write in a pet sympathy card? Simple examples, what to avoid, and how to say something real when a friend loses a pet.",
+    datePublished: "2026-09-10",
+    published: true,
+  },
+  {
+    slug: "gotcha-day-ideas",
+    title: "Gotcha Day Ideas: How to Celebrate Your Pet's Adoption Anniversary",
+    description:
+      "Ten gotcha day ideas to celebrate your pet's adoption anniversary: ways to mark the day, capture the memory, and make it a tradition worth keeping.",
+    datePublished: "2026-09-10",
+    published: true,
+  },
+  {
+    slug: "senior-dog-memory-book",
+    title: "Senior Dog Memory Book: How to Capture the Golden Years",
+    description:
+      "How to make a senior dog memory book: what to write, what to photograph, and how to capture the golden years with tenderness, not urgency.",
+    datePublished: "2026-09-10",
+    published: true,
+  },
 ];
 
 /** True once `published` is set AND `datePublished` has arrived (UTC "today"). */
@@ -255,6 +279,33 @@ export const BLOG_POSTS_FR: BlogPostFr[] = [
     description:
       "Application de journal animalier ou service de livre photo ? Un comparatif de ce que chacun capture, ce qu'il manque, et quelle approche garde vraiment l'histoire de votre animal.",
     datePublished: "2026-09-04",
+    published: true,
+  },
+  {
+    slug: "carte-condoleances-animal",
+    slugEn: "pet-sympathy-card",
+    title: "Quoi écrire dans une carte de condoléances pour un animal (avec exemples)",
+    description:
+      "Vous ne savez pas quoi écrire dans une carte de condoléances pour un animal ? Des exemples simples, ce qu'il faut éviter, et comment dire quelque chose de vrai quand un ami perd son animal.",
+    datePublished: "2026-09-10",
+    published: true,
+  },
+  {
+    slug: "idees-anniversaire-adoption-animal",
+    slugEn: "gotcha-day-ideas",
+    title: "Idées pour célébrer l'anniversaire d'adoption de votre animal (Gotcha Day)",
+    description:
+      "Dix idées pour célébrer l'anniversaire d'adoption de votre animal : des façons de marquer le jour, garder le souvenir, et en faire une tradition qui dure.",
+    datePublished: "2026-09-10",
+    published: true,
+  },
+  {
+    slug: "livre-souvenir-chien-senior",
+    slugEn: "senior-dog-memory-book",
+    title: "Livre souvenir pour chien senior : capturer les années dorées",
+    description:
+      "Comment créer un livre souvenir pour un chien senior : quoi écrire, quoi photographier, et comment capturer les années dorées avec tendresse, sans urgence.",
+    datePublished: "2026-09-10",
     published: true,
   },
 ];

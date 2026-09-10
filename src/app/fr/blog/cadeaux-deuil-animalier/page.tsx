@@ -62,6 +62,11 @@ export default function Page() {
           jour où Milo a volé mon sandwich au barbecue&nbsp;&raquo; réconforte plus que la plupart des cartes de
           condoléances.
         </p>
+        <p>
+          Si vous ne savez pas par où commencer avec les mots, le{" "}
+          <a href="/fr/blog/carte-condoleances-animal">guide de la carte de condoléances pour animal</a> propose des
+          exemples et quelques pièges à éviter.
+        </p>
 
         <h2>2. Un repas dont il n&rsquo;a pas à s&rsquo;occuper</h2>
         <p>

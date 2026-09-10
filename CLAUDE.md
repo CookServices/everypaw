@@ -456,7 +456,7 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/memorial` | Landing marketing publique « pet memorial book » (server component, ton sobre, palette cream+sage) — distincte des pages user `/memorial/[id]` |
 | `/blog` | Index blog SEO (cluster « pet memory ») — cards des articles publiés, empty state si aucun |
 | `/blog/[slug]` | Article : 1 `page.tsx` écrit à la main par slug, via `ArticleLayout` + JSON-LD Article |
-| `/fr/blog` | Index blog FR — mêmes 12 articles, slugs traduits |
+| `/fr/blog` | Index blog FR — mêmes 15 articles, slugs traduits |
 | `/fr/blog/[slug-fr]` | Article FR : `page.tsx` par slug FR, `ArticleLayout locale="fr"`, hreflang réciproque vers l'article EN |
 | `/fr/memorial` | Landing mémorial FR, réutilise `getTranslations("fr").memorial_landing`, hreflang réciproque avec `/memorial` |
 | `/gift` | Page cadeau |
@@ -712,13 +712,6 @@ des selects dont toutes les colonnes servent. Le seul candidat cassait le type `
 
 Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dernières sessions restent ici, à chaque nouvelle session déplacer la plus ancienne vers l'archive.
 
-### ✅ Session 69 — Chantier Print, phases 0 à 2 livrées (2026-09-03)
-
-Huit specs, huit PR (#145 à #152) : événements d'achat serveur, requête du tunnel, couverture dès la
-première histoire, rattrapage des mois passés, livre rempli, campagne cadeau, anniversaire qui mène
-au livre, chemin depuis la page mémorial. Les pièges durables vivent dans les sections concernées de
-ce fichier ; le récit complet est dans `docs/SESSIONS.md`.
-
 ### ✅ Session 70 — Passe visuelle, pagination des chapitres, pile mergée (2026-09-04)
 
 **Un bug critique que seul un rendu réel pouvait montrer.** Le PDF sortait à **55 pages pour 31
@@ -747,3 +740,11 @@ donc re-cibler chaque enfant sur `main` (`gh pr edit --base main`) **après** le
 **Premier relevé du tunnel** (#154, détail dans `docs/print/roadmap.md`) : 18 comptes réels depuis
 l'ouverture, 11 sans animal, **aucun brouillon de livre ni aucune commande, jamais**. Le goulot
 mesuré est en amont de ce chantier.
+
+### ✅ Session 71 — Blog : 3 nouveaux articles EN+FR + maillage retour (2026-09-10)
+
+3 articles EN (`pet-sympathy-card`, `gotcha-day-ideas`, `senior-dog-memory-book`) + pendants FR
+(`carte-condoleances-animal`, `idees-anniversaire-adoption-animal`, `livre-souvenir-chien-senior`),
+hreflang réciproque auto (`getFrSlugForEn`). Maillage retour dans les deux langues (4 fichiers EN +
+4 FR, 1 lien chacun). Vérifié en local : `/blog` et `/fr/blog` à 15 articles chacun,
+canonical/hreflang/JSON-LD/sitemap OK, 8 backlinks présents, zéro tiret cadratin.

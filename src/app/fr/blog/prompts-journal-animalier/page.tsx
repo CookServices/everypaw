@@ -129,6 +129,11 @@ export default function Page() {
           <li>29. Quel moment d&rsquo;apprentissage a enfin fonctionné, et qu&rsquo;est-ce qui a fait le déclic ?</li>
           <li>30. Comment avez-vous célébré son dernier anniversaire ou son adoption ?</li>
         </ul>
+        <p>
+          Si vous cherchez des façons de célébrer ce jour chaque année, l&rsquo;article{" "}
+          <a href="/fr/blog/idees-anniversaire-adoption-animal">idées pour l&rsquo;anniversaire d&rsquo;adoption</a>{" "}
+          propose dix traditions à essayer.
+        </p>
 
         <h2>Votre lien (prompts 31 à 40)</h2>
         <ul>

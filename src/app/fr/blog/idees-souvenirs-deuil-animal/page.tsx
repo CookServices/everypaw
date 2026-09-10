@@ -157,7 +157,10 @@ export default function Page() {
         <p>
           Si vous cherchez un cadeau pour quelqu&rsquo;un d&rsquo;autre qui a perdu son animal, le{" "}
           <a href="/fr/blog/cadeaux-deuil-animalier">guide des cadeaux pour un deuil animalier</a> couvre ce qui aide
-          vraiment, du point de vue de l&rsquo;ami.
+          vraiment, du point de vue de l&rsquo;ami. Et si quelqu&rsquo;un dans votre entourage traverse une perte en
+          ce moment, voici un guide sur{" "}
+          <a href="/fr/blog/carte-condoleances-animal">quoi écrire dans une carte de condoléances pour animal</a> qui
+          aide vraiment.
         </p>
       </ArticleLayout>
     </>

@@ -123,6 +123,10 @@ export default function Page() {
           <li>29. What training moment finally clicked, and what made it click?</li>
           <li>30. How did you celebrate their last birthday or gotcha day?</li>
         </ul>
+        <p>
+          If you&rsquo;re looking for ways to celebrate that day each year, the{" "}
+          <a href="/blog/gotcha-day-ideas">gotcha day ideas</a> article has ten traditions worth starting.
+        </p>
 
         <h2>Your bond (prompts 31-40)</h2>
         <ul>

@@ -5,6 +5,15 @@
 
 ---
 
+### ✅ Session 69 — Chantier Print, phases 0 à 2 livrées (2026-09-03)
+
+Huit specs, huit PR (#145 à #152) : événements d'achat serveur, requête du tunnel, couverture dès la
+première histoire, rattrapage des mois passés, livre rempli, campagne cadeau, anniversaire qui mène
+au livre, chemin depuis la page mémorial. Les pièges durables vivent dans les sections concernées de
+CLAUDE.md.
+
+---
+
 ### ✅ Session 68 — Backlog vidé, onglet journal extrait, chantier emails en trois lots (2026-09-02)
 
 **Backlog #19, #20, #12(b) clos.** #19 : 85 clés i18n sans lecteur retirées (667 à 582 feuilles) ; les
