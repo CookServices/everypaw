@@ -144,6 +144,11 @@ export default function Page() {
           <a href="/fr/blog/idees-souvenirs-deuil-animal">idées de souvenirs après la perte d&rsquo;un animal</a> a
           d&rsquo;autres façons d&rsquo;honorer sa mémoire.
         </p>
+        <p>
+          Si votre chien est dans ses années seniors, le{" "}
+          <a href="/fr/blog/livre-souvenir-chien-senior">guide du livre souvenir pour chien senior</a> se concentre
+          sur la capture des années dorées avec toute l&rsquo;attention qu&rsquo;elles méritent.
+        </p>
 
         <h2>Faites en sorte que ça leur ressemble, pas à un modèle</h2>
         <ul>
