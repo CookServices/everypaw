@@ -112,6 +112,30 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-09-04",
     published: true,
   },
+  {
+    slug: "pet-sympathy-card",
+    title: "What to Write in a Pet Sympathy Card (With Examples)",
+    description:
+      "Not sure what to write in a pet sympathy card? Simple examples, what to avoid, and how to say something real when a friend loses a pet.",
+    datePublished: "2026-09-10",
+    published: true,
+  },
+  {
+    slug: "gotcha-day-ideas",
+    title: "Gotcha Day Ideas: How to Celebrate Your Pet's Adoption Anniversary",
+    description:
+      "Ten gotcha day ideas to celebrate your pet's adoption anniversary: ways to mark the day, capture the memory, and make it a tradition worth keeping.",
+    datePublished: "2026-09-10",
+    published: true,
+  },
+  {
+    slug: "senior-dog-memory-book",
+    title: "Senior Dog Memory Book: How to Capture the Golden Years",
+    description:
+      "How to make a senior dog memory book: what to write, what to photograph, and how to capture the golden years with tenderness, not urgency.",
+    datePublished: "2026-09-10",
+    published: true,
+  },
 ];
 
 /** True once `published` is set AND `datePublished` has arrived (UTC "today"). */
