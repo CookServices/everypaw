@@ -136,6 +136,30 @@ export const BLOG_POSTS: BlogPost[] = [
     datePublished: "2026-09-10",
     published: true,
   },
+  {
+    slug: "pet-scrapbook-ideas",
+    title: "Pet Scrapbook Ideas vs Memory Book: Which One Tells the Real Story?",
+    description:
+      "Pet scrapbook or memory book? What each one captures, creative page ideas for both, and how to pick the approach that actually preserves your pet's story.",
+    datePublished: "2026-09-17",
+    published: true,
+  },
+  {
+    slug: "help-child-remember-pet",
+    title: "How to Help a Child Remember a Pet (A Guide for Parents)",
+    description:
+      "A parent's guide to helping children remember a pet: simple journaling ideas, memory book projects for kids, and how to make remembering feel safe.",
+    datePublished: "2026-09-17",
+    published: true,
+  },
+  {
+    slug: "dog-bucket-list",
+    title: "Dog Bucket List: 25 Adventures Worth Writing Down",
+    description:
+      "25 dog bucket list adventures that double as memory-book material: experiences worth having, and worth writing down before you forget the details.",
+    datePublished: "2026-09-17",
+    published: true,
+  },
 ];
 
 /** True once `published` is set AND `datePublished` has arrived (UTC "today"). */
