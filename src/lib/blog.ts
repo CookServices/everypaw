@@ -281,6 +281,33 @@ export const BLOG_POSTS_FR: BlogPostFr[] = [
     datePublished: "2026-09-04",
     published: true,
   },
+  {
+    slug: "carte-condoleances-animal",
+    slugEn: "pet-sympathy-card",
+    title: "Quoi écrire dans une carte de condoléances pour un animal (avec exemples)",
+    description:
+      "Vous ne savez pas quoi écrire dans une carte de condoléances pour un animal ? Des exemples simples, ce qu'il faut éviter, et comment dire quelque chose de vrai quand un ami perd son animal.",
+    datePublished: "2026-09-10",
+    published: true,
+  },
+  {
+    slug: "idees-anniversaire-adoption-animal",
+    slugEn: "gotcha-day-ideas",
+    title: "Idées pour célébrer l'anniversaire d'adoption de votre animal (Gotcha Day)",
+    description:
+      "Dix idées pour célébrer l'anniversaire d'adoption de votre animal : des façons de marquer le jour, garder le souvenir, et en faire une tradition qui dure.",
+    datePublished: "2026-09-10",
+    published: true,
+  },
+  {
+    slug: "livre-souvenir-chien-senior",
+    slugEn: "senior-dog-memory-book",
+    title: "Livre souvenir pour chien senior : capturer les années dorées",
+    description:
+      "Comment créer un livre souvenir pour un chien senior : quoi écrire, quoi photographier, et comment capturer les années dorées avec tendresse, sans urgence.",
+    datePublished: "2026-09-10",
+    published: true,
+  },
 ];
 
 /** Published French posts, newest first. Excludes posts whose `datePublished` is still in the future. */
