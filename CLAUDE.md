@@ -456,7 +456,7 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/memorial` | Landing marketing publique « pet memorial book » (server component, ton sobre, palette cream+sage) — distincte des pages user `/memorial/[id]` |
 | `/blog` | Index blog SEO (cluster « pet memory ») — cards des articles publiés, empty state si aucun |
 | `/blog/[slug]` | Article : 1 `page.tsx` écrit à la main par slug, via `ArticleLayout` + JSON-LD Article |
-| `/fr/blog` | Index blog FR — mêmes 12 articles, slugs traduits |
+| `/fr/blog` | Index blog FR — mêmes 15 articles, slugs traduits |
 | `/fr/blog/[slug-fr]` | Article FR : `page.tsx` par slug FR, `ArticleLayout locale="fr"`, hreflang réciproque vers l'article EN |
 | `/fr/memorial` | Landing mémorial FR, réutilise `getTranslations("fr").memorial_landing`, hreflang réciproque avec `/memorial` |
 | `/gift` | Page cadeau |
@@ -741,9 +741,10 @@ donc re-cibler chaque enfant sur `main` (`gh pr edit --base main`) **après** le
 l'ouverture, 11 sans animal, **aucun brouillon de livre ni aucune commande, jamais**. Le goulot
 mesuré est en amont de ce chantier.
 
-### ✅ Session 71 — Blog : 3 nouveaux articles + maillage retour (2026-09-10)
+### ✅ Session 71 — Blog : 3 nouveaux articles EN+FR + maillage retour (2026-09-10)
 
-3 articles EN (même pattern que les 12 précédents) : `pet-sympathy-card`, `gotcha-day-ideas`,
-`senior-dog-memory-book`. Pas de version FR (non demandée). Maillage retour (4 fichiers, 1 lien
-chacun) vers les 3 nouveaux, sans toucher au texte existant. Vérifié en local (`next start`) :
-15 routes 200, canonical/JSON-LD/sitemap OK, 4 backlinks présents, zéro tiret cadratin.
+3 articles EN (`pet-sympathy-card`, `gotcha-day-ideas`, `senior-dog-memory-book`) + pendants FR
+(`carte-condoleances-animal`, `idees-anniversaire-adoption-animal`, `livre-souvenir-chien-senior`),
+hreflang réciproque auto (`getFrSlugForEn`). Maillage retour dans les deux langues (4 fichiers EN +
+4 FR, 1 lien chacun). Vérifié en local : `/blog` et `/fr/blog` à 15 articles chacun,
+canonical/hreflang/JSON-LD/sitemap OK, 8 backlinks présents, zéro tiret cadratin.
