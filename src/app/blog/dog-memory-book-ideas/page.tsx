@@ -139,6 +139,11 @@ export default function Page() {
           <a href="/blog/pet-loss-keepsake-ideas">pet loss keepsake ideas</a> article has other ways to honor their
           memory.
         </p>
+        <p>
+          If your dog is in their later years, the{" "}
+          <a href="/blog/senior-dog-memory-book">senior dog memory book guide</a> focuses on capturing the golden
+          years with the attention they deserve.
+        </p>
 
         <h2>Make it feel like them, not like a template</h2>
         <ul>

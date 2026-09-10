@@ -712,13 +712,6 @@ des selects dont toutes les colonnes servent. Le seul candidat cassait le type `
 
 Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dernières sessions restent ici, à chaque nouvelle session déplacer la plus ancienne vers l'archive.
 
-### ✅ Session 69 — Chantier Print, phases 0 à 2 livrées (2026-09-03)
-
-Huit specs, huit PR (#145 à #152) : événements d'achat serveur, requête du tunnel, couverture dès la
-première histoire, rattrapage des mois passés, livre rempli, campagne cadeau, anniversaire qui mène
-au livre, chemin depuis la page mémorial. Les pièges durables vivent dans les sections concernées de
-ce fichier ; le récit complet est dans `docs/SESSIONS.md`.
-
 ### ✅ Session 70 — Passe visuelle, pagination des chapitres, pile mergée (2026-09-04)
 
 **Un bug critique que seul un rendu réel pouvait montrer.** Le PDF sortait à **55 pages pour 31
@@ -747,3 +740,10 @@ donc re-cibler chaque enfant sur `main` (`gh pr edit --base main`) **après** le
 **Premier relevé du tunnel** (#154, détail dans `docs/print/roadmap.md`) : 18 comptes réels depuis
 l'ouverture, 11 sans animal, **aucun brouillon de livre ni aucune commande, jamais**. Le goulot
 mesuré est en amont de ce chantier.
+
+### ✅ Session 71 — Blog : 3 nouveaux articles + maillage retour (2026-09-10)
+
+3 articles EN (même pattern que les 12 précédents) : `pet-sympathy-card`, `gotcha-day-ideas`,
+`senior-dog-memory-book`. Pas de version FR (non demandée). Maillage retour (4 fichiers, 1 lien
+chacun) vers les 3 nouveaux, sans toucher au texte existant. Vérifié en local (`next start`) :
+15 routes 200, canonical/JSON-LD/sitemap OK, 4 backlinks présents, zéro tiret cadratin.

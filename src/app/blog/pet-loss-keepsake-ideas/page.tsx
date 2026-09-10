@@ -147,7 +147,8 @@ export default function Page() {
         <p>
           If you&rsquo;re looking for a gift for someone else who has lost a pet, the{" "}
           <a href="/blog/pet-memorial-gifts">pet memorial gifts guide</a> covers what actually helps from the
-          friend&rsquo;s side.
+          friend&rsquo;s side. And if someone in your life is going through a loss right now, here&rsquo;s a guide to{" "}
+          <a href="/blog/pet-sympathy-card">what to write in a pet sympathy card</a> that actually helps.
         </p>
       </ArticleLayout>
     </>
