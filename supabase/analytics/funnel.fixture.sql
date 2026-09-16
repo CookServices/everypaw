@@ -14,6 +14,7 @@
 -- Attendu sur la fenêtre d'août 2026 écrite dans funnel.sql :
 --   signups 3 · with_pet 2 · with_3_entries 1 · with_story 1
 --   with_book_preview 1 · print_subscribers 1
+--   pages_created 2 · pages_claimed 1
 --
 -- Ces tables sont volontairement minimales : seules les colonnes lues par
 -- funnel.sql sont présentes, ce n'est pas une réplique du schéma de prod.
@@ -26,6 +27,8 @@ create table stories (id uuid primary key, user_id uuid, created_at timestamptz)
 create table events_log (id uuid primary key default gen_random_uuid(), user_id uuid,
   pet_id uuid, event_type text, triggered_at timestamptz default now(),
   unique (user_id, pet_id, event_type));
+create table public_pages (id uuid primary key default gen_random_uuid(), claimed_by uuid,
+  created_at timestamptz, claimed_at timestamptz);
 
 -- u1: in window, pet, 3 entries, story, book config, plan print  -> counted everywhere
 -- u2: in window, pet, 2 entries only                             -> stops at with_pet
@@ -54,3 +57,13 @@ select gen_random_uuid(), id, '2026-08-22' from profiles where email in ('a@x.co
 
 insert into events_log (user_id, pet_id, event_type)
 select id, null, 'book_preview_opened' from profiles where email in ('a@x.com','d@x.com','test-print@yopmail.com');
+
+-- pg1: in window, never claimed                    -> pages_created only
+-- pg2: in window, claimed by a@x.com               -> pages_created + pages_claimed
+-- pg3: in window, claimed by the yopmail account   -> excluded entirely
+-- pg4: BEFORE the window, claimed by d@x.com       -> excluded entirely
+insert into public_pages (claimed_by, created_at, claimed_at) values
+  (null, '2026-08-12', null),
+  ((select id from profiles where email = 'a@x.com'), '2026-08-15', '2026-09-02'),
+  ((select id from profiles where email = 'test-print@yopmail.com'), '2026-08-16', '2026-08-17'),
+  ((select id from profiles where email = 'd@x.com'), '2026-07-30', '2026-08-03');

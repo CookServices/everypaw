@@ -1,12 +1,13 @@
 -- ─────────────────────────────────────────────────────────────────────────
 -- Everypaw — Les six nombres du tunnel (spec P0-2, docs/print/specs.md)
+--            et les deux nombres des pages (spec PP-0, docs/acquisition/specs.md)
 -- ─────────────────────────────────────────────────────────────────────────
 --
 -- OBJET : suivre chaque semaine la conversion vers le plan Print, marche par
 --         marche, sur une cohorte d'inscription. Read-only, aucun DDL.
 --
 -- USAGE : éditeur SQL Supabase. Changer les deux dates du bloc `params`
---         ci-dessous, puis Run. Une ligne, six entiers.
+--         ci-dessous, puis Run. Une ligne, huit entiers.
 --
 -- LECTURE : la cohorte est fixée par la date d'INSCRIPTION. Les marches
 --           suivantes se mesurent « à ce jour », sans limite de temps : un
@@ -53,6 +54,24 @@ per_user AS (
        WHERE ev.user_id = c.user_id
          AND ev.event_type = 'book_preview_opened')                     AS preview_opened_count
   FROM cohort c
+),
+
+-- Les pages créées sans compte (PP-0). Même logique de cohorte, mais la
+-- cohorte est celle des PAGES créées dans la fenêtre, pas des inscrits :
+-- leur créateur n'a pas encore de compte. `pages_claimed` se mesure « à ce
+-- jour » sur ces mêmes pages. Une page réclamée par un compte de test est
+-- exclue ; une page non réclamée ne peut pas l'être (créateur anonyme).
+-- La table n'existe que depuis le 2026-09-16 : une fenêtre antérieure rend 0.
+pages AS (
+  SELECT pg.id, pg.claimed_at
+  FROM public_pages pg, params
+  WHERE pg.created_at >= params.window_start
+    AND pg.created_at <  params.window_end
+    AND NOT EXISTS (
+      SELECT 1 FROM profiles tp
+      WHERE tp.id = pg.claimed_by
+        AND coalesce(tp.email, '') LIKE '%@yopmail.com'
+    )
 )
 
 SELECT
@@ -63,5 +82,7 @@ SELECT
   count(*) FILTER (WHERE entries_count       >= 3)               AS with_3_entries,
   count(*) FILTER (WHERE stories_count       >= 1)               AS with_story,
   count(*) FILTER (WHERE preview_opened_count >= 1)               AS with_book_preview,
-  count(*) FILTER (WHERE plan = 'print')                         AS print_subscribers
+  count(*) FILTER (WHERE plan = 'print')                         AS print_subscribers,
+  (SELECT count(*) FROM pages)                                   AS pages_created,
+  (SELECT count(*) FROM pages WHERE claimed_at IS NOT NULL)      AS pages_claimed
 FROM per_user;

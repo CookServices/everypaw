@@ -19,7 +19,7 @@ plafond du prix en trois morceaux, définitions du tunnel, caches qui mentent) e
 revenait à rogner des phrases utiles. Ce qui doit partir en premier reste l'historique, jamais les
 conventions : ce sont elles qui sont lues à chaque session.
 
-**Chantier en cours : conversion vers le plan Print.** Roadmap et décisions dans `docs/print/roadmap.md`, les dix specs exécutables dans `docs/print/specs.md`. Une spec = une PR. Phases 0 à 2 livrées le 2026-09-03 (huit specs, PR #145 à #152) ; reste la phase 3, datée janvier 2027, et les deux points de la « Checklist avant mise en production ».
+**Chantier en cours : page avant compte (acquisition).** Constat, décisions et les six specs PP-0 à PP-5 dans `docs/acquisition/specs.md`. Une spec = une PR. PP-0 livré le 2026-09-16 ; PP-1 (le tronc) est la suite. Le chantier Print (`docs/print/roadmap.md`, `docs/print/specs.md`) est livré jusqu'à la phase 2 ; reste la phase 3, datée janvier 2027, et les points de la « Checklist avant mise en production », dont la commande Gelato réelle avant le 7 novembre.
 
 Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suivre l'ordre d'implémentation recommandé pour toute nouvelle feature (voir section dédiée).
 
@@ -286,6 +286,14 @@ gift_deliveries: id, checkout_session_id (unique), promo_code, recipient_email,
                  sender_name, message, locale, deliver_on (date), sent_at, created_at
 -- RLS on, aucune policy : service role seul. Le cron réclame la ligne en écrivant
 -- sent_at AVANT l'envoi et ne lit que sent_at IS NULL, donc jamais deux envois.
+
+-- public_pages (pages créées sans compte, docs/acquisition/specs.md ; posée par PP-0, écrite dès PP-1)
+public_pages: id, slug (unique), kind ('memorial'|'living'), locale, pet_name, species, birthdate,
+              deceased_at, photo_url, memories (jsonb), story_title, story_content,
+              claim_token_hash (sha256, jamais le token brut), claimed_by, claimed_pet_id (cascade),
+              claimed_at, creator_ip_hash, country, view_count, status ('active'|'claimed'|'hidden'),
+              created_at, expires_at (+30 j)
+-- RLS on, aucune policy : service role seul. RPC increment_public_page_view(slug) révoquée clients.
 
 -- memorial_tributes (hommages publics sur pages mémorial)
 memorial_tributes: id, pet_id, author_name (1–100), message (1–1000),
@@ -588,6 +596,14 @@ fenêtre récente n'a pas fini de mûrir.
 | `with_book_preview` | Au moins une ligne `events_log` de type `book_preview_opened`, posée par `POST /api/events/book-preview` quand l'aperçu s'ouvre. L'événement n'existe que depuis le 2026-09-03 : une fenêtre antérieure rend 0, ce n'est pas un bug. |
 | `print_subscribers` | `profiles.plan = 'print'` **à l'instant de la requête**, pas au moment de la souscription. Un abonné de la cohorte qui a résilié depuis n'y est plus : ce nombre mesure le stock converti et survivant, pas le flux. |
 
+**Les deux nombres des pages** (PP-0), même ligne de `funnel.sql`. Leur cohorte est celle des
+**pages** dont `public_pages.created_at` tombe dans la fenêtre : le créateur n'a pas encore de compte.
+
+| Nombre | Définition exacte |
+|---|---|
+| `pages_created` | Pages de la cohorte, moins celles réclamées depuis par un compte `@yopmail.com`. Une page non réclamée ne peut pas être exclue (créateur anonyme). La table n'existe que depuis le 2026-09-16. |
+| `pages_claimed` | Pages de la cohorte avec `claimed_at` non nul, **à ce jour**. Le taux de réclamation est `pages_claimed / pages_created` ; c'est lui qui décide si la porte B (PP-4) s'écrit. |
+
 ---
 
 ## Conventions de code
@@ -712,35 +728,6 @@ des selects dont toutes les colonnes servent. Le seul candidat cassait le type `
 
 Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dernières sessions restent ici, à chaque nouvelle session déplacer la plus ancienne vers l'archive.
 
-### ✅ Session 70 — Passe visuelle, pagination des chapitres, pile mergée (2026-09-04)
-
-**Un bug critique que seul un rendu réel pouvait montrer.** Le PDF sortait à **55 pages pour 31
-déclarées** : react-pdf coupe en deux une page dont le contenu déborde, et la page photo dépassait
-son budget de quatre dixièmes de point. Gelato aurait refusé le fichier, crédit déjà consommé. Deux
-couches de correctif, le budget mesuré et `wrap={false}` sur **toute** `<Page>` de la route, ce qui
-rend l'arithmétique non critique. `ChapterPage` a quatre branches, une par mise en page.
-
-**Puis le vrai sujet qu'il masquait** : un chapitre généré fait ~2 000 caractères, une page
-classique en accueille ~1 400 avec deux photos. Le surplus débordait (donc refus Gelato) ou était
-rogné. Un chapitre prend désormais autant de pages que son texte l'exige ; le comptage et le rendu
-appellent le même découpeur, donc ils ne peuvent pas diverger. Vérifié sur un chapitre de 5 173
-caractères : 35 pages rendues, 35 déclarées.
-
-**Passe visuelle des phases 1 et 2**, compte de test alimenté par `supabase/seed_visual_pass.sql`.
-Deux défauts trouvés : la carte de rattrapage comptait les entrées **paginées** de la page (5 mois
-annoncés pour 9), et `memorial.born` disait « Né(e) le septembre 2012 ». Les trois caches qui font
-mentir un contrôle local sont documentés en tête de fichier.
-
-**Cadeau rapporté comme achat** : son paiement est anonyme, donc sans ligne `events_log` ; la
-déduplication tient à l'`event_id` Meta et au `transaction_id` GA4.
-
-**Pile de neuf PR mergée** (#145 à #153). Piège : `gh pr merge` fusionne dans la **branche de base**,
-donc re-cibler chaque enfant sur `main` (`gh pr edit --base main`) **après** le merge du parent.
-
-**Premier relevé du tunnel** (#154, détail dans `docs/print/roadmap.md`) : 18 comptes réels depuis
-l'ouverture, 11 sans animal, **aucun brouillon de livre ni aucune commande, jamais**. Le goulot
-mesuré est en amont de ce chantier.
-
 ### ✅ Session 71 — Blog : 3 nouveaux articles EN+FR + maillage retour (2026-09-10)
 
 3 articles EN (`pet-sympathy-card`, `gotcha-day-ideas`, `senior-dog-memory-book`) + pendants FR
@@ -748,3 +735,15 @@ mesuré est en amont de ce chantier.
 hreflang réciproque auto (`getFrSlugForEn`). Maillage retour dans les deux langues (4 fichiers EN +
 4 FR, 1 lien chacun). Vérifié en local : `/blog` et `/fr/blog` à 15 articles chacun,
 canonical/hreflang/JSON-LD/sitemap OK, 8 backlinks présents, zéro tiret cadratin.
+
+### ✅ Session 72 — Lecture GA4, chantier « page avant compte », PP-0 (2026-09-16)
+
+**Le constat qui manquait.** GA4 et Search Console lus pour la première fois : aucun canal ne
+fonctionne (12 vrais inscrits en cinq mois, engagés = le cercle du fondateur), la campagne Meta
+« Trafic » d'août = 700 clics d'une seconde, seul organique non-brand = le deuil, **GA4 sans
+événement clé**. Décisions dans `docs/acquisition/specs.md` (PR #160).
+
+**PP-0 livré** : `sign_up` envoyé à GA4 au signup email (`src/lib/ga.ts`, derrière le consentement),
+table `public_pages` posée (`add_public_pages_2026_09_16.sql`), `funnel.sql` rend `pages_created`
+et `pages_claimed`, fixture Docker vérifiée. **Manuel** : marquer `sign_up` événement clé dans
+GA4, appliquer la migration en prod avant le merge de PP-1.
