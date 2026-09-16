@@ -2,7 +2,8 @@
 
 Deux fichiers, deux usages :
 
-- **`funnel.sql`** — les six nombres du tunnel, à relancer chaque semaine (spec P0-2).
+- **`funnel.sql`** — les six nombres du tunnel (spec P0-2) et les deux nombres des
+  pages créées sans compte (spec PP-0), à relancer chaque semaine.
   Changer les deux dates du bloc `params`, Run, lire la ligne. Les définitions de
   chaque nombre font foi dans `CLAUDE.md`, section « Les six nombres du tunnel » ;
   `funnel.fixture.sql` permet de vérifier sur une base jetable qu'une définition

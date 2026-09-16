@@ -98,8 +98,10 @@ page créée sans compte n'existe dans aucune mesure. Sans PP-0, PP-1 est aveugl
   dans `pixel.ts`. Le marquer « événement clé » dans l'interface GA4 : action manuelle, à noter
   dans `docs/SESSIONS.md` quand elle est faite.
 - Les compteurs de pages ne passent **pas** par `events_log` : ils se lisent dans
-  `public_pages` (PP-1), colonnes `created_at`, `claimed_at`, `view_count`, `kind`,
-  `country`. `funnel.sql` les agrège sur la même fenêtre.
+  `public_pages`, colonnes `created_at`, `claimed_at`, `view_count`, `kind`, `country`.
+  `funnel.sql` les agrège sur la même fenêtre. **La migration de la table est donc posée ici**
+  (`add_public_pages_2026_09_16.sql`, schéma décrit en PP-1), sinon la requête ne tourne pas
+  en production avant PP-1.
 - `view_count` : incrément atomique par RPC `increment_public_page_view(slug)` depuis le server
   component, jamais depuis le client. Pas de déduplication par visiteur, on mesure des
   ouvertures, pas des personnes.
@@ -135,7 +137,7 @@ page créée sans compte n'existe dans aucune mesure. Sans PP-0, PP-1 est aveugl
   conservés).
 
 **Plan technique**
-- Migration `add_public_pages_YYYY_MM_DD.sql`, idempotente :
+- Migration `add_public_pages_2026_09_16.sql`, posée par PP-0, idempotente :
   ```
   public_pages: id uuid pk, slug text unique (10 caractères base62),
     kind text check in ('memorial','living'), locale text check in ('en','fr'),

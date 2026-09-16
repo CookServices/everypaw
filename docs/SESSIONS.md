@@ -5,6 +5,37 @@
 
 ---
 
+### ✅ Session 70 — Passe visuelle, pagination des chapitres, pile mergée (2026-09-04)
+
+**Un bug critique que seul un rendu réel pouvait montrer.** Le PDF sortait à **55 pages pour 31
+déclarées** : react-pdf coupe en deux une page dont le contenu déborde, et la page photo dépassait
+son budget de quatre dixièmes de point. Gelato aurait refusé le fichier, crédit déjà consommé. Deux
+couches de correctif, le budget mesuré et `wrap={false}` sur **toute** `<Page>` de la route, ce qui
+rend l'arithmétique non critique. `ChapterPage` a quatre branches, une par mise en page.
+
+**Puis le vrai sujet qu'il masquait** : un chapitre généré fait ~2 000 caractères, une page
+classique en accueille ~1 400 avec deux photos. Le surplus débordait (donc refus Gelato) ou était
+rogné. Un chapitre prend désormais autant de pages que son texte l'exige ; le comptage et le rendu
+appellent le même découpeur, donc ils ne peuvent pas diverger. Vérifié sur un chapitre de 5 173
+caractères : 35 pages rendues, 35 déclarées.
+
+**Passe visuelle des phases 1 et 2**, compte de test alimenté par `supabase/seed_visual_pass.sql`.
+Deux défauts trouvés : la carte de rattrapage comptait les entrées **paginées** de la page (5 mois
+annoncés pour 9), et `memorial.born` disait « Né(e) le septembre 2012 ». Les trois caches qui font
+mentir un contrôle local sont documentés en tête de CLAUDE.md.
+
+**Cadeau rapporté comme achat** : son paiement est anonyme, donc sans ligne `events_log` ; la
+déduplication tient à l'`event_id` Meta et au `transaction_id` GA4.
+
+**Pile de neuf PR mergée** (#145 à #153). Piège : `gh pr merge` fusionne dans la **branche de base**,
+donc re-cibler chaque enfant sur `main` (`gh pr edit --base main`) **après** le merge du parent.
+
+**Premier relevé du tunnel** (#154, détail dans `docs/print/roadmap.md`) : 18 comptes réels depuis
+l'ouverture, 11 sans animal, **aucun brouillon de livre ni aucune commande, jamais**. Le goulot
+mesuré est en amont de ce chantier.
+
+---
+
 ### ✅ Session 69 — Chantier Print, phases 0 à 2 livrées (2026-09-03)
 
 Huit specs, huit PR (#145 à #152) : événements d'achat serveur, requête du tunnel, couverture dès la

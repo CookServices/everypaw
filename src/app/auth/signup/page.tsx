@@ -7,6 +7,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { getSignupError } from "@/lib/auth-errors";
 import { log } from "@/lib/log";
 import { trackCompleteRegistration } from "@/lib/pixel";
+import { trackSignUp } from "@/lib/ga";
 import PublicFooter from "@/components/PublicFooter";
 import PasswordStrength from "@/components/PasswordStrength";
 
@@ -148,6 +149,7 @@ export default function SignupPage() {
     } else {
       setStatus("success");
       trackCompleteRegistration();
+      trackSignUp("email");
     }
   };
 
