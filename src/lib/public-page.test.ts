@@ -101,6 +101,16 @@ describe("validatePublicPageInput", () => {
     expect(r).toEqual({ ok: false, error: "invalid_birthdate" });
   });
 
+  it("refuse un 30 février pour une naissance", () => {
+    const r = validatePublicPageInput({ ...validBody, birthdate: "2012-02-30" }, TODAY);
+    expect(r).toEqual({ ok: false, error: "invalid_birthdate" });
+  });
+
+  it("refuse un 31 avril pour une date de départ", () => {
+    const r = validatePublicPageInput({ ...validBody, deceasedAt: "2026-04-31" }, TODAY);
+    expect(r).toEqual({ ok: false, error: "invalid_deceased_at" });
+  });
+
   it("accepte une naissance absente", () => {
     const r = validatePublicPageInput({ ...validBody, birthdate: null }, TODAY);
     expect(r.ok).toBe(true);

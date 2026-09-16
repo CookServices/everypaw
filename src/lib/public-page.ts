@@ -42,9 +42,21 @@ const MEMORY_MIN = 20;
 const MEMORY_MAX = 400;
 
 /** Les dates sont des chaînes `YYYY-MM-DD` : comparables lexicographiquement,
- *  donc aucun fuseau horaire n'entre dans la décision. */
+ *  donc aucun fuseau horaire n'entre dans la décision.
+ *  Valide aussi le round-trip : `Date.parse` normalise les débordements de calendrier
+ *  (p.ex. 2012-02-30 → 2012-03-01), donc on reconstruit la date à partir du timestamp
+ *  et on compare à l'entrée pour rejeter les dates invalides. */
 function isIsoDate(v: unknown): v is string {
-  return typeof v === "string" && ISO_DATE.test(v) && !Number.isNaN(Date.parse(v));
+  if (typeof v !== "string" || !ISO_DATE.test(v)) return false;
+  const timestamp = Date.parse(v);
+  if (Number.isNaN(timestamp)) return false;
+  // Round-trip: reconstruct from UTC timestamp and compare
+  const d = new Date(timestamp);
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const date = String(d.getUTCDate()).padStart(2, "0");
+  const reconstructed = `${year}-${month}-${date}`;
+  return reconstructed === v;
 }
 
 /**
