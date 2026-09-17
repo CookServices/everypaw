@@ -81,6 +81,7 @@ export default function PublicPageForm({ kind, locale }: { kind: PageKind; local
     if (petName.trim().length < 2 || petName.trim().length > 40) return setError(t.error_name);
     if (kind === "memorial" && (!deceasedAt || deceasedAt > today)) return setError(t.error_deceased);
     if (birthdate && birthdate > today) return setError(t.error_birthdate);
+    if (birthdate && deceasedAt && birthdate > deceasedAt) return setError(t.error_birthdate);
     if (filled.length < 2 || filled.some((m) => m.length < 20 || m.length > 400)) {
       return setError(t.error_memories);
     }
@@ -122,9 +123,18 @@ export default function PublicPageForm({ kind, locale }: { kind: PageKind; local
 
       if (!res.ok) {
         setStatus("idle");
-        if (data.error === "rate_limited") return setError(t.error_rate_limited);
-        if (data.error === "generation_failed") return setError(t.error_generation);
-        return setError(t.error_generation);
+        // Codes qui signalent un désaccord client/serveur invisible pour le
+        // visiteur (génération, insertion, JSON malformé, kind/locale/species
+        // incohérents) retombent sur le message générique : c'est la réponse
+        // honnête quand il n'y a rien qu'il puisse corriger.
+        const messages: Record<string, string> = {
+          invalid_name: t.error_name,
+          invalid_memories: t.error_memories,
+          invalid_birthdate: t.error_birthdate,
+          invalid_deceased_at: t.error_deceased,
+          rate_limited: t.error_rate_limited,
+        };
+        return setError(messages[data.error] ?? t.error_generation);
       }
 
       // Le jeton ne voyage jamais dans l'URL : il reste dans ce navigateur, et
