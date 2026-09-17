@@ -480,14 +480,21 @@
   },
   "memorial_landing": {
     "hero_h1": "A gentle way to honor their story",
-    "hero_sub": "A pet memorial book and a dedicated memorial page, so the moments you shared stay close — kept, shared, and remembered.",
+    "hero_sub": "A pet memorial book and a dedicated memorial page, so the moments you shared stay close, kept and remembered.",
     "s1_title": "Their memories stay with you",
     "s1_body": "Every journal entry, photo, and story remains yours to revisit, for as long as you like. Nothing is lost.",
     "s2_title": "A dedicated memorial page",
     "s2_body": "A quiet page to remember them, ready to share with the people who loved them too.",
     "s3_title": "A commemorative bound book",
-    "s3_body": "Gather the stories of their whole life into a hardcover pet memorial book — a keepsake to hold onto.",
-    "cta": "Create a memorial"
+    "s3_body": "Gather the stories of their whole life into a hardcover pet memorial book, a keepsake to hold onto.",
+    "example_label": "What three memories turn into",
+    "example_input_label": "A memory you write",
+    "example_input": "He waited on the third stair every evening, never the second, never the fourth, until he heard the car.",
+    "example_output_label": "What we write back",
+    "example_output": "Every evening I would settle myself on the third stair, never the second, never the fourth, and wait. There was something in the particular creak of the gate, the specific rhythm of your footsteps on the path, that told me it was you before you even reached the door.",
+    "example_note": "A real excerpt from a real page. The chapter is written in their voice, not yours.",
+    "cta": "Create their page, no account needed",
+    "cta_note": "Three memories are enough. You leave with a page, their chapter, and a link to keep and share."
   },
   "public_page": {
     "form_title_empty": "A page to remember them",

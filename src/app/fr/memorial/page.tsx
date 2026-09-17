@@ -74,10 +74,40 @@ export default function MemorialLandingFr() {
         ))}
       </main>
 
+      {/* Example: a real memory next to the real chapter it produced. The point
+          of the whole page is that the writing is good; nothing argues that as
+          well as showing it, so this sits directly above the CTA. */}
+      <section style={{ maxWidth: 640, margin: "0 auto", padding: "1.25rem 1.5rem 0" }}>
+        <div style={{ background: "#1C1410", borderRadius: 20, padding: "2rem", color: "#F7F2EA" }}>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.2rem", fontWeight: 600, margin: "0 0 1.5rem", textAlign: "center" }}>
+            {t.example_label}
+          </h2>
+
+          <div style={{ fontSize: ".7rem", letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(247,242,234,.4)", marginBottom: ".6rem" }}>
+            {t.example_input_label}
+          </div>
+          <p style={{ fontSize: ".92rem", fontWeight: 300, lineHeight: 1.7, color: "rgba(247,242,234,.6)", margin: "0 0 1.75rem" }}>
+            {t.example_input}
+          </p>
+
+          <div style={{ width: 32, height: 1, background: "rgba(200,129,58,.4)", margin: "0 0 1.75rem" }} />
+
+          <div style={{ fontSize: ".7rem", letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(200,129,58,.75)", marginBottom: ".6rem" }}>
+            {t.example_output_label}
+          </div>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: "1rem", fontStyle: "italic", lineHeight: 1.85, color: "rgba(247,242,234,.88)", margin: 0 }}>
+            {t.example_output}
+          </p>
+        </div>
+        <p style={{ fontSize: ".78rem", fontWeight: 300, color: "#9A8070", textAlign: "center", margin: ".9rem 0 0" }}>
+          {t.example_note}
+        </p>
+      </section>
+
       {/* CTA */}
       <section style={{ maxWidth: 640, margin: "0 auto", padding: "2.5rem 1.5rem 5rem", textAlign: "center" }}>
         <Link
-          href="/auth/signup"
+          href="/fr/memorial/new"
           style={{
             display: "inline-block",
             background: SAGE,
@@ -92,6 +122,9 @@ export default function MemorialLandingFr() {
         >
           {t.cta}
         </Link>
+        <p style={{ fontSize: ".85rem", fontWeight: 300, color: "#7A5C44", lineHeight: 1.7, margin: "1rem auto 0", maxWidth: 420 }}>
+          {t.cta_note}
+        </p>
       </section>
 
       <PublicFooter variant="minimal" locale="fr" />
