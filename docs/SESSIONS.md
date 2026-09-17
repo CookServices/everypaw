@@ -5,6 +5,12 @@
 
 ---
 
+### ✅ Session 73 : PP-1, page publique sans compte livrée (2026-09-17)
+
+PP-1 est implémenté : un visiteur sans compte crée une page publique pour son animal, trois souvenirs deviennent un chapitre écrit par Claude, la page (`/p/[slug]`) est partageable et porte un encart de réclamation qui s'arrête à l'inscription ; la réclamation elle-même, les hommages tenus en attente et la redirection après réclamation restent PP-2, pas ce chantier. Deux vérifications restent ouvertes, car aucune page n'a jamais été créée de bout en bout ici : la migration `add_public_pages_2026_09_16.sql` n'est pas appliquée en production et `ANTHROPIC_API_KEY` était vide dans `.env.local` pendant l'implémentation ; il reste à un humain d'appliquer la migration et de renseigner une vraie clé pour vérifier réellement, et la purge à 30 jours (PP-5) laissera toute page de test créée ici en base jusque là.
+
+---
+
 ### ✅ Session 72 — Lecture GA4, chantier « page avant compte », PP-0 (2026-09-16)
 
 **Le constat qui manquait.** GA4 et Search Console lus pour la première fois : aucun canal ne

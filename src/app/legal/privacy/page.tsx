@@ -35,6 +35,7 @@ export default function Privacy() {
           ["6. Retention", "Your data is retained for the duration of your account, then deleted within 30 days of account closure, unless required by law."],
           ["7. Your rights", "You have the right to access, rectify, erase, port, and object to your data. Exercise these rights at hello@everypaw.app. EU residents may also contact their national data protection authority."],
           ["8. Cookies", "We use a session cookie for authentication and a preference cookie for language. No advertising or third-party tracking cookies are used."],
+          ["9. Pages created without an account", "A memorial page can be created without signing up. It holds the pet's name, the dates and memories you write, the photo you choose, and a one-way hash of your IP address kept to limit abuse. It is reachable by its link only and is never indexed by search engines. If nobody claims it by adding it to an account, it is deleted automatically thirty days after creation, photo included, and so is any photo uploaded without a page ever being created. A claimed page becomes part of that account and follows the retention rule above."],
         ].map(([title, body]) => (
           <section key={title as string} style={{ marginBottom: "2rem" }}>
             <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.1rem", fontWeight: 600, color: "#3D2B1F", marginBottom: ".5rem" }}>{title}</h2>

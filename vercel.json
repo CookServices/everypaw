@@ -35,6 +35,10 @@
     {
       "path": "/api/cron/gift-deliveries",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/public-pages-purge",
+      "schedule": "0 4 * * *"
     }
   ]
 }
