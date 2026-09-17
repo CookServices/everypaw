@@ -326,6 +326,19 @@ valeur produit.
 - Cron `/api/cron/public-pages-purge`, quotidien, dans `vercel.json`, protégé par
   `CRON_SECRET` : sélectionne `status='active' and expires_at < now()`, supprime les objets
   `public/{id}.jpg` du bucket, puis les lignes (les hommages liés partent par cascade).
+- **Deuxième balayage, ajouté le 2026-09-17 après une trouvaille de PP-1** : une photo envoyée
+  par la route d'upload puis abandonnée avant que la page ne soit soumise n'est référencée par
+  aucune ligne, donc le premier balayage ne peut jamais l'atteindre et elle vivrait
+  indéfiniment dans un bucket public. Le cron liste les objets sous `public/`, les compare aux
+  `photo_url` réellement référencées, et supprime la différence. Deux gardes : un objet de
+  moins de vingt-quatre heures est épargné, sa page pouvant être en cours d'écriture, et un
+  objet dont l'API de stockage ne donne pas la date de création l'est aussi, puisqu'on ne peut
+  pas prouver qu'il est périmé. Si la lecture des références échoue, le balayage renonce au
+  lieu de tout prendre pour orphelin.
+- Ce deuxième balayage est aussi le filet du premier : si la suppression d'un objet échoue
+  après que sa ligne a disparu, l'objet devient orphelin et la passe suivante le ramasse.
+- **Quand PP-2 ajoutera `memorial_tributes.page_id`**, la clé étrangère doit être
+  `ON DELETE CASCADE`, sans quoi la purge échouera sur les pages portant un hommage.
 - Un utilisateur qui réclame juste avant la purge gagne : la sélection se fait sur
   `status='active'` au moment de la suppression, dans la même requête que le `delete`.
 - Paragraphe ajouté aux deux pages légales (EN et FR).

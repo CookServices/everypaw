@@ -230,3 +230,37 @@ Also generate a short evocative title, 5 words maximum.
 You MUST respond with valid JSON only, no other text:
 {"title": "...", "story": "..."}`;
 }
+
+// ── Purge (PP-5) ─────────────────────────────────────────────────────────────
+
+export interface StorageObject {
+  name: string;
+  created_at?: string | null;
+}
+
+/**
+ * Photos uploaded through the photo route but never submitted with a page are
+ * referenced by nothing: no row points at them, so the page purge never reaches
+ * them and they would sit in a public bucket forever. This picks them out.
+ *
+ * Two guards keep it from eating live work. A photo newer than the cutoff is
+ * left alone, because its page may still be in the middle of being written. A
+ * photo whose creation date the storage API did not report is also left alone,
+ * since an object that cannot be dated cannot be proven stale.
+ */
+export function selectOrphanPhotoNames(
+  objects: StorageObject[],
+  referencedNames: ReadonlySet<string>,
+  cutoffIso: string,
+): string[] {
+  return objects
+    .filter((o) => o.name.endsWith(".jpg"))
+    .filter((o) => !referencedNames.has(o.name))
+    .filter((o) => typeof o.created_at === "string" && o.created_at < cutoffIso)
+    .map((o) => o.name);
+}
+
+/** Last path segment of a public storage URL, which is how a row names its object. */
+export function photoObjectName(photoUrl: string): string {
+  return photoUrl.split("/").pop() ?? "";
+}

@@ -19,7 +19,7 @@ plafond du prix en trois morceaux, définitions du tunnel, caches qui mentent) e
 revenait à rogner des phrases utiles. Ce qui doit partir en premier reste l'historique, jamais les
 conventions : ce sont elles qui sont lues à chaque session.
 
-**Chantier en cours : page avant compte (acquisition).** Constat, décisions et les six specs PP-0 à PP-5 dans `docs/acquisition/specs.md`. Une spec = une PR. PP-0, PP-1 et PP-3 livrés ; restent PP-2 (la réclamation), PP-5 (la purge à trente jours, à livrer avant toute publication en communauté) et PP-4 (conditionné à une mesure). Le chantier Print (`docs/print/roadmap.md`, `docs/print/specs.md`) est livré jusqu'à la phase 2 ; reste la phase 3, datée janvier 2027, et les points de la « Checklist avant mise en production », dont la commande Gelato réelle avant le 7 novembre.
+**Chantier en cours : page avant compte (acquisition).** Constat, décisions et les six specs PP-0 à PP-5 dans `docs/acquisition/specs.md`. Une spec = une PR. PP-0, PP-1, PP-3 et PP-5 livrés ; restent PP-2 (la réclamation, le gros morceau) et PP-4 (conditionné à une mesure). Le chantier Print (`docs/print/roadmap.md`, `docs/print/specs.md`) est livré jusqu'à la phase 2 ; reste la phase 3, datée janvier 2027, et les points de la « Checklist avant mise en production », dont la commande Gelato réelle avant le 7 novembre.
 
 Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suivre l'ordre d'implémentation recommandé pour toute nouvelle feature (voir section dédiée).
 
@@ -489,14 +489,17 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
     { "path": "/api/cron/daily-prompts",     "schedule": "0 7 * * *" },
     { "path": "/api/cron/retention-emails", "schedule": "0 9 * * *" },
     { "path": "/api/cron/first-story-nudge", "schedule": "0 10 * * *" },
-    { "path": "/api/cron/gift-deliveries",   "schedule": "0 6 * * *" }
+    { "path": "/api/cron/gift-deliveries",   "schedule": "0 6 * * *" },
+    { "path": "/api/cron/public-pages-purge", "schedule": "0 4 * * *" }
   ]
 }
 ```
 
 Toutes les routes cron protégées par `Authorization: Bearer CRON_SECRET`.
 
-Les 9 routes existent (`on-this-day`/`streak-alert`/`birthday-check` en session 24 ; `first-story-nudge` en session 58 ; `gift-deliveries` en session 68, elle envoie les cadeaux datés).
+Les 10 routes existent (`on-this-day`/`streak-alert`/`birthday-check` en session 24 ; `first-story-nudge` en session 58 ; `gift-deliveries` en session 68, elle envoie les cadeaux datés ; `public-pages-purge` en session 75).
+
+**`public-pages-purge`** fait deux balayages. Le premier supprime les pages `status='active'` dont `expires_at` est passé, et leurs photos ; le filtre vit **dans le DELETE**, jamais dans un SELECT préalable, pour qu'un visiteur qui réclame sa page dans les secondes qui précèdent la garde. Le second supprime les photos qu'aucune ligne ne référence, envoyées puis abandonnées avant soumission : elles sont épargnées si elles ont moins de 24 h ou si le stockage ne donne pas leur date, et le balayage renonce entièrement si la lecture des références échoue, sans quoi tout passerait pour orphelin. Le second est aussi le filet du premier, une suppression d'objet ratée après que la ligne a disparu devient un orphelin ramassé au passage suivant.
 
 ---
 
@@ -732,12 +735,17 @@ des selects dont toutes les colonnes servent. Le seul candidat cassait le type `
 
 Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dernières sessions restent ici, à chaque nouvelle session déplacer la plus ancienne vers l'archive.
 
-### ✅ Session 73 : PP-1, page publique sans compte livrée (2026-09-17)
-
-PP-1 est implémenté : un visiteur sans compte crée une page publique pour son animal, trois souvenirs deviennent un chapitre écrit par Claude, la page (`/p/[slug]`) est partageable et porte un encart de réclamation qui s'arrête à l'inscription ; la réclamation elle-même, les hommages tenus en attente et la redirection après réclamation restent PP-2, pas ce chantier. Deux vérifications restent ouvertes, car aucune page n'a jamais été créée de bout en bout ici : la migration `add_public_pages_2026_09_16.sql` n'est pas appliquée en production et `ANTHROPIC_API_KEY` était vide dans `.env.local` pendant l'implémentation ; il reste à un humain d'appliquer la migration et de renseigner une vraie clé pour vérifier réellement, et la purge à 30 jours (PP-5) laissera toute page de test créée ici en base jusque là.
 
 ### ✅ Session 74 — PP-1 vérifié en réel, PP-3 livré (2026-09-17)
 
 **Les deux blocages de PP-1 sont levés et le parcours complet a tourné.** Migration appliquée, clé Anthropic scopée workspace fournie : `POST /api/public-pages` rend 201, le chapitre fait 261 mots dans la fourchette voulue, sans tiret cadratin. Le correctif critique tient en réel, un `photoUrl` pointant un hôte étranger arrive à `null` en base. Le compteur de vues ignore Facebook, Slack et WhatsApp. Piège à retenir : une clé Anthropic d'organisation échoue avec « not scoped to a workspace », il faut une clé de workspace, et jamais contourner en touchant `src/lib/anthropic.ts` que partagent les cinq appels Claude de l'app.
 
 **PP-3 rebranche les deux landings mémorial** vers `/memorial/new` et `/fr/memorial/new` au lieu de `/auth/signup`, avec sous le bouton la promesse de ce qui va se passer. Chaque landing porte désormais un bloc sombre montrant un vrai souvenir brut et l'extrait du vrai chapitre qu'il a produit, cité mot pour mot. Deux écarts assumés par rapport à la spec : le lien vers le livre en pied de `/p/[slug]` n'a pas été ajouté, l'encart de réclamation nomme déjà le livre au même endroit et un second bloc commercial sur une page de deuil serait redondant ; et l'exemple est cité sur la landing au lieu de pointer une page vivante, parce qu'une page exemple jamais réclamée serait détruite par la purge de PP-5 et que le lien deviendrait un 404. `memorial_landing.example_output` est la première entrée de `ADDRESSED_TO_THE_PET` dans `copy-register.test.ts` : c'est l'animal qui tutoie son humain, et la règle de vouvoiement ne s'applique pas quand l'app n'est pas celle qui parle.
+
+### ✅ Session 75 — PP-5, la purge des pages sans compte (2026-09-17)
+
+**Une page créée sans compte et jamais réclamée est un passif.** Elle porte un nom d'animal, trois souvenirs, une photo et une empreinte d'IP, sans personne pour en demander la suppression. Le cron `public-pages-purge` tourne chaque nuit à 4 h et la supprime trente jours après sa création, photo comprise. Une page réclamée n'expire jamais, parce que la réclamation change son statut et que le cron ne touche que les lignes `active`.
+
+**Le second balayage vient d'une trouvaille de PP-1, pas de la spec** : une photo envoyée puis abandonnée avant que la page ne soit soumise n'est référencée par rien, donc le premier balayage ne peut pas l'atteindre. La spec PP-5 a été amendée en conséquence. Vérifié en réel contre la base de production : sans jeton 401, avec jeton une page expirée et sa photo disparaissent, une page réclamée à la date d'expiration dépassée survit, et les photos de moins de vingt-quatre heures sont épargnées.
+
+**À savoir pour PP-2** : quand `memorial_tributes.page_id` sera ajouté, sa clé étrangère doit être `ON DELETE CASCADE`, sinon la purge échouera sur toute page portant un hommage.

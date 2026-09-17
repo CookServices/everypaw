@@ -3,6 +3,8 @@ import {
   validatePublicPageInput,
   generateSlug,
   buildPublicPagePrompt,
+  selectOrphanPhotoNames,
+  photoObjectName,
   isSafePhotoUrl,
   type PublicPageInput,
 } from "./public-page";
@@ -250,5 +252,54 @@ describe("buildPublicPagePrompt", () => {
     const p = buildPublicPagePrompt({ ...input, petName: injected });
     const count = p.split(injected).length - 1;
     expect(count).toBe(1);
+  });
+});
+
+describe("selectOrphanPhotoNames", () => {
+  const CUTOFF = "2026-09-17T00:00:00.000Z";
+  const old = "2026-09-15T10:00:00.000Z";
+  const recent = "2026-09-17T11:00:00.000Z";
+
+  it("retient une photo ancienne que plus aucune page ne reference", () => {
+    const objects = [{ name: "a.jpg", created_at: old }];
+    expect(selectOrphanPhotoNames(objects, new Set(), CUTOFF)).toEqual(["a.jpg"]);
+  });
+
+  it("epargne une photo referencee par une page, meme ancienne", () => {
+    const objects = [{ name: "a.jpg", created_at: old }];
+    expect(selectOrphanPhotoNames(objects, new Set(["a.jpg"]), CUTOFF)).toEqual([]);
+  });
+
+  it("epargne une photo recente, dont la page peut etre en cours d'ecriture", () => {
+    const objects = [{ name: "a.jpg", created_at: recent }];
+    expect(selectOrphanPhotoNames(objects, new Set(), CUTOFF)).toEqual([]);
+  });
+
+  it("epargne un objet dont la date de creation est absente", () => {
+    const objects = [{ name: "a.jpg", created_at: null }, { name: "b.jpg" }];
+    expect(selectOrphanPhotoNames(objects, new Set(), CUTOFF)).toEqual([]);
+  });
+
+  it("ignore ce qui n'est pas un .jpg, dont le marqueur de dossier vide", () => {
+    const objects = [{ name: ".emptyFolderPlaceholder", created_at: old }];
+    expect(selectOrphanPhotoNames(objects, new Set(), CUTOFF)).toEqual([]);
+  });
+
+  it("trie le melange realiste en ne rendant que les orphelines anciennes", () => {
+    const objects = [
+      { name: "referencee.jpg", created_at: old },
+      { name: "orpheline-ancienne.jpg", created_at: old },
+      { name: "orpheline-recente.jpg", created_at: recent },
+      { name: ".emptyFolderPlaceholder", created_at: old },
+    ];
+    expect(selectOrphanPhotoNames(objects, new Set(["referencee.jpg"]), CUTOFF))
+      .toEqual(["orpheline-ancienne.jpg"]);
+  });
+});
+
+describe("photoObjectName", () => {
+  it("rend le dernier segment d'une URL de stockage", () => {
+    expect(photoObjectName("https://x.supabase.co/storage/v1/object/public/pet-photos/public/abc.jpg"))
+      .toBe("abc.jpg");
   });
 });
