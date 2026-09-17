@@ -9,7 +9,14 @@ export const metadata = {
   openGraph: { title: "Contact, Everypaw", url: "/contact", siteName: "Everypaw", type: "website" },
 };
 
-export default function Contact() {
+export default function Contact({ searchParams }: { searchParams?: { subject?: string } }) {
+  // Le lien de signalement d'une page publique (`/p/[slug]`) passe son objet
+  // en query string : la route n'a pas de champ objet libre, on le pousse
+  // donc dans le corps du message. Longueur bornée, jamais rendu en HTML
+  // (React l'affiche comme texte dans un textarea contrôlé).
+  const subjectParam =
+    typeof searchParams?.subject === "string" ? searchParams.subject.slice(0, 200) : undefined;
+
   return (
     <div style={{ minHeight: "100vh", background: "#F7F2EA", fontFamily: "'DM Sans', sans-serif" }}>
       <PublicNav variant="simple" />
@@ -44,7 +51,7 @@ export default function Contact() {
         </div>
 
         <div style={{ marginTop: "2.5rem" }}>
-          <ContactForm />
+          <ContactForm initialNote={subjectParam} />
         </div>
 
         <div style={{ marginTop: "2rem", background: "rgba(200,129,58,.06)", border: "1px solid rgba(200,129,58,.2)", borderRadius: 16, padding: "1.25rem 1.5rem" }}>
