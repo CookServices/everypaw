@@ -112,7 +112,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
 
-    const { error: insertError } = await supabase
+    const { data: inserted, error: insertError } = await supabase
       .from("memorial_tributes")
       .insert({
         page_id: pageId,
@@ -120,11 +120,45 @@ export async function POST(req: Request) {
         author_name: sanitizedName,
         message: sanitizedMessage,
         status: "pending",
-      });
+      })
+      .select("id")
+      .single();
 
     if (insertError) {
       log.error("[memorial/tributes] insert error:", insertError.message);
       return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+    }
+
+    // Fenêtre de course avec claim_public_page, sans verrou : une lecture puis
+    // une insertion ne sont pas atomiques, donc la page a pu être réclamée
+    // entre le check ci-dessus et cet insert. Seuls deux ordres sont possibles.
+    // - Le claim commit avant cette relecture : on la voit `claimed` ici et on
+    //   rattache nous-mêmes l'hommage qu'on vient d'insérer.
+    // - Le claim commit après notre insert : sa ligne est déjà visible à son
+    //   `update ... where page_id = ...`, qui la rattache pour nous.
+    // Un troisième ordre n'existe pas (l'insert ci-dessus a déjà eu lieu), d'où
+    // l'absence de verrou : au pire l'un des deux chemins fait le travail.
+    try {
+      const { data: pageAfter } = await supabase
+        .from("public_pages")
+        .select("status, claimed_pet_id")
+        .eq("id", pageId)
+        .single();
+
+      if (pageAfter?.status === "claimed" && pageAfter.claimed_pet_id) {
+        const { error: attachError } = await supabase
+          .from("memorial_tributes")
+          .update({ pet_id: pageAfter.claimed_pet_id, status: "pending" })
+          .eq("id", inserted.id)
+          .is("pet_id", null);
+        if (attachError) {
+          log.error("[memorial/tributes] claim-race attach error:", attachError.message);
+        }
+      }
+    } catch (err) {
+      log.error("[memorial/tributes] claim-race check error:", err);
+      // Non-fatal: l'hommage existe déjà, mieux vaut un rare orphelin qu'un
+      // faux échec renvoyé à la personne qui vient d'écrire un message.
     }
 
     return NextResponse.json({ ok: true });
