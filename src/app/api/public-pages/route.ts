@@ -32,6 +32,9 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
 
   // Honeypot : un vrai visiteur ne remplit jamais ce champ, il est masqué.
   // Réponse volontairement indiscernable d'un succès, sans rien écrire, et
@@ -42,29 +45,40 @@ export async function POST(req: Request) {
   }
 
   // Ce plafond reste tôt : il borne un visiteur unique qui s'acharne, quel
-  // que soit le contenu qu'il envoie.
+  // que soit le contenu qu'il envoie. Code dédié (`rate_limited_ip`) pour que
+  // le visiteur ne croie pas, à tort, que d'autres personnes ont rempli le site.
   const perIp = await checkRateLimitDb(`public-page:${ip}`, PER_IP_PER_DAY, DAY_MS);
-  if (!perIp.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  if (!perIp.allowed) return NextResponse.json({ error: "rate_limited_ip" }, { status: 429 });
 
   const today = new Date().toISOString().slice(0, 10);
   const parsed = validatePublicPageInput(body, today);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
   const input = parsed.value;
 
-  const photoUrl = isSafePhotoUrl(body.photoUrl) ? body.photoUrl : null;
+  // L'URL doit être une URL que notre propre route d'upload aurait pu
+  // produire ; sans `NEXT_PUBLIC_SUPABASE_URL`, aucune URL n'est acceptée.
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const photoAllowedPrefix = supabaseUrl
+    ? `${supabaseUrl}/storage/v1/object/public/pet-photos/public/`
+    : null;
+  const photoUrl =
+    photoAllowedPrefix && isSafePhotoUrl(body.photoUrl, photoAllowedPrefix) ? body.photoUrl : null;
 
   // Ce plafond protège la facture Anthropic, donc il ne doit consommer une
   // unité que pour une requête sur le point d'appeler Claude pour de vrai :
   // vérifié seulement après le honeypot et la validation, juste avant l'appel.
   const global = await checkRateLimitDb("public-page:global", GLOBAL_PER_DAY, DAY_MS);
-  if (!global.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  if (!global.allowed) return NextResponse.json({ error: "rate_limited_global" }, { status: 429 });
 
   let title: string;
   let content: string;
   try {
     const text = await callClaude({ prompt: buildPublicPagePrompt(input), maxTokens: 800 });
     const story = parseStoryResponse(text);
-    title = stripEmDash(story.title).slice(0, 120);
+    const generatedTitle = stripEmDash(story.title).slice(0, 120);
+    // `story_title` est `not null`, mais un titre vide (ou blanc) rendrait un
+    // <h2> vide sur la page publique : on retombe sur le nom de l'animal.
+    title = generatedTitle.trim() ? generatedTitle : input.petName;
     content = stripEmDash(story.story);
   } catch (err) {
     log.error("[public-pages] generation failed:", err instanceof AnthropicError ? err.message : err);
