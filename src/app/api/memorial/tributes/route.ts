@@ -139,11 +139,15 @@ export async function POST(req: Request) {
     // Un troisième ordre n'existe pas (l'insert ci-dessus a déjà eu lieu), d'où
     // l'absence de verrou : au pire l'un des deux chemins fait le travail.
     try {
-      const { data: pageAfter } = await supabase
+      const { data: pageAfter, error: recheckError } = await supabase
         .from("public_pages")
         .select("status, claimed_pet_id")
         .eq("id", pageId)
         .single();
+
+      if (recheckError) {
+        log.error("[memorial/tributes] claim-race recheck error:", recheckError.message);
+      }
 
       if (pageAfter?.status === "claimed" && pageAfter.claimed_pet_id) {
         const { error: attachError } = await supabase
