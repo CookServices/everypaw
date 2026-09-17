@@ -449,6 +449,8 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/api/preview-pdf` | Preview PDF HTML — `POST` pour l'aperçu in-app (session utilisateur requise, vérifie ownership du pet). `GET` (anciennement pour Gelato) remplacé par `book-pdf` |
 | `/api/events/book-preview` | Marque `book_preview_opened` dans `events_log` (unique par utilisateur et animal, un rejeu n'est pas une erreur) — session requise, propriétaire de l'animal uniquement |
 | `/api/export-data` | Export RGPD — `GET` (session requise) retourne JSON avec toutes les données utilisateur : profil, pets, entrées, histoires, milestones, book_configs |
+| `/api/public-pages` | Création d'une page sans compte (PP-1), 3/jour/IP puis 200/jour global juste avant l'appel Claude, honeypot, renvoie `{ slug, claimToken }` |
+| `/api/public-pages/photo` | Upload photo d'une page sans compte, service role, 5 Mo, jpeg/png/webp vérifiés aux octets magiques, 10/jour/IP et 400/jour global |
 
 ---
 
@@ -469,6 +471,8 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/fr/memorial` | Landing mémorial FR, réutilise `getTranslations("fr").memorial_landing`, hreflang réciproque avec `/memorial` |
 | `/gift` | Page cadeau |
 | `/unsubscribe` | Désinscription emails (token) |
+| `/p/[slug]` | Page publique créée sans compte, `noindex`, OG, compteur de vues, partage, encart de réclamation |
+| `/memorial/new`, `/fr/memorial/new` | Formulaire de création sans compte, langue figée par URL |
 
 ---
 
@@ -728,14 +732,6 @@ des selects dont toutes les colonnes servent. Le seul candidat cassait le type `
 
 Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dernières sessions restent ici, à chaque nouvelle session déplacer la plus ancienne vers l'archive.
 
-### ✅ Session 71 — Blog : 3 nouveaux articles EN+FR + maillage retour (2026-09-10)
-
-3 articles EN (`pet-sympathy-card`, `gotcha-day-ideas`, `senior-dog-memory-book`) + pendants FR
-(`carte-condoleances-animal`, `idees-anniversaire-adoption-animal`, `livre-souvenir-chien-senior`),
-hreflang réciproque auto (`getFrSlugForEn`). Maillage retour dans les deux langues (4 fichiers EN +
-4 FR, 1 lien chacun). Vérifié en local : `/blog` et `/fr/blog` à 15 articles chacun,
-canonical/hreflang/JSON-LD/sitemap OK, 8 backlinks présents, zéro tiret cadratin.
-
 ### ✅ Session 72 — Lecture GA4, chantier « page avant compte », PP-0 (2026-09-16)
 
 **Le constat qui manquait.** GA4 et Search Console lus pour la première fois : aucun canal ne
@@ -747,3 +743,7 @@ fonctionne (12 vrais inscrits en cinq mois, engagés = le cercle du fondateur), 
 table `public_pages` posée (`add_public_pages_2026_09_16.sql`), `funnel.sql` rend `pages_created`
 et `pages_claimed`, fixture Docker vérifiée. **Manuel** : marquer `sign_up` événement clé dans
 GA4, appliquer la migration en prod avant le merge de PP-1.
+
+### ✅ Session 73 : PP-1, page publique sans compte livrée (2026-09-17)
+
+PP-1 est implémenté : un visiteur sans compte crée une page publique pour son animal, trois souvenirs deviennent un chapitre écrit par Claude, la page (`/p/[slug]`) est partageable et porte un encart de réclamation qui s'arrête à l'inscription ; la réclamation elle-même, les hommages tenus en attente et la redirection après réclamation restent PP-2, pas ce chantier. Deux vérifications restent ouvertes, car aucune page n'a jamais été créée de bout en bout ici : la migration `add_public_pages_2026_09_16.sql` n'est pas appliquée en production et `ANTHROPIC_API_KEY` était vide dans `.env.local` pendant l'implémentation ; il reste à un humain d'appliquer la migration et de renseigner une vraie clé pour vérifier réellement, et la purge à 30 jours (PP-5) laissera toute page de test créée ici en base jusque là.

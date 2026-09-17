@@ -41,10 +41,10 @@ const errorStyle: React.CSSProperties = {
   margin: ".3rem 0 0 .25rem",
 };
 
-export default function ContactForm() {
-  const [subject, setSubject] = useState("");
+export default function ContactForm({ initialNote }: { initialNote?: string }) {
+  const [subject, setSubject] = useState(initialNote ? "Autre" : "");
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialNote ? `${initialNote}\n\n` : "");
   const [errors, setErrors] = useState<{ subject?: string; email?: string; message?: string }>({});
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 

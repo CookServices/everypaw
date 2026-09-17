@@ -5,6 +5,16 @@
 
 ---
 
+### ✅ Session 71 — Blog : 3 nouveaux articles EN+FR + maillage retour (2026-09-10)
+
+3 articles EN (`pet-sympathy-card`, `gotcha-day-ideas`, `senior-dog-memory-book`) + pendants FR
+(`carte-condoleances-animal`, `idees-anniversaire-adoption-animal`, `livre-souvenir-chien-senior`),
+hreflang réciproque auto (`getFrSlugForEn`). Maillage retour dans les deux langues (4 fichiers EN +
+4 FR, 1 lien chacun). Vérifié en local : `/blog` et `/fr/blog` à 15 articles chacun,
+canonical/hreflang/JSON-LD/sitemap OK, 8 backlinks présents, zéro tiret cadratin.
+
+---
+
 ### ✅ Session 70 — Passe visuelle, pagination des chapitres, pile mergée (2026-09-04)
 
 **Un bug critique que seul un rendu réel pouvait montrer.** Le PDF sortait à **55 pages pour 31

@@ -44,3 +44,6 @@ ds-bundle/
 .design-sync/.cache/
 .design-sync/learnings/
 .design-sync/node_modules
+
+# Espace de travail des plans superpowers (scratch, jamais commité)
+.superpowers/
