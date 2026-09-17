@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { getServiceSupabase } from "@/lib/supabase/service";
 import { getTranslations, type Locale } from "@/lib/i18n";
 import PublicFooter from "@/components/PublicFooter";
@@ -9,6 +10,14 @@ import PublicPageActions from "@/components/public-page/PublicPageActions";
 export const dynamic = "force-dynamic";
 
 const SLUG_REGEX = /^[0-9A-Za-z]{10}$/;
+
+// Ces pages sont faites pour être collées sur Facebook, iMessage, WhatsApp,
+// Slack, Discord : chacun de ces services charge la page une fois pour son
+// aperçu (OpenGraph). Sans ce filtre, chaque partage gonflerait `view_count`
+// d'une visite qui n'est jamais un visiteur, faussant la métrique que
+// `funnel.sql` (PP-0) lit pour mesurer l'acquisition.
+const BOT_UA =
+  /bot|crawler|spider|facebookexternalhit|slackbot|discordbot|whatsapp|twitterbot|bingpreview|embedly|preview/i;
 
 interface PublicPageRow {
   slug: string;
@@ -121,12 +130,16 @@ export default async function PublicPage({ params }: { params: { slug: string } 
   }
 
   // Compteur de vues. Un échec ne doit jamais empêcher la page de s'afficher.
-  await getServiceSupabase()
-    .rpc("increment_public_page_view", { p_slug: page.slug })
-    .then(
-      () => undefined,
-      () => undefined,
-    );
+  // Les crawlers de prévisualisation ne comptent pas comme des vues.
+  const userAgent = headers().get("user-agent") ?? "";
+  if (!BOT_UA.test(userAgent)) {
+    await getServiceSupabase()
+      .rpc("increment_public_page_view", { p_slug: page.slug })
+      .then(
+        () => undefined,
+        () => undefined,
+      );
+  }
 
   const isFr = page.locale === "fr";
   const dateLocale = isFr ? "fr-FR" : "en-US";
@@ -241,7 +254,7 @@ export default async function PublicPage({ params }: { params: { slug: string } 
           <h2 style={{ fontSize: "1.3rem", fontWeight: 600, textAlign: "center", margin: "0 0 2rem" }}>
             {page.story_title}
           </h2>
-          {page.story_content.split(/\n\n+/).map((para, i) => (
+          {page.story_content.split(/\n+/).map((para, i) => (
             <p
               key={i}
               style={{
