@@ -128,11 +128,19 @@ export function validatePublicPageInput(raw: unknown, today: string): Validation
 
 const PHOTO_URL_MAX = 500;
 
-/** URL de photo optionnelle : https uniquement, longueur bornee pour ne pas
- *  laisser un attaquant pousser une chaine arbitraire jusqu'en base puis
- *  jusqu'au rendu de la page publique. */
-export function isSafePhotoUrl(v: unknown): v is string {
-  return typeof v === "string" && v.startsWith("https://") && v.length <= PHOTO_URL_MAX;
+/** URL de photo optionnelle : doit être une URL que notre propre route
+ *  d'upload aurait pu produire (bucket `pet-photos`), sinon un POST direct
+ *  sur cette route pourrait planter une URL arbitraire, ensuite rendue sur
+ *  la page publique et dans les balises OpenGraph/Twitter. Longueur bornée
+ *  pour ne pas laisser un attaquant pousser une chaîne arbitraire jusqu'en
+ *  base. Le check `https://` reste utile si `allowedPrefix` est vide. */
+export function isSafePhotoUrl(v: unknown, allowedPrefix: string): v is string {
+  return (
+    typeof v === "string" &&
+    v.startsWith("https://") &&
+    v.length <= PHOTO_URL_MAX &&
+    v.startsWith(allowedPrefix)
+  );
 }
 
 const ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -182,7 +190,7 @@ ${memories}
 
   const brief =
     input.kind === "memorial"
-      ? `This is a farewell letter. ${name} has passed away, and writes one last time to the human who loved them.
+      ? `This is a farewell letter. The pet named in <pet_details> has passed away, and writes one last time to the human who loved them.
 
 Write 250-350 words, in three short paragraphs.
 - Open on a sensory image of an ordinary shared moment, not on the death itself.
@@ -193,10 +201,10 @@ Tone rules:
 - Tender, calm, grateful. Never morbid, never dramatic.
 - Never mention how they died, a cause, an illness, or a veterinarian.
 - Never use the words "rainbow bridge".`
-      : `This is the first chapter of ${name}'s journal, written by ${name}.
+      : `This is the first chapter of the journal of the pet named in <pet_details>, written by that pet.
 
 Write 250-350 words, in three short paragraphs.
-- Open on who ${name} is: their habits, their character, the texture of their days.
+- Open on who they are: their habits, their character, the texture of their days.
 - Weave in the memories above, transformed into narrative. Never list them.
 - Close on a tender, forward-looking note about the life still ahead.
 
@@ -212,8 +220,8 @@ ${shared}
 ${brief}
 
 Style rules (follow strictly):
-- First-person voice: ${name} is the narrator throughout (I, me, my).
-- Use the name ${name} at least twice, naturally.
+- First-person voice: the pet named in <pet_details> is the narrator throughout (I, me, my).
+- Use the pet's name, exactly as given in <pet_details>, at least twice, naturally.
 - Reference the species at least once.
 - NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
 
