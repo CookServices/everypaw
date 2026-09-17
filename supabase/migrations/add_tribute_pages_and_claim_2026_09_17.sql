@@ -35,7 +35,7 @@ create or replace function public.enforce_free_entry_limit()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 DECLARE
   v_plan      text;
@@ -79,10 +79,10 @@ create or replace function public.claim_public_page(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
-  v_page      public_pages%rowtype;
+  v_page      public.public_pages%rowtype;
   v_pet_id    uuid;
   v_entry     date;
   v_memory    text;
@@ -142,14 +142,20 @@ begin
   v_type := case when v_page.kind = 'memorial' then 'memorial' else 'origins' end;
 
   insert into public.stories (pet_id, user_id, title, content, status,
-                              story_type, period_start, period_end)
+                              story_type, period_start, period_end, style)
   values (v_pet_id, p_user, v_page.story_title, v_page.story_content,
-          'published', v_type, v_entry, v_entry);
+          'published', v_type, v_entry, v_entry,
+          case when v_page.kind = 'memorial' then 'tender' else 'classic' end);
 
-  -- Les hommages déposés pendant que la page était anonyme rejoignent l'animal,
-  -- en attente : le nouveau propriétaire les modère dans l'onglet existant.
+  -- Les hommages déposés pendant que la page était anonyme rejoignent l'animal.
+  -- Le statut est forcé à 'pending' ici, pas seulement supposé par l'appelant :
+  -- un hommage 'approved' resterait invisible tant que pet_id est nul (les deux
+  -- policies RLS filtrent sur pets via pet_id), mais deviendrait lisible par
+  -- tous dès que la ligne ci-dessous lui donne un pet_id, sans jamais être passé
+  -- devant le nouveau propriétaire.
   update public.memorial_tributes
-  set pet_id = v_pet_id
+  set pet_id = v_pet_id,
+      status = 'pending'
   where page_id = v_page.id;
 
   update public.public_pages
@@ -164,6 +170,10 @@ begin
   set onboarding_completed = true,
       onboarding_dismissed = true
   where id = p_user;
+
+  -- L'exemption ne doit pas survivre à la réclamation si cette fonction est
+  -- un jour appelée depuis une transaction plus large que la sienne.
+  perform set_config('everypaw.claiming', '', true);
 
   return jsonb_build_object('ok', true, 'pet_id', v_pet_id);
 end;
