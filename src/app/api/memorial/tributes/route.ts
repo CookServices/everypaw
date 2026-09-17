@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
 
-  let body: { petId?: string; authorName?: string; message?: string; website?: string };
+  let body: { petId?: string; pageId?: string; authorName?: string; message?: string; website?: string };
   try {
     body = await req.json();
   } catch {
@@ -78,10 +78,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const { petId, authorName, message } = body;
+  const { petId, pageId, authorName, message } = body;
 
-  if (!petId || !UUID_REGEX.test(petId)) {
+  if (!petId === !pageId) {
+    return NextResponse.json({ error: "invalid_target" }, { status: 400 });
+  }
+  if (petId && !UUID_REGEX.test(petId)) {
     return NextResponse.json({ error: "invalid_pet_id" }, { status: 400 });
+  }
+  if (pageId && !UUID_REGEX.test(pageId)) {
+    return NextResponse.json({ error: "invalid_page_id" }, { status: 400 });
   }
   if (!authorName || typeof authorName !== "string" || authorName.trim().length < 1 || authorName.trim().length > 100) {
     return NextResponse.json({ error: "invalid_author_name" }, { status: 400 });
@@ -91,6 +97,38 @@ export async function POST(req: Request) {
   }
 
   const supabase = getServiceSupabase();
+  const sanitizedName = escapeHtml(authorName.trim());
+  const sanitizedMessage = escapeHtml(message.trim());
+
+  if (pageId) {
+    // Un hommage sur une page sans compte : pas de propriétaire, donc pas d'email.
+    const { data: page } = await supabase
+      .from("public_pages")
+      .select("id, status, kind")
+      .eq("id", pageId)
+      .single();
+
+    if (!page || page.status !== "active" || page.kind !== "memorial") {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+
+    const { error: insertError } = await supabase
+      .from("memorial_tributes")
+      .insert({
+        page_id: pageId,
+        pet_id: null,
+        author_name: sanitizedName,
+        message: sanitizedMessage,
+        status: "pending",
+      });
+
+    if (insertError) {
+      log.error("[memorial/tributes] insert error:", insertError.message);
+      return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
+  }
 
   // Verify pet is deceased and exists
   const { data: pet } = await supabase
@@ -102,9 +140,6 @@ export async function POST(req: Request) {
   if (!pet || !pet.deceased_at) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
-
-  const sanitizedName = escapeHtml(authorName.trim());
-  const sanitizedMessage = escapeHtml(message.trim());
 
   const { error: insertError } = await supabase
     .from("memorial_tributes")
