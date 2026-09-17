@@ -520,6 +520,7 @@
     "error_memories": "Each memory needs between 20 and 400 characters, and we need at least two.",
     "error_photo": "This photo could not be uploaded. Try another one, or continue without.",
     "error_rate_limited": "A lot of pages were created today. Please come back tomorrow.",
+    "error_rate_limited_ip": "You have already created several pages today. Please come back tomorrow.",
     "error_generation": "We could not write this chapter. Your words are still here, please try again.",
     "creator_banner": "Keep this link. It is how you come back to this page.",
     "copied": "Link copied",

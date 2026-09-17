@@ -520,6 +520,7 @@
     "error_memories": "Chaque souvenir doit faire entre 20 et 400 caractères, et il en faut au moins deux.",
     "error_photo": "Cette photo n'a pas pu être envoyée. Essayez-en une autre, ou continuez sans.",
     "error_rate_limited": "Beaucoup de pages ont été créées aujourd'hui. Revenez demain.",
+    "error_rate_limited_ip": "Vous avez déjà créé plusieurs pages aujourd'hui. Revenez demain.",
     "error_generation": "Nous n'avons pas réussi à écrire ce chapitre. Vos mots sont toujours là, réessayez.",
     "creator_banner": "Conservez ce lien. C'est par lui que vous revenez sur cette page.",
     "copied": "Lien copié",

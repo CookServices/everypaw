@@ -36,9 +36,13 @@ export async function POST(req: Request) {
   const { allowed } = await checkRateLimitDb(`public-page-photo:${ip}`, 10, DAY_MS);
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
-  // Plafond global : 2 photos par page au plafond de 200 pages/jour de la
-  // route de création, pour borner l'abus de stockage agrégé sur toutes les IP.
-  const global = await checkRateLimitDb("public-page-photo:global", 400, DAY_MS);
+  // Plafond global : 60/jour, pas 2 photos x 200 pages/jour (le plafond de la
+  // route de création). À 4,5 Mo par photo, 400 uploads dépasseraient le
+  // quota gratuit de 1 Go Supabase en une après-midi, sans job de purge. 60
+  // correspond à environ deux photos par page sur un volume réaliste de
+  // créations quotidiennes ; ici, c'est le quota de stockage qui borne, pas
+  // le plafond de la route de création.
+  const global = await checkRateLimitDb("public-page-photo:global", 60, DAY_MS);
   if (!global.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   let file: File | null = null;

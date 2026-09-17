@@ -95,7 +95,11 @@ export default function PublicPageForm({ kind, locale }: { kind: PageKind; local
         const form = new FormData();
         form.append("file", new File([compressed], "photo.jpg", { type: "image/jpeg" }));
         const res = await fetch("/api/public-pages/photo", { method: "POST", body: form });
-        if (!res.ok) throw new Error("upload");
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setStatus("idle");
+          return setError(data.error === "rate_limited" ? t.error_rate_limited : t.error_photo);
+        }
         photoUrl = (await res.json()).url;
       } catch {
         setStatus("idle");
@@ -132,9 +136,23 @@ export default function PublicPageForm({ kind, locale }: { kind: PageKind; local
           invalid_memories: t.error_memories,
           invalid_birthdate: t.error_birthdate,
           invalid_deceased_at: t.error_deceased,
+          // `rate_limited` reste mappé pour qu'un déploiement resté en
+          // retard (ancien code générique) ne produise jamais un message
+          // introuvable dans cette table.
           rate_limited: t.error_rate_limited,
+          rate_limited_ip: t.error_rate_limited_ip,
+          rate_limited_global: t.error_rate_limited,
         };
         return setError(messages[data.error] ?? t.error_generation);
+      }
+
+      // Un hit de honeypot renvoie un 201 avec un slug vide : ce n'est pas un
+      // visiteur réel (il ne remplit jamais ce champ cache), mais si jamais ce
+      // chemin était atteint autrement, naviguer vers `/p/` serait un 404 qui
+      // perdrait les mots du visiteur pour rien.
+      if (!data.slug) {
+        setStatus("idle");
+        return setError(t.error_generation);
       }
 
       // Le jeton ne voyage jamais dans l'URL : il reste dans ce navigateur, et
