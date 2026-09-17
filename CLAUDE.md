@@ -19,7 +19,7 @@ plafond du prix en trois morceaux, définitions du tunnel, caches qui mentent) e
 revenait à rogner des phrases utiles. Ce qui doit partir en premier reste l'historique, jamais les
 conventions : ce sont elles qui sont lues à chaque session.
 
-**Chantier en cours : page avant compte (acquisition).** Constat, décisions et les six specs PP-0 à PP-5 dans `docs/acquisition/specs.md`. Une spec = une PR. PP-0 livré le 2026-09-16 ; PP-1 (le tronc) est la suite. Le chantier Print (`docs/print/roadmap.md`, `docs/print/specs.md`) est livré jusqu'à la phase 2 ; reste la phase 3, datée janvier 2027, et les points de la « Checklist avant mise en production », dont la commande Gelato réelle avant le 7 novembre.
+**Chantier en cours : page avant compte (acquisition).** Constat, décisions et les six specs PP-0 à PP-5 dans `docs/acquisition/specs.md`. Une spec = une PR. PP-0, PP-1 et PP-3 livrés ; restent PP-2 (la réclamation), PP-5 (la purge à trente jours, à livrer avant toute publication en communauté) et PP-4 (conditionné à une mesure). Le chantier Print (`docs/print/roadmap.md`, `docs/print/specs.md`) est livré jusqu'à la phase 2 ; reste la phase 3, datée janvier 2027, et les points de la « Checklist avant mise en production », dont la commande Gelato réelle avant le 7 novembre.
 
 Toujours auditer les fichiers existants avant de modifier quoi que ce soit. Suivre l'ordre d'implémentation recommandé pour toute nouvelle feature (voir section dédiée).
 
@@ -732,18 +732,12 @@ des selects dont toutes les colonnes servent. Le seul candidat cassait le type `
 
 Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dernières sessions restent ici, à chaque nouvelle session déplacer la plus ancienne vers l'archive.
 
-### ✅ Session 72 — Lecture GA4, chantier « page avant compte », PP-0 (2026-09-16)
-
-**Le constat qui manquait.** GA4 et Search Console lus pour la première fois : aucun canal ne
-fonctionne (12 vrais inscrits en cinq mois, engagés = le cercle du fondateur), la campagne Meta
-« Trafic » d'août = 700 clics d'une seconde, seul organique non-brand = le deuil, **GA4 sans
-événement clé**. Décisions dans `docs/acquisition/specs.md` (PR #160).
-
-**PP-0 livré** : `sign_up` envoyé à GA4 au signup email (`src/lib/ga.ts`, derrière le consentement),
-table `public_pages` posée (`add_public_pages_2026_09_16.sql`), `funnel.sql` rend `pages_created`
-et `pages_claimed`, fixture Docker vérifiée. **Manuel** : marquer `sign_up` événement clé dans
-GA4, appliquer la migration en prod avant le merge de PP-1.
-
 ### ✅ Session 73 : PP-1, page publique sans compte livrée (2026-09-17)
 
 PP-1 est implémenté : un visiteur sans compte crée une page publique pour son animal, trois souvenirs deviennent un chapitre écrit par Claude, la page (`/p/[slug]`) est partageable et porte un encart de réclamation qui s'arrête à l'inscription ; la réclamation elle-même, les hommages tenus en attente et la redirection après réclamation restent PP-2, pas ce chantier. Deux vérifications restent ouvertes, car aucune page n'a jamais été créée de bout en bout ici : la migration `add_public_pages_2026_09_16.sql` n'est pas appliquée en production et `ANTHROPIC_API_KEY` était vide dans `.env.local` pendant l'implémentation ; il reste à un humain d'appliquer la migration et de renseigner une vraie clé pour vérifier réellement, et la purge à 30 jours (PP-5) laissera toute page de test créée ici en base jusque là.
+
+### ✅ Session 74 — PP-1 vérifié en réel, PP-3 livré (2026-09-17)
+
+**Les deux blocages de PP-1 sont levés et le parcours complet a tourné.** Migration appliquée, clé Anthropic scopée workspace fournie : `POST /api/public-pages` rend 201, le chapitre fait 261 mots dans la fourchette voulue, sans tiret cadratin. Le correctif critique tient en réel, un `photoUrl` pointant un hôte étranger arrive à `null` en base. Le compteur de vues ignore Facebook, Slack et WhatsApp. Piège à retenir : une clé Anthropic d'organisation échoue avec « not scoped to a workspace », il faut une clé de workspace, et jamais contourner en touchant `src/lib/anthropic.ts` que partagent les cinq appels Claude de l'app.
+
+**PP-3 rebranche les deux landings mémorial** vers `/memorial/new` et `/fr/memorial/new` au lieu de `/auth/signup`, avec sous le bouton la promesse de ce qui va se passer. Chaque landing porte désormais un bloc sombre montrant un vrai souvenir brut et l'extrait du vrai chapitre qu'il a produit, cité mot pour mot. Deux écarts assumés par rapport à la spec : le lien vers le livre en pied de `/p/[slug]` n'a pas été ajouté, l'encart de réclamation nomme déjà le livre au même endroit et un second bloc commercial sur une page de deuil serait redondant ; et l'exemple est cité sur la landing au lieu de pointer une page vivante, parce qu'une page exemple jamais réclamée serait détruite par la purge de PP-5 et que le lien deviendrait un 404. `memorial_landing.example_output` est la première entrée de `ADDRESSED_TO_THE_PET` dans `copy-register.test.ts` : c'est l'animal qui tutoie son humain, et la règle de vouvoiement ne s'applique pas quand l'app n'est pas celle qui parle.

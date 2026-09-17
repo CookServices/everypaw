@@ -5,6 +5,20 @@
 
 ---
 
+### ✅ Session 72 — Lecture GA4, chantier « page avant compte », PP-0 (2026-09-16)
+
+**Le constat qui manquait.** GA4 et Search Console lus pour la première fois : aucun canal ne
+fonctionne (12 vrais inscrits en cinq mois, engagés = le cercle du fondateur), la campagne Meta
+« Trafic » d'août = 700 clics d'une seconde, seul organique non-brand = le deuil, **GA4 sans
+événement clé**. Décisions dans `docs/acquisition/specs.md` (PR #160).
+
+**PP-0 livré** : `sign_up` envoyé à GA4 au signup email (`src/lib/ga.ts`, derrière le consentement),
+table `public_pages` posée (`add_public_pages_2026_09_16.sql`), `funnel.sql` rend `pages_created`
+et `pages_claimed`, fixture Docker vérifiée. **Manuel** : marquer `sign_up` événement clé dans
+GA4, appliquer la migration en prod avant le merge de PP-1.
+
+---
+
 ### ✅ Session 71 — Blog : 3 nouveaux articles EN+FR + maillage retour (2026-09-10)
 
 3 articles EN (`pet-sympathy-card`, `gotcha-day-ideas`, `senior-dog-memory-book`) + pendants FR

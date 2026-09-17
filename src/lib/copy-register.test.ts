@@ -16,12 +16,17 @@ import fr from "../../messages/fr.json";
 const TUTOIEMENT = /(^|[^A-Za-zÀ-ÿ])(tu|ton|ta|tes|toi|t')($|[^A-Za-zÀ-ÿ])/i;
 
 /**
- * Keys where the reader is addressing their pet rather than the app addressing
- * the reader. Tutoiement is right there. Empty today: the one example, the
- * dedication placeholder "À toi, notre fidèle compagnon", lives in a component
- * rather than in the bundle.
+ * Keys where the app is not the one addressing the reader, so the vouvoiement
+ * rule does not apply. Two shapes qualify: the reader speaking to their pet,
+ * and the pet speaking to the reader.
+ *
+ * The dedication placeholder "À toi, notre fidèle compagnon" is the first
+ * shape; it lives in a component rather than in the bundle, so it is not
+ * listed here. The memorial landing's example excerpt is the second: it quotes
+ * a real generated chapter, written in the animal's voice, and an animal that
+ * vouvoie its human would ring false.
  */
-const ADDRESSED_TO_THE_PET: string[] = [];
+const ADDRESSED_TO_THE_PET: string[] = ["memorial_landing.example_output"];
 
 function leaves(value: unknown, path: string): [string, string][] {
   if (typeof value === "string") return [[path, value]];

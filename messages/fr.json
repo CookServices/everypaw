@@ -487,7 +487,14 @@
     "s2_body": "Une page paisible pour se souvenir de lui, à partager avec ceux qui l'aimaient aussi.",
     "s3_title": "Un livre commémoratif relié",
     "s3_body": "Rassemblez les histoires de toute sa vie dans un livre relié commémoratif, un objet précieux à conserver.",
-    "cta": "Créer un mémorial"
+    "example_label": "Ce que trois souvenirs deviennent",
+    "example_input_label": "Un souvenir que vous écrivez",
+    "example_input": "Elle posait sa tête sur mon genou pendant les longs appels de travail et ne bougeait plus jusqu'à la fin.",
+    "example_output_label": "Ce que nous écrivons en retour",
+    "example_output": "Je me souviens de la chaleur de ton genou sous ma tête. Tu parlais dans le téléphone depuis si longtemps, ta voix montait et descendait comme une marée, et moi je restais là, immobile, parce que c'était ma façon de te dire que je n'allais nulle part.",
+    "example_note": "Extrait réel d'une vraie page. Le chapitre est écrit à sa voix, pas à la vôtre.",
+    "cta": "Créer sa page, sans compte",
+    "cta_note": "Trois souvenirs suffisent. Vous repartez avec une page, son chapitre, et un lien à garder et à partager."
   },
   "public_page": {
     "form_title_empty": "Une page pour se souvenir",
