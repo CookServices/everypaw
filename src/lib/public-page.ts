@@ -126,6 +126,15 @@ export function validatePublicPageInput(raw: unknown, today: string): Validation
   return { ok: true, value: { kind, locale, petName, species, birthdate, deceasedAt, memories } };
 }
 
+const PHOTO_URL_MAX = 500;
+
+/** URL de photo optionnelle : https uniquement, longueur bornee pour ne pas
+ *  laisser un attaquant pousser une chaine arbitraire jusqu'en base puis
+ *  jusqu'au rendu de la page publique. */
+export function isSafePhotoUrl(v: unknown): v is string {
+  return typeof v === "string" && v.startsWith("https://") && v.length <= PHOTO_URL_MAX;
+}
+
 const ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 /**

@@ -3,6 +3,7 @@ import {
   validatePublicPageInput,
   generateSlug,
   buildPublicPagePrompt,
+  isSafePhotoUrl,
   type PublicPageInput,
 } from "./public-page";
 
@@ -166,6 +167,22 @@ describe("generateSlug", () => {
     const bytes = new Uint8Array(10);
     for (let i = 0; i < 10; i++) bytes[i] = i * 25;
     expect(generateSlug(bytes)).toMatch(/^[0-9A-Za-z]{10}$/);
+  });
+});
+
+describe("isSafePhotoUrl", () => {
+  it("accepte une URL https de longueur normale", () => {
+    expect(isSafePhotoUrl("https://example.com/photo.jpg")).toBe(true);
+  });
+
+  it("refuse une URL http", () => {
+    expect(isSafePhotoUrl("http://example.com/photo.jpg")).toBe(false);
+  });
+
+  it("refuse une URL de plus de 500 caracteres", () => {
+    const url = "https://example.com/" + "a".repeat(481);
+    expect(url.length).toBe(501);
+    expect(isSafePhotoUrl(url)).toBe(false);
   });
 });
 

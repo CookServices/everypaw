@@ -4,7 +4,12 @@ import { getServiceSupabase } from "@/lib/supabase/service";
 import { callClaude, parseStoryResponse, AnthropicError } from "@/lib/anthropic";
 import { stripEmDash } from "@/lib/story";
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
-import { validatePublicPageInput, generateSlug, buildPublicPagePrompt } from "@/lib/public-page";
+import {
+  validatePublicPageInput,
+  generateSlug,
+  buildPublicPagePrompt,
+  isSafePhotoUrl,
+} from "@/lib/public-page";
 import { log } from "@/lib/log";
 
 /** Une génération dure ~15 s, au-delà du défaut de 10 s du plan Hobby. */
@@ -21,15 +26,6 @@ function sha256(value: string): string {
 export async function POST(req: Request) {
   const ip = getClientIp(req);
 
-  // Deux plafonds, dans cet ordre. Le premier protège contre un visiteur qui
-  // s'acharne, le second protège la facture Anthropic contre plusieurs
-  // visiteurs à la fois. `checkRateLimitDb` échoue ouvert, d'où le second.
-  const perIp = await checkRateLimitDb(`public-page:${ip}`, PER_IP_PER_DAY, DAY_MS);
-  if (!perIp.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
-
-  const global = await checkRateLimitDb("public-page:global", GLOBAL_PER_DAY, DAY_MS);
-  if (!global.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
-
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -38,20 +34,30 @@ export async function POST(req: Request) {
   }
 
   // Honeypot : un vrai visiteur ne remplit jamais ce champ, il est masqué.
-  // Réponse volontairement indiscernable d'un succès, sans rien écrire.
+  // Réponse volontairement indiscernable d'un succès, sans rien écrire, et
+  // avant tout aller-retour base (y compris les plafonds ci-dessous) : un
+  // hit de honeypot ne doit rien coûter, ni en écriture ni en quota partagé.
   if (body.website) {
     return NextResponse.json({ slug: "", claimToken: "" }, { status: 201 });
   }
+
+  // Ce plafond reste tôt : il borne un visiteur unique qui s'acharne, quel
+  // que soit le contenu qu'il envoie.
+  const perIp = await checkRateLimitDb(`public-page:${ip}`, PER_IP_PER_DAY, DAY_MS);
+  if (!perIp.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const today = new Date().toISOString().slice(0, 10);
   const parsed = validatePublicPageInput(body, today);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
   const input = parsed.value;
 
-  const photoUrl =
-    typeof body.photoUrl === "string" && body.photoUrl.startsWith("https://")
-      ? body.photoUrl
-      : null;
+  const photoUrl = isSafePhotoUrl(body.photoUrl) ? body.photoUrl : null;
+
+  // Ce plafond protège la facture Anthropic, donc il ne doit consommer une
+  // unité que pour une requête sur le point d'appeler Claude pour de vrai :
+  // vérifié seulement après le honeypot et la validation, juste avant l'appel.
+  const global = await checkRateLimitDb("public-page:global", GLOBAL_PER_DAY, DAY_MS);
+  if (!global.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   let title: string;
   let content: string;
