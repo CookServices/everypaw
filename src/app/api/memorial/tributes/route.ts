@@ -106,8 +106,15 @@ export async function POST(req: Request) {
   }
 
   const supabase = getServiceSupabase();
-  const sanitizedName = escapeHtml(authorName.trim());
-  const sanitizedMessage = escapeHtml(message.trim());
+  // Stocké tel quel, jamais échappé. Les quatre endroits qui relisent ces deux
+  // champs échappent au rendu : trois passent par JSX (page mémorial, page
+  // publique, onglet de modération), `preview-pdf` applique `escapeHtml` sur
+  // son gabarit HTML et `book-pdf` rend du `<Text>` react-pdf. Échapper ici en
+  // plus faisait arriver au lecteur l'apostrophe de son propre message sous la
+  // forme `&#x27;`. Avant d'insérer ces valeurs ailleurs, vérifier que la
+  // destination échappe, et l'échapper là-bas, pas ici.
+  const trimmedName = authorName.trim();
+  const trimmedMessage = message.trim();
 
   if (pageId) {
     // Un hommage sur une page sans compte : pas de propriétaire, donc pas d'email.
@@ -137,8 +144,8 @@ export async function POST(req: Request) {
       .insert({
         page_id: pageId,
         pet_id: null,
-        author_name: sanitizedName,
-        message: sanitizedMessage,
+        author_name: trimmedName,
+        message: trimmedMessage,
         status: "pending",
       })
       .select("id")
@@ -203,8 +210,8 @@ export async function POST(req: Request) {
     .from("memorial_tributes")
     .insert({
       pet_id: petId,
-      author_name: sanitizedName,
-      message: sanitizedMessage,
+      author_name: trimmedName,
+      message: trimmedMessage,
       status: "pending",
     });
 
