@@ -723,6 +723,12 @@ fix et vérification de chacun dans `docs/SESSIONS.md` → « Backlog dette tech
   dynamique. Fix = restructuration en `/[locale]/`, avec un risque SEO réel sur le hreflang.
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` dans un
   `useEffect` (waterfall, requêtes exposées côté client). Gros blast-radius, gain utilisateur faible.
+- **#21 Hommages stockés échappés en HTML** : `memorial_tributes.message`/`author_name` sont échappés
+  côté écriture (`escapeHtml`) puis rééchappés par React au rendu, donc une apostrophe ou un guillemet
+  arrive au lecteur sous forme de code d'entité (`&#x27;`). Antérieur à ce chantier (juin), mais PP-2 le
+  met sur le chemin critique : lire les hommages est la récompense que le créateur récupère à la fin du
+  tunnel de réclamation. Fix = arrêter l'échappement à l'écriture et réécrire (backfill) les lignes
+  existantes.
 **Ne pas re-tenter — #2 `select("*")` → colonnes explicites** : analysé, aucun gain réel. Les
 occurrences restantes sont soit `select("*", { count, head: true })` (zéro ligne transférée), soit
 des selects dont toutes les colonnes servent. Le seul candidat cassait le type `Entry`.
@@ -735,14 +741,6 @@ des selects dont toutes les colonnes servent. Le seul candidat cassait le type `
 
 Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dernières sessions restent ici, à chaque nouvelle session déplacer la plus ancienne vers l'archive.
 
-
-### ✅ Session 75 — PP-5, la purge des pages sans compte (2026-09-17)
-
-**Une page créée sans compte et jamais réclamée est un passif.** Elle porte un nom d'animal, trois souvenirs, une photo et une empreinte d'IP, sans personne pour en demander la suppression. Le cron `public-pages-purge` tourne chaque nuit à 4 h et la supprime trente jours après sa création, photo comprise. Une page réclamée n'expire jamais, parce que la réclamation change son statut et que le cron ne touche que les lignes `active`.
-
-**Le second balayage vient d'une trouvaille de PP-1, pas de la spec** : une photo envoyée puis abandonnée avant que la page ne soit soumise n'est référencée par rien, donc le premier balayage ne peut pas l'atteindre. La spec PP-5 a été amendée en conséquence. Vérifié en réel contre la base de production : sans jeton 401, avec jeton une page expirée et sa photo disparaissent, une page réclamée à la date d'expiration dépassée survit, et les photos de moins de vingt-quatre heures sont épargnées.
-
-**À savoir pour PP-2** : quand `memorial_tributes.page_id` sera ajouté, sa clé étrangère doit être `ON DELETE CASCADE`, sinon la purge échouera sur toute page portant un hommage.
 
 ### ✅ Session 76 — PP-2 livré, réclamation et rattrapage au tableau de bord (2026-09-17)
 

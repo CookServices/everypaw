@@ -2282,3 +2282,13 @@ Session en 3 lots indépendants, chacun validé sur preview Vercel avant merge (
 - Vérifier `exchange_failed` en anglais (navigateur perso en EN) — non testable depuis cette session.
 - **Backlog #13/#14** (voir section Optimisation & dette technique) : `OnboardingModal` ignore `hasPets`/`hasEntries`/`hasStories` (2ᵉ invocation du modal montre la mauvaise étape), clés i18n `step2_cta`/`step3_cta` mortes — trouvés pendant le Lot 1, pas corrigés, hors périmètre.
 
+---
+
+### ✅ Session 75 — PP-5, la purge des pages sans compte (2026-09-17)
+
+**Une page créée sans compte et jamais réclamée est un passif.** Elle porte un nom d'animal, trois souvenirs, une photo et une empreinte d'IP, sans personne pour en demander la suppression. Le cron `public-pages-purge` tourne chaque nuit à 4 h et la supprime trente jours après sa création, photo comprise. Une page réclamée n'expire jamais, parce que la réclamation change son statut et que le cron ne touche que les lignes `active`.
+
+**Le second balayage vient d'une trouvaille de PP-1, pas de la spec** : une photo envoyée puis abandonnée avant que la page ne soit soumise n'est référencée par rien, donc le premier balayage ne peut pas l'atteindre. La spec PP-5 a été amendée en conséquence. Vérifié en réel contre la base de production : sans jeton 401, avec jeton une page expirée et sa photo disparaissent, une page réclamée à la date d'expiration dépassée survit, et les photos de moins de vingt-quatre heures sont épargnées.
+
+**À savoir pour PP-2** : quand `memorial_tributes.page_id` sera ajouté, sa clé étrangère doit être `ON DELETE CASCADE`, sinon la purge échouera sur toute page portant un hommage.
+
