@@ -5,6 +5,14 @@
 
 ---
 
+### ✅ Session 74 — PP-1 vérifié en réel, PP-3 livré (2026-09-17)
+
+**Les deux blocages de PP-1 sont levés et le parcours complet a tourné.** Migration appliquée, clé Anthropic scopée workspace fournie : `POST /api/public-pages` rend 201, le chapitre fait 261 mots dans la fourchette voulue, sans tiret cadratin. Le correctif critique tient en réel, un `photoUrl` pointant un hôte étranger arrive à `null` en base. Le compteur de vues ignore Facebook, Slack et WhatsApp. Piège à retenir : une clé Anthropic d'organisation échoue avec « not scoped to a workspace », il faut une clé de workspace, et jamais contourner en touchant `src/lib/anthropic.ts` que partagent les cinq appels Claude de l'app.
+
+**PP-3 rebranche les deux landings mémorial** vers `/memorial/new` et `/fr/memorial/new` au lieu de `/auth/signup`, avec sous le bouton la promesse de ce qui va se passer. Chaque landing porte désormais un bloc sombre montrant un vrai souvenir brut et l'extrait du vrai chapitre qu'il a produit, cité mot pour mot. Deux écarts assumés par rapport à la spec : le lien vers le livre en pied de `/p/[slug]` n'a pas été ajouté, l'encart de réclamation nomme déjà le livre au même endroit et un second bloc commercial sur une page de deuil serait redondant ; et l'exemple est cité sur la landing au lieu de pointer une page vivante, parce qu'une page exemple jamais réclamée serait détruite par la purge de PP-5 et que le lien deviendrait un 404. `memorial_landing.example_output` est la première entrée de `ADDRESSED_TO_THE_PET` dans `copy-register.test.ts` : c'est l'animal qui tutoie son humain, et la règle de vouvoiement ne s'applique pas quand l'app n'est pas celle qui parle.
+
+---
+
 ### ✅ Session 73 : PP-1, page publique sans compte livrée (2026-09-17)
 
 PP-1 est implémenté : un visiteur sans compte crée une page publique pour son animal, trois souvenirs deviennent un chapitre écrit par Claude, la page (`/p/[slug]`) est partageable et porte un encart de réclamation qui s'arrête à l'inscription ; la réclamation elle-même, les hommages tenus en attente et la redirection après réclamation restent PP-2, pas ce chantier. Deux vérifications restent ouvertes, car aucune page n'a jamais été créée de bout en bout ici : la migration `add_public_pages_2026_09_16.sql` n'est pas appliquée en production et `ANTHROPIC_API_KEY` était vide dans `.env.local` pendant l'implémentation ; il reste à un humain d'appliquer la migration et de renseigner une vraie clé pour vérifier réellement, et la purge à 30 jours (PP-5) laissera toute page de test créée ici en base jusque là.

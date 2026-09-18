@@ -324,7 +324,7 @@ export async function shouldShowFirstStoryNudge(
       supabase.from("profiles").select("plan").eq("id", userId).single(),
       supabase.from("entries").select("*", { count: "exact", head: true }).eq("pet_id", petId),
       supabase.from("stories").select("*", { count: "exact", head: true }).eq("pet_id", petId),
-      supabase.from("stories").select("*", { count: "exact", head: true }).eq("user_id", userId).not("story_type", "in", "(origins,birthday)"),
+      supabase.from("stories").select("*", { count: "exact", head: true }).eq("user_id", userId).not("story_type", "in", "(origins,birthday,memorial)"),
     ]);
 
   if (!pet || pet.user_id !== userId) return false;

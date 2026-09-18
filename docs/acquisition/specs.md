@@ -259,6 +259,33 @@ déposés avant réclamation sont le meilleur motif de réclamer : ils sont anno
 - Token faux : 403, rien n'est écrit.
 - `npm test` vert avec les exclusions de quota mises à jour.
 
+**Obstacles trouvés à l'audit (revues de code des tâches 1 et 2) et traitement**
+- **L'exemption du déclencheur d'entrées.** Le trigger `enforce_free_entry_limit` refuse toute
+  ligne `entries` au-delà de dix pour un compte gratuit. Sans exception, réclamer une page
+  pousserait un compte déjà proche du plafond à refuser l'insertion des souvenirs, au moment
+  précis où la personne vient de s'inscrire pour les garder : perdre le seul motif d'avoir
+  créé un compte. Traité par un drapeau local à la transaction
+  (`set_config('everypaw.claiming', '1', true)`), effacé avant que la fonction ne rende la
+  main, que seule `claim_public_page` peut poser : PostgREST n'expose pas `set_config` et la
+  fonction elle-même est révoquée pour `anon`/`authenticated`, donc aucun client ne peut
+  déclencher l'exemption pour un ajout normal.
+- **Le statut des hommages hérité au rattachement.** La revue de la tâche 1 a trouvé qu'un
+  hommage déjà `approved` sur une page non réclamée deviendrait lisible par tout le monde à
+  l'instant où `claim_public_page` lui donne un `pet_id`, sans jamais être passé devant le
+  nouveau propriétaire : les deux policies RLS filtrent sur `pets` via `pet_id`, donc un
+  hommage sans `pet_id` est invisible et le redevient dès qu'il en reçoit un. En pratique la
+  route de dépôt n'insère jamais que `pending`, mais la garantie ne peut pas reposer sur
+  l'appelant. Traité en forçant `status = 'pending'` sans condition dans l'`UPDATE` de la RPC.
+- **La course entre un dépôt d'hommage et une réclamation concurrente.** La revue de la
+  tâche 2 a trouvé qu'un hommage déposé pendant la fenêtre où la page passe de `active` à
+  `claimed` pouvait rester avec `page_id` renseigné et `pet_id` nul sur une page déjà
+  réclamée : invisible pour tout le monde, perdu en silence. Un verrou SQL aurait exigé une
+  seconde migration ; le correctif retenu est une compensation côté route, une relecture du
+  statut de la page après l'insertion qui rattache l'hommage si la réclamation a eu lieu
+  entre-temps. Les deux ordres d'exécution possibles sont couverts : si la réclamation commit
+  avant la relecture, la route rattache ; si elle commit après, c'est elle qui voit la ligne
+  et la rattache à son tour.
+
 ---
 
 ## PP-3 — Porte A : l'entrée depuis le deuil · S

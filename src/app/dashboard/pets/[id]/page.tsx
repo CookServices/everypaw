@@ -186,7 +186,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
           .from("stories")
           .select("*", { count: "exact", head: true })
           .eq("user_id", uid)
-          .not("story_type", "in", "(origins,birthday)");
+          .not("story_type", "in", "(origins,birthday,memorial)");
         setUserTotalStoryCount(totalStoryCount ?? 0);
       }
 
