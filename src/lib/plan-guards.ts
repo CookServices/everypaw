@@ -22,7 +22,7 @@ export function canAddEntry(plan: Plan, totalEntries: number): string | null {
 /**
  * Returns null if allowed, or an error string if blocked.
  * Pass current story count for the user (across all pets).
- * IMPORTANT: callers must exclude story_type IN ('origins', 'birthday') from the
+ * IMPORTANT: callers must exclude story_type IN ('origins', 'birthday', 'memorial') from the
  * count, those special stories are always free and must not burn the quota.
  */
 export function canGenerateStory(plan: Plan, totalStories: number): string | null {

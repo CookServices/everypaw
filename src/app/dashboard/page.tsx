@@ -7,6 +7,7 @@ import Link from "next/link";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
 import GettingStartedChecklist from "@/components/onboarding/GettingStartedChecklist";
 import OriginsFlow from "@/components/onboarding/OriginsFlow";
+import ClaimBanner from "@/components/dashboard/ClaimBanner";
 import BookProgressWidget from "@/components/BookProgressWidget";
 import GiftCampaignCard from "@/components/GiftCampaignCard";
 import { useLocale } from "@/hooks/useLocale";
@@ -275,6 +276,8 @@ export default function DashboardPage() {
   return (
     <div style={{ minHeight: "100dvh", background: "var(--ep-bg)", fontFamily: "'DM Sans', sans-serif" }}>
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+
+        <ClaimBanner />
 
         {showOnboarding && !pets.length && (
           <OnboardingModal

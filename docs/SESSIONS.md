@@ -5,6 +5,14 @@
 
 ---
 
+### ✅ Session 74 — PP-1 vérifié en réel, PP-3 livré (2026-09-17)
+
+**Les deux blocages de PP-1 sont levés et le parcours complet a tourné.** Migration appliquée, clé Anthropic scopée workspace fournie : `POST /api/public-pages` rend 201, le chapitre fait 261 mots dans la fourchette voulue, sans tiret cadratin. Le correctif critique tient en réel, un `photoUrl` pointant un hôte étranger arrive à `null` en base. Le compteur de vues ignore Facebook, Slack et WhatsApp. Piège à retenir : une clé Anthropic d'organisation échoue avec « not scoped to a workspace », il faut une clé de workspace, et jamais contourner en touchant `src/lib/anthropic.ts` que partagent les cinq appels Claude de l'app.
+
+**PP-3 rebranche les deux landings mémorial** vers `/memorial/new` et `/fr/memorial/new` au lieu de `/auth/signup`, avec sous le bouton la promesse de ce qui va se passer. Chaque landing porte désormais un bloc sombre montrant un vrai souvenir brut et l'extrait du vrai chapitre qu'il a produit, cité mot pour mot. Deux écarts assumés par rapport à la spec : le lien vers le livre en pied de `/p/[slug]` n'a pas été ajouté, l'encart de réclamation nomme déjà le livre au même endroit et un second bloc commercial sur une page de deuil serait redondant ; et l'exemple est cité sur la landing au lieu de pointer une page vivante, parce qu'une page exemple jamais réclamée serait détruite par la purge de PP-5 et que le lien deviendrait un 404. `memorial_landing.example_output` est la première entrée de `ADDRESSED_TO_THE_PET` dans `copy-register.test.ts` : c'est l'animal qui tutoie son humain, et la règle de vouvoiement ne s'applique pas quand l'app n'est pas celle qui parle.
+
+---
+
 ### ✅ Session 73 : PP-1, page publique sans compte livrée (2026-09-17)
 
 PP-1 est implémenté : un visiteur sans compte crée une page publique pour son animal, trois souvenirs deviennent un chapitre écrit par Claude, la page (`/p/[slug]`) est partageable et porte un encart de réclamation qui s'arrête à l'inscription ; la réclamation elle-même, les hommages tenus en attente et la redirection après réclamation restent PP-2, pas ce chantier. Deux vérifications restent ouvertes, car aucune page n'a jamais été créée de bout en bout ici : la migration `add_public_pages_2026_09_16.sql` n'est pas appliquée en production et `ANTHROPIC_API_KEY` était vide dans `.env.local` pendant l'implémentation ; il reste à un humain d'appliquer la migration et de renseigner une vraie clé pour vérifier réellement, et la purge à 30 jours (PP-5) laissera toute page de test créée ici en base jusque là.
@@ -2273,4 +2281,14 @@ Session en 3 lots indépendants, chacun validé sur preview Vercel avant merge (
 - Exécuter le rattrapage SQL onboarding (2 requêtes, voir mémoire projet) si pas déjà fait — sans la 2ᵉ requête, tous les comptes existants avec animal revoient le modal d'onboarding.
 - Vérifier `exchange_failed` en anglais (navigateur perso en EN) — non testable depuis cette session.
 - **Backlog #13/#14** (voir section Optimisation & dette technique) : `OnboardingModal` ignore `hasPets`/`hasEntries`/`hasStories` (2ᵉ invocation du modal montre la mauvaise étape), clés i18n `step2_cta`/`step3_cta` mortes — trouvés pendant le Lot 1, pas corrigés, hors périmètre.
+
+---
+
+### ✅ Session 75 — PP-5, la purge des pages sans compte (2026-09-17)
+
+**Une page créée sans compte et jamais réclamée est un passif.** Elle porte un nom d'animal, trois souvenirs, une photo et une empreinte d'IP, sans personne pour en demander la suppression. Le cron `public-pages-purge` tourne chaque nuit à 4 h et la supprime trente jours après sa création, photo comprise. Une page réclamée n'expire jamais, parce que la réclamation change son statut et que le cron ne touche que les lignes `active`.
+
+**Le second balayage vient d'une trouvaille de PP-1, pas de la spec** : une photo envoyée puis abandonnée avant que la page ne soit soumise n'est référencée par rien, donc le premier balayage ne peut pas l'atteindre. La spec PP-5 a été amendée en conséquence. Vérifié en réel contre la base de production : sans jeton 401, avec jeton une page expirée et sa photo disparaissent, une page réclamée à la date d'expiration dépassée survit, et les photos de moins de vingt-quatre heures sont épargnées.
+
+**À savoir pour PP-2** : quand `memorial_tributes.page_id` sera ajouté, sa clé étrangère doit être `ON DELETE CASCADE`, sinon la purge échouera sur toute page portant un hommage.
 

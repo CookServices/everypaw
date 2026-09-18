@@ -6,6 +6,7 @@ import {
   selectOrphanPhotoNames,
   photoObjectName,
   isSafePhotoUrl,
+  parseClaimStorage,
   type PublicPageInput,
 } from "./public-page";
 
@@ -301,5 +302,45 @@ describe("photoObjectName", () => {
   it("rend le dernier segment d'une URL de stockage", () => {
     expect(photoObjectName("https://x.supabase.co/storage/v1/object/public/pet-photos/public/abc.jpg"))
       .toBe("abc.jpg");
+  });
+});
+
+describe("parseClaimStorage", () => {
+  const TOKEN = "a".repeat(64);
+
+  it("accepte la forme héritée, un jeton brut de 64 caractères hexadécimaux", () => {
+    expect(parseClaimStorage(TOKEN)).toEqual({ token: TOKEN, name: "" });
+  });
+
+  it("accepte un objet JSON bien formé avec un jeton et un nom", () => {
+    expect(parseClaimStorage(JSON.stringify({ token: TOKEN, name: "Coco" })))
+      .toEqual({ token: TOKEN, name: "Coco" });
+  });
+
+  it("refuse un JSON dont le jeton est trop court", () => {
+    const short = "a".repeat(63);
+    expect(parseClaimStorage(JSON.stringify({ token: short, name: "Coco" }))).toBeNull();
+  });
+
+  it("refuse un JSON dont le jeton est en majuscules", () => {
+    const upper = "A".repeat(64);
+    expect(parseClaimStorage(JSON.stringify({ token: upper, name: "Coco" }))).toBeNull();
+  });
+
+  it("refuse un JSON dont le jeton n'est pas hexadécimal", () => {
+    const notHex = "g".repeat(64);
+    expect(parseClaimStorage(JSON.stringify({ token: notHex, name: "Coco" }))).toBeNull();
+  });
+
+  it("refuse un JSON dont le nom n'est pas une chaîne", () => {
+    expect(parseClaimStorage(JSON.stringify({ token: TOKEN, name: 123 }))).toBeNull();
+  });
+
+  it("refuse une chaîne qui n'est pas du JSON", () => {
+    expect(parseClaimStorage("pas du json")).toBeNull();
+  });
+
+  it("refuse null", () => {
+    expect(parseClaimStorage(null)).toBeNull();
   });
 });

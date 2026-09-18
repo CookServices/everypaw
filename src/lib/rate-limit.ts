@@ -67,9 +67,18 @@ export function checkRateLimit(
   return { allowed: true, remaining: maxRequests - record.count };
 }
 
-/** Extract a best-effort IP from Next.js request headers. */
+/**
+ * Extract a best-effort IP from Next.js request headers.
+ *
+ * `x-vercel-forwarded-for` is set by the platform itself and cannot be forged
+ * by the client; `x-forwarded-for` is client-supplied on the leftmost hop, so
+ * a request can claim any IP it likes and bypass every per-IP limit that
+ * relies on it. Prefer the platform header, keep the rest as fallback so
+ * local dev and non-Vercel environments behave as before.
+ */
 export function getClientIp(req: Request): string {
   return (
+    req.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ??
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     req.headers.get("x-real-ip") ??
     "unknown"

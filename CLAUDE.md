@@ -296,10 +296,9 @@ public_pages: id, slug (unique), kind ('memorial'|'living'), locale, pet_name, s
 -- RLS on, aucune policy : service role seul. RPC increment_public_page_view(slug) révoquée clients.
 
 -- memorial_tributes (hommages publics sur pages mémorial)
-memorial_tributes: id, pet_id, author_name (1–100), message (1–1000),
-                   status ('pending'|'approved'|'rejected'), created_at
--- RLS : tributes_public_read (approved + pet décédé), tributes_owner_read (owner voit tout)
--- Écriture client uniquement via POST route API (rate limit 3/h IP + honeypot)
+memorial_tributes: id, pet_id (nullable), page_id (nullable, réf. public_pages, cascade),
+                   author_name (1–100), message (1–1000), status ('pending'|'approved'|'rejected'), created_at
+-- check memorial_tributes_target_check (pet_id is not null or page_id is not null) ; RLS : tributes_public_read (approved + pet décédé), tributes_owner_read (owner voit tout) ; écriture client uniquement via POST route API (rate limit 3/h IP + honeypot), pageId ou petId
 
 -- pet_members (journal partagé foyer)
 pet_members: id, pet_id, user_id (null jusqu'à acceptation), invited_email,
@@ -451,6 +450,7 @@ Le tab est lu depuis `useSearchParams()` — **dérivé de l'URL, pas un state l
 | `/api/export-data` | Export RGPD — `GET` (session requise) retourne JSON avec toutes les données utilisateur : profil, pets, entrées, histoires, milestones, book_configs |
 | `/api/public-pages` | Création d'une page sans compte (PP-1), 3/jour/IP puis 200/jour global juste avant l'appel Claude, honeypot, renvoie `{ slug, claimToken }` |
 | `/api/public-pages/photo` | Upload photo d'une page sans compte, service role, 5 Mo, jpeg/png/webp vérifiés aux octets magiques, 10/jour/IP et 400/jour global |
+| `/api/public-pages/claim` | Réclamation d'une page sans compte (PP-2), session requise, `{ slug, claimToken }`, rate limit 20/h/IP, RPC `claim_public_page` en service role, renvoie `200 { petId }` / `401 unauthorized` / `400 invalid_input` / `403 bad_token` / `409 not_claimable` / `500 claim_failed` |
 
 ---
 
@@ -723,6 +723,12 @@ fix et vérification de chacun dans `docs/SESSIONS.md` → « Backlog dette tech
   dynamique. Fix = restructuration en `/[locale]/`, avec un risque SEO réel sur le hreflang.
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` dans un
   `useEffect` (waterfall, requêtes exposées côté client). Gros blast-radius, gain utilisateur faible.
+- **#21 Hommages stockés échappés en HTML** : `memorial_tributes.message`/`author_name` sont échappés
+  côté écriture (`escapeHtml`) puis rééchappés par React au rendu, donc une apostrophe ou un guillemet
+  arrive au lecteur sous forme de code d'entité (`&#x27;`). Antérieur à ce chantier (juin), mais PP-2 le
+  met sur le chemin critique : lire les hommages est la récompense que le créateur récupère à la fin du
+  tunnel de réclamation. Fix = arrêter l'échappement à l'écriture et réécrire (backfill) les lignes
+  existantes.
 **Ne pas re-tenter — #2 `select("*")` → colonnes explicites** : analysé, aucun gain réel. Les
 occurrences restantes sont soit `select("*", { count, head: true })` (zéro ligne transférée), soit
 des selects dont toutes les colonnes servent. Le seul candidat cassait le type `Entry`.
@@ -736,16 +742,6 @@ des selects dont toutes les colonnes servent. Le seul candidat cassait le type `
 Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dernières sessions restent ici, à chaque nouvelle session déplacer la plus ancienne vers l'archive.
 
 
-### ✅ Session 74 — PP-1 vérifié en réel, PP-3 livré (2026-09-17)
+### ✅ Session 76 — PP-2 livré, réclamation et rattrapage au tableau de bord (2026-09-17)
 
-**Les deux blocages de PP-1 sont levés et le parcours complet a tourné.** Migration appliquée, clé Anthropic scopée workspace fournie : `POST /api/public-pages` rend 201, le chapitre fait 261 mots dans la fourchette voulue, sans tiret cadratin. Le correctif critique tient en réel, un `photoUrl` pointant un hôte étranger arrive à `null` en base. Le compteur de vues ignore Facebook, Slack et WhatsApp. Piège à retenir : une clé Anthropic d'organisation échoue avec « not scoped to a workspace », il faut une clé de workspace, et jamais contourner en touchant `src/lib/anthropic.ts` que partagent les cinq appels Claude de l'app.
-
-**PP-3 rebranche les deux landings mémorial** vers `/memorial/new` et `/fr/memorial/new` au lieu de `/auth/signup`, avec sous le bouton la promesse de ce qui va se passer. Chaque landing porte désormais un bloc sombre montrant un vrai souvenir brut et l'extrait du vrai chapitre qu'il a produit, cité mot pour mot. Deux écarts assumés par rapport à la spec : le lien vers le livre en pied de `/p/[slug]` n'a pas été ajouté, l'encart de réclamation nomme déjà le livre au même endroit et un second bloc commercial sur une page de deuil serait redondant ; et l'exemple est cité sur la landing au lieu de pointer une page vivante, parce qu'une page exemple jamais réclamée serait détruite par la purge de PP-5 et que le lien deviendrait un 404. `memorial_landing.example_output` est la première entrée de `ADDRESSED_TO_THE_PET` dans `copy-register.test.ts` : c'est l'animal qui tutoie son humain, et la règle de vouvoiement ne s'applique pas quand l'app n'est pas celle qui parle.
-
-### ✅ Session 75 — PP-5, la purge des pages sans compte (2026-09-17)
-
-**Une page créée sans compte et jamais réclamée est un passif.** Elle porte un nom d'animal, trois souvenirs, une photo et une empreinte d'IP, sans personne pour en demander la suppression. Le cron `public-pages-purge` tourne chaque nuit à 4 h et la supprime trente jours après sa création, photo comprise. Une page réclamée n'expire jamais, parce que la réclamation change son statut et que le cron ne touche que les lignes `active`.
-
-**Le second balayage vient d'une trouvaille de PP-1, pas de la spec** : une photo envoyée puis abandonnée avant que la page ne soit soumise n'est référencée par rien, donc le premier balayage ne peut pas l'atteindre. La spec PP-5 a été amendée en conséquence. Vérifié en réel contre la base de production : sans jeton 401, avec jeton une page expirée et sa photo disparaissent, une page réclamée à la date d'expiration dépassée survit, et les photos de moins de vingt-quatre heures sont épargnées.
-
-**À savoir pour PP-2** : quand `memorial_tributes.page_id` sera ajouté, sa clé étrangère doit être `ON DELETE CASCADE`, sinon la purge échouera sur toute page portant un hommage.
+**PP-2 referme le chantier « page avant compte » : la page anonyme devient un vrai compte, avec l'animal, ses souvenirs en entrées, le chapitre déjà en place, et les hommages déposés pendant l'attente.** La RPC `claim_public_page`, révoquée pour `anon` et `authenticated`, insère l'animal, rattache les hommages en forçant leur statut à `pending`, et marque l'onboarding terminé ; `POST /api/public-pages/claim` la porte derrière une session obligatoire. Cette dernière tâche ajoutait le rattrapage : `memorial` a rejoint `origins` et `birthday` dans l'exclusion du quota d'histoires aux trois endroits qui la vérifient, pour qu'un chapitre offert avec la page ne consomme pas l'unique génération du plan gratuit ; `ClaimBanner`, monté en tête du tableau de bord, relit les clés `ep_claim_*` via `parseClaimStorage` (les deux formes), affiche le nom du premier animal retrouvé et réclame au clic, un `409` effaçant la clé sans un mot. `OriginsFlow` ne se relance pas après une réclamation, vérifié par lecture du code exécuté et non par supposition : `showOnboarding` vaut `!profile.onboarding_dismissed`, que la RPC met à `true` avant de rendre la main. Trois obstacles trouvés en cours de route sont consignés dans `docs/acquisition/specs.md` (PP-2), le plus notable étant l'exemption du déclencheur d'entrées, sans laquelle réclamer une page pousserait un compte déjà proche du plafond gratuit à refuser l'insertion des souvenirs. **La réclamation authentifiée a été jouée en conditions réelles avant le merge** (le propriétaire tape le mot de passe, l'agent pilote le reste) : page créée par le vrai formulaire, hommage déposé dessus, puis les trois branches sur un compte gratuit déjà à 8 entrées sur 10 — `403` avec jeton faussé et clé conservée, `200` puis redirection et clé effacée, `409` sur rejeu et clé effacée sans message, plus le `308` de `/p/<slug>` vers le mémorial. Le compte finit à **11 entrées sur un plafond de 10**, ce qui prouve l'exemption du déclencheur autrement que par lecture, et `POST /api/generate` y répond encore `200`, ce qui prouve l'exclusion du chapitre `memorial` du quota. Deux scories relevées à cette occasion, aucune bloquante : `ClaimBanner` est recouvert par `OriginsFlow` puis `OnboardingModal` tant que l'onboarding n'est pas écarté, alors que c'est justement le compte qui vient de s'inscrire que ce rattrapage vise ; et le compteur du tableau de bord affiche « 11 / 10 entrées utilisées » après une réclamation. La même passe a mis l'item #21 sous les yeux plutôt qu'en base : l'hommage s'affiche `On n&#x27;oubliera pas…` dans l'écran de modération.

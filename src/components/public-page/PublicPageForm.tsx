@@ -156,9 +156,14 @@ export default function PublicPageForm({ kind, locale }: { kind: PageKind; local
       }
 
       // Le jeton ne voyage jamais dans l'URL : il reste dans ce navigateur, et
-      // c'est lui qui prouvera plus tard que ce visiteur a créé la page.
+      // c'est lui qui prouvera plus tard que ce visiteur a créé la page. Le nom
+      // de l'animal voyage avec lui : lui seul le connaît à cet instant, et le
+      // bandeau de réclamation en aura besoin pour nommer la page.
       try {
-        window.localStorage.setItem(`ep_claim_${data.slug}`, data.claimToken);
+        window.localStorage.setItem(
+          `ep_claim_${data.slug}`,
+          JSON.stringify({ token: data.claimToken, name: petName.trim() }),
+        );
       } catch {
         // Navigation privée : la page existe quand même, le lien suffit.
       }

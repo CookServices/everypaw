@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     .from("stories")
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id)
-    .not("story_type", "in", "(origins,birthday)");
+    .not("story_type", "in", "(origins,birthday,memorial)");
 
   log.debug("[generate] plan gate: plan=", plan, "storyCount=", storyCount);
 

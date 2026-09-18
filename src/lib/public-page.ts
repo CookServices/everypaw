@@ -231,6 +231,44 @@ You MUST respond with valid JSON only, no other text:
 {"title": "...", "story": "..."}`;
 }
 
+// ── Jeton de réclamation (PP-2) ──────────────────────────────────────────────
+
+const CLAIM_TOKEN_REGEX = /^[0-9a-f]{64}$/;
+
+export interface ClaimStorage {
+  token: string;
+  name: string;
+}
+
+/**
+ * `localStorage['ep_claim_' + slug]` porte la preuve que ce navigateur a créé
+ * la page. Depuis ce déploiement, la valeur est `{ token, name }` en JSON, où
+ * `name` est le nom de l'animal tel que tapé à la création : le bandeau de
+ * réclamation en a besoin pour nommer la page. Les pages créées avant ce
+ * déploiement portent encore la chaîne brute du jeton, sans nom : les deux
+ * formes doivent rester lisibles, sinon leurs créateurs ne pourraient plus
+ * réclamer leur page.
+ */
+export function parseClaimStorage(raw: string | null): ClaimStorage | null {
+  if (!raw) return null;
+  if (CLAIM_TOKEN_REGEX.test(raw)) return { token: raw, name: "" };
+  try {
+    const parsed = JSON.parse(raw);
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      typeof parsed.token === "string" &&
+      CLAIM_TOKEN_REGEX.test(parsed.token) &&
+      typeof parsed.name === "string"
+    ) {
+      return { token: parsed.token, name: parsed.name };
+    }
+  } catch {
+    // Valeur corrompue : traitée comme absente.
+  }
+  return null;
+}
+
 // ── Purge (PP-5) ─────────────────────────────────────────────────────────────
 
 export interface StorageObject {
