@@ -107,7 +107,7 @@ export default async function PublicPage({ params }: { params: { slug: string } 
   // lève un signal de contrôle de flux qu'un `catch` avalerait. Une page
   // `living` réclamée reste affichée telle quelle : c'est un instantané (PP-4).
   if (page && page.status === "claimed" && page.claimed_pet_id && page.kind === "memorial") {
-    permanentRedirect(`/memorial/${page.claimed_pet_id}`, RedirectType.replace);
+    permanentRedirect(`/memorial/${page.claimed_pet_id}?lang=${page.locale}`, RedirectType.replace);
   }
 
   // Calculé avant le rétrécissement de `isVisible` : celui-ci ramène `page` à
@@ -159,12 +159,16 @@ export default async function PublicPage({ params }: { params: { slug: string } 
   // annonce plutôt que de faire échouer la page, comme le compteur de vues.
   let pendingTributeCount = 0;
   if (page.kind === "memorial") {
-    const { count } = await getServiceSupabase()
+    const count = await getServiceSupabase()
       .from("memorial_tributes")
       .select("id", { count: "exact", head: true })
       .eq("page_id", page.id)
-      .eq("status", "pending");
-    pendingTributeCount = count ?? 0;
+      .eq("status", "pending")
+      .then(
+        (res) => res.count ?? 0,
+        () => 0,
+      );
+    pendingTributeCount = count;
   }
 
   const isFr = page.locale === "fr";
