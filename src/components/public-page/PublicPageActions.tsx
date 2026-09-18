@@ -42,7 +42,7 @@ export default function PublicPageActions({
 
   const signupHref = `/auth/signup?next=${encodeURIComponent(`/p/${slug}?claim=1`)}`;
 
-  const doClaim = async (token: string) => {
+  const doClaim = async (token: string, isAutoClaim = false) => {
     setClaiming(true);
     setClaimError("");
     try {
@@ -53,10 +53,6 @@ export default function PublicPageActions({
       });
 
       if (res.status === 401) {
-        // Nettoie `?claim=1` de l'historique avant de partir : sans ça, un
-        // retour arrière depuis l'inscription ramène ici avec le même
-        // paramètre, qui relance aussitôt la même réclamation ratée.
-        window.history.replaceState(null, "", window.location.pathname);
         // La session manque : l'inscription revient ici avec `?claim=1` pour
         // relancer la réclamation sans que le visiteur ait à recliquer.
         window.location.href = signupHref;
@@ -93,6 +89,16 @@ export default function PublicPageActions({
     } catch {
       setClaiming(false);
       setClaimError(t.claim_error);
+    } finally {
+      // Nettoie `?claim=1` de l'historique pour toute issue de la réclamation
+      // automatique, succès comme chaque échec : sans ça, un rechargement ou un
+      // retour arrière depuis l'inscription relance la même réclamation, y
+      // compris après un échec permanent (403/409). Le clic manuel n'a jamais
+      // posé ce paramètre, donc il n'a rien à nettoyer et peut toujours
+      // réessayer.
+      if (isAutoClaim) {
+        window.history.replaceState(null, "", window.location.pathname);
+      }
     }
   };
 
@@ -111,7 +117,7 @@ export default function PublicPageActions({
       const params = new URLSearchParams(window.location.search);
       if (params.get("claim") === "1" && !autoClaimedRef.current) {
         autoClaimedRef.current = true;
-        doClaim(stored.token);
+        doClaim(stored.token, true);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
