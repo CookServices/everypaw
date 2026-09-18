@@ -86,9 +86,10 @@ export async function GET(req: Request) {
       ? (isFR ? `${age} an${age > 1 ? "s" : ""}` : `${age} year${age > 1 ? "s" : ""} old`)
       : null;
 
+    // Un sujet d'email n'est pas du HTML : `pet.name` brut, pas `petName`.
     const subject = isFR
-      ? `🎂 C'est l'anniversaire de ${petName} !`
-      : `🎂 It's ${petName}'s birthday!`;
+      ? `🎂 C'est l'anniversaire de ${pet.name} !`
+      : `🎂 It's ${pet.name}'s birthday!`;
 
     // ── Birthday letter (idempotent, one per pet per year) ───────────────────
     let letterExcerpt: string | null = null;
