@@ -295,7 +295,7 @@ export async function generateAndSaveStory(
 export interface FirstStoryNudgeConditions {
   deceasedAt: string | null;
   plan: Plan;
-  /** User's total story count, excluding story_type in (origins, birthday). */
+  /** User's total story count, excluding story_type in (origins, birthday, memorial). */
   totalStories: number;
   /** This pet's entry count. */
   entryCount: number;
