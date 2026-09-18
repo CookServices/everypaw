@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
+import { permanentRedirect, RedirectType } from "next/navigation";
 import { getServiceSupabase } from "@/lib/supabase/service";
 import { getTranslations, type Locale } from "@/lib/i18n";
 import PublicFooter from "@/components/PublicFooter";
 import PublicPageActions from "@/components/public-page/PublicPageActions";
+import PublicPageTributes from "@/components/public-page/PublicPageTributes";
 
 // Le compteur de vues s'incrémente à chaque requête : rien ne doit être mis en cache.
 export const dynamic = "force-dynamic";
@@ -20,6 +22,7 @@ const BOT_UA =
   /bot|crawler|spider|facebookexternalhit|slackbot|discordbot|whatsapp|twitterbot|bingpreview|embedly|preview/i;
 
 interface PublicPageRow {
+  id: string;
   slug: string;
   kind: "memorial" | "living";
   locale: Locale;
@@ -46,7 +49,7 @@ async function loadPage(slug: string): Promise<PublicPageRow | null> {
   const { data } = await getServiceSupabase()
     .from("public_pages")
     .select(
-      "slug, kind, locale, pet_name, species, birthdate, deceased_at, photo_url, memories, story_title, story_content, status, expires_at, claimed_pet_id",
+      "id, slug, kind, locale, pet_name, species, birthdate, deceased_at, photo_url, memories, story_title, story_content, status, expires_at, claimed_pet_id",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -97,6 +100,16 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 export default async function PublicPage({ params }: { params: { slug: string } }) {
   const page = await loadPage(params.slug);
   const t = getTranslations(page?.locale ?? "en").public_page;
+
+  // Le lien partagé doit continuer de fonctionner après la réclamation : on
+  // renvoie vers la page mémorial réelle de l'animal, en 308 (permanent), donc
+  // avant tout autre traitement et hors d'un `try` puisque `permanentRedirect`
+  // lève un signal de contrôle de flux qu'un `catch` avalerait. Une page
+  // `living` réclamée reste affichée telle quelle : c'est un instantané (PP-4).
+  if (page && page.status === "claimed" && page.claimed_pet_id && page.kind === "memorial") {
+    permanentRedirect(`/memorial/${page.claimed_pet_id}`, RedirectType.replace);
+  }
+
   // Calculé avant le rétrécissement de `isVisible` : celui-ci ramène `page` à
   // `null` dans la branche négative (son prédicat ne distingue pas « absent »
   // de « caché/expiré »), et un accès à `.status` y échouerait à la compilation.
@@ -139,6 +152,19 @@ export default async function PublicPage({ params }: { params: { slug: string } 
         () => undefined,
         () => undefined,
       );
+  }
+
+  // Hommages en attente : uniquement sur un mémorial, seule sorte de page que
+  // `/api/memorial/tributes` accepte comme cible. Un échec n'affiche aucune
+  // annonce plutôt que de faire échouer la page, comme le compteur de vues.
+  let pendingTributeCount = 0;
+  if (page.kind === "memorial") {
+    const { count } = await getServiceSupabase()
+      .from("memorial_tributes")
+      .select("id", { count: "exact", head: true })
+      .eq("page_id", page.id)
+      .eq("status", "pending");
+    pendingTributeCount = count ?? 0;
   }
 
   const isFr = page.locale === "fr";
@@ -303,55 +329,11 @@ export default async function PublicPage({ params }: { params: { slug: string } 
           ))}
         </section>
 
-        <PublicPageActions slug={page.slug} url={url} petName={page.pet_name} locale={page.locale} />
+        {page.kind === "memorial" && (
+          <PublicPageTributes pageId={page.id} pendingCount={pendingTributeCount} locale={page.locale} />
+        )}
 
-        {/* L'invitation vit en pied de page, jamais en en-tête : une pastille
-            commerciale en tête d'une page de deuil se lit comme une bannière.
-            PP-2 remplacera ce lien par la réclamation réelle. */}
-        <div style={{ textAlign: "center", borderTop: `1px solid ${rule}`, paddingTop: "3rem" }}>
-          <p style={{ fontSize: "1rem", fontStyle: "italic", color: soft, marginBottom: ".75rem" }}>
-            {t.claim_title}
-          </p>
-          <p
-            style={{
-              fontSize: ".85rem",
-              color: faint,
-              fontFamily: "'DM Sans', sans-serif",
-              fontWeight: 300,
-              lineHeight: 1.7,
-              maxWidth: 420,
-              margin: "0 auto 1.5rem",
-            }}
-          >
-            {t.claim_body}
-          </p>
-          <Link
-            href={`/auth/signup?next=${encodeURIComponent(`/p/${page.slug}?claim=1`)}`}
-            style={{
-              display: "inline-block",
-              background: "rgba(200,129,58,.15)",
-              border: "1px solid rgba(200,129,58,.3)",
-              color: "#C8813A",
-              padding: ".625rem 1.5rem",
-              borderRadius: 100,
-              fontSize: ".85rem",
-              fontWeight: 500,
-              textDecoration: "none",
-              fontFamily: "'DM Sans', sans-serif",
-            }}
-          >
-            {t.claim_cta}
-          </Link>
-
-          <div style={{ marginTop: "2.5rem" }}>
-            <Link
-              href={`/contact?subject=${encodeURIComponent(`Signalement /p/${page.slug}`)}`}
-              style={{ fontSize: ".75rem", color: faint, fontFamily: "'DM Sans', sans-serif", textDecoration: "underline" }}
-            >
-              {t.report}
-            </Link>
-          </div>
-        </div>
+        <PublicPageActions slug={page.slug} url={url} petName={page.pet_name} locale={page.locale} dark={dark} />
       </main>
 
       <PublicFooter variant="minimal" locale={page.locale} />
