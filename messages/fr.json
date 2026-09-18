@@ -554,6 +554,7 @@
     "claim_error_token": "Ce navigateur n'est pas celui qui a créé la page, il ne peut pas la réclamer.",
     "claim_error_taken": "Cette page a déjà été ajoutée à un compte.",
     "claim_banner_title": "Vous avez créé la page de {name}",
+    "claim_banner_title_unnamed": "Vous avez créé une page hommage",
     "claim_banner_cta": "L'ajouter à mon compte"
   },
   "onboarding": {

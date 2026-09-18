@@ -554,6 +554,7 @@
     "claim_error_token": "This browser is not the one that created the page, so it cannot claim it.",
     "claim_error_taken": "This page has already been added to an account.",
     "claim_banner_title": "You created the page for {name}",
+    "claim_banner_title_unnamed": "You created a memorial page",
     "claim_banner_cta": "Add it to my account"
   },
   "onboarding": {

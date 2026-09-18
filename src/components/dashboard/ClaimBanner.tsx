@@ -125,7 +125,9 @@ export default function ClaimBanner() {
           margin: 0,
         }}
       >
-        {pt.claim_banner_title.replace("{name}", current.name)}
+        {current.name
+          ? pt.claim_banner_title.replace("{name}", () => current.name)
+          : pt.claim_banner_title_unnamed}
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: ".4rem" }}>
