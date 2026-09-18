@@ -9,6 +9,15 @@ import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 
 import { UUID_REGEX } from "@/lib/validation";
 
+// La réclamation (`claim_public_page`) réattache chaque hommage en attente
+// d'une page dans une seule transaction qui tient déjà un verrou `FOR UPDATE`
+// sur la ligne de la page : un `UPDATE ... WHERE page_id = ...` portant sur
+// trop de lignes peut dépasser le statement timeout de la base et faire
+// échouer le claim. Les hommages ne périment jamais, donc un échec de ce
+// genre est permanent, pas transitoire. Ce plafond est très au-dessus de tout
+// mémorial réel et très en-dessous de ce qui menacerait cette transaction.
+const MAX_PENDING_TRIBUTES_PER_PAGE = 500;
+
 // GET /api/memorial/tributes?petId=xxx[&status=pending], owner only for pending/rejected
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -110,6 +119,17 @@ export async function POST(req: Request) {
 
     if (!page || page.status !== "active" || page.kind !== "memorial") {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+
+    const { count: pendingCount } = await supabase
+      .from("memorial_tributes")
+      .select("id", { count: "exact", head: true })
+      .eq("page_id", pageId)
+      .eq("status", "pending");
+
+    if ((pendingCount ?? 0) >= MAX_PENDING_TRIBUTES_PER_PAGE) {
+      log.error(`[memorial/tributes] pending ceiling reached for page ${pageId}: ${pendingCount}`);
+      return NextResponse.json({ error: "rate_limited" }, { status: 429 });
     }
 
     const { data: inserted, error: insertError } = await supabase
