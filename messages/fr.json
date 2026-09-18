@@ -541,7 +541,7 @@
     "not_found": "Cette page n'existe pas.",
     "report": "Signaler cette page",
     "tributes_pending_one": "Une personne a laissé un hommage. Réclamez la page pour le lire et le publier.",
-    "tributes_pending_many": "{count} personnes ont laissé un hommage. Réclamez la page pour les lire et les publier.",
+    "tributes_pending_many": "{count} personnes ont laissé des hommages. Réclamez la page pour les lire et les publier.",
     "tribute_form_title": "Laisser un hommage",
     "tribute_name_label": "Votre nom",
     "tribute_message_label": "Votre message",
