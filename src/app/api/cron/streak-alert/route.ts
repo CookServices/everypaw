@@ -84,9 +84,10 @@ export async function GET(req: Request) {
       ? `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`
       : "https://everypaw.app/dashboard";
 
+    // Un sujet d'email n'est pas du HTML : `pet.name` brut, pas `petName`.
     const subject = isFR
-      ? `🐾 ${daysSince} jours sans entrée pour ${petName}`
-      : `🐾 ${daysSince} days without an entry for ${petName}`;
+      ? `🐾 ${daysSince} jours sans entrée pour ${pet.name}`
+      : `🐾 ${daysSince} days without an entry for ${pet.name}`;
 
     const html = baseLayout(
       hero({

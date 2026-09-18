@@ -47,7 +47,10 @@ export async function POST(req: Request) {
       from: "Everypaw Contact <noreply@everypaw.app>",
       to,
       replyTo: email,
-      subject: `[Contact] ${escapeHtml(subject!)}`,
+      // Un sujet d'email n'est pas du HTML, et « Commande & livraison » en
+      // sortait avec un `&amp;`. La valeur est déjà contrainte à une clé de
+      // SUBJECT_ROUTING, il n'y a rien à échapper ici.
+      subject: `[Contact] ${subject!}`,
       html: baseLayout(
         heroSection("💬", escapeHtml(subject!)) +
         paragraph(`<strong>From:</strong> ${escapeHtml(email!)}`) +

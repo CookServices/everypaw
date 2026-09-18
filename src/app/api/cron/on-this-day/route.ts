@@ -63,16 +63,18 @@ export async function GET(req: Request) {
     // Pick the first entry to feature (most recent past year)
     const featured = userEntries.sort((a, b) => b.entry_date.localeCompare(a.entry_date))[0];
     const featuredPet = petMap[featured.pet_id];
-    const petName = escapeHtml(featuredPet?.name ?? (isFR ? "votre animal" : "your pet"));
+    const petNameRaw = featuredPet?.name ?? (isFR ? "votre animal" : "your pet");
+    const petName = escapeHtml(petNameRaw);
     const yearsAgo = currentYear - parseInt(featured.entry_date.slice(0, 4), 10);
     const snippet = escapeHtml(featured.content.trim().slice(0, 120)) + (featured.content.length > 120 ? "…" : "");
     const unsubscribeUrl = profile.unsubscribe_token
       ? `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`
       : "https://everypaw.app/dashboard";
 
+    // Un sujet d'email n'est pas du HTML : `petNameRaw`, pas `petName`.
     const subject = isFR
-      ? `🐾 Il y a ${yearsAgo} an${yearsAgo > 1 ? "s" : ""}, ${petName}…`
-      : `🐾 ${yearsAgo} year${yearsAgo > 1 ? "s" : ""} ago, ${petName}…`;
+      ? `🐾 Il y a ${yearsAgo} an${yearsAgo > 1 ? "s" : ""}, ${petNameRaw}…`
+      : `🐾 ${yearsAgo} year${yearsAgo > 1 ? "s" : ""} ago, ${petNameRaw}…`;
 
     const dateLabel = new Date(featured.entry_date + "T12:00:00").toLocaleDateString(
       isFR ? "fr-FR" : "en-US",

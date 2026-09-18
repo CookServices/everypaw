@@ -246,9 +246,10 @@ export async function POST(req: Request) {
         const isFR = locale.startsWith("fr");
         const petNameEsc = escapeHtml(pet.name);
 
+        // Un sujet d'email n'est pas du HTML : `pet.name` brut, pas `petNameEsc`.
         const subject = isFR
-          ? `🕊️ Quelqu'un a laissé un hommage pour ${petNameEsc}`
-          : `🕊️ Someone left a tribute for ${petNameEsc}`;
+          ? `🕊️ Quelqu'un a laissé un hommage pour ${pet.name}`
+          : `🕊️ Someone left a tribute for ${pet.name}`;
 
         const tributesUrl = `https://everypaw.app/dashboard/pets/${pet.id}?tab=tributes`;
         const html = baseLayout(
