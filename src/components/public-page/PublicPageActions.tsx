@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getTranslations, type Locale } from "@/lib/i18n";
@@ -34,6 +34,11 @@ export default function PublicPageActions({
   const [claimToken, setClaimToken] = useState<string | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState("");
+  // Verrou à un coup : en dev, StrictMode double-invoque les effets, ce qui
+  // enverrait deux réclamations concurrentes pour un seul `?claim=1` (la
+  // seconde revenant 409 alors que la première a réussi, un faux échec affiché
+  // à l'écran). La ref survit au double montage, contrairement à un état.
+  const autoClaimedRef = useRef(false);
 
   const signupHref = `/auth/signup?next=${encodeURIComponent(`/p/${slug}?claim=1`)}`;
 
@@ -48,6 +53,10 @@ export default function PublicPageActions({
       });
 
       if (res.status === 401) {
+        // Nettoie `?claim=1` de l'historique avant de partir : sans ça, un
+        // retour arrière depuis l'inscription ramène ici avec le même
+        // paramètre, qui relance aussitôt la même réclamation ratée.
+        window.history.replaceState(null, "", window.location.pathname);
         // La session manque : l'inscription revient ici avec `?claim=1` pour
         // relancer la réclamation sans que le visiteur ait à recliquer.
         window.location.href = signupHref;
@@ -61,7 +70,25 @@ export default function PublicPageActions({
         return setClaimError(t.claim_error);
       }
 
-      const data = (await res.json()) as { petId: string };
+      // La route type `pet_id` en optionnel : un 200 malformé ne doit pas
+      // envoyer vers `/dashboard/pets/undefined`.
+      const data = (await res.json()) as { petId?: unknown };
+      if (typeof data.petId !== "string" || !data.petId) {
+        setClaiming(false);
+        return setClaimError(t.claim_error);
+      }
+
+      // Le jeton vient de servir : le laisser en localStorage laisserait un
+      // secret de réclamation valide traîner indéfiniment dans ce navigateur,
+      // et ferait croire au bandeau de la tâche suivante que cette page est
+      // encore à réclamer. Enveloppé : un échec de stockage ne doit pas
+      // empêcher la redirection vers le tableau de bord qui vient de réussir.
+      try {
+        window.localStorage.removeItem(`ep_claim_${slug}`);
+      } catch {
+        // Navigation privée ou stockage bloqué : rien à faire de plus.
+      }
+
       router.push(`/dashboard/pets/${data.petId}`);
     } catch {
       setClaiming(false);
@@ -79,9 +106,13 @@ export default function PublicPageActions({
     setIsCreator(Boolean(stored));
     if (stored) {
       setClaimToken(stored.token);
-      // Retour d'inscription : `?claim=1` déclenche la réclamation sans clic.
+      // Retour d'inscription : `?claim=1` déclenche la réclamation sans clic,
+      // mais une seule fois par montage (voir `autoClaimedRef`).
       const params = new URLSearchParams(window.location.search);
-      if (params.get("claim") === "1") doClaim(stored.token);
+      if (params.get("claim") === "1" && !autoClaimedRef.current) {
+        autoClaimedRef.current = true;
+        doClaim(stored.token);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
