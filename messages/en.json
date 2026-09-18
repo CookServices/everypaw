@@ -539,7 +539,22 @@
     "expired_title": "This page has expired",
     "expired_body": "Pages created without an account are kept for thirty days.",
     "not_found": "This page does not exist.",
-    "report": "Report this page"
+    "report": "Report this page",
+    "tributes_pending_one": "One person has left a tribute. Claim the page to read it and publish it.",
+    "tributes_pending_many": "{count} people have left tributes. Claim the page to read them and publish them.",
+    "tribute_form_title": "Leave a tribute",
+    "tribute_name_label": "Your name",
+    "tribute_message_label": "Your message",
+    "tribute_submit": "Leave it",
+    "tribute_sending": "Sending",
+    "tribute_done": "Thank you. Your tribute is waiting for the family.",
+    "tribute_error": "This tribute could not be sent. Please try again.",
+    "claiming": "Adding it to your account",
+    "claim_error": "This page could not be added to your account. Please try again.",
+    "claim_error_token": "This browser is not the one that created the page, so it cannot claim it.",
+    "claim_error_taken": "This page has already been added to an account.",
+    "claim_banner_title": "You created the page for {name}",
+    "claim_banner_cta": "Add it to my account"
   },
   "onboarding": {
     "title": "Get started with Everypaw",
