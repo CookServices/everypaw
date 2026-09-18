@@ -16,13 +16,17 @@ export async function POST(req: Request) {
   if (!allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const supabaseAuth = await createServerClient();
-  const { data: { user } } = await supabaseAuth.auth.getUser();
+  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+  if (authError) log.error("[public-pages/claim] getUser failed:", authError.message);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  let body: { slug?: unknown; claimToken?: unknown };
+  let body: { slug?: unknown; claimToken?: unknown } | null;
   try {
     body = await req.json();
   } catch {
+    return NextResponse.json({ error: "invalid_input" }, { status: 400 });
+  }
+  if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
 
