@@ -713,27 +713,26 @@ Cible : pet parents US/UK, très attachés émotionnellement. Différenciateur :
 ## Optimisation & dette technique
 
 Backlog numéroté, ouvert par l'audit Pareto du 2026-06-18 puis alimenté session après session.
-**Clos : #1, #2, #3, #5, #6, #7, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20** — cause,
-fix et vérification de chacun dans `docs/SESSIONS.md` → « Backlog dette technique, items clos ».
+**Clos : #1, #2, #3, #5, #6, #7, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20, #21** —
+cause, fix et vérification de chacun dans `docs/SESSIONS.md` → « Backlog dette technique, items clos ».
 
 **Ouvert :**
 
 - **#4 Rendu statique CDN de la landing** — bloqué par construction : le root `layout.tsx` lit
-  `headers()` (`x-pathname`) uniquement pour fixer `<html lang>`, ce qui force **tout** le site en
-  dynamique. Fix = restructuration en `/[locale]/`, avec un risque SEO réel sur le hreflang.
+  `headers()` (`x-pathname`) pour fixer `<html lang>`, ce qui force **tout** le site en dynamique.
+  Fix = restructuration en `/[locale]/`, avec un risque SEO réel sur le hreflang.
 - **#8 Dashboards client → Server Components** — ~10 pages font `getUser()` + `Promise.all` dans un
   `useEffect` (waterfall, requêtes exposées côté client). Gros blast-radius, gain utilisateur faible.
-- **#21 Hommages stockés échappés en HTML** : `memorial_tributes.message`/`author_name` sont échappés
-  côté écriture (`escapeHtml`) puis rééchappés par React au rendu, donc une apostrophe ou un guillemet
-  arrive au lecteur sous forme de code d'entité (`&#x27;`). Antérieur à ce chantier (juin), mais PP-2 le
-  met sur le chemin critique : lire les hommages est la récompense que le créateur récupère à la fin du
-  tunnel de réclamation. Fix = arrêter l'échappement à l'écriture et réécrire (backfill) les lignes
-  existantes.
+
+**Règle qui sort de #21 — un champ utilisateur se stocke brut et s'échappe à la destination.** Les hommages étaient
+échappés à l'écriture *et* au rendu, donc l'apostrophe arrivait au lecteur en `&#x27;`, jusque dans le livre imprimé.
+Échapper à l'écriture ne protège rien qu'un rendu correct ne protège déjà, et ne se voit pas tant qu'on ne relit pas la valeur stockée.
+
 **Ne pas re-tenter — #2 `select("*")` → colonnes explicites** : analysé, aucun gain réel. Les
 occurrences restantes sont soit `select("*", { count, head: true })` (zéro ligne transférée), soit
 des selects dont toutes les colonnes servent. Le seul candidat cassait le type `Entry`.
 
-*Dernière mise à jour : 2026-09-04 (sessions 69 et 70 : chantier Print livré, phases 0 à 2 ; le backlog dette est inchangé, restent #4 et #8)*
+*Dernière mise à jour : 2026-09-18 (session 77 : item #21 clos, les hommages sont stockés bruts ; restent #4 et #8)*
 
 ---
 
@@ -741,7 +740,10 @@ des selects dont toutes les colonnes servent. Le seul candidat cassait le type `
 
 Historique complet : **[docs/SESSIONS.md](docs/SESSIONS.md)**. Seules les 2 dernières sessions restent ici, à chaque nouvelle session déplacer la plus ancienne vers l'archive.
 
-
 ### ✅ Session 76 — PP-2 livré, réclamation et rattrapage au tableau de bord (2026-09-17)
 
 **PP-2 referme le chantier « page avant compte » : la page anonyme devient un vrai compte, avec l'animal, ses souvenirs en entrées, le chapitre déjà en place, et les hommages déposés pendant l'attente.** La RPC `claim_public_page`, révoquée pour `anon` et `authenticated`, insère l'animal, rattache les hommages en forçant leur statut à `pending`, et marque l'onboarding terminé ; `POST /api/public-pages/claim` la porte derrière une session obligatoire. Cette dernière tâche ajoutait le rattrapage : `memorial` a rejoint `origins` et `birthday` dans l'exclusion du quota d'histoires aux trois endroits qui la vérifient, pour qu'un chapitre offert avec la page ne consomme pas l'unique génération du plan gratuit ; `ClaimBanner`, monté en tête du tableau de bord, relit les clés `ep_claim_*` via `parseClaimStorage` (les deux formes), affiche le nom du premier animal retrouvé et réclame au clic, un `409` effaçant la clé sans un mot. `OriginsFlow` ne se relance pas après une réclamation, vérifié par lecture du code exécuté et non par supposition : `showOnboarding` vaut `!profile.onboarding_dismissed`, que la RPC met à `true` avant de rendre la main. Trois obstacles trouvés en cours de route sont consignés dans `docs/acquisition/specs.md` (PP-2), le plus notable étant l'exemption du déclencheur d'entrées, sans laquelle réclamer une page pousserait un compte déjà proche du plafond gratuit à refuser l'insertion des souvenirs. **La réclamation authentifiée a été jouée en conditions réelles avant le merge** (le propriétaire tape le mot de passe, l'agent pilote le reste) : page créée par le vrai formulaire, hommage déposé dessus, puis les trois branches sur un compte gratuit déjà à 8 entrées sur 10 — `403` avec jeton faussé et clé conservée, `200` puis redirection et clé effacée, `409` sur rejeu et clé effacée sans message, plus le `308` de `/p/<slug>` vers le mémorial. Le compte finit à **11 entrées sur un plafond de 10**, ce qui prouve l'exemption du déclencheur autrement que par lecture, et `POST /api/generate` y répond encore `200`, ce qui prouve l'exclusion du chapitre `memorial` du quota. Deux scories relevées à cette occasion, aucune bloquante : `ClaimBanner` est recouvert par `OriginsFlow` puis `OnboardingModal` tant que l'onboarding n'est pas écarté, alors que c'est justement le compte qui vient de s'inscrire que ce rattrapage vise ; et le compteur du tableau de bord affiche « 11 / 10 entrées utilisées » après une réclamation. La même passe a mis l'item #21 sous les yeux plutôt qu'en base : l'hommage s'affiche `On n&#x27;oubliera pas…` dans l'écran de modération.
+
+### ✅ Session 77 — Item #21 clos, les hommages cessent d'arriver en codes d'entité (2026-09-18)
+
+**`POST /api/memorial/tributes` stocke désormais `author_name` et `message` bruts, simplement détourés des espaces.** Les cinq relectures ont été auditées une par une avant de retirer l'échappement, puisque c'est lui qui aurait protégé un rendu qui n'échapperait pas : trois passent par JSX (page mémorial, page publique, onglet de modération), `preview-pdf` applique `escapeHtml` sur son gabarit HTML et `book-pdf` rend du `<Text>` react-pdf. Aucune ne touche `dangerouslySetInnerHTML`. **Le livre imprimé était touché aussi**, c'est la trouvaille de la passe : `preview-pdf` échappait par-dessus l'échappement stocké, donc un hommage payé et relié serait sorti en `&amp;#x27;`. Vérifié en bout de chaîne avec `Jean d'Arc` et `On n'oubliera pas <ce chien> & ses "betises".` — restitué tel quel dans l'onglet de modération et sur la page mémorial publique, `&lt;ce chien&gt;` dans la source HTML donc aucune injection, et `&#x27;` une seule fois dans le gabarit du PDF. **Aucun backfill n'a été écrit : la table `memorial_tributes` comptait zéro ligne**, vérifié avant et après. Reste une scorie voisine non corrigée, hors périmètre de l'item : le sujet de l'email de notification passe `escapeHtml(pet.name)` alors qu'un sujet n'est pas du HTML, donc un animal nommé « L'Or » sort en `L&#x27;Or` dans la boîte de réception.
