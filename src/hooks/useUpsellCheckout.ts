@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { getTranslations } from "@/lib/i18n";
 
 export type UpsellSource = "story" | "book" | "backfill" | "next_chapter";
@@ -16,6 +16,18 @@ export type UpsellPlan = "digital" | "print_annual";
 export function useUpsellCheckout(t: ReturnType<typeof getTranslations>) {
   const [pending, setPending] = useState<UpsellSource | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Back from Stripe, the page may come out of the bfcache with `pending`
+  // still set: the CTA would stay frozen on its loading label.
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      setPending(null);
+      setError(null);
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   const startCheckout = async (source: UpsellSource, plan: UpsellPlan, petId: string | null) => {
     setPending(source);
