@@ -4,6 +4,7 @@ import { sendEmail } from "@/lib/resend";
 import Stripe from "stripe";
 import { getServiceSupabase, priceIdToPlan } from "@/lib/plan";
 import { buildPaymentFailedEmail } from "@/lib/auth-emails";
+import { resolveLocale } from "@/lib/resolve-locale";
 import { analyticsConfigured, recordPurchaseOnce, trackPurchase } from "@/lib/analytics-server";
 
 import { stripe } from "@/lib/stripe";
@@ -442,10 +443,7 @@ export async function POST(req: Request) {
     const attemptCount = invoice.attempt_count ?? 1;
     if (userEmail && attemptCount <= 1) {
       try {
-        const lang: "fr" | "en" =
-          (failedProfile.language as string | undefined)?.startsWith("en")
-            ? "en"
-            : "fr";
+        const lang = resolveLocale(failedProfile.language as string | null);
         const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://everypaw.app";
         const portalSession = await stripe.billingPortal.sessions.create({
           customer: customerId,

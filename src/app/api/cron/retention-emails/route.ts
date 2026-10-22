@@ -7,7 +7,7 @@ import { sendEmail } from "@/lib/resend";
 import { baseLayout, hero, heading, paragraph, ctaButton, heroSection, quote, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
 import { estimateBookPages } from "@/lib/book";
 import { getTranslations } from "@/lib/i18n";
-import type { Locale } from "@/lib/i18n";
+import { resolveLocale } from "@/lib/resolve-locale";
 
 // ── Email helpers (thin wrappers over the shared template primitives) ──────────
 
@@ -15,7 +15,7 @@ function btn(url: string, label: string): string {
   return ctaButton(url, escapeHtml(label));
 }
 
-function wrap(body: string, unsubscribeUrl: string, unsubscribeLabel: string, lang: "fr" | "en" = "fr", preheaderText = ""): string {
+function wrap(body: string, unsubscribeUrl: string, unsubscribeLabel: string, lang: "fr" | "en" = "en", preheaderText = ""): string {
   return baseLayout(body, unsubscribeLink(unsubscribeUrl, unsubscribeLabel), lang, preheaderText);
 }
 
@@ -35,13 +35,6 @@ function extract2Sentences(text: string): string {
 // ── Counters ──────────────────────────────────────────────────────────────────
 
 interface PalierStats { sent: number; skipped: number; errors: number }
-
-// ── Locale helper ─────────────────────────────────────────────────────────────
-
-function profileLocale(language: string | null): Locale {
-  if (language?.startsWith("en")) return "en";
-  return "fr";
-}
 
 // ── Main handler ──────────────────────────────────────────────────────────────
 
@@ -97,7 +90,7 @@ export async function GET(req: Request) {
     const alivePets = (pets ?? []).filter(p => !p.deceased_at);
     if ((pets ?? []).length > 0 && alivePets.length === 0) { d1Stats.skipped++; continue; }
 
-    const locale = profileLocale(profile.language);
+    const locale = resolveLocale(profile.language);
     const t = getTranslations(locale).retention_emails;
     const re = getTranslations(locale).retention_emails;
 
@@ -241,7 +234,7 @@ export async function GET(req: Request) {
     const alivePets = (pets ?? []).filter(p => !p.deceased_at);
     if (alivePets.length === 0) { d7Stats.skipped++; continue; }
 
-    const locale = profileLocale(profile.language);
+    const locale = resolveLocale(profile.language);
     const re = getTranslations(locale).retention_emails;
 
     const unsubscribeUrl = profile.unsubscribe_token
@@ -394,7 +387,7 @@ export async function GET(req: Request) {
     const alivePets = (pets ?? []).filter(p => !p.deceased_at);
     if (alivePets.length === 0) { d30Stats.skipped++; continue; }
 
-    const locale = profileLocale(profile.language);
+    const locale = resolveLocale(profile.language);
     const re = getTranslations(locale).retention_emails;
 
     const unsubscribeUrl = profile.unsubscribe_token

@@ -5,6 +5,7 @@ import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
 import { getWeeklyQuestion, currentISOWeekBounds } from "@/lib/interview";
 import { baseLayout, hero, emoji, eyebrow, quote, ctaButton, paragraph, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
+import { resolveLocale } from "@/lib/resolve-locale";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -35,8 +36,8 @@ export async function GET(req: Request) {
 
     if (!pets || pets.length === 0) continue;
 
-    const locale = (profile.language ?? "en");
-    const isFrench = locale.toLowerCase().startsWith("fr");
+    const locale = resolveLocale(profile.language);
+    const isFrench = locale === "fr";
     const firstPet = pets[0];
     const petName = firstPet.name;
     const petNameHtml = escapeHtml(petName);

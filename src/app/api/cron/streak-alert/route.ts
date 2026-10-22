@@ -4,6 +4,7 @@ import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
 import { baseLayout, hero, heroSection, paragraph, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
+import { resolveLocale } from "@/lib/resolve-locale";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -79,7 +80,7 @@ export async function GET(req: Request) {
     const daysSince = Math.floor((now.getTime() - lastDate.getTime()) / 864e5);
 
     const petName = escapeHtml(pet.name);
-    const isFR = (profile.language ?? "en").toLowerCase().startsWith("fr");
+    const isFR = resolveLocale(profile.language) === "fr";
     const unsubscribeUrl = profile.unsubscribe_token
       ? `https://everypaw.app/unsubscribe?token=${profile.unsubscribe_token}`
       : "https://everypaw.app/dashboard";

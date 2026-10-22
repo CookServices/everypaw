@@ -4,6 +4,7 @@ import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
 import { baseLayout, hero, emoji, heading, paragraph, quote, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
+import { resolveLocale } from "@/lib/resolve-locale";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -56,7 +57,7 @@ export async function GET(req: Request) {
   for (const profile of profiles) {
     if (!profile.email) continue;
 
-    const isFR = (profile.language ?? "en").toLowerCase().startsWith("fr");
+    const isFR = resolveLocale(profile.language) === "fr";
     const userEntries = byUser[profile.id] ?? [];
     if (userEntries.length === 0) continue;
 

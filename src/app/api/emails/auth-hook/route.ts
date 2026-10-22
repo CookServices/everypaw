@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/resend";
 import { createHmac, timingSafeEqual } from "crypto";
 import { getProfileLocale } from "@/lib/locale";
+import { resolveLocale } from "@/lib/resolve-locale";
 import { isSafeRelativePath } from "@/lib/validation";
 import {
   buildConfirmSignupEmail,
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
   }
 
   let body: {
-    user?: { email?: string; new_email?: string };
+    user?: { email?: string; new_email?: string; user_metadata?: { language?: string } };
     email?: string;
     email_data?: {
       email_action_type?: string;
@@ -101,7 +102,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing email_action_type" }, { status: 400 });
   }
 
-  const lang = await getProfileLocale(email);
+  // At signup the profile row exists but its language is still null: the
+  // language chosen on the signup page only lives in user_metadata so far.
+  const metaLanguage = body.user?.user_metadata?.language;
+  const lang = metaLanguage ? resolveLocale(metaLanguage) : await getProfileLocale(email);
   let subject: string;
   let html: string;
   let toEmail = email;

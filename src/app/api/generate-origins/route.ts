@@ -2,6 +2,7 @@ import { log } from "@/lib/log";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildOriginsPrompt, stripEmDash } from "@/lib/story";
+import { promptLanguage, resolveLocale } from "@/lib/resolve-locale";
 import { callClaude, parseStoryResponse } from "@/lib/anthropic";
 
 import { UUID_REGEX } from "@/lib/validation";
@@ -51,8 +52,7 @@ export async function POST(req: Request) {
     .select("language")
     .eq("id", user.id)
     .single();
-  const lang: "French" | "English" = (profile?.language || "fr")
-    .toLowerCase().startsWith("fr") ? "French" : "English";
+  const lang = promptLanguage(resolveLocale(profile?.language));
 
   // Create entries from text answers (antidated: birthdate or today - 1 year)
   const entryDate = pet.birthdate
@@ -89,13 +89,16 @@ export async function POST(req: Request) {
     const text = await callClaude({ prompt, maxTokens: 1200 });
     const parsed = parseStoryResponse(text);
     const story = stripEmDash(parsed.story);
+    // The model writes the fixed title in the story's language, which follows
+    // the answers rather than the profile; the profile-language title is the fallback.
+    const title = stripEmDash(parsed.title).trim() || fixedTitle;
 
     const { data: saved, error: insertError } = await supabase
       .from("stories")
       .insert({
         pet_id: petId,
         user_id: user.id,
-        title: fixedTitle,
+        title,
         content: story,
         style: "classic",
         period_start: entryDate,
@@ -114,7 +117,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Failed to save story" }, { status: 500 });
     }
 
-    return NextResponse.json({ id: saved.id, title: fixedTitle, story });
+    return NextResponse.json({ id: saved.id, title, story });
   } catch (err) {
     log.error("[generate-origins] Unexpected error:", err);
     return NextResponse.json({ error: "Generation failed" }, { status: 500 });

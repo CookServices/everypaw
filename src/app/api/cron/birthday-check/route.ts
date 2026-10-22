@@ -7,6 +7,7 @@ import { sendEmail } from "@/lib/resend";
 import { generateAndSaveBirthdayLetter } from "@/lib/story";
 import { getTranslations } from "@/lib/i18n";
 import { baseLayout, hero, heroSection, paragraph, quote, ctaButton, ctaButtonOutline, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
+import { resolveLocale } from "@/lib/resolve-locale";
 
 export async function GET(req: Request) {
   const authError = verifyCronRoute(req);
@@ -72,8 +73,7 @@ export async function GET(req: Request) {
     const profile = profileMap[pet.user_id];
     if (!profile?.email) continue;
 
-    const locale = (profile.language ?? "en").toLowerCase();
-    const isFR = locale.startsWith("fr");
+    const isFR = resolveLocale(profile.language) === "fr";
     const lang: "French" | "English" = isFR ? "French" : "English";
     const petName = escapeHtml(pet.name);
     const birthYear = pet.birthdate ? parseInt(pet.birthdate.slice(0, 4), 10) : null;

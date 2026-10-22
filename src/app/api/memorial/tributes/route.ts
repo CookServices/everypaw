@@ -8,6 +8,7 @@ import { baseLayout, hero, ctaButton, heroSection, paragraph } from "@/lib/email
 import { checkRateLimitDb, getClientIp } from "@/lib/rate-limit";
 
 import { UUID_REGEX } from "@/lib/validation";
+import { resolveLocale } from "@/lib/resolve-locale";
 
 // La réclamation (`claim_public_page`) réattache chaque hommage en attente
 // d'une page dans une seule transaction qui tient déjà un verrou `FOR UPDATE`
@@ -242,8 +243,7 @@ export async function POST(req: Request) {
         .single();
 
       if (profile?.email) {
-        const locale = (profile.language ?? "en").toLowerCase();
-        const isFR = locale.startsWith("fr");
+        const isFR = resolveLocale(profile.language) === "fr";
         const petNameEsc = escapeHtml(pet.name);
 
         // Un sujet d'email n'est pas du HTML : `pet.name` brut, pas `petNameEsc`.
