@@ -7,6 +7,7 @@ import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
 import { generateAndSaveStory } from "@/lib/story";
 import { getProfileLocaleById } from "@/lib/locale";
+import { promptLanguage } from "@/lib/resolve-locale";
 import { baseLayout, hero, emoji, eyebrow, heading, paragraph, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 
 // Sequential AI generation across N pets, each callClaude up to ~30s. Vercel Hobby
@@ -116,7 +117,7 @@ export async function GET(req: Request) {
     if (!entries || entries.length < 3) { skipped++; continue; }
 
     const locale = await getProfileLocaleById(profile.id);
-    const lang = locale === "en" ? "English" : "French";
+    const lang = promptLanguage(locale);
 
     try {
       const result = await generateAndSaveStory(

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getUserPlan, canGenerateStory } from "@/lib/plan";
 import { stripEmDash, buildStoryPrompt, type StoryStyle } from "@/lib/story";
+import { promptLanguage, resolveLocale } from "@/lib/resolve-locale";
 import { callClaude, parseStoryResponse, AnthropicError } from "@/lib/anthropic";
 import { UUID_REGEX } from "@/lib/validation";
 
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
     supabase.from("profiles").select("language").eq("id", user.id).single(),
   ]);
 
-  const lang = (profile?.language || "fr").toLowerCase().startsWith("fr") ? "French" : "English";
+  const lang = promptLanguage(resolveLocale(profile?.language));
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   if (pet.user_id !== user.id) {
     log.error("[generate] 403 Forbidden: pet.user_id", pet.user_id, "!= user.id", user.id);

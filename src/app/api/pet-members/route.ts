@@ -8,6 +8,7 @@ import { baseLayout, hero, heading, paragraph, ctaButton, finePrint } from "@/li
 import crypto from "node:crypto";
 
 import { UUID_REGEX, EMAIL_REGEX } from "@/lib/validation";
+import { resolveLocale } from "@/lib/resolve-locale";
 const MAX_MEMBERS = 5;
 const INVITE_TTL_DAYS = 7;
 
@@ -171,8 +172,8 @@ async function sendInviteEmail(
 
   const db = getServiceSupabase();
   const { data: ownerProfile } = await db.from("profiles").select("language").eq("id", ownerId).single();
-  const isFR = (ownerProfile?.language ?? "en").toLowerCase().startsWith("fr");
-  const lang: "fr" | "en" = isFR ? "fr" : "en";
+  const lang = resolveLocale(ownerProfile?.language);
+  const isFR = lang === "fr";
 
   const subject = isFR
     ? `Vous êtes invité(e) à rejoindre le journal de ${petName} sur Everypaw`

@@ -7,12 +7,7 @@ import { sendEmail } from "@/lib/resend";
 import { shouldShowFirstStoryNudge } from "@/lib/story";
 import { baseLayout, hero, emoji, heading, paragraph, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, heroSection, colorSection, divider, BRAND } from "@/lib/email-templates";
 import { getTranslations } from "@/lib/i18n";
-import type { Locale } from "@/lib/i18n";
-
-function profileLocale(language: string | null): Locale {
-  if (language?.startsWith("en")) return "en";
-  return "fr";
-}
+import { resolveLocale } from "@/lib/resolve-locale";
 
 // One reminder email, sent once, to a free-plan user who's been eligible for
 // their first AI chapter (3+ entries, no story yet) for 2-3 days and hasn't
@@ -96,7 +91,7 @@ export async function GET(req: Request) {
 
       if (!profile.email) { skipped++; continue; }
 
-      const locale = profileLocale(profile.language);
+      const locale = resolveLocale(profile.language);
       const nudge = getTranslations(locale).first_story_nudge;
 
       const unsubscribeUrl = profile.unsubscribe_token

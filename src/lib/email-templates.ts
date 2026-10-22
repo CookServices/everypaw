@@ -29,7 +29,7 @@ export type Illustration = "paw" | "book" | "star" | "heart" | "bone" | "plant";
 // `preheader` is the inbox preview line: shown next to the subject in the list,
 // hidden once the mail is open. Without it, clients fall back to the first
 // visible text, which here is always the "Everypaw" header.
-export function baseLayout(content: string, footerExtra = "", lang: "fr" | "en" = "fr", preheaderText = ""): string {
+export function baseLayout(content: string, footerExtra = "", lang: "fr" | "en" = "en", preheaderText = ""): string {
   const year = new Date().getFullYear();
   return `<!DOCTYPE html>
 <html lang="${lang}">

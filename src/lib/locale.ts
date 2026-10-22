@@ -1,6 +1,7 @@
 import { getServiceSupabase } from "@/lib/plan";
+import { resolveLocale, type AppLocale } from "@/lib/resolve-locale";
 
-export async function getProfileLocale(email: string): Promise<"en" | "fr"> {
+export async function getProfileLocale(email: string): Promise<AppLocale> {
   try {
     const supabase = getServiceSupabase();
     const { data } = await supabase
@@ -8,12 +9,12 @@ export async function getProfileLocale(email: string): Promise<"en" | "fr"> {
       .select("language")
       .eq("email", email)
       .single();
-    if (data?.language?.startsWith("en")) return "en";
+    return resolveLocale(data?.language);
   } catch {}
-  return "fr";
+  return resolveLocale(null);
 }
 
-export async function getProfileLocaleById(userId: string): Promise<"en" | "fr"> {
+export async function getProfileLocaleById(userId: string): Promise<AppLocale> {
   try {
     const supabase = getServiceSupabase();
     const { data } = await supabase
@@ -21,7 +22,7 @@ export async function getProfileLocaleById(userId: string): Promise<"en" | "fr">
       .select("language")
       .eq("id", userId)
       .single();
-    if (data?.language?.startsWith("en")) return "en";
+    return resolveLocale(data?.language);
   } catch {}
-  return "fr";
+  return resolveLocale(null);
 }

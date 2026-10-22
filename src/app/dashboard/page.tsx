@@ -16,6 +16,7 @@ import { fmtDateOrdinal } from "@/lib/date";
 import type { Plan } from "@/lib/plan";
 import { canGenerateStory, getChapterEligibility } from "@/lib/plan-guards";
 import { useUpsellCheckout } from "@/hooks/useUpsellCheckout";
+import { resolveLocale } from "@/lib/resolve-locale";
 import { getWeeklyQuestion, currentISOWeekBounds } from "@/lib/interview";
 
 export const dynamic = "force-dynamic";
@@ -99,7 +100,7 @@ export default function DashboardPage() {
       ] = await Promise.all([
         supabase.from("pets").select("*").order("created_at", { ascending: false }),
         supabase.from("entries").select("*").eq("user_id", user.id).order("entry_date", { ascending: false }).limit(5),
-        supabase.from("profiles").select("is_premium, onboarding_dismissed, book_credits, subscription_renewal_date, plan, payment_past_due").single(),
+        supabase.from("profiles").select("is_premium, onboarding_dismissed, book_credits, subscription_renewal_date, plan, payment_past_due, language").single(),
         supabase.from("stories").select("id").eq("user_id", user.id).limit(1),
         supabase.from("entries").select("*", { count: "exact", head: true }).eq("user_id", user.id).gte("entry_date", monthStart).lte("entry_date", monthEnd),
         supabase.from("entries").select("pet_id, entry_date").eq("user_id", user.id).order("entry_date", { ascending: false }),
@@ -118,6 +119,15 @@ export default function DashboardPage() {
       setBookCredits(profile?.book_credits ?? 0);
       if (profile?.subscription_renewal_date) setSubscriptionRenewalDate(profile.subscription_renewal_date);
       setPaymentPastDue(!!profile?.payment_past_due);
+      // Accounts with no language yet (sign-ins that predate the callback
+      // fallback) get the browser's. Best effort, the server keeps a set one.
+      if (profile && !profile.language) {
+        fetch("/api/profile/language", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ language: resolveLocale(navigator.language) }),
+        }).catch(() => {});
+      }
       // Modal visibility follows onboarding_dismissed, not onboarding_completed: completion now
       // reflects having a real pet (set in pets/new), dismissal is what stops the modal recurring.
       setShowOnboarding(!profile?.onboarding_dismissed);

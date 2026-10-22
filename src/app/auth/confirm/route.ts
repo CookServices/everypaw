@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSafeRelativePath } from "@/lib/validation";
 import { log } from "@/lib/log";
+import { resolveAcceptLanguage, resolveLocale } from "@/lib/resolve-locale";
 import { NextResponse } from "next/server";
 
 const SUPPORTED_TYPES = ["signup", "recovery", "email_change"] as const;
@@ -49,12 +50,16 @@ export async function GET(request: Request) {
     return NextResponse.redirect(failureRedirect);
   }
 
-  // Persist the signup language (from user_metadata) onto the profile once,
-  // so localized emails can target the right language.
+  // Persist the user's language onto the profile once, so localized emails
+  // and chapters target the right language: the one chosen on the signup
+  // page (user_metadata), else the browser's.
   const { data: { user } } = await supabase.auth.getUser();
-  const lang = user?.user_metadata?.language;
-  if (user && (lang === "fr" || lang === "en")) {
-    await supabase.from("profiles").update({ language: lang }).eq("id", user.id).is("language", null);
+  if (user) {
+    const metaLanguage = user.user_metadata?.language;
+    const language = metaLanguage
+      ? resolveLocale(metaLanguage)
+      : resolveAcceptLanguage(request.headers.get("accept-language"));
+    await supabase.from("profiles").update({ language }).eq("id", user.id).is("language", null);
   }
 
   return NextResponse.redirect(`${origin}${destination}`);

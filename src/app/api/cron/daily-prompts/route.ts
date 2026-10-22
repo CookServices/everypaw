@@ -4,6 +4,7 @@ import { escapeHtml } from "@/lib/html";
 import { verifyCronRoute } from "@/lib/auth";
 import { sendEmail } from "@/lib/resend";
 import { baseLayout, hero, heroSection, quote, ctaButton, unsubscribeLink, oneClickUnsubscribeUrl, divider, colorSection, BRAND } from "@/lib/email-templates";
+import { resolveLocale } from "@/lib/resolve-locale";
 
 // Prompts rotate daily by day-of-year index
 const PROMPTS_EN: Record<string, string[]> = {
@@ -139,7 +140,7 @@ export async function GET(req: Request) {
 
     if (!count || count === 0) continue;
 
-    const isFR = (profile.language ?? "en").toLowerCase().startsWith("fr");
+    const isFR = resolveLocale(profile.language) === "fr";
     const pet = pets[0];
     const petName = escapeHtml(pet.name);
     const species = (pet.species ?? "").toLowerCase();

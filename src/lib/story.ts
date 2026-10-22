@@ -18,6 +18,21 @@ const STYLE_DESCRIPTIONS: Record<StoryStyle, string> = {
   tender:   "Write like a love letter, deeply warm, intimate, soft, full of tenderness and affection.",
 };
 
+/**
+ * The one language rule of every prompt built from what the user wrote: their
+ * writing decides, the profile language only breaks a tie. A null profile
+ * language falls back on English, so an English journal used to come back as
+ * a French chapter.
+ */
+function languageRule(text: "story" | "letter", source: string, fallback: "French" | "English"): string {
+  return `IMPORTANT: Write this ${text} entirely in the language the ${source} are written in. Only if they do not make that clear, write in ${fallback}. Do not mix languages.`;
+}
+
+/** Fixed titles are given in the profile language; they must follow the text's language instead. */
+function fixedTitleRule(fixedTitle: string): string {
+  return `The title is fixed: "${fixedTitle}". Write it in the same language as the text, translating it if the text is not in the language it is given in.`;
+}
+
 interface StoryPet {
   id: string;
   name: string;
@@ -43,7 +58,7 @@ export function buildStoryPrompt(
 
   return `You are writing a warm, emotional, first-person narrative story for a pet journal called Everypaw.
 
-IMPORTANT: Write this story entirely in ${lang}. Do not use any other language.
+${languageRule("story", "journal entries", lang)}
 ${style ? `STYLE: ${STYLE_DESCRIPTIONS[style]}` : ""}
 
 <pet_details>
@@ -112,10 +127,10 @@ export function buildOriginsPrompt(
 
   return `You are writing a warm, emotional, first-person narrative story for a pet journal called Everypaw.
 
-IMPORTANT: Write this story entirely in ${lang}. Do not use any other language.
+${languageRule("story", "origins answers", lang)}
 
 This is a special ORIGINS story, the very first chapter of ${petName}'s life with their family.
-The title is fixed: "${fixedTitle}"
+${fixedTitleRule(fixedTitle)}
 
 <pet_details>
   <name>${petName}</name>
@@ -142,7 +157,7 @@ Style rules:
 - NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
 
 You MUST respond with valid JSON only, no other text:
-{"title": "${fixedTitle}", "story": "..."}`;
+{"title": "...", "story": "..."}`;
 }
 
 export function buildBirthdayLetterPrompt(
@@ -168,7 +183,7 @@ export function buildBirthdayLetterPrompt(
 
   return `You are writing a short, heartfelt birthday letter for a pet journal called Everypaw.
 
-IMPORTANT: Write this letter entirely in ${lang}. Do not use any other language.
+${languageRule("letter", entries.length > 0 ? "journal entries" : "pet details", lang)}
 
 The pet is writing to their human family on their birthday${ageStr ? `, turning ${ageStr}` : ""}.
 
@@ -189,10 +204,10 @@ ${entries.length > 0
 - End with a warm closing sentence addressed to the human family
 - NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
 
-The title is fixed: "${fixedTitle}"
+${fixedTitleRule(fixedTitle)}
 
 You MUST respond with valid JSON only, no other text:
-{"title": "${fixedTitle}", "story": "..."}`;
+{"title": "...", "story": "..."}`;
 }
 
 export async function generateAndSaveBirthdayLetter(
