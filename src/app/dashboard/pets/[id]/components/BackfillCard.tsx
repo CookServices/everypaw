@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Story } from "@/types";
 import { planBackfill } from "@/lib/story-backfill";
 import { Translations } from "./types";
+import { useUpsellCheckout } from "@/hooks/useUpsellCheckout";
 
 /**
  * Catching up on the months that have no chapter (spec P1-2).
@@ -40,6 +41,7 @@ export default function BackfillCard({
   const [written, setWritten] = useState(0);
   const [limitHit, setLimitHit] = useState(false);
   const [failed, setFailed] = useState(false);
+  const { startCheckout, pending, error: checkoutError } = useUpsellCheckout(t);
 
   const plan = planBackfill(entryDates.map(entry_date => ({ entry_date })), stories);
   if (plan.months.length === 0) return null;
@@ -115,8 +117,16 @@ export default function BackfillCard({
       {isFree ? (
         <p style={{ fontSize: ".82rem", color: "var(--ep-text-muted)", margin: 0, lineHeight: 1.6, fontWeight: 300 }}>
           {t.stories.backfill_free_reason}{" "}
-          <Link href="/dashboard/settings" style={{ color: "var(--ep-brand)", textDecoration: "none", fontWeight: 500 }}>
-            {t.stories.free_upsell_cta}
+          <button
+            onClick={() => startCheckout("backfill", "digital", petId)}
+            disabled={pending !== null}
+            style={{ background: "none", border: "none", padding: 0, font: "inherit", color: "var(--ep-brand)", fontWeight: 500, cursor: pending ? "wait" : "pointer" }}
+          >
+            {pending === "backfill" ? t.upsell.loading : t.upsell.cta}
+          </button>
+          <br />
+          <Link href="/dashboard/settings" style={{ color: "var(--ep-text-muted)", textDecoration: "underline", fontSize: ".72rem" }}>
+            {t.upsell.compare}
           </Link>
         </p>
       ) : plan.eligible.length > 0 && (
@@ -149,6 +159,12 @@ export default function BackfillCard({
       {limitHit && (
         <p style={{ margin: 0, fontSize: ".8rem", color: "var(--ep-text-muted)", lineHeight: 1.6, fontWeight: 300 }}>
           {t.stories.backfill_limit}
+        </p>
+      )}
+
+      {checkoutError && (
+        <p style={{ margin: 0, fontSize: ".8rem", color: "var(--ep-error-ink)", background: "var(--ep-error-bg)", border: "1px solid var(--ep-error-border)", borderRadius: 8, padding: ".625rem .875rem" }}>
+          {checkoutError}
         </p>
       )}
 

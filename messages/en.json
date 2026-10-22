@@ -35,10 +35,10 @@
     "month_chapter_days": "in {days} days",
     "month_chapter_day": "tomorrow",
     "month_chapter_soon": "generating soon",
-    "month_chapter_not_included": "Auto-generated chapters are a Premium feature",
     "month_chapter_write_manually": "Write a chapter manually",
     "month_chapter_missing": "{n} more moment(s) needed to unlock this chapter",
     "month_chapter_add_moment": "Add a moment",
+    "month_chapter_auto": "Auto-generated",
     "month_book_label": "Your {year} book",
     "month_book_value": "In progress ✦",
     "month_book_credit_available": "{n} credit available",
@@ -100,7 +100,6 @@
     "share_generating": "Creating card…",
     "share_error": "Could not create the card. Please try again.",
     "free_upsell_text": "That was Chapter 1. Premium writes the next one every month, and prints it.",
-    "free_upsell_cta": "See plans",
     "free_upsell_refresh": "Already upgraded? Refresh the page.",
     "book_card_title": "Your book so far",
     "book_card_hint": "It grows with every chapter you add.",
@@ -122,7 +121,19 @@
     "backfill_error": "Generation stopped. The chapters already written are kept, you can start again.",
     "backfill_free_reason": "Writing past chapters comes with a paid plan.",
     "backfill_skipped_title": "Months still short of entries",
-    "backfill_skipped_item": "{month}: {count} of 3 entries needed"
+    "backfill_skipped_item": "{month}: {count} of 3 entries needed",
+    "next_chapter_date": "Next: {date} (in {days}d)",
+    "next_chapter_auto": "Auto-generated"
+  },
+  "upsell": {
+    "next_chapter": "Next chapter on {date}, written automatically with {premium}",
+    "premium": "Premium",
+    "cta": "Go Premium",
+    "cta_print": "Get Premium Print",
+    "loading": "Redirecting…",
+    "compare": "Compare plans",
+    "error": "Could not open checkout. Please try again in a moment.",
+    "already_subscribed": "You're already subscribed, refresh the page."
   },
   "first_story_nudge": {
     "card_title": "Your first chapter is ready to be written",

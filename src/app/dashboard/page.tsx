@@ -14,7 +14,8 @@ import { useLocale } from "@/hooks/useLocale";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { fmtDateOrdinal } from "@/lib/date";
 import type { Plan } from "@/lib/plan";
-import { getChapterEligibility } from "@/lib/plan-guards";
+import { canGenerateStory, getChapterEligibility } from "@/lib/plan-guards";
+import { useUpsellCheckout } from "@/hooks/useUpsellCheckout";
 import { getWeeklyQuestion, currentISOWeekBounds } from "@/lib/interview";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +59,8 @@ export default function DashboardPage() {
   const [interviewSubmitting, setInterviewSubmitting] = useState(false);
   const [interviewError, setInterviewError] = useState(false);
   const [totalEntriesCount, setTotalEntriesCount] = useState(0);
+  const [quotaStoryCount, setQuotaStoryCount] = useState(0);
+  const { startCheckout, pending: upsellPending, error: upsellError } = useUpsellCheckout(t);
   const [petMetadata, setPetMetadata] = useState<Record<string, {
     lastEntry: string | null;
     monthlyCount: number;
@@ -92,6 +95,7 @@ export default function DashboardPage() {
         { count: originsCount },
         { data: interviewEntry },
         { count: totalEntries },
+        { count: quotaStoryCount },
       ] = await Promise.all([
         supabase.from("pets").select("*").order("created_at", { ascending: false }),
         supabase.from("entries").select("*").eq("user_id", user.id).order("entry_date", { ascending: false }).limit(5),
@@ -103,6 +107,8 @@ export default function DashboardPage() {
         supabase.from("stories").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("story_type", "origins"),
         supabase.from("entries").select("content").eq("user_id", user.id).contains("tags", ["interview"]).gte("entry_date", weekStart).lte("entry_date", weekEnd).limit(1).maybeSingle(),
         supabase.from("entries").select("*", { count: "exact", head: true }).eq("user_id", user.id),
+        // Same exclusion as /api/generate and the pet page, for canGenerateStory.
+        supabase.from("stories").select("*", { count: "exact", head: true }).eq("user_id", user.id).not("story_type", "in", "(origins,birthday,memorial)"),
       ]);
 
       setPets(petsData || []);
@@ -121,6 +127,7 @@ export default function DashboardPage() {
       setInterviewDone(!!interviewEntry);
       if (interviewEntry?.content) setInterviewAnsweredContent(interviewEntry.content);
       setTotalEntriesCount(totalEntries ?? 0);
+      setQuotaStoryCount(quotaStoryCount ?? 0);
 
       const meta: Record<string, { lastEntry: string | null; monthlyCount: number; hasNewChapter: boolean }> = {};
       for (const e of (allEntriesMeta || []) as { pet_id: string; entry_date: string }[]) {
@@ -233,6 +240,14 @@ export default function DashboardPage() {
       : t.dashboard.month_chapter_days.replace("{days}", String(daysUntilChapter));
 
   const chapterEligibility = getChapterEligibility(plan, monthlyEntryCount);
+  const storyLimitReached = canGenerateStory(plan, quotaStoryCount) === "story_limit";
+  const nextChapterDate = (() => {
+    const d = firstOfNextMonth.getDate();
+    const m = firstOfNextMonth.toLocaleDateString(dateLocale, { month: "long" });
+    const ord = isFR ? (d === 1 ? "1er" : `${d}`) : (d === 1 ? "1st" : d === 2 ? "2nd" : d === 3 ? "3rd" : `${d}th`);
+    return isFR ? `${ord} ${m}` : `${m} ${ord}`;
+  })();
+  const [nextChapterBefore, nextChapterAfter] = t.upsell.next_chapter.replace("{date}", nextChapterDate).split("{premium}");
 
   // Free plan's "10" is a lifetime cap (see plan-guards.ts canAddEntry), not a monthly one,
   // so its progress must track totalEntriesCount, not monthlyEntryCount.
@@ -437,15 +452,10 @@ export default function DashboardPage() {
                     {chapterLabel}
                   </p>
                   <p style={{ fontSize: ".72rem", color: "var(--ep-text-muted)", margin: "0 0 .15rem", fontWeight: 300 }}>
-                    {(() => {
-                      const d = firstOfNextMonth.getDate();
-                      const m = firstOfNextMonth.toLocaleDateString(dateLocale, { month: "long" });
-                      const ord = isFR ? (d === 1 ? "1er" : `${d}`) : (d === 1 ? "1st" : d === 2 ? "2nd" : d === 3 ? "3rd" : `${d}th`);
-                      return isFR ? `${ord} ${m}` : `${m} ${ord}`;
-                    })()}
+                    {nextChapterDate}
                   </p>
                   <p style={{ fontSize: ".68rem", color: "var(--ep-text-muted)", margin: "0 0 .5rem", fontWeight: 300 }}>
-                    {isFR ? "Généré automatiquement" : "Auto-generated"}
+                    {t.dashboard.month_chapter_auto}
                   </p>
                 </>
               )}
@@ -464,17 +474,40 @@ export default function DashboardPage() {
                   )}
                 </>
               )}
+              {/* free and book_only: no monthly cron, so name Premium instead of promising a chapter. */}
               {chapterEligibility.state === "not_included" && (
                 <>
                   <p style={{ fontFamily: "Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "var(--ep-text)", margin: "0 0 .35rem", lineHeight: 1.3 }}>
-                    {t.dashboard.month_chapter_not_included}
+                    {nextChapterBefore}
+                    <button
+                      onClick={() => startCheckout("next_chapter", "digital", resolvedPetId)}
+                      disabled={upsellPending !== null}
+                      style={{ background: "none", border: "none", padding: 0, font: "inherit", color: "var(--ep-brand)", textDecoration: "underline", cursor: upsellPending ? "wait" : "pointer" }}
+                    >
+                      {upsellPending === "next_chapter" ? t.upsell.loading : t.upsell.premium}
+                    </button>
+                    {nextChapterAfter}
                   </p>
+                  {/* Once the free chapter is spent, /api/generate would refuse a manual one. */}
+                  {!storyLimitReached && (
+                    <Link
+                      href={storiesLink}
+                      style={{ fontSize: ".72rem", color: "var(--ep-brand)", textDecoration: "none", fontWeight: 500, display: "inline-block", marginBottom: ".35rem" }}
+                    >
+                      {t.dashboard.month_chapter_write_manually}
+                    </Link>
+                  )}
                   <Link
-                    href={storiesLink}
-                    style={{ fontSize: ".72rem", color: "var(--ep-brand)", textDecoration: "none", fontWeight: 500, display: "inline-block", marginBottom: ".5rem" }}
+                    href="/dashboard/settings"
+                    style={{ fontSize: ".68rem", color: "var(--ep-text-muted)", textDecoration: "underline", fontWeight: 300, display: "block", marginBottom: ".5rem" }}
                   >
-                    {t.dashboard.month_chapter_write_manually}
+                    {t.upsell.compare}
                   </Link>
+                  {upsellError && (
+                    <p style={{ margin: "0 0 .5rem", fontSize: ".72rem", color: "var(--ep-error-ink)", background: "var(--ep-error-bg)", border: "1px solid var(--ep-error-border)", borderRadius: 8, padding: ".5rem .75rem" }}>
+                      {upsellError}
+                    </p>
+                  )}
                 </>
               )}
               {hasStories && (
