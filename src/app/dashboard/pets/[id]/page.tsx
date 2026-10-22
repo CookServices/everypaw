@@ -8,6 +8,7 @@ import { detectMilestones, MILESTONE_TYPES, translateMilestone, MilestoneDefinit
 import { useLocale } from "@/hooks/useLocale";
 import { evaluateFirstStoryNudge } from "@/lib/story";
 import type { Plan } from "@/lib/plan";
+import { canGenerateStory } from "@/lib/plan-guards";
 import { compressImage } from "@/lib/image";
 import { useEntryComposer } from "./useEntryComposer";
 import MemorialModal from "./components/MemorialModal";
@@ -591,6 +592,8 @@ export default function PetPage({ params }: { params: { id: string } }) {
     entryCount: allEntryDates.length,
     existingStoryCount: stories.length,
   });
+  // Same count and guard as /api/generate: once true, a Generate button would only be refused.
+  const storyLimitReached = canGenerateStory(userPlan as Plan, userTotalStoryCount) === "story_limit";
   const tabs: { key: "journal" | "stories" | "milestones" | "tributes" | "members"; label: string }[] = [
     { key: "journal", label: t.pet.tab_journal },
     { key: "stories", label: t.pet.tab_stories },
@@ -726,7 +729,7 @@ export default function PetPage({ params }: { params: { id: string } }) {
             showFirstStoryNudge={showFirstStoryNudge}
             onOpenGenerateModal={() => { setStoryStyle(null); setGenPeriodStart(""); setGenPeriodEnd(""); setShowGenerateModal(true); }}
             generating={generating} generatingMsgIdx={generatingMsgIdx}
-            userPlan={userPlan} sharingStoryId={sharingStoryId}
+            userPlan={userPlan} storyLimitReached={storyLimitReached} sharingStoryId={sharingStoryId}
             onShare={handleShare} onOpenShareCard={openShareCard}
             hasMoreEntries={hasMoreEntries} filterYear={filterYear} filterMonth={filterMonth}
             onLoadMore={loadMoreEntries} loadingMore={loadingMore}

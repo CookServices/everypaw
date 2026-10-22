@@ -35,10 +35,10 @@
     "month_chapter_days": "dans {days} jours",
     "month_chapter_day": "demain",
     "month_chapter_soon": "génération imminente",
-    "month_chapter_not_included": "Les chapitres automatiques sont réservés aux plans payants",
     "month_chapter_write_manually": "Écrire un chapitre manuellement",
     "month_chapter_missing": "Encore {n} moment(s) pour débloquer ce chapitre",
     "month_chapter_add_moment": "Ajouter un moment",
+    "month_chapter_auto": "Généré automatiquement",
     "month_book_label": "Votre livre {year}",
     "month_book_value": "En cours de création ✦",
     "month_book_credit_available": "{n} crédit disponible",
@@ -100,7 +100,6 @@
     "share_generating": "Génération de la carte…",
     "share_error": "Impossible de créer la carte. Veuillez réessayer.",
     "free_upsell_text": "C'était le Chapitre 1. Premium écrit le suivant chaque mois, et l'imprime.",
-    "free_upsell_cta": "Voir les plans",
     "free_upsell_refresh": "Déjà passé à Premium ? Rafraîchis la page.",
     "book_card_title": "Votre livre à ce jour",
     "book_card_hint": "Il s'étoffe à chaque nouveau chapitre.",
@@ -122,7 +121,19 @@
     "backfill_error": "La génération s'est arrêtée. Les chapitres déjà écrits sont conservés, vous pouvez relancer.",
     "backfill_free_reason": "L'écriture des chapitres passés est comprise dans les formules payantes.",
     "backfill_skipped_title": "Mois encore trop courts en entrées",
-    "backfill_skipped_item": "{month} : {count} sur 3 entrées requises"
+    "backfill_skipped_item": "{month} : {count} sur 3 entrées requises",
+    "next_chapter_date": "Prochain : {date} (dans {days}j)",
+    "next_chapter_auto": "Généré automatiquement"
+  },
+  "upsell": {
+    "next_chapter": "Prochain chapitre le {date}, écrit automatiquement avec {premium}",
+    "premium": "Premium",
+    "cta": "Passer à Premium",
+    "cta_print": "Choisir Premium Print",
+    "loading": "Redirection…",
+    "compare": "Comparer les plans",
+    "error": "Impossible d'ouvrir le paiement. Réessayez dans un instant.",
+    "already_subscribed": "Vous êtes déjà abonné, rafraîchissez la page."
   },
   "first_story_nudge": {
     "card_title": "Votre premier chapitre est prêt à être écrit",

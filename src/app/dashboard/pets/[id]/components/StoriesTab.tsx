@@ -7,11 +7,12 @@ import BackfillCard from "./BackfillCard";
 import { fmtDateOrdinal } from "@/lib/date";
 import { STORY_STYLES } from "../constants";
 import { Translations } from "./types";
+import { useUpsellCheckout } from "@/hooks/useUpsellCheckout";
 
 export default function StoriesTab({
   t, isFR, dateLocale, pet, petName, stories, entries, allEntryDates,
   showFirstStoryNudge, onOpenGenerateModal, generating, generatingMsgIdx,
-  userPlan, sharingStoryId, onShare, onOpenShareCard,
+  userPlan, storyLimitReached, sharingStoryId, onShare, onOpenShareCard,
   hasMoreEntries, filterYear, filterMonth, onLoadMore, loadingMore, onStoryAdded,
 }: {
   t: Translations;
@@ -27,6 +28,8 @@ export default function StoriesTab({
   generating: boolean;
   generatingMsgIdx: number;
   userPlan: string;
+  /** Free plan with its one generation spent (canGenerateStory says story_limit). */
+  storyLimitReached: boolean;
   sharingStoryId: string | null;
   onShare: (story: Story) => void;
   onOpenShareCard: (story: Story) => void;
@@ -54,6 +57,23 @@ export default function StoriesTab({
     ? (nextDay === 1 ? `1er` : `${nextDay}`)
     : (nextDay === 1 ? "1st" : nextDay === 2 ? "2nd" : nextDay === 3 ? "3rd" : `${nextDay}th`);
   const nextDate = isFR ? `${ordinal} ${nextMonthName}` : `${nextMonthName} ${ordinal}`;
+
+  // Only digital and print get the monthly cron's chapter (getChapterEligibility).
+  const autoChapters = userPlan === "digital" || userPlan === "print";
+  const { startCheckout, pending, error } = useUpsellCheckout(t);
+  const petId = pet?.id ?? null;
+  const [nextChapterBefore, nextChapterAfter] = t.upsell.next_chapter.replace("{date}", nextDate).split("{premium}");
+
+  const compareLink = (
+    <Link href="/dashboard/settings" style={{ fontSize: ".72rem", color: "var(--ep-text-muted)", textDecoration: "underline", fontWeight: 300 }}>
+      {t.upsell.compare}
+    </Link>
+  );
+  const errorNote = error && (
+    <p style={{ margin: 0, fontSize: ".78rem", color: "var(--ep-error-ink)", background: "var(--ep-error-bg)", border: "1px solid var(--ep-error-border)", borderRadius: 8, padding: ".625rem .875rem" }}>
+      {error}
+    </p>
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -103,32 +123,57 @@ export default function StoriesTab({
         </div>
       )}
 
-      {/* Next chapter indicator */}
+      {/* Next chapter indicator. Without the monthly cron (free, book_only) it
+          names Premium instead of promising a chapter that will never come. */}
       <div style={{ background: hasThisMonthStory ? "rgba(61,43,31,.04)" : "rgba(200,129,58,.06)", borderRadius: 12, padding: ".625rem 1rem", border: `1px solid ${hasThisMonthStory ? "rgba(61,43,31,.08)" : "rgba(200,129,58,.2)"}`, display: "flex", flexDirection: "column", gap: ".35rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".5rem", flexWrap: "wrap" }}>
-          <span style={{ fontSize: ".8rem", color: hasThisMonthStory ? "var(--ep-text-muted)" : "var(--ep-brand)", fontWeight: hasThisMonthStory ? 300 : 500 }}>
-            {hasThisMonthStory
-              ? (isFR ? `✓ Chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })} généré` : `✓ ${now.toLocaleDateString(dateLocale, { month: "long" })} chapter generated`)
-              : (isFR ? `✨ Générez le chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })}` : `✨ Generate ${now.toLocaleDateString(dateLocale, { month: "long" })}'s chapter`)}
+        {(hasThisMonthStory || !storyLimitReached) && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".5rem", flexWrap: "wrap" }}>
+            <span style={{ fontSize: ".8rem", color: hasThisMonthStory ? "var(--ep-text-muted)" : "var(--ep-brand)", fontWeight: hasThisMonthStory ? 300 : 500 }}>
+              {hasThisMonthStory
+                ? (isFR ? `✓ Chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })} généré` : `✓ ${now.toLocaleDateString(dateLocale, { month: "long" })} chapter generated`)
+                : (isFR ? `✨ Générez le chapitre de ${now.toLocaleDateString(dateLocale, { month: "long" })}` : `✨ Generate ${now.toLocaleDateString(dateLocale, { month: "long" })}'s chapter`)}
+            </span>
+            {autoChapters && (
+              <span style={{ fontSize: ".72rem", color: "var(--ep-text-faint)", fontWeight: 300, flexShrink: 0 }}>
+                {t.stories.next_chapter_date.replace("{date}", nextDate).replace("{days}", String(daysUntil))}
+              </span>
+            )}
+          </div>
+        )}
+        {autoChapters ? (
+          <span style={{ fontSize: ".72rem", color: "var(--ep-text-faint)", fontWeight: 300 }}>
+            {t.stories.next_chapter_auto}
           </span>
-          <span style={{ fontSize: ".72rem", color: "var(--ep-text-faint)", fontWeight: 300, flexShrink: 0 }}>
-            {isFR ? `Prochain : ${nextDate} (dans ${daysUntil}j)` : `Next: ${nextDate} (in ${daysUntil}d)`}
-          </span>
-        </div>
-        <span style={{ fontSize: ".72rem", color: "var(--ep-text-faint)", fontWeight: 300 }}>
-          {isFR ? "Généré automatiquement" : "Auto-generated"}
-        </span>
+        ) : (
+          <>
+            <span style={{ fontSize: ".8rem", color: "var(--ep-text-muted)", fontWeight: 300, lineHeight: 1.5 }}>
+              {nextChapterBefore}
+              <button
+                onClick={() => startCheckout("next_chapter", "digital", petId)}
+                disabled={pending !== null}
+                style={{ background: "none", border: "none", padding: 0, font: "inherit", color: "var(--ep-brand)", fontWeight: 500, textDecoration: "underline", cursor: pending ? "wait" : "pointer" }}
+              >
+                {pending === "next_chapter" ? t.upsell.loading : t.upsell.premium}
+              </button>
+              {nextChapterAfter}
+            </span>
+            {compareLink}
+          </>
+        )}
       </div>
 
-      {/* Generate button, mirrors journal tab CTA */}
-      <button
+      {/* Generate button, mirrors journal tab CTA. Hidden once the free plan's
+          one chapter is spent: /api/generate would only refuse it. */}
+      {!storyLimitReached && <button
         onClick={() => { if (entries.length >= 3) onOpenGenerateModal(); }}
         disabled={generating || entries.length < 3}
         style={{ width: "100%", padding: ".875rem", borderRadius: 16, border: "1.5px dashed rgba(200,129,58,.4)", background: "rgba(200,129,58,.05)", color: "var(--ep-brand)", fontFamily: "inherit", fontSize: ".9rem", fontWeight: 500, cursor: entries.length < 3 ? "not-allowed" : "pointer", opacity: entries.length < 3 ? .5 : 1 }}
       >
         {generating ? generatingMessages[generatingMsgIdx] : t.journal.generate_story.replace("{name}", petName)}
         {entries.length < 3 && <span style={{ fontSize: ".75rem", display: "block", fontWeight: 300, marginTop: ".2rem" }}>{t.journal.add_more.replace("{count}", String(3 - entries.length)).replace("{entries}", 3 - entries.length === 1 ? t.journal.entry : t.journal.entries)}</span>}
-      </button>
+      </button>}
+
+      {errorNote}
 
       {stories.length === 0 ? (
         <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
@@ -229,12 +274,16 @@ export default function StoriesTab({
             <p style={{ fontSize: ".875rem", color: "var(--ep-text)", lineHeight: 1.6, margin: "0 0 1rem", fontFamily: "Georgia, serif" }}>
               {t.stories.free_upsell_text}
             </p>
-            <Link
-              href="/dashboard/settings"
-              style={{ display: "inline-block", padding: ".625rem 1.25rem", borderRadius: 100, background: "var(--ep-brand)", color: "var(--ep-bg-card)", fontSize: ".875rem", fontWeight: 500, textDecoration: "none" }}
-            >
-              {t.stories.free_upsell_cta}
-            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: ".875rem", flexWrap: "wrap" }}>
+              <button
+                onClick={() => startCheckout("story", "digital", petId)}
+                disabled={pending !== null}
+                style={{ padding: ".625rem 1.25rem", borderRadius: 100, border: "none", background: "var(--ep-brand)", color: "var(--ep-bg-card)", fontFamily: "inherit", fontSize: ".875rem", fontWeight: 500, cursor: pending ? "wait" : "pointer", opacity: pending === "story" ? .7 : 1 }}
+              >
+                {pending === "story" ? t.upsell.loading : t.upsell.cta}
+              </button>
+              {compareLink}
+            </div>
             <p style={{ fontSize: ".75rem", color: "var(--ep-text-faint)", margin: ".75rem 0 0", fontWeight: 300 }}>
               {t.stories.free_upsell_refresh}
             </p>

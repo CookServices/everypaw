@@ -8,6 +8,7 @@ import { calcCoverPeriod } from "../order/utils";
 import CoverArt from "../order/components/CoverArt";
 import PreviewModal from "../order/components/PreviewModal";
 import { Translations } from "./types";
+import { useUpsellCheckout } from "@/hooks/useUpsellCheckout";
 
 /**
  * The book, shown from the first chapter (spec P1-1).
@@ -36,6 +37,8 @@ export default function BookPreviewCard({
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  // The context is the book, so the CTA goes straight to the plan that prints it.
+  const { startCheckout, pending, error: checkoutError } = useUpsellCheckout(t);
 
   const isMemorial = !!pet.deceased_at;
   const theme = COVER_THEMES[0];
@@ -125,8 +128,16 @@ export default function BookPreviewCard({
           {userPlan === "free" ? (
             <span style={{ fontSize: ".78rem", color: "var(--ep-text-muted)", fontWeight: 300, lineHeight: 1.5 }}>
               {t.stories.book_card_free_reason}{" "}
-              <Link href="/dashboard/settings" style={{ color: "var(--ep-brand)", textDecoration: "none", fontWeight: 500 }}>
-                {t.stories.free_upsell_cta}
+              <button
+                onClick={() => startCheckout("book", "print_annual", pet.id)}
+                disabled={pending !== null}
+                style={{ background: "none", border: "none", padding: 0, font: "inherit", color: "var(--ep-brand)", fontWeight: 500, cursor: pending ? "wait" : "pointer" }}
+              >
+                {pending === "book" ? t.upsell.loading : t.upsell.cta_print}
+              </button>
+              <br />
+              <Link href="/dashboard/settings" style={{ color: "var(--ep-text-muted)", textDecoration: "underline", fontSize: ".72rem" }}>
+                {t.upsell.compare}
               </Link>
             </span>
           ) : (
@@ -147,6 +158,12 @@ export default function BookPreviewCard({
         {error && (
           <p style={{ margin: 0, fontSize: ".78rem", color: "var(--ep-error-ink)", background: "var(--ep-error-bg)", border: "1px solid var(--ep-error-border)", borderRadius: 8, padding: ".625rem .875rem" }}>
             {t.stories.book_card_preview_error}
+          </p>
+        )}
+
+        {checkoutError && (
+          <p style={{ margin: 0, fontSize: ".78rem", color: "var(--ep-error-ink)", background: "var(--ep-error-bg)", border: "1px solid var(--ep-error-border)", borderRadius: 8, padding: ".625rem .875rem" }}>
+            {checkoutError}
           </p>
         )}
       </div>
