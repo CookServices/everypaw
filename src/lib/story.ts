@@ -28,6 +28,9 @@ function languageRule(text: "story" | "letter", source: string, fallback: "Frenc
   return `IMPORTANT: Write this ${text} entirely in the language the ${source} are written in. Only if they do not make that clear, write in ${fallback}. Do not mix languages.`;
 }
 
+/** "My human" / "mon humain" reads as a cliché; the owner is "you" or named by their place in the family. */
+const NO_MY_HUMAN_RULE = `- NEVER call the owner "my human" or "his/her human" (in French "mon humain", "son humain", "mes humains"), nor refer to people as "humans". Speak to them directly as "you", or name them by their place in the family.`;
+
 /** Fixed titles are given in the profile language; they must follow the text's language instead. */
 function fixedTitleRule(fixedTitle: string): string {
   return `The title is fixed: "${fixedTitle}". Write it in the same language as the text, translating it if the text is not in the language it is given in.`;
@@ -87,6 +90,7 @@ Style rules (follow strictly):
 - Tone: warm, intimate, slightly poetic, like a letter to the reader
 - Target exactly 400-500 words (count carefully)
 - NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
+${NO_MY_HUMAN_RULE}
 
 Also generate a short evocative title (5 words max).
 
@@ -155,6 +159,7 @@ Style rules:
 - Do NOT list facts, transform them into narrative
 - Target 350-450 words
 - NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
+${NO_MY_HUMAN_RULE}
 
 You MUST respond with valid JSON only, no other text:
 {"title": "...", "story": "..."}`;
@@ -185,7 +190,7 @@ export function buildBirthdayLetterPrompt(
 
 ${languageRule("letter", entries.length > 0 ? "journal entries" : "pet details", lang)}
 
-The pet is writing to their human family on their birthday${ageStr ? `, turning ${ageStr}` : ""}.
+The pet is writing to their family on their birthday${ageStr ? `, turning ${ageStr}` : ""}.
 
 <pet_details>
   <name>${petName}</name>
@@ -201,8 +206,9 @@ ${entries.length > 0
     ? "- Weave in 1-2 specific memories from the journal entries above"
     : "- Write warmly based on the pet's species and name"}
 - Tone: tender, slightly playful, full of love
-- End with a warm closing sentence addressed to the human family
+- End with a warm closing sentence addressed to the family
 - NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
+${NO_MY_HUMAN_RULE}
 
 ${fixedTitleRule(fixedTitle)}
 
