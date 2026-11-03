@@ -50,7 +50,7 @@ de moment déclencheur équivalent.
 
 ## Deux tests à zéro code, avant et pendant l'écriture
 
-Ils testent l'hypothèse la plus risquée de chaque porte. Leur résultat décide si PP-4 s'écrit.
+Ils testent l'hypothèse la plus risquée de chaque porte. Leur résultat décide si PP-4 s'écrit. Supports prêts à l'emploi (textes, protocole, grilles) : [pp1-tests-kit.md](pp1-tests-kit.md).
 
 1. **Porte A, le partage.** Créer un mémorial sur le `/memorial/[id]` existant avec un animal de
    test, le poster dans deux groupes Facebook pet loss francophones et sur r/petloss avec un vrai
