@@ -29,7 +29,7 @@ function languageRule(text: "story" | "letter", source: string, fallback: "Frenc
 }
 
 /** "My human" / "mon humain" reads as a cliché; the owner is "you" or named by their place in the family. */
-const NO_MY_HUMAN_RULE = `- NEVER call the owner "my human" or "his/her human" (in French "mon humain", "son humain", "mes humains"), nor refer to people as "humans". Speak to them directly as "you", or name them by their place in the family.`;
+const NO_MY_HUMAN_RULE = `- NEVER call the owner "my human" or "his/her human" (in French "mon humain", "son humain", "mes humains"), nor refer to people as "humans". Speak to them directly as "you" (in French, always the familiar "tu", never the formal "vous"), or name them by their place in the family.`;
 
 /** Fixed titles are given in the profile language; they must follow the text's language instead. */
 function fixedTitleRule(fixedTitle: string): string {
