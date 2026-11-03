@@ -190,7 +190,7 @@ ${memories}
 
   const brief =
     input.kind === "memorial"
-      ? `This is a farewell letter. The pet named in <pet_details> has passed away, and writes one last time to the human who loved them.
+      ? `This is a farewell letter. The pet named in <pet_details> has passed away, and writes one last time to the person who loved them.
 
 Write 250-350 words, in three short paragraphs.
 - Open on a sensory image of an ordinary shared moment, not on the death itself.
@@ -224,6 +224,7 @@ Style rules (follow strictly):
 - Use the pet's name, exactly as given in <pet_details>, at least twice, naturally.
 - Reference the species at least once.
 - NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
+- NEVER call the owner "my human" or "his/her human" (in French "mon humain", "son humain", "mes humains"), nor refer to people as "humans". Speak to them directly as "you", or name them by their place in the family.
 
 Also generate a short evocative title, 5 words maximum.
 

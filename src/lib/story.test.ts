@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { evaluateFirstStoryNudge, type FirstStoryNudgeConditions } from "./story";
+import {
+  buildBirthdayLetterPrompt,
+  buildOriginsPrompt,
+  buildStoryPrompt,
+  evaluateFirstStoryNudge,
+  type FirstStoryNudgeConditions,
+} from "./story";
 
 const base: FirstStoryNudgeConditions = {
   deceasedAt: null,
@@ -28,5 +34,21 @@ describe("evaluateFirstStoryNudge", () => {
 
   it("true when every condition is met", () => {
     expect(evaluateFirstStoryNudge(base)).toBe(true);
+  });
+});
+
+describe("story prompts", () => {
+  const pet = { id: "p", name: "Luna", species: "cat", bio: null };
+  const entries = [{ entry_date: "2026-10-01", content: "Premier jour à la plage." }];
+  const rule = `NEVER call the owner "my human"`;
+
+  it("forbid 'my human' in every prompt", () => {
+    expect(buildStoryPrompt(pet, entries, "French")).toContain(rule);
+    expect(buildOriginsPrompt(pet, "a", "b", "c", "French")).toContain(rule);
+    expect(buildBirthdayLetterPrompt(pet, entries, "French", 3)).toContain(rule);
+  });
+
+  it("never call the family 'human' themselves", () => {
+    expect(buildBirthdayLetterPrompt(pet, entries, "English", 3)).not.toContain("human family");
   });
 });
