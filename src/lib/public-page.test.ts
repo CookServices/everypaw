@@ -251,6 +251,7 @@ describe("buildPublicPagePrompt", () => {
   it("interdit la formule mon humain", () => {
     expect(buildPublicPagePrompt(input)).toContain(`NEVER call the owner "my human"`);
     expect(buildPublicPagePrompt({ ...input, kind: "living", deceasedAt: null })).toContain(`NEVER call the owner "my human"`);
+    expect(buildPublicPagePrompt(input)).toContain(`always the familiar "tu", never the formal "vous"`);
   });
 
   it("ne repete pas le nom du proprietaire en dehors du bloc pet_details", () => {

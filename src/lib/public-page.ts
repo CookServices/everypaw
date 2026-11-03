@@ -224,7 +224,7 @@ Style rules (follow strictly):
 - Use the pet's name, exactly as given in <pet_details>, at least twice, naturally.
 - Reference the species at least once.
 - NEVER use the em dash character (—). Use commas, periods, or parentheses instead.
-- NEVER call the owner "my human" or "his/her human" (in French "mon humain", "son humain", "mes humains"), nor refer to people as "humans". Speak to them directly as "you", or name them by their place in the family.
+- NEVER call the owner "my human" or "his/her human" (in French "mon humain", "son humain", "mes humains"), nor refer to people as "humans". Speak to them directly as "you" (in French, always the familiar "tu", never the formal "vous"), or name them by their place in the family.
 
 Also generate a short evocative title, 5 words maximum.
 

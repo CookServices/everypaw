@@ -48,6 +48,13 @@ describe("story prompts", () => {
     expect(buildBirthdayLetterPrompt(pet, entries, "French", 3)).toContain(rule);
   });
 
+  it("make the pet say 'tu' to its owner in French", () => {
+    const tu = `always the familiar "tu", never the formal "vous"`;
+    expect(buildStoryPrompt(pet, entries, "French")).toContain(tu);
+    expect(buildOriginsPrompt(pet, "a", "b", "c", "French")).toContain(tu);
+    expect(buildBirthdayLetterPrompt(pet, entries, "French", 3)).toContain(tu);
+  });
+
   it("never call the family 'human' themselves", () => {
     expect(buildBirthdayLetterPrompt(pet, entries, "English", 3)).not.toContain("human family");
   });
